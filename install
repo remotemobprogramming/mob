@@ -1,0 +1,1 @@
+go build mob.go && cp -f mob /usr/local/bin/
