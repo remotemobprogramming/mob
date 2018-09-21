@@ -48,7 +48,7 @@ func start() {
 func next() {
 	git("add", ".", "--all")
 	git("commit", "--message", "\"WIP in Mob Session [ci-skip]\"")
-	git("push")
+	git("push", "origin", branch)
 	say("join the 'rest of the mob'")
 }
 
