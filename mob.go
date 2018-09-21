@@ -8,8 +8,9 @@ import (
 )
 
 const branch = "mob-session"
+
 func isDebug() bool {
-	_, isSet:= os.LookupEnv("MOB_DEBUG")
+	_, isSet := os.LookupEnv("MOB_DEBUG")
 	return isSet
 }
 

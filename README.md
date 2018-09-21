@@ -1,6 +1,6 @@
 # Tool for Remote Mob Programming
 
-Allows to switch the typist in a remote mob programming session quickly. Syncs via a "mob feature branch".
+CLI tool written in GO that allows to switch the typist in a remote mob programming session quickly with git and a remote branch.
 
 ## How to use it?
 
