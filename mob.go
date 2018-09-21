@@ -41,7 +41,8 @@ func reset() {
 
 func start() {
 	git("checkout", "-b", branch)
-	git("pull", "--force")
+	git("fetch", "origin", branch)
+	git("merge", "origin/"+branch)
 	say("start hacking")
 }
 
