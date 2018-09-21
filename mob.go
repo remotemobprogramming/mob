@@ -8,7 +8,10 @@ import (
 )
 
 const branch = "mob-session"
-const debug = true
+func isDebug() bool {
+	_, isSet:= os.LookupEnv("MOB_DEBUG")
+	return isSet
+}
 
 // -d to enable insights into what happened in git
 
@@ -82,12 +85,12 @@ func help() {
 
 func git(args ...string) string {
 	command := exec.Command("git", args...)
-	if (debug) {
+	if isDebug() {
 		fmt.Println(command.Args)
 	}
 	outputBinary, err := command.CombinedOutput()
 	output := string(outputBinary)
-	if (debug) {
+	if isDebug() {
 		fmt.Println(output)
 	}
 	if err != nil {

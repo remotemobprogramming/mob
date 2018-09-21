@@ -23,3 +23,11 @@ carola$ git commit --message "describe what the mob session was all about"
 - `mob start` creates branch `mob-session` and pulls from `origin/mob-session`
 - `mob next` pushes all changes to `origin/mob-session`in a `WIP [ci-skip]` commit
 - `mob done` squashes all changes in `mob-session` into staging of `master` and removes `mob-session` and `origin/mob-session` 
+
+## How does it really work?
+
+```bash
+$ MOB_DEBUG=true mob start
+```
+
+Prints out any git commands and their results.
