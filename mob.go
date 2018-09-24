@@ -14,7 +14,7 @@ func isDebug() bool {
 	return isSet
 }
 
-// -d to enable insights into what happened in git
+// master
 
 func main() {
 	argument := getCommand()
@@ -33,6 +33,22 @@ func main() {
 	}
 }
 
+func startTimer(timer string) {
+	fmt.Println("starting " + timer + " minutes timer")
+	command := exec.Command("at", "-q", "m", "-f", "/tmp/timer-done", "now", "+", timer, "minutes")
+	if isDebug() {
+		fmt.Println(command.Args)
+	}
+	outputBinary, err := command.CombinedOutput()
+	output := string(outputBinary)
+	if isDebug() {
+		fmt.Println(output)
+	}
+	if err != nil && isDebug() {
+		fmt.Println(err)
+	}
+}
+
 func reset() {
 	git("checkout", "master")
 	git("branch", "-D", branch)
@@ -44,6 +60,11 @@ func start() {
 	git("fetch", "origin", branch)
 	git("merge", "origin/"+branch)
 	say("start hacking")
+
+	if len(os.Args) > 2 {
+		timer := os.Args[2]
+		startTimer(timer)
+	}
 }
 
 func next() {
@@ -95,7 +116,7 @@ func git(args ...string) string {
 	if isDebug() {
 		fmt.Println(output)
 	}
-	if err != nil {
+	if err != nil && isDebug() {
 		fmt.Println(err)
 	}
 	return output
