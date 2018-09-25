@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"strconv"
 	"strings"
 )
 
@@ -33,20 +34,18 @@ func main() {
 	}
 }
 
-func startTimer(timer string) {
-	fmt.Println("starting " + timer + " minutes timer")
-	command := exec.Command("at", "-q", "m", "-f", "/tmp/timer-done", "now", "+", timer, "minutes")
+func startTimer(timerInMinutes string) {
+	fmt.Println("starting " + timerInMinutes + " minutes timer")
+
+	timeoutInMinutes, _ := strconv.Atoi(timerInMinutes)
+	timeoutInSeconds := timeoutInMinutes * 60
+	timerInSeconds := strconv.Itoa(timeoutInSeconds)
+
+	command := exec.Command("sh", "-c", "( sleep "+timerInSeconds+" && say \"time's up\" & )")
 	if isDebug() {
 		fmt.Println(command.Args)
 	}
-	outputBinary, err := command.CombinedOutput()
-	output := string(outputBinary)
-	if isDebug() {
-		fmt.Println(output)
-	}
-	if err != nil && isDebug() {
-		fmt.Println(err)
-	}
+	command.Start()
 }
 
 func reset() {
