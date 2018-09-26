@@ -15,8 +15,6 @@ func isDebug() bool {
 	return isSet
 }
 
-// master
-
 func main() {
 	argument := getCommand()
 	if argument == "s" || argument == "start" {
@@ -27,6 +25,11 @@ func main() {
 		done()
 	} else if argument == "r" || argument == "reset" {
 		reset()
+	} else if argument == "t" || argument == "timer" {
+		if len(os.Args) > 2 {
+			timer := os.Args[2]
+			startTimer(timer)
+		}
 	} else if argument == "h" || argument == "help" {
 		help()
 	} else {
