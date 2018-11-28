@@ -73,7 +73,8 @@ func start() {
 	git("checkout", "master")
 	git("pull")
 	git("fetch")
-	git("checkout", "-b", branch)
+	git("branch", branch)
+	git("checkout", branch)
 	if hasMobbingBranchOrigin() {
 		git("merge", "origin/"+branch)
 	}
