@@ -73,10 +73,13 @@ func start() {
 	git("checkout", "master")
 	git("pull")
 	git("fetch")
-	git("branch", branch)
+	if !hasMobbingBranch() {
+		git("branch", branch)
+	}
 	git("checkout", branch)
 	if hasMobbingBranchOrigin() {
 		git("merge", "origin/"+branch)
+		git("branch", "--set-upstream-to=origin/"+branch, branch)
 	}
 	say("start hacking")
 
@@ -110,7 +113,7 @@ func status() {
 	if isMobbing() {
 		say("mobbing in progress")
 
-		output := silentgit("--no-pager", "log", "master.."+branch, "--pretty=format:%h - %s %cr <%an>", "--abbrev-commit")
+		output := silentgit("--no-pager", "log", "master.."+branch, "--pretty=format:%h %cr <%an>", "--abbrev-commit")
 		fmt.Println(output)
 	} else {
 		say("you aren't mobbing right now")
