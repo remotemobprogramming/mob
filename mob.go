@@ -109,8 +109,8 @@ func status() {
 	if isMobbing() {
 		say("mobbing in progress")
 
-		output := silentgit("--no-pager", "log", "master.."+branch, "--oneline")
-		fmt.Print(output)
+		output := silentgit("--no-pager", "log", "master.."+branch, "--pretty=format:%h - %s %cr <%an>", "--abbrev-commit")
+		fmt.Println(output)
 	} else {
 		say("you aren't mobbing right now")
 	}
