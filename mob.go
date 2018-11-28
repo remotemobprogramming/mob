@@ -15,16 +15,24 @@ func isDebug() bool {
 	return isSet
 }
 
+func isInfo() bool {
+	return !isDebug()
+}
+
 func main() {
 	argument := getCommand()
 	if argument == "s" || argument == "start" {
 		start()
+		status()
 	} else if argument == "n" || argument == "next" {
 		next()
+		status()
 	} else if argument == "d" || argument == "done" {
 		done()
+		status()
 	} else if argument == "r" || argument == "reset" {
 		reset()
+		status()
 	} else if argument == "t" || argument == "timer" {
 		if len(os.Args) > 2 {
 			timer := os.Args[2]
@@ -53,14 +61,22 @@ func startTimer(timerInMinutes string) {
 
 func reset() {
 	git("checkout", "master")
-	git("branch", "-D", branch)
-	git("push", "origin", "--delete", branch)
+	if hasMobbingBranch() {
+		git("branch", "-D", branch)
+	}
+	if hasMobbingBranchOrigin() {
+		git("push", "origin", "--delete", branch)
+	}
 }
 
 func start() {
+	git("checkout", "master")
+	git("pull")
+	git("fetch")
 	git("checkout", "-b", branch)
-	git("fetch", "origin", branch)
-	git("merge", "origin/"+branch)
+	if hasMobbingBranchOrigin() {
+		git("merge", "origin/"+branch)
+	}
 	say("start hacking")
 
 	if len(os.Args) > 2 {
@@ -70,6 +86,10 @@ func start() {
 }
 
 func next() {
+	if isNothingToCommit() {
+		say("nothing was done, so nothing to commit")
+		return
+	}
 	git("add", ".", "--all")
 	git("commit", "--message", "\"WIP in Mob Session [ci-skip]\"")
 	git("push", "origin", branch)
@@ -88,15 +108,35 @@ func done() {
 func status() {
 	if isMobbing() {
 		say("mobbing in progress")
+
+		output := silentgit("--no-pager", "log", "master.."+branch, "--oneline")
+		fmt.Print(output)
 	} else {
 		say("you aren't mobbing right now")
 	}
 }
 
+func isNothingToCommit() bool {
+	output := silentgit("status", "--short")
+	isMobbing := len(strings.TrimSpace(output)) == 0
+	return isMobbing
+}
+
 func isMobbing() bool {
-	output := git("branch")
+	output := silentgit("branch")
 	isMobbing := strings.Contains(output, "* "+branch)
 	return isMobbing
+}
+
+func hasMobbingBranch() bool {
+	output := silentgit("branch")
+	return strings.Contains(output, "  "+branch) || strings.Contains(output, "* "+branch)
+}
+
+func hasMobbingBranchOrigin() bool {
+	silentgit("fetch")
+	output := silentgit("branch", "--remotes")
+	return strings.Contains(output, "  origin/"+branch)
 }
 
 func help() {
@@ -108,7 +148,7 @@ func help() {
 	say("\tmob [h]elp \t# prints this help")
 }
 
-func git(args ...string) string {
+func silentgit(args ...string) string {
 	command := exec.Command("git", args...)
 	if isDebug() {
 		fmt.Println(command.Args)
@@ -119,6 +159,22 @@ func git(args ...string) string {
 		fmt.Println(output)
 	}
 	if err != nil && isDebug() {
+		fmt.Println(err)
+	}
+	return output
+}
+
+func git(args ...string) string {
+	command := exec.Command("git", args...)
+	if isDebug() || isInfo() {
+		fmt.Println(command.Args)
+	}
+	outputBinary, err := command.CombinedOutput()
+	output := string(outputBinary)
+	if isDebug() {
+		fmt.Println(output)
+	}
+	if err != nil && (isDebug() || isInfo()) {
 		fmt.Println(err)
 	}
 	return output
