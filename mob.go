@@ -71,6 +71,10 @@ func reset() {
 
 func start() {
 	git("checkout", "master")
+	if !isNothingToCommit() {
+		say("uncommitted changes, aborting 'mob start'")
+		return
+	}
 	git("pull")
 	git("fetch")
 	if !hasMobbingBranch() {
