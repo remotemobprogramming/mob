@@ -31,7 +31,7 @@ func main() {
 		}
 	} else if argument == "h" || argument == "help" {
 		help()
-	} else if argument == "s" || argument == "status" {
+	} else if argument == "status" {
 		status()
 	} else {
 		status()
@@ -196,6 +196,7 @@ func help() {
 	say("\tmob [n]ext \t# hand over to next typist")
 	say("\tmob [d]one \t# finish mob session")
 	say("\tmob [r]eset \t# resets any unfinished mob session")
+	say("\tmob status \t# show status of mob session")
 	say("\tmob [h]elp \t# prints this help")
 }
 
