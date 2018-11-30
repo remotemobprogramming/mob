@@ -10,15 +10,6 @@ import (
 
 const branch = "mob-session"
 
-func isDebug() bool {
-	_, isSet := os.LookupEnv("MOB_DEBUG")
-	return isSet
-}
-
-func isInfo() bool {
-	return !isDebug()
-}
-
 func main() {
 	argument := getCommand()
 	if argument == "s" || argument == "start" {
@@ -40,9 +31,21 @@ func main() {
 		}
 	} else if argument == "h" || argument == "help" {
 		help()
+	} else if argument == "s" || argument == "status" {
+		status()
 	} else {
 		status()
+		help()
 	}
+}
+
+func isDebug() bool {
+	_, isSet := os.LookupEnv("MOB_DEBUG")
+	return isSet
+}
+
+func isInfo() bool {
+	return !isDebug()
 }
 
 func startTimer(timerInMinutes string) {
@@ -60,6 +63,7 @@ func startTimer(timerInMinutes string) {
 }
 
 func reset() {
+	git("fetch")
 	git("checkout", "master")
 	if hasMobbingBranch() {
 		git("branch", "-D", branch)
@@ -70,21 +74,41 @@ func reset() {
 }
 
 func start() {
-	git("checkout", "master")
 	if !isNothingToCommit() {
 		say("uncommitted changes, aborting 'mob start'")
 		return
 	}
-	git("pull")
-	git("fetch")
-	if !hasMobbingBranch() {
-		git("branch", branch)
-	}
-	git("checkout", branch)
-	if hasMobbingBranchOrigin() {
-		git("merge", "origin/"+branch)
+
+	git("fetch") // abort if didn't work
+
+	if hasMobbingBranch() && hasMobbingBranchOrigin() {
+		say("rejoining mob session")
+		git("checkout", branch)
+		git("merge", "origin/"+branch) // caution
 		git("branch", "--set-upstream-to=origin/"+branch, branch)
+	} else if !hasMobbingBranch() && !hasMobbingBranchOrigin() {
+		say("create " + branch + " from master")
+		git("checkout", "master")
+		git("merge", "origin/master")
+		git("branch", branch)
+		git("checkout", branch)
+		git("branch", "--set-upstream-to=origin/"+branch, branch)
+		git("push")
+	} else if !hasMobbingBranch() && hasMobbingBranchOrigin() {
+		say("joining mob session")
+		git("checkout", branch)
+	} else {
+		say("purging local branch and start new mob session from master")
+		git("branch", "-D", branch) // check if unmerged commits
+
+		git("checkout", "master")
+		git("merge", "origin/master")
+		git("branch", branch)
+		git("checkout", branch)
+		git("branch", "--set-upstream-to=origin/"+branch, branch)
+		git("push")
 	}
+
 	say("start hacking")
 
 	if len(os.Args) > 2 {
@@ -94,10 +118,16 @@ func start() {
 }
 
 func next() {
+	if !isMobbing() {
+		say("nothing was done, because you aren't mobbing")
+		return
+	}
+
 	if isNothingToCommit() {
 		say("nothing was done, so nothing to commit")
 		return
 	}
+
 	git("add", ".", "--all")
 	git("commit", "--message", "\"WIP in Mob Session [ci-skip]\"")
 	git("push", "origin", branch)
@@ -105,10 +135,23 @@ func next() {
 }
 
 func done() {
+	if !isMobbing() {
+		say("nothing was done, because you aren't mobbing")
+		return
+	}
+
+	git("fetch")
+
+	git("add", ".", "--all")
+	git("commit", "--message", "\"Mob Session DONE [ci-skip]\"")
+	git("push", "origin", branch)
+
 	git("checkout", "master")
 	git("merge", "--squash", branch)
+
 	git("branch", "-D", branch)
 	git("push", "origin", "--delete", branch)
+
 	say("lean back, you survived your mob session :-)")
 	say("execute 'git commit' to describe what the mob achieved")
 }
