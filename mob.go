@@ -9,6 +9,8 @@ import (
 )
 
 const branch = "mob-session"
+const message = "\"Mob Session DONE [ci-skip]\""
+const master = "master"
 
 func main() {
 	argument := getCommand()
@@ -67,7 +69,7 @@ func startTimer(timerInMinutes string) {
 
 func reset() {
 	git("fetch")
-	git("checkout", "master")
+	git("checkout", master)
 	if hasMobbingBranch() {
 		git("branch", "-D", branch)
 	}
@@ -91,7 +93,7 @@ func start() {
 		git("branch", "--set-upstream-to=origin/"+branch, branch)
 	} else if !hasMobbingBranch() && !hasMobbingBranchOrigin() {
 		say("create " + branch + " from master")
-		git("checkout", "master")
+		git("checkout", master)
 		git("merge", "origin/master")
 		git("branch", branch)
 		git("checkout", branch)
@@ -100,10 +102,10 @@ func start() {
 		say("joining mob session")
 		git("checkout", branch)
 	} else {
-		say("purging local branch and start new mob session from master")
+		say("purging local branch and start new " + branch + " branch from " + master)
 		git("branch", "-D", branch) // check if unmerged commits
 
-		git("checkout", "master")
+		git("checkout", master)
 		git("merge", "origin/master")
 		git("branch", branch)
 		git("checkout", branch)
@@ -132,7 +134,7 @@ func next() {
 		git("push", "origin", branch)
 	}
 
-	git("checkout", "master")
+	git("checkout", master)
 	say("join the 'rest of the mob'")
 }
 
@@ -146,11 +148,11 @@ func done() {
 
 	if !isNothingToCommit() {
 		git("add", ".", "--all")
-		git("commit", "--message", "\"Mob Session DONE [ci-skip]\"")
+		git("commit", "--message", message)
 	}
 	git("push", "origin", branch)
 
-	git("checkout", "master")
+	git("checkout", master)
 	git("merge", "--squash", branch)
 
 	git("branch", "-D", branch)
@@ -164,7 +166,7 @@ func status() {
 	if isMobbing() {
 		say("mobbing in progress")
 
-		output := silentgit("--no-pager", "log", "master.."+branch, "--pretty=format:%h %cr <%an>", "--abbrev-commit")
+		output := silentgit("--no-pager", "log", master+".."+branch, "--pretty=format:%h %cr <%an>", "--abbrev-commit")
 		fmt.Println(output)
 	} else {
 		say("you aren't mobbing right now")
