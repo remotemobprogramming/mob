@@ -59,7 +59,10 @@ func startTimer(timerInMinutes string) {
 	if isDebug() {
 		fmt.Println(command.Args)
 	}
-	command.Start()
+	err := command.Start()
+	if err != nil {
+		say("timer couldn't be started...")
+	}
 }
 
 func reset() {
@@ -92,8 +95,7 @@ func start() {
 		git("merge", "origin/master")
 		git("branch", branch)
 		git("checkout", branch)
-		git("branch", "--set-upstream-to=origin/"+branch, branch)
-		git("push")
+		git("push", "--set-upstream", "origin", branch)
 	} else if !hasMobbingBranch() && hasMobbingBranchOrigin() {
 		say("joining mob session")
 		git("checkout", branch)
@@ -105,8 +107,7 @@ func start() {
 		git("merge", "origin/master")
 		git("branch", branch)
 		git("checkout", branch)
-		git("branch", "--set-upstream-to=origin/"+branch, branch)
-		git("push")
+		git("push", "--set-upstream", "origin", branch)
 	}
 
 	say("start hacking")
@@ -125,12 +126,13 @@ func next() {
 
 	if isNothingToCommit() {
 		say("nothing was done, so nothing to commit")
-		return
+	} else {
+		git("add", ".", "--all")
+		git("commit", "--message", "\"WIP in Mob Session [ci-skip]\"")
+		git("push", "origin", branch)
 	}
 
-	git("add", ".", "--all")
-	git("commit", "--message", "\"WIP in Mob Session [ci-skip]\"")
-	git("push", "origin", branch)
+	git("checkout", "master")
 	say("join the 'rest of the mob'")
 }
 
@@ -142,8 +144,10 @@ func done() {
 
 	git("fetch")
 
-	git("add", ".", "--all")
-	git("commit", "--message", "\"Mob Session DONE [ci-skip]\"")
+	if !isNothingToCommit() {
+		git("add", ".", "--all")
+		git("commit", "--message", "\"Mob Session DONE [ci-skip]\"")
+	}
 	git("push", "origin", branch)
 
 	git("checkout", "master")
@@ -210,8 +214,10 @@ func silentgit(args ...string) string {
 	if isDebug() {
 		fmt.Println(output)
 	}
-	if err != nil && isDebug() {
+	if err != nil {
+		fmt.Println(output)
 		fmt.Println(err)
+		os.Exit(1)
 	}
 	return output
 }
@@ -226,8 +232,9 @@ func git(args ...string) string {
 	if isDebug() {
 		fmt.Println(output)
 	}
-	if err != nil && (isDebug() || isInfo()) {
+	if err != nil {
 		fmt.Println(err)
+		os.Exit(1)
 	}
 	return output
 }
