@@ -30,6 +30,9 @@ func main() {
 		if len(os.Args) > 2 {
 			timer := os.Args[2]
 			startTimer(timer)
+		} else {
+			fmt.Println("provide the number of minutes for the timer")
+			fmt.Println("try 'mob timer 10'")
 		}
 	} else if argument == "h" || argument == "help" {
 		help()
@@ -63,7 +66,7 @@ func startTimer(timerInMinutes string) {
 	}
 	err := command.Start()
 	if err != nil {
-		say("timer couldn't be started...")
+		say("timer couldn't be started... (timer only works on OSX)")
 	}
 }
 
@@ -117,12 +120,16 @@ func start() {
 	if len(os.Args) > 2 {
 		timer := os.Args[2]
 		startTimer(timer)
+	} else {
+		fmt.Println("provide the number of minutes for the timer")
+		fmt.Println("try 'mob start 10'")
 	}
 }
 
 func next() {
 	if !isMobbing() {
 		say("nothing was done, because you aren't mobbing")
+		say("try 'mob start 10' to start the next mob session with a ten-minute timer")
 		return
 	}
 
@@ -141,6 +148,7 @@ func next() {
 func done() {
 	if !isMobbing() {
 		say("nothing was done, because you aren't mobbing")
+		say("try 'mob start 10' to start the next mob session with a ten-minute timer")
 		return
 	}
 
@@ -170,6 +178,7 @@ func status() {
 		fmt.Println(output)
 	} else {
 		say("you aren't mobbing right now")
+		say("try 'mob start 10' to start the next mob session with a ten-minute timer")
 	}
 }
 
@@ -181,8 +190,7 @@ func isNothingToCommit() bool {
 
 func isMobbing() bool {
 	output := silentgit("branch")
-	isMobbing := strings.Contains(output, "* "+branch)
-	return isMobbing
+	return strings.Contains(output, "* "+branch)
 }
 
 func hasMobbingBranch() bool {
@@ -191,7 +199,6 @@ func hasMobbingBranch() bool {
 }
 
 func hasMobbingBranchOrigin() bool {
-	silentgit("fetch")
 	output := silentgit("branch", "--remotes")
 	return strings.Contains(output, "  origin/"+branch)
 }
