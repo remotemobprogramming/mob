@@ -20,7 +20,7 @@ func main() {
 	} else if argument == "n" || argument == "next" {
 		next()
 		status()
-	} else if argument == "d" || argument == "done" {
+	} else if argument == "d" || argument == "done" || argument == "e" || argument == "end" {
 		done()
 		status()
 	} else if argument == "r" || argument == "reset" {
@@ -92,12 +92,12 @@ func start() {
 	if hasMobbingBranch() && hasMobbingBranchOrigin() {
 		say("rejoining mob session")
 		git("checkout", branch)
-		git("merge", "origin/"+branch) // caution
+		git("merge", "origin/"+branch, "--ff-only")
 		git("branch", "--set-upstream-to=origin/"+branch, branch)
 	} else if !hasMobbingBranch() && !hasMobbingBranchOrigin() {
 		say("create " + branch + " from master")
 		git("checkout", master)
-		git("merge", "origin/master")
+		git("merge", "origin/master", "--ff-only")
 		git("branch", branch)
 		git("checkout", branch)
 		git("push", "--set-upstream", "origin", branch)
@@ -109,7 +109,7 @@ func start() {
 		git("branch", "-D", branch) // check if unmerged commits
 
 		git("checkout", master)
-		git("merge", "origin/master")
+		git("merge", "origin/master", "--ff-only")
 		git("branch", branch)
 		git("checkout", branch)
 		git("push", "--set-upstream", "origin", branch)
@@ -154,20 +154,26 @@ func done() {
 
 	git("fetch")
 
-	if !isNothingToCommit() {
-		git("add", ".", "--all")
-		git("commit", "--message", message)
+	if hasMobbingBranchOrigin() {
+		if !isNothingToCommit() {
+			git("add", ".", "--all")
+			git("commit", "--message", message)
+		}
+		git("push", "origin", branch)
+
+		git("checkout", master)
+		git("merge", "--squash", branch)
+
+		git("branch", "-D", branch)
+		git("push", "origin", "--delete", branch)
+
+		say("lean back, you survived your mob session :-)")
+		say("execute 'git commit' to describe what the mob achieved")
+	} else {
+		git("checkout", master)
+		git("branch", "-D", branch)
+		say("someone else already ended your mob session")
 	}
-	git("push", "origin", branch)
-
-	git("checkout", master)
-	git("merge", "--squash", branch)
-
-	git("branch", "-D", branch)
-	git("push", "origin", "--delete", branch)
-
-	say("lean back, you survived your mob session :-)")
-	say("execute 'git commit' to describe what the mob achieved")
 }
 
 func status() {
