@@ -136,7 +136,7 @@ func next() {
 	if isNothingToCommit() {
 		say("nothing was done, so nothing to commit")
 	} else {
-		git("add", ".", "--all")
+		git("add", "--all")
 		git("commit", "--message", "\"WIP in Mob Session [ci-skip]\"")
 		git("push", "origin", branch)
 	}
@@ -156,7 +156,7 @@ func done() {
 
 	if hasMobbingBranchOrigin() {
 		if !isNothingToCommit() {
-			git("add", ".", "--all")
+			git("add", "--all")
 			git("commit", "--message", message)
 		}
 		git("push", "origin", branch)
@@ -185,6 +185,10 @@ func status() {
 	} else {
 		say("you aren't mobbing right now")
 		say("try 'mob start 10' to start the next mob session with a ten-minute timer")
+	}
+
+	if !hasSay() {
+		say("text-to-speech disabled because 'say' not found")
 	}
 }
 
@@ -235,6 +239,19 @@ func silentgit(args ...string) string {
 		os.Exit(1)
 	}
 	return output
+}
+
+func hasSay() bool {
+	command := exec.Command("which", "say")
+	if isDebug() {
+		fmt.Println(command.Args)
+	}
+	outputBinary, err := command.CombinedOutput()
+	output := string(outputBinary)
+	if isDebug() {
+		fmt.Println(output)
+	}
+	return err == nil
 }
 
 func git(args ...string) string {
