@@ -71,7 +71,7 @@ func startTimer(timerInMinutes string) {
 }
 
 func reset() {
-	git("fetch")
+	git("fetch", "--prune")
 	git("checkout", master)
 	if hasMobbingBranch() {
 		git("branch", "-D", branch)
@@ -87,7 +87,7 @@ func start() {
 		return
 	}
 
-	git("fetch") // abort if didn't work
+	git("fetch", "--prune") // abort if didn't work
 
 	if hasMobbingBranch() && hasMobbingBranchOrigin() {
 		say("rejoining mob session")
@@ -152,7 +152,7 @@ func done() {
 		return
 	}
 
-	git("fetch")
+	git("fetch", "--prune")
 
 	if hasMobbingBranchOrigin() {
 		if !isNothingToCommit() {
