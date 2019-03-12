@@ -19,20 +19,14 @@ func main() {
 		status()
 	} else if argument == "n" || argument == "next" {
 		next()
-		status()
 	} else if argument == "d" || argument == "done" || argument == "e" || argument == "end" {
 		done()
-		status()
 	} else if argument == "r" || argument == "reset" {
 		reset()
-		status()
 	} else if argument == "t" || argument == "timer" {
 		if len(os.Args) > 2 {
 			timer := os.Args[2]
 			startTimer(timer)
-		} else {
-			fmt.Println("provide the number of minutes for the timer")
-			fmt.Println("try 'mob timer 10'")
 		}
 	} else if argument == "h" || argument == "help" {
 		help()
@@ -49,13 +43,7 @@ func isDebug() bool {
 	return isSet
 }
 
-func isInfo() bool {
-	return !isDebug()
-}
-
 func startTimer(timerInMinutes string) {
-	fmt.Println("starting " + timerInMinutes + " minutes timer")
-
 	timeoutInMinutes, _ := strconv.Atoi(timerInMinutes)
 	timeoutInSeconds := timeoutInMinutes * 60
 	timerInSeconds := strconv.Itoa(timeoutInSeconds)
@@ -66,7 +54,10 @@ func startTimer(timerInMinutes string) {
 	}
 	err := command.Start()
 	if err != nil {
-		say("timer couldn't be started... (timer only works on OSX)")
+		sayError("timer couldn't be started... (timer only works on OSX)")
+		sayError(err)
+	} else {
+		sayOkay(timerInMinutes + " minutes timer started")
 	}
 }
 
@@ -83,29 +74,29 @@ func reset() {
 
 func start() {
 	if !isNothingToCommit() {
-		say("uncommitted changes, aborting 'mob start'")
+		sayNote("uncommitted changes")
 		return
 	}
 
-	git("fetch", "--prune") // abort if didn't work
+	git("fetch", "--prune")
 
 	if hasMobbingBranch() && hasMobbingBranchOrigin() {
-		say("rejoining mob session")
+		sayInfo("rejoining mob session")
 		git("checkout", branch)
 		git("merge", "origin/"+branch, "--ff-only")
 		git("branch", "--set-upstream-to=origin/"+branch, branch)
 	} else if !hasMobbingBranch() && !hasMobbingBranchOrigin() {
-		say("create " + branch + " from master")
+		sayInfo("create " + branch + " from master")
 		git("checkout", master)
 		git("merge", "origin/master", "--ff-only")
 		git("branch", branch)
 		git("checkout", branch)
 		git("push", "--set-upstream", "origin", branch)
 	} else if !hasMobbingBranch() && hasMobbingBranchOrigin() {
-		say("joining mob session")
+		sayInfo("joining mob session")
 		git("checkout", branch)
 	} else {
-		say("purging local branch and start new " + branch + " branch from " + master)
+		sayInfo("purging local branch and start new " + branch + " branch from " + master)
 		git("branch", "-D", branch) // check if unmerged commits
 
 		git("checkout", master)
@@ -115,26 +106,20 @@ func start() {
 		git("push", "--set-upstream", "origin", branch)
 	}
 
-	say("start hacking")
-
 	if len(os.Args) > 2 {
 		timer := os.Args[2]
 		startTimer(timer)
-	} else {
-		fmt.Println("provide the number of minutes for the timer")
-		fmt.Println("try 'mob start 10'")
 	}
 }
 
 func next() {
 	if !isMobbing() {
-		say("nothing was done, because you aren't mobbing")
-		say("try 'mob start 10' to start the next mob session with a ten-minute timer")
+		sayError("you aren't mobbing")
 		return
 	}
 
 	if isNothingToCommit() {
-		say("nothing was done, so nothing to commit")
+		sayInfo("nothing was done, so nothing to commit")
 	} else {
 		git("add", "--all")
 		git("commit", "--message", "\"WIP in Mob Session [ci-skip]\"")
@@ -142,13 +127,11 @@ func next() {
 	}
 
 	git("checkout", master)
-	say("join the 'rest of the mob'")
 }
 
 func done() {
 	if !isMobbing() {
-		say("nothing was done, because you aren't mobbing")
-		say("try 'mob start 10' to start the next mob session with a ten-minute timer")
+		sayError("you aren't mobbing")
 		return
 	}
 
@@ -167,28 +150,26 @@ func done() {
 		git("branch", "-D", branch)
 		git("push", "origin", "--delete", branch)
 
-		say("lean back, you survived your mob session :-)")
-		say("execute 'git commit' to describe what the mob achieved")
+		sayTodo("git commit -m 'describe the changes'")
 	} else {
 		git("checkout", master)
 		git("branch", "-D", branch)
-		say("someone else already ended your mob session")
+		sayInfo("someone else already ended your mob session")
 	}
 }
 
 func status() {
 	if isMobbing() {
-		say("mobbing in progress")
+		sayInfo("mobbing in progress")
 
 		output := silentgit("--no-pager", "log", master+".."+branch, "--pretty=format:%h %cr <%an>", "--abbrev-commit")
-		fmt.Println(output)
+		say(output)
 	} else {
-		say("you aren't mobbing right now")
-		say("try 'mob start 10' to start the next mob session with a ten-minute timer")
+		sayInfo("you aren't mobbing right now")
 	}
 
 	if !hasSay() {
-		say("text-to-speech disabled because 'say' not found")
+		sayNote("text-to-speech disabled because 'say' not found")
 	}
 }
 
@@ -256,7 +237,7 @@ func hasSay() bool {
 
 func git(args ...string) string {
 	command := exec.Command("git", args...)
-	if isDebug() || isInfo() {
+	if isDebug() {
 		fmt.Println(command.Args)
 	}
 	outputBinary, err := command.CombinedOutput()
@@ -265,14 +246,47 @@ func git(args ...string) string {
 		fmt.Println(output)
 	}
 	if err != nil {
-		fmt.Println(err)
+		sayError(command.Args)
+		sayError(err)
 		os.Exit(1)
+	} else {
+		sayOkay(command.Args)
 	}
 	return output
 }
 
 func say(s string) {
 	fmt.Println(s)
+}
+
+func sayError(s interface{}) {
+	fmt.Print(" ⚡ ")
+	fmt.Print(s)
+	fmt.Print("\n")
+}
+
+func sayOkay(s interface{}) {
+	fmt.Print(" ✓ ")
+	fmt.Print(s)
+	fmt.Print("\n")
+}
+
+func sayNote(s interface{}) {
+	fmt.Print(" ❗ ")
+	fmt.Print(s)
+	fmt.Print("\n")
+}
+
+func sayTodo(s interface{}) {
+	fmt.Print(" ☐ ")
+	fmt.Print(s)
+	fmt.Print("\n")
+}
+
+func sayInfo(s string) {
+	fmt.Print(" > ")
+	fmt.Print(s)
+	fmt.Print("\n")
 }
 
 func getCommand() string {
