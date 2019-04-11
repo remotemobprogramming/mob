@@ -82,8 +82,8 @@ func start() {
 
 	if hasMobbingBranch() && hasMobbingBranchOrigin() {
 		sayInfo("rejoining mob session")
+		git("branch", "-D", branch)
 		git("checkout", branch)
-		git("merge", "origin/"+branch, "--ff-only")
 		git("branch", "--set-upstream-to=origin/"+branch, branch)
 	} else if !hasMobbingBranch() && !hasMobbingBranchOrigin() {
 		sayInfo("create " + branch + " from master")
@@ -95,6 +95,7 @@ func start() {
 	} else if !hasMobbingBranch() && hasMobbingBranchOrigin() {
 		sayInfo("joining mob session")
 		git("checkout", branch)
+		git("branch", "--set-upstream-to=origin/"+branch, branch)
 	} else {
 		sayInfo("purging local branch and start new " + branch + " branch from " + master)
 		git("branch", "-D", branch) // check if unmerged commits
@@ -123,6 +124,7 @@ func next() {
 	} else {
 		git("add", "--all")
 		git("commit", "--message", "\"WIP in Mob Session [ci-skip]\"")
+		git("diff", "HEAD^1", "--stat")
 		git("push", "origin", branch)
 	}
 
