@@ -29,13 +29,10 @@ func main() {
 			timer := os.Args[2]
 			startTimer(timer)
 		}
-	} else if argument == "h" || argument == "help" {
+	} else if argument == "h" || argument == "help" || argument == "--help" || argument == "-h" {
 		help()
-	} else if argument == "status" {
-		status()
 	} else {
 		status()
-		help()
 	}
 }
 
@@ -126,8 +123,9 @@ func next() {
 	} else {
 		git("add", "--all")
 		git("commit", "--message", "\"WIP in Mob Session [ci-skip]\"")
-		git("diff", "HEAD^1", "--stat")
+		result := silentgit("diff", "HEAD^1", "--stat")
 		git("push", "origin", branch)
+		say(result)
 	}
 
 	git("checkout", master)
