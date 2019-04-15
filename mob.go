@@ -6,6 +6,7 @@ import (
 	"os/exec"
 	"strconv"
 	"strings"
+	"time"
 )
 
 const branch = "mob-session"
@@ -57,7 +58,8 @@ func startTimer(timerInMinutes string) {
 		sayError("timer couldn't be started... (timer only works on OSX)")
 		sayError(err)
 	} else {
-		sayOkay(timerInMinutes + " minutes timer started")
+		timeOfTimeout := time.Now().Add(time.Minute * time.Duration(timeoutInMinutes)).Format("15:04")
+		sayOkay(timerInMinutes + " minutes timer started (finishes at approx. " + timeOfTimeout + ")")
 	}
 }
 
@@ -194,6 +196,10 @@ func hasMobbingBranch() bool {
 func hasMobbingBranchOrigin() bool {
 	output := silentgit("branch", "--remotes")
 	return strings.Contains(output, "  origin/"+branch)
+}
+
+func getGitUserName() string {
+	return silentgit("config", "--get", "user.name")
 }
 
 func help() {
