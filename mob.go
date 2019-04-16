@@ -123,9 +123,9 @@ func next() {
 	} else {
 		git("add", "--all")
 		git("commit", "--message", "\"WIP in Mob Session [ci-skip]\"")
-		result := silentgit("diff", "HEAD^1", "--stat")
+		changes := strings.TrimSpace(silentgit("diff", "HEAD^1", "--stat"))
 		git("push", "origin", branch)
-		say(result)
+		say(changes)
 	}
 
 	git("checkout", master)
