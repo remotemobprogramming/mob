@@ -123,12 +123,20 @@ func next() {
 	} else {
 		git("add", "--all")
 		git("commit", "--message", "\"WIP in Mob Session [ci-skip]\"")
-		changes := strings.TrimSpace(silentgit("diff", "HEAD^1", "--stat"))
+		changes := getChangesOfLastCommit()
 		git("push", "origin", branch)
 		say(changes)
 	}
 
 	git("checkout", master)
+}
+
+func getChangesOfLastCommit() string {
+	return strings.TrimSpace(silentgit("diff", "HEAD^1", "--stat"))
+}
+
+func getCachedChanges() string {
+	return strings.TrimSpace(silentgit("diff", "--cached", "--stat"))
 }
 
 func done() {
@@ -147,11 +155,12 @@ func done() {
 		git("push", "origin", branch)
 
 		git("checkout", master)
+		git("merge", "origin/"+master, "--ff-only")
 		git("merge", "--squash", branch)
 
 		git("branch", "-D", branch)
 		git("push", "origin", "--delete", branch)
-
+		say(getCachedChanges())
 		sayTodo("git commit -m 'describe the changes'")
 	} else {
 		git("checkout", master)
@@ -198,6 +207,11 @@ func hasMobbingBranchOrigin() bool {
 
 func getGitUserName() string {
 	return silentgit("config", "--get", "user.name")
+}
+
+func showNext() {
+	// output := silentgit("--no-pager", "log", master+".."+branch, "--pretty=format:%an", "--abbrev-commit")
+	// to lines; find own name and ignore very last line; try to determine next
 }
 
 func help() {
