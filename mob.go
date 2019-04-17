@@ -126,6 +126,7 @@ func next() {
 		changes := getChangesOfLastCommit()
 		git("push", "origin", branch)
 		say(changes)
+		showNext()
 	}
 
 	git("checkout", master)
@@ -210,8 +211,18 @@ func getGitUserName() string {
 }
 
 func showNext() {
-	// output := silentgit("--no-pager", "log", master+".."+branch, "--pretty=format:%an", "--abbrev-commit")
-	// to lines; find own name and ignore very last line; try to determine next
+	changes := strings.TrimSpace(silentgit("--no-pager", "log", master+".."+branch, "--pretty=format:%an", "--abbrev-commit"))
+	lines := strings.Split(strings.Replace(changes, "\r\n", "\n", -1), "\n")
+	numberOfLines := len(lines)
+	gitUserName := getGitUserName()
+	if numberOfLines < 1 {
+		return
+	}
+	for i := 0; i < len(lines); i++ {
+		if lines[i] == gitUserName && i > 0 {
+			sayInfo("Probably " + lines[i-1] + " is next")
+		}
+	}
 }
 
 func help() {
