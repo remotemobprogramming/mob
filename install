@@ -1,1 +1,3 @@
-go build mob.go && cp -f mob /usr/local/bin/
+target=/usr/local/bin/
+go build mob.go && cp -f mob $target
+echo "installed 'mob' to $target"
