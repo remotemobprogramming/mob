@@ -1,5 +1,7 @@
 # Tool for Remote Mob Programming
 
+![mob Logo](logo.svg)
+
 Swift handover for remote mobs using git. 
 `mob` is a CLI tool written in GO.
 It keeps your master branch clean and creates WIP commits on `mob-session` branch.
@@ -56,3 +58,7 @@ $ ./install
 ## How to contribute
 
 Create a pull request.
+
+## Credits
+
+Logo designed by [Sonja Scheungrab](https://twitter.com/multebaerr).
