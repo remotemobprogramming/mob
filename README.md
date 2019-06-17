@@ -6,8 +6,6 @@ Swift handover for remote mobs using git.
 `mob` is a CLI tool written in GO.
 It keeps your master branch clean and creates WIP commits on `mob-session` branch.
 
-The timer only works on OS X.
-
 ## How to use it?
 
 ```bash
@@ -53,6 +51,13 @@ $ git clone https://github.com/simonharrer/mob
 $ cd mob
 $ ./install
 # Now, you can use the mob tool from anywhere directory in the terminal
+```
+
+On linux systems you need the GNUstep speech engine to get the timer running.
+
+On Ubuntu:
+```
+sudo apt-get install gnustep-gui-runtime
 ```
 
 ## How to contribute
