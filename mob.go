@@ -10,18 +10,18 @@ import (
 )
 
 const message = "\"Mob Session DONE [ci-skip]\""
+const remote_name = "origin"
 
-var wip_branch = "mob-session"
-var base_branch = "master"
-var remote_name = "origin"
+var wip_branch = "mob-session" // override with MOB_WIP_BRANCH environment variable
+var base_branch = "master"     // override with MOB_BASE_BRANCH environment variable
 
 func main() {
 	user_base_branch, user_base_branch_set := os.LookupEnv("MOB_BASE_BRANCH")
-	if (user_base_branch_set) {
+	if user_base_branch_set {
 		base_branch = user_base_branch
 	}
 	user_wip_branch, user_wip_branch_set := os.LookupEnv("MOB_WIP_BRANCH")
-	if (user_wip_branch_set) {
+	if user_wip_branch_set {
 		wip_branch = user_wip_branch
 	}
 
