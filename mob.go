@@ -9,11 +9,22 @@ import (
 	"time"
 )
 
-const branch = "mob-session"
 const message = "\"Mob Session DONE [ci-skip]\""
-const master = "master"
+
+var wip_branch = "mob-session"
+var base_branch = "master"
+var remote_name = "origin"
 
 func main() {
+	user_base_branch, user_base_branch_set := os.LookupEnv("MOB_BASE_BRANCH")
+	if (user_base_branch_set) {
+		base_branch = user_base_branch
+	}
+	user_wip_branch, user_wip_branch_set := os.LookupEnv("MOB_WIP_BRANCH")
+	if (user_wip_branch_set) {
+		wip_branch = user_wip_branch
+	}
+
 	argument := getCommand()
 	if argument == "s" || argument == "start" {
 		start()
@@ -62,12 +73,12 @@ func startTimer(timerInMinutes string) {
 
 func reset() {
 	git("fetch", "--prune")
-	git("checkout", master)
+	git("checkout", base_branch)
 	if hasMobbingBranch() {
-		git("branch", "-D", branch)
+		git("branch", "-D", wip_branch)
 	}
 	if hasMobbingBranchOrigin() {
-		git("push", "origin", "--delete", branch)
+		git("push", remote_name, "--delete", wip_branch)
 	}
 }
 
@@ -81,29 +92,29 @@ func start() {
 
 	if hasMobbingBranch() && hasMobbingBranchOrigin() {
 		sayInfo("rejoining mob session")
-		git("branch", "-D", branch)
-		git("checkout", branch)
-		git("branch", "--set-upstream-to=origin/"+branch, branch)
+		git("branch", "-D", wip_branch)
+		git("checkout", wip_branch)
+		git("branch", "--set-upstream-to="+remote_name+"/"+wip_branch, wip_branch)
 	} else if !hasMobbingBranch() && !hasMobbingBranchOrigin() {
-		sayInfo("create " + branch + " from master")
-		git("checkout", master)
-		git("merge", "origin/master", "--ff-only")
-		git("branch", branch)
-		git("checkout", branch)
-		git("push", "--set-upstream", "origin", branch)
+		sayInfo("create " + wip_branch + " from " + base_branch)
+		git("checkout", base_branch)
+		git("merge", remote_name+"/"+base_branch, "--ff-only")
+		git("branch", wip_branch)
+		git("checkout", wip_branch)
+		git("push", "--set-upstream", remote_name, wip_branch)
 	} else if !hasMobbingBranch() && hasMobbingBranchOrigin() {
 		sayInfo("joining mob session")
-		git("checkout", branch)
-		git("branch", "--set-upstream-to=origin/"+branch, branch)
+		git("checkout", wip_branch)
+		git("branch", "--set-upstream-to="+remote_name+"/"+wip_branch, wip_branch)
 	} else {
-		sayInfo("purging local branch and start new " + branch + " branch from " + master)
-		git("branch", "-D", branch) // check if unmerged commits
+		sayInfo("purging local branch and start new " + wip_branch + " branch from " + base_branch)
+		git("branch", "-D", wip_branch) // check if unmerged commits
 
-		git("checkout", master)
-		git("merge", "origin/master", "--ff-only")
-		git("branch", branch)
-		git("checkout", branch)
-		git("push", "--set-upstream", "origin", branch)
+		git("checkout", base_branch)
+		git("merge", remote_name+"/"+base_branch, "--ff-only")
+		git("branch", wip_branch)
+		git("checkout", wip_branch)
+		git("push", "--set-upstream", remote_name, wip_branch)
 	}
 
 	if len(os.Args) > 2 {
@@ -124,12 +135,12 @@ func next() {
 		git("add", "--all")
 		git("commit", "--message", "\"WIP in Mob Session [ci-skip]\"")
 		changes := getChangesOfLastCommit()
-		git("push", "origin", branch)
+		git("push", remote_name, wip_branch)
 		say(changes)
 		showNext()
 	}
 
-	git("checkout", master)
+	git("checkout", base_branch)
 }
 
 func getChangesOfLastCommit() string {
@@ -153,19 +164,19 @@ func done() {
 			git("add", "--all")
 			git("commit", "--message", message)
 		}
-		git("push", "origin", branch)
+		git("push", remote_name, wip_branch)
 
-		git("checkout", master)
-		git("merge", "origin/"+master, "--ff-only")
-		git("merge", "--squash", branch)
+		git("checkout", base_branch)
+		git("merge", remote_name+"/"+base_branch, "--ff-only")
+		git("merge", "--squash", wip_branch)
 
-		git("branch", "-D", branch)
-		git("push", "origin", "--delete", branch)
+		git("branch", "-D", wip_branch)
+		git("push", remote_name, "--delete", wip_branch)
 		say(getCachedChanges())
 		sayTodo("git commit -m 'describe the changes'")
 	} else {
-		git("checkout", master)
-		git("branch", "-D", branch)
+		git("checkout", base_branch)
+		git("branch", "-D", wip_branch)
 		sayInfo("someone else already ended your mob session")
 	}
 }
@@ -174,7 +185,7 @@ func status() {
 	if isMobbing() {
 		sayInfo("mobbing in progress")
 
-		output := silentgit("--no-pager", "log", master+".."+branch, "--pretty=format:%h %cr <%an>", "--abbrev-commit")
+		output := silentgit("--no-pager", "log", base_branch+".."+wip_branch, "--pretty=format:%h %cr <%an>", "--abbrev-commit")
 		say(output)
 	} else {
 		sayInfo("you aren't mobbing right now")
@@ -193,17 +204,17 @@ func isNothingToCommit() bool {
 
 func isMobbing() bool {
 	output := silentgit("branch")
-	return strings.Contains(output, "* "+branch)
+	return strings.Contains(output, "* "+wip_branch)
 }
 
 func hasMobbingBranch() bool {
 	output := silentgit("branch")
-	return strings.Contains(output, "  "+branch) || strings.Contains(output, "* "+branch)
+	return strings.Contains(output, "  "+wip_branch) || strings.Contains(output, "* "+wip_branch)
 }
 
 func hasMobbingBranchOrigin() bool {
 	output := silentgit("branch", "--remotes")
-	return strings.Contains(output, "  origin/"+branch)
+	return strings.Contains(output, "  "+remote_name+"/"+wip_branch)
 }
 
 func getGitUserName() string {
@@ -211,7 +222,7 @@ func getGitUserName() string {
 }
 
 func showNext() {
-	changes := strings.TrimSpace(silentgit("--no-pager", "log", master+".."+branch, "--pretty=format:%an", "--abbrev-commit"))
+	changes := strings.TrimSpace(silentgit("--no-pager", "log", base_branch+".."+wip_branch, "--pretty=format:%an", "--abbrev-commit"))
 	lines := strings.Split(strings.Replace(changes, "\r\n", "\n", -1), "\n")
 	numberOfLines := len(lines)
 	gitUserName := getGitUserName()
