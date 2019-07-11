@@ -89,6 +89,7 @@ func start() {
 	}
 
 	git("fetch", "--prune")
+	git("pull")
 
 	if hasMobbingBranch() && hasMobbingBranchOrigin() {
 		sayInfo("rejoining mob session")
