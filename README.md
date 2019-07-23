@@ -66,4 +66,6 @@ Create a pull request.
 
 ## Credits
 
-Logo designed by [Sonja Scheungrab](https://twitter.com/multebaerr).
+- Developed and maintained by [Simon Harrer](https://twitter.com/simonharrer).
+- Contributions and testing by Jochen Christ, Martin Huber, Franziska Dessart, and Nikolas Hermann. Thank you!
+- Logo designed by [Sonja Scheungrab](https://twitter.com/multebaerr).
