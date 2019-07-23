@@ -50,6 +50,10 @@ func main() {
 	if argument == "s" || argument == "start" {
 		start()
 		status()
+	} else if argument == "j" || argument == "join" {
+		start()
+		join()
+		status()
 	} else if argument == "n" || argument == "next" {
 		next()
 	} else if argument == "d" || argument == "done" || argument == "e" || argument == "end" {
@@ -67,6 +71,14 @@ func main() {
 		version()
 	} else {
 		status()
+	}
+}
+
+func join() {
+	for !isLastChangeSecondsAgo() {
+		sayInfo("Waiting for recent commit. Will 'git pull' again in 1 second")
+		time.Sleep(time.Second)
+		git("pull")
 	}
 }
 
@@ -240,6 +252,17 @@ func getGitUserName() string {
 	return strings.TrimSpace(silentgit("config", "--get", "user.name"))
 }
 
+func isLastChangeSecondsAgo() bool {
+	changes := silentgit("--no-pager", "log", base_branch+".."+wip_branch, "--pretty=format:%cr", "--abbrev-commit")
+	lines := strings.Split(strings.Replace(changes, "\r\n", "\n", -1), "\n")
+	numberOfLines := len(lines)
+	if numberOfLines < 1 {
+		return true
+	}
+
+	return strings.Contains(lines[0], "seconds ago") || strings.Contains(lines[0], "second ago")
+}
+
 func showNext() {
 	if debug {
 		say("determining next person based on previous changes")
@@ -274,6 +297,7 @@ func showNext() {
 func help() {
 	say("usage")
 	say("\tmob [s]tart \t# start mobbing as typist")
+	say("\tmob [j]oin \t# like start but waits for recent commit")
 	say("\tmob [n]ext \t# hand over to next typist")
 	say("\tmob [d]one \t# finish mob session")
 	say("\tmob [r]eset \t# resets any unfinished mob session")
