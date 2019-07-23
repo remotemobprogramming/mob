@@ -9,21 +9,42 @@ import (
 	"time"
 )
 
-const message = "\"Mob Session DONE [ci-skip]\""
-const remote_name = "origin"
+var wip_branch = "mob-session"                        // override with MOB_WIP_BRANCH environment variable
+var base_branch = "master"                            // override with MOB_BASE_BRANCH environment variable
+var remote_name = "origin"                            // override with MOB_REMOTE_NAME environment variable
+var wip_commit_message = "Mob Session DONE [ci-skip]" // override with MOB_WIP_COMMIT_MESSAGE environment variable
+var debug = false                                     // override with MOB_DEBUG environment variable
 
-var wip_branch = "mob-session" // override with MOB_WIP_BRANCH environment variable
-var base_branch = "master"     // override with MOB_BASE_BRANCH environment variable
-
-func main() {
+func parseEnvironmentVariables() {
 	user_base_branch, user_base_branch_set := os.LookupEnv("MOB_BASE_BRANCH")
 	if user_base_branch_set {
 		base_branch = user_base_branch
+		say("overriding MOB_BASE_BRANCH=" + base_branch)
 	}
 	user_wip_branch, user_wip_branch_set := os.LookupEnv("MOB_WIP_BRANCH")
 	if user_wip_branch_set {
 		wip_branch = user_wip_branch
+		say("overriding MOB_WIP_BRANCH=" + wip_branch)
 	}
+	user_remote_name, user_remote_name_set := os.LookupEnv("MOB_REMOTE_NAME")
+	if user_remote_name_set {
+		remote_name = user_remote_name
+		say("overriding MOB_REMOTE_NAME=" + remote_name)
+	}
+	user_wip_commit_message, user_wip_commit_message_set := os.LookupEnv("MOB_WIP_COMMIT_MESSAGE")
+	if user_wip_commit_message_set {
+		wip_commit_message = user_wip_commit_message
+		say("overriding MOB_WIP_COMMIT_MESSAGE=" + wip_commit_message)
+	}
+	_, user_mob_debug_set := os.LookupEnv("MOB_DEBUG")
+	if user_mob_debug_set {
+		debug = true
+		say("overriding MOB_DEBUG=" + strconv.FormatBool(debug))
+	}
+}
+
+func main() {
+	parseEnvironmentVariables()
 
 	argument := getCommand()
 	if argument == "s" || argument == "start" {
@@ -47,18 +68,13 @@ func main() {
 	}
 }
 
-func isDebug() bool {
-	_, isSet := os.LookupEnv("MOB_DEBUG")
-	return isSet
-}
-
 func startTimer(timerInMinutes string) {
 	timeoutInMinutes, _ := strconv.Atoi(timerInMinutes)
 	timeoutInSeconds := timeoutInMinutes * 60
 	timerInSeconds := strconv.Itoa(timeoutInSeconds)
 
 	command := exec.Command("sh", "-c", "( sleep "+timerInSeconds+" && say \"time's up\" && (/usr/bin/osascript -e 'display notification \"time is up\"' || /usr/bin/notify-send \"time is up\")  & )")
-	if isDebug() {
+	if debug {
 		fmt.Println(command.Args)
 	}
 	err := command.Start()
@@ -134,12 +150,12 @@ func next() {
 		sayInfo("nothing was done, so nothing to commit")
 	} else {
 		git("add", "--all")
-		git("commit", "--message", "\"WIP in Mob Session [ci-skip]\"")
+		git("commit", "--message", "\""+wip_commit_message+"\"")
 		changes := getChangesOfLastCommit()
 		git("push", remote_name, wip_branch)
 		say(changes)
-		showNext()
 	}
+	showNext()
 
 	git("checkout", base_branch)
 }
@@ -163,7 +179,7 @@ func done() {
 	if hasMobbingBranchOrigin() {
 		if !isNothingToCommit() {
 			git("add", "--all")
-			git("commit", "--message", message)
+			git("commit", "--message", "\""+wip_commit_message+"\"")
 		}
 		git("push", remote_name, wip_branch)
 
@@ -219,21 +235,37 @@ func hasMobbingBranchOrigin() bool {
 }
 
 func getGitUserName() string {
-	return silentgit("config", "--get", "user.name")
+	return strings.TrimSpace(silentgit("config", "--get", "user.name"))
 }
 
 func showNext() {
+	if debug {
+		say("determining next person based on previous changes")
+	}
 	changes := strings.TrimSpace(silentgit("--no-pager", "log", base_branch+".."+wip_branch, "--pretty=format:%an", "--abbrev-commit"))
 	lines := strings.Split(strings.Replace(changes, "\r\n", "\n", -1), "\n")
 	numberOfLines := len(lines)
+	if debug {
+		say("there have been " + strconv.Itoa(numberOfLines) + " changes")
+	}
 	gitUserName := getGitUserName()
+	if debug {
+		say("current git user.name is '" + gitUserName + "'")
+	}
 	if numberOfLines < 1 {
 		return
 	}
+	var history = ""
 	for i := 0; i < len(lines); i++ {
 		if lines[i] == gitUserName && i > 0 {
-			sayInfo("Probably " + lines[i-1] + " is next")
+			sayInfo("Committers after your last commit: " + history)
+			sayInfo("***" + lines[i-1] + "*** is (probably) next.")
+			return
 		}
+		if history != "" {
+			history = ", " + history
+		}
+		history = lines[i] + history
 	}
 }
 
@@ -249,12 +281,12 @@ func help() {
 
 func silentgit(args ...string) string {
 	command := exec.Command("git", args...)
-	if isDebug() {
+	if debug {
 		fmt.Println(command.Args)
 	}
 	outputBinary, err := command.CombinedOutput()
 	output := string(outputBinary)
-	if isDebug() {
+	if debug {
 		fmt.Println(output)
 	}
 	if err != nil {
@@ -267,12 +299,12 @@ func silentgit(args ...string) string {
 
 func hasSay() bool {
 	command := exec.Command("which", "say")
-	if isDebug() {
+	if debug {
 		fmt.Println(command.Args)
 	}
 	outputBinary, err := command.CombinedOutput()
 	output := string(outputBinary)
-	if isDebug() {
+	if debug {
 		fmt.Println(output)
 	}
 	return err == nil
@@ -280,12 +312,12 @@ func hasSay() bool {
 
 func git(args ...string) string {
 	command := exec.Command("git", args...)
-	if isDebug() {
+	if debug {
 		fmt.Println(command.Args)
 	}
 	outputBinary, err := command.CombinedOutput()
 	output := string(outputBinary)
-	if isDebug() {
+	if debug {
 		fmt.Println(output)
 	}
 	if err != nil {
