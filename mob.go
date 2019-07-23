@@ -63,6 +63,8 @@ func main() {
 		}
 	} else if argument == "h" || argument == "help" || argument == "--help" || argument == "-h" {
 		help()
+	} else if argument == "v" || argument == "version" || argument == "--version" || argument == "-v" {
+		version()
 	} else {
 		status()
 	}
@@ -276,7 +278,12 @@ func help() {
 	say("\tmob [d]one \t# finish mob session")
 	say("\tmob [r]eset \t# resets any unfinished mob session")
 	say("\tmob status \t# show status of mob session")
-	say("\tmob [h]elp \t# prints this help")
+	say("\tmob --help \t# prints this help")
+	say("\tmob --version \t# prints the version")
+}
+
+func version() {
+	say("BEST version")
 }
 
 func silentgit(args ...string) string {
