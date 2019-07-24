@@ -9,35 +9,35 @@ import (
 	"time"
 )
 
-var wip_branch = "mob-session"                        // override with MOB_WIP_BRANCH environment variable
-var base_branch = "master"                            // override with MOB_BASE_BRANCH environment variable
-var remote_name = "origin"                            // override with MOB_REMOTE_NAME environment variable
-var wip_commit_message = "Mob Session DONE [ci-skip]" // override with MOB_WIP_COMMIT_MESSAGE environment variable
-var debug = false                                     // override with MOB_DEBUG environment variable
+var wipBranch = "mob-session"                       // override with MOB_WIP_BRANCH environment variable
+var baseBranch = "master"                           // override with MOB_BASE_BRANCH environment variable
+var remoteName = "origin"                           // override with MOB_REMOTE_NAME environment variable
+var wipCommitMessage = "Mob Session DONE [ci-skip]" // override with MOB_WIP_COMMIT_MESSAGE environment variable
+var debug = false                                   // override with MOB_DEBUG environment variable
 
 func parseEnvironmentVariables() {
-	user_base_branch, user_base_branch_set := os.LookupEnv("MOB_BASE_BRANCH")
-	if user_base_branch_set {
-		base_branch = user_base_branch
-		say("overriding MOB_BASE_BRANCH=" + base_branch)
+	userBaseBranch, userBaseBranchSet := os.LookupEnv("MOB_BASE_BRANCH")
+	if userBaseBranchSet {
+		baseBranch = userBaseBranch
+		say("overriding MOB_BASE_BRANCH=" + baseBranch)
 	}
-	user_wip_branch, user_wip_branch_set := os.LookupEnv("MOB_WIP_BRANCH")
-	if user_wip_branch_set {
-		wip_branch = user_wip_branch
-		say("overriding MOB_WIP_BRANCH=" + wip_branch)
+	userWipBranch, userWipBranchSet := os.LookupEnv("MOB_WIP_BRANCH")
+	if userWipBranchSet {
+		wipBranch = userWipBranch
+		say("overriding MOB_WIP_BRANCH=" + wipBranch)
 	}
-	user_remote_name, user_remote_name_set := os.LookupEnv("MOB_REMOTE_NAME")
-	if user_remote_name_set {
-		remote_name = user_remote_name
-		say("overriding MOB_REMOTE_NAME=" + remote_name)
+	userRemoteName, userRemoteNameSet := os.LookupEnv("MOB_REMOTE_NAME")
+	if userRemoteNameSet {
+		remoteName = userRemoteName
+		say("overriding MOB_REMOTE_NAME=" + remoteName)
 	}
-	user_wip_commit_message, user_wip_commit_message_set := os.LookupEnv("MOB_WIP_COMMIT_MESSAGE")
-	if user_wip_commit_message_set {
-		wip_commit_message = user_wip_commit_message
-		say("overriding MOB_WIP_COMMIT_MESSAGE=" + wip_commit_message)
+	userWipCommitMessage, userWipCommitMessageSet := os.LookupEnv("MOB_WIP_COMMIT_MESSAGE")
+	if userWipCommitMessageSet {
+		wipCommitMessage = userWipCommitMessage
+		say("overriding MOB_WIP_COMMIT_MESSAGE=" + wipCommitMessage)
 	}
-	_, user_mob_debug_set := os.LookupEnv("MOB_DEBUG")
-	if user_mob_debug_set {
+	_, userMobDebugSet := os.LookupEnv("MOB_DEBUG")
+	if userMobDebugSet {
 		debug = true
 		say("overriding MOB_DEBUG=" + strconv.FormatBool(debug))
 	}
@@ -105,12 +105,12 @@ func startTimer(timerInMinutes string) {
 
 func reset() {
 	git("fetch", "--prune")
-	git("checkout", base_branch)
+	git("checkout", baseBranch)
 	if hasMobbingBranch() {
-		git("branch", "-D", wip_branch)
+		git("branch", "-D", wipBranch)
 	}
 	if hasMobbingBranchOrigin() {
-		git("push", remote_name, "--delete", wip_branch)
+		git("push", remoteName, "--delete", wipBranch)
 	}
 }
 
@@ -125,29 +125,29 @@ func start() {
 
 	if hasMobbingBranch() && hasMobbingBranchOrigin() {
 		sayInfo("rejoining mob session")
-		git("branch", "-D", wip_branch)
-		git("checkout", wip_branch)
-		git("branch", "--set-upstream-to="+remote_name+"/"+wip_branch, wip_branch)
+		git("branch", "-D", wipBranch)
+		git("checkout", wipBranch)
+		git("branch", "--set-upstream-to="+remoteName+"/"+wipBranch, wipBranch)
 	} else if !hasMobbingBranch() && !hasMobbingBranchOrigin() {
-		sayInfo("create " + wip_branch + " from " + base_branch)
-		git("checkout", base_branch)
-		git("merge", remote_name+"/"+base_branch, "--ff-only")
-		git("branch", wip_branch)
-		git("checkout", wip_branch)
-		git("push", "--set-upstream", remote_name, wip_branch)
+		sayInfo("create " + wipBranch + " from " + baseBranch)
+		git("checkout", baseBranch)
+		git("merge", remoteName+"/"+baseBranch, "--ff-only")
+		git("branch", wipBranch)
+		git("checkout", wipBranch)
+		git("push", "--set-upstream", remoteName, wipBranch)
 	} else if !hasMobbingBranch() && hasMobbingBranchOrigin() {
 		sayInfo("joining mob session")
-		git("checkout", wip_branch)
-		git("branch", "--set-upstream-to="+remote_name+"/"+wip_branch, wip_branch)
+		git("checkout", wipBranch)
+		git("branch", "--set-upstream-to="+remoteName+"/"+wipBranch, wipBranch)
 	} else {
-		sayInfo("purging local branch and start new " + wip_branch + " branch from " + base_branch)
-		git("branch", "-D", wip_branch) // check if unmerged commits
+		sayInfo("purging local branch and start new " + wipBranch + " branch from " + baseBranch)
+		git("branch", "-D", wipBranch) // check if unmerged commits
 
-		git("checkout", base_branch)
-		git("merge", remote_name+"/"+base_branch, "--ff-only")
-		git("branch", wip_branch)
-		git("checkout", wip_branch)
-		git("push", "--set-upstream", remote_name, wip_branch)
+		git("checkout", baseBranch)
+		git("merge", remoteName+"/"+baseBranch, "--ff-only")
+		git("branch", wipBranch)
+		git("checkout", wipBranch)
+		git("push", "--set-upstream", remoteName, wipBranch)
 	}
 
 	if len(os.Args) > 2 {
@@ -166,14 +166,14 @@ func next() {
 		sayInfo("nothing was done, so nothing to commit")
 	} else {
 		git("add", "--all")
-		git("commit", "--message", "\""+wip_commit_message+"\"")
+		git("commit", "--message", "\""+wipCommitMessage+"\"")
 		changes := getChangesOfLastCommit()
-		git("push", remote_name, wip_branch)
+		git("push", remoteName, wipBranch)
 		say(changes)
 	}
 	showNext()
 
-	git("checkout", base_branch)
+	git("checkout", baseBranch)
 }
 
 func getChangesOfLastCommit() string {
@@ -195,21 +195,21 @@ func done() {
 	if hasMobbingBranchOrigin() {
 		if !isNothingToCommit() {
 			git("add", "--all")
-			git("commit", "--message", "\""+wip_commit_message+"\"")
+			git("commit", "--message", "\""+wipCommitMessage+"\"")
 		}
-		git("push", remote_name, wip_branch)
+		git("push", remoteName, wipBranch)
 
-		git("checkout", base_branch)
-		git("merge", remote_name+"/"+base_branch, "--ff-only")
-		git("merge", "--squash", wip_branch)
+		git("checkout", baseBranch)
+		git("merge", remoteName+"/"+baseBranch, "--ff-only")
+		git("merge", "--squash", wipBranch)
 
-		git("branch", "-D", wip_branch)
-		git("push", remote_name, "--delete", wip_branch)
+		git("branch", "-D", wipBranch)
+		git("push", remoteName, "--delete", wipBranch)
 		say(getCachedChanges())
 		sayTodo("git commit -m 'describe the changes'")
 	} else {
-		git("checkout", base_branch)
-		git("branch", "-D", wip_branch)
+		git("checkout", baseBranch)
+		git("branch", "-D", wipBranch)
 		sayInfo("someone else already ended your mob session")
 	}
 }
@@ -218,7 +218,7 @@ func status() {
 	if isMobbing() {
 		sayInfo("mobbing in progress")
 
-		output := silentgit("--no-pager", "log", base_branch+".."+wip_branch, "--pretty=format:%h %cr <%an>", "--abbrev-commit")
+		output := silentgit("--no-pager", "log", baseBranch+".."+wipBranch, "--pretty=format:%h %cr <%an>", "--abbrev-commit")
 		say(output)
 	} else {
 		sayInfo("you aren't mobbing right now")
@@ -237,17 +237,17 @@ func isNothingToCommit() bool {
 
 func isMobbing() bool {
 	output := silentgit("branch")
-	return strings.Contains(output, "* "+wip_branch)
+	return strings.Contains(output, "* "+wipBranch)
 }
 
 func hasMobbingBranch() bool {
 	output := silentgit("branch")
-	return strings.Contains(output, "  "+wip_branch) || strings.Contains(output, "* "+wip_branch)
+	return strings.Contains(output, "  "+wipBranch) || strings.Contains(output, "* "+wipBranch)
 }
 
 func hasMobbingBranchOrigin() bool {
 	output := silentgit("branch", "--remotes")
-	return strings.Contains(output, "  "+remote_name+"/"+wip_branch)
+	return strings.Contains(output, "  "+remoteName+"/"+wipBranch)
 }
 
 func getGitUserName() string {
@@ -255,7 +255,7 @@ func getGitUserName() string {
 }
 
 func isLastChangeSecondsAgo() bool {
-	changes := silentgit("--no-pager", "log", base_branch+".."+wip_branch, "--pretty=format:%cr", "--abbrev-commit")
+	changes := silentgit("--no-pager", "log", baseBranch+".."+wipBranch, "--pretty=format:%cr", "--abbrev-commit")
 	lines := strings.Split(strings.Replace(changes, "\r\n", "\n", -1), "\n")
 	numberOfLines := len(lines)
 	if numberOfLines < 1 {
@@ -269,7 +269,7 @@ func showNext() {
 	if debug {
 		say("determining next person based on previous changes")
 	}
-	changes := strings.TrimSpace(silentgit("--no-pager", "log", base_branch+".."+wip_branch, "--pretty=format:%an", "--abbrev-commit"))
+	changes := strings.TrimSpace(silentgit("--no-pager", "log", baseBranch+".."+wipBranch, "--pretty=format:%an", "--abbrev-commit"))
 	lines := strings.Split(strings.Replace(changes, "\r\n", "\n", -1), "\n")
 	numberOfLines := len(lines)
 	if debug {
