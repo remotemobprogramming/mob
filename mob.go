@@ -75,8 +75,10 @@ func main() {
 }
 
 func join() {
+	if !isLastChangeSecondsAgo() {
+		sayInfo("Actively waiting for new remote commit...")
+	}
 	for !isLastChangeSecondsAgo() {
-		sayInfo("Waiting for recent commit. Will 'git pull' again in 1 second")
 		time.Sleep(time.Second)
 		git("pull")
 	}
