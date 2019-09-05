@@ -1,0 +1,2 @@
+git pull
+.\install.cmd
