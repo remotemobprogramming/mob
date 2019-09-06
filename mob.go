@@ -89,7 +89,7 @@ func join() {
 
 func startTimer(timerInMinutes string) {
 	timeoutInMinutes, _ := strconv.Atoi(timerInMinutes)
-	barLen := 30
+	barLen := 40
 
 	timeOfTimeout := time.Now().Add(time.Minute * time.Duration(timeoutInMinutes)).Format("15:04")
 	sayOkay(timerInMinutes + " minutes timer started (finishes at approx. " + timeOfTimeout + ")")
@@ -113,7 +113,7 @@ func startTimer(timerInMinutes string) {
 	signal.Notify(c, os.Interrupt, os.Kill, syscall.SIGINT, syscall.SIGTERM)
 	select {
 	case <-closedCh:
-		fmt.Println("")
+		//fmt.Println("")
 	case <-c:
 		thymer.Stop()
 		<-closedCh
