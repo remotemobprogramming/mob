@@ -83,3 +83,5 @@ Create a pull request.
 - Developed and maintained by [Simon Harrer](https://twitter.com/simonharrer).
 - Contributions and testing by Jochen Christ, Martin Huber, Franziska Dessart, and Nikolas Hermann. Thank you!
 - Logo designed by [Sonja Scheungrab](https://twitter.com/multebaerr).
+- [Benedikt Lang](https://github.com/blang) for Timer [Thymer](https://github.com/blang/thymer)
+- [Stephan Strittmatter](https://github.com/stritti) for Windows support and integration of Thymer

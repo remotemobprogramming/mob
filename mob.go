@@ -2,10 +2,13 @@ package main
 
 import (
 	"fmt"
+	"math"
 	"os"
 	"os/exec"
+	"os/signal"
 	"strconv"
 	"strings"
+	"syscall"
 	"time"
 )
 
@@ -86,21 +89,41 @@ func join() {
 
 func startTimer(timerInMinutes string) {
 	timeoutInMinutes, _ := strconv.Atoi(timerInMinutes)
-	timeoutInSeconds := timeoutInMinutes * 60
-	timerInSeconds := strconv.Itoa(timeoutInSeconds)
+	barLen := 30
 
-	command := exec.Command("sh", "-c", "( sleep "+timerInSeconds+" && say \"time's up\" && (/usr/bin/osascript -e 'display notification \"time is up\"' || /usr/bin/notify-send \"time is up\")  & )")
-	if debug {
-		fmt.Println(command.Args)
+	timeOfTimeout := time.Now().Add(time.Minute * time.Duration(timeoutInMinutes)).Format("15:04")
+	sayOkay(timerInMinutes + " minutes timer started (finishes at approx. " + timeOfTimeout + ")")
+
+	thymer := NewThymer(time.Duration(timeoutInMinutes) * time.Minute, time.Duration(5) * time.Second)
+	notifyCh := make(chan ThymerNotification)
+	go func() {
+		for n := range notifyCh {
+			fmt.Printf("\r%s %d:%02d", progressBar(100-int(n.PercLeft), barLen), int(math.Floor(n.TimeLeft.Minutes())), int(math.Floor(n.TimeLeft.Seconds()))%60)
+		}
+	}()
+	thymer.Start(notifyCh)
+
+	closedCh := make(chan bool)
+	go func() {
+		thymer.Wait()
+		close(closedCh)
+	}()
+
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt, os.Kill, syscall.SIGINT, syscall.SIGTERM)
+	select {
+	case <-closedCh:
+		fmt.Println("")
+	case <-c:
+		thymer.Stop()
+		<-closedCh
+		sayError("\nInterrupted")
 	}
-	err := command.Start()
-	if err != nil {
-		sayError("timer couldn't be started... (timer only works on OSX)")
-		sayError(err)
-	} else {
-		timeOfTimeout := time.Now().Add(time.Minute * time.Duration(timeoutInMinutes)).Format("15:04")
-		sayOkay(timerInMinutes + " minutes timer started (finishes at approx. " + timeOfTimeout + ")")
-	}
+}
+
+func progressBar(percent int, length int) string {
+	stars := percent * length / 100
+	return fmt.Sprintf("[%s%s]", strings.Repeat("■", stars), strings.Repeat(" ", length-stars))
 }
 
 func reset() {
