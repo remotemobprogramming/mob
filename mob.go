@@ -329,12 +329,6 @@ func help() {
 	say("\tmob status \t# show status of mob session")
 	say("\tmob --help \t# prints this help")
 	say("\tmob --version \t# prints the version")
-	say("")
-	say("examples")
-	say("\t mob start 10 \t# start session with 10 min.")
-	say("\t mob next \t# after 10 minutes work ...")
-	say("\t mob done \t# After the work is done.")
-
 }
 
 func version() {
