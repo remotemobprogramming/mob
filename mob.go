@@ -90,11 +90,12 @@ func join() {
 func startTimer(timerInMinutes string) {
 	timeoutInMinutes, _ := strconv.Atoi(timerInMinutes)
 	barLen := 40
+	updateInSec := 5
 
 	timeOfTimeout := time.Now().Add(time.Minute * time.Duration(timeoutInMinutes)).Format("15:04")
 	sayOkay(timerInMinutes + " minutes timer started (finishes at approx. " + timeOfTimeout + ")")
 
-	thymer := NewThymer(time.Duration(timeoutInMinutes)*time.Minute, time.Duration(5)*time.Second)
+	thymer := NewThymer(time.Duration(timeoutInMinutes)*time.Minute, time.Duration(updateInSec)*time.Second)
 	notifyCh := make(chan ThymerNotification)
 	go func() {
 		for n := range notifyCh {
@@ -113,13 +114,15 @@ func startTimer(timerInMinutes string) {
 	signal.Notify(c, os.Interrupt, os.Kill, syscall.SIGINT, syscall.SIGTERM)
 	select {
 	case <-closedCh:
-		command := exec.Command("sh", "-c", "say \"time's up\" && (/usr/bin/osascript -e 'display notification \"time is up\"' || /usr/bin/notify-send \"time is up\")  & )")
-		if debug {
-			fmt.Println(command.Args)
-		}
-		err := command.Start()
-		if err != nil {
-			sayError(err)
+		if hasSay() {
+			command := exec.Command("sh", "-c", "say \"time's up\" && (/usr/bin/osascript -e 'display notification \"time is up\"' || /usr/bin/notify-send \"time is up\")  & )")
+			if debug {
+				fmt.Println(command.Args)
+			}
+			err := command.Start()
+			if err != nil {
+				sayError(err)
+			}
 		}
 	case <-c:
 		thymer.Stop()
@@ -246,7 +249,9 @@ func done() {
 
 func status() {
 	if isMobbing() {
-		sayInfo("mobbing in progress")
+		sayInfo("")
+		sayInfo("mobbing in progress:")
+		sayInfo("  switch using 'mob next' or finish using 'mob done'")
 
 		output := silentgit("--no-pager", "log", baseBranch+".."+wipBranch, "--pretty=format:%h %cr <%an>", "--abbrev-commit")
 		say(output)
