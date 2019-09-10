@@ -90,7 +90,7 @@ func join() {
 func startTimer(timerInMinutes string) {
 	timeoutInMinutes, _ := strconv.Atoi(timerInMinutes)
 	barLen := 40
-	updateInSec := 5
+	updateInSec := 1
 
 	timeOfTimeout := time.Now().Add(time.Minute * time.Duration(timeoutInMinutes)).Format("15:04")
 	sayOkay(timerInMinutes + " minutes timer started (finishes at approx. " + timeOfTimeout + ")")
@@ -99,8 +99,9 @@ func startTimer(timerInMinutes string) {
 	notifyCh := make(chan ThymerNotification)
 	go func() {
 		for n := range notifyCh {
-			fmt.Printf("\r%s %d:%02d", progressBar(100-int(n.PercLeft), barLen), int(math.Floor(n.TimeLeft.Minutes())), int(math.Floor(n.TimeLeft.Seconds()))%60)
+			fmt.Printf("\u001b[1000D%s %02d:%02d", progressBar(100-int(n.PercLeft), barLen), int(math.Floor(n.TimeLeft.Minutes())), int(math.Floor(n.TimeLeft.Seconds()))%60)
 		}
+		fmt.Printf("\n")
 	}()
 	thymer.Start(notifyCh)
 
@@ -257,9 +258,8 @@ func done() {
 
 func status() {
 	if isMobbing() {
-		sayInfo("")
 		sayInfo("mobbing in progress:")
-		sayInfo("  switch using 'mob next' or finish using 'mob done'")
+		sayInfo("  switch by using 'mob next' or finish by using 'mob done'")
 
 		output := silentgit("--no-pager", "log", baseBranch+".."+wipBranch, "--pretty=format:%h %cr <%an>", "--abbrev-commit")
 		say(output)
