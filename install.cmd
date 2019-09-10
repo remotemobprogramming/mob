@@ -6,4 +6,4 @@ set target=%SystemRoot%
 
 go build mob.go
 copy mob.exe %target%
-echo "installed 'mob' to %target%"
+echo 'mob.exe' installed to %target%
