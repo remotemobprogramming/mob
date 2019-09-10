@@ -128,7 +128,7 @@ func startTimer(timerInMinutes string) {
 	case <-c:
 		thymer.Stop()
 		<-closedCh
-		sayError("\nInterrupted")
+		sayError("Interrupted")
 	}
 }
 
