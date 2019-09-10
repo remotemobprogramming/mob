@@ -133,7 +133,15 @@ func startTimer(timerInMinutes string) {
 
 func progressBar(percent int, length int) string {
 	stars := percent * length / 100
-	return fmt.Sprintf("[%s%s]", strings.Repeat("■", stars), strings.Repeat(" ", length-stars))
+	colReset := "\u001b[0m"
+	color := "\033[32m" // green
+	if percent > 70 && percent <= 90 {
+		color = "\u001b[33m" //yellow
+	}
+	if percent > 90 {
+		color = "\033[31m" //red
+	}
+	return fmt.Sprintf("["+color+"%s%s"+colReset+"]", strings.Repeat("■", stars), strings.Repeat(" ", length-stars))
 }
 
 func reset() {
