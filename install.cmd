@@ -1,29 +1,22 @@
-@echo off
+REM @echo off
 @setlocal
 
-echo Installing 'mob'...
+echo Installing 'mob' ...
 
-set target="%USERPROFILE%\.mob"
+setx MOB_HOME "%USERPROFILE%\.mob"
+set target="%MOB_HOME%"
 
 if not exist %target% (
 	md %target%
-	echo Created %target%
+	echo Directory %target% created.
 )
 
 go build mob.go
 copy mob.exe %target%
 echo 'mob.exe' installed to %target%
 
-REM add target to PATH
-for /f "tokens=*" %%a in ('echo "%PATH%" ^| find /C /I %target%') do set INPATH=%%a
+REM add MOB_HOME to PATH
+echo %path%|find /i "%MOB_HOME%">nul  || set path=%path%;%MOB_HOME%
 
-setx MOB_HOME %target%
-echo Added '%target%' to PATH
-
-
-if %INPATH% EQU 0 (
-	setx PATH %%MOB_HOME%%;"%PATH%"
-	echo Added '%target%' to PATH
-)
-echo Installed 'mob' successfully
+echo 'mob' successfully installed.
 pause
