@@ -53,7 +53,7 @@ $ brew install golang
 $ git clone https://github.com/simonharrer/mob
 $ cd mob
 $ ./install
-# Now, you can use the mob tool from anywhere directory in the terminal
+# Now, you can use the mob tool from any directory in the terminal
 ```
 
 On linux systems you need the GNUstep speech engine to get the timer running.
