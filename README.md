@@ -35,6 +35,9 @@ simon$ git commit --message "describe what the mob session was all about"
 - `mob status` display the mob session status and all the created WIP commits
 - `mob reset` deletes `mob-session` and `origin/mob-session`
 
+## How can one customize it?
+You can set several environment variables, such as `MOB_WIP_BRANCH` and `MOB_REMOTE_NAME`, that will be picked up by `mob`. See [the source for an extensive list](https://github.com/remotemobprogramming/mob/blob/master/mob.go#L12).
+
 ## How does it really work?
 
 ```bash
