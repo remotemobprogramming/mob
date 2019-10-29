@@ -50,10 +50,6 @@ func main() {
 	if argument == "s" || argument == "start" {
 		start()
 		status()
-	} else if argument == "j" || argument == "join" {
-		start()
-		join()
-		status()
 	} else if argument == "n" || argument == "next" {
 		next()
 	} else if argument == "d" || argument == "done" || argument == "e" || argument == "end" {
@@ -71,16 +67,6 @@ func main() {
 		version()
 	} else {
 		status()
-	}
-}
-
-func join() {
-	if !isLastChangeSecondsAgo() {
-		sayInfo("Actively waiting for new remote commit...")
-	}
-	for !isLastChangeSecondsAgo() {
-		time.Sleep(time.Second)
-		git("pull")
 	}
 }
 
