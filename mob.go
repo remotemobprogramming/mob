@@ -285,7 +285,6 @@ func showNext() {
 func help() {
 	say("usage")
 	say("\tmob [s]tart \t# start mobbing as typist")
-	say("\tmob [j]oin \t# like start but waits for recent commit")
 	say("\tmob [n]ext \t# hand over to next typist")
 	say("\tmob [d]one \t# finish mob session")
 	say("\tmob [r]eset \t# resets any unfinished mob session")
