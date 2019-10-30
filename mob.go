@@ -187,7 +187,7 @@ func done() {
 
 		git("checkout", baseBranch)
 		git("merge", remoteName+"/"+baseBranch, "--ff-only")
-		git("merge", "--squash", wipBranch)
+		git("merge", "--squash", "--ff", wipBranch)
 
 		git("branch", "-D", wipBranch)
 		git("push", remoteName, "--delete", wipBranch)
