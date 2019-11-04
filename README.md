@@ -61,7 +61,10 @@ On linux systems you need the GNUstep speech engine to get the timer running.
 On Ubuntu:
 
 ```bash
-sudo apt-get install gnustep-gui-runtime
+sudo apt-get install gnustep-gui-runtime golang
+git clone https://github.com/remotemobprogramming/mob
+cd mob
+sudo ./install
 ```
 
 ### Windows
