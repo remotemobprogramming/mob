@@ -45,7 +45,7 @@ func parseEnvironmentVariables() {
 	_, userMobNextStaySet := os.LookupEnv("MOB_NEXT_STAY")
 	if userMobNextStaySet {
 		mobNextStay = true
-		say("overriding MOB_NEXT_STAY=" + strconv.FormatBool(debug))
+		say("overriding MOB_NEXT_STAY=" + strconv.FormatBool(mobNextStay))
 	}
 }
 
