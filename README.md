@@ -35,17 +35,6 @@ simon$ git commit --message "describe what the mob session was all about"
 - `mob status` display the mob session status and all the created WIP commits
 - `mob reset` deletes `mob-session` and `origin/mob-session`
 
-## How can one customize it?
-You can set several environment variables, such as `MOB_WIP_BRANCH` and `MOB_REMOTE_NAME`, that will be picked up by `mob`. See [the source for an extensive list](https://github.com/remotemobprogramming/mob/blob/master/mob.go#L12).
-
-## How does it really work?
-
-```bash
-$ MOB_DEBUG=true mob start
-```
-
-Prints out any git commands and their results.
-
 ## How to install
 
 ```bash
@@ -69,16 +58,35 @@ sudo ./install
 
 ### Windows
 
-- Install [Golang](https://golang.org/)
-  - Download and execute MSI from Download page
+- Install [Golang](https://golang.org/): Download and execute MSI from Download page
 - Open console and execute following commands
 
-    ```bash
-    > git clone https://github.com/remotemobprogramming/mob
-    > cd mob
-    > .\install.cmd
-    # Now, you can use the mob tool from anywhere directory in the terminal
-    ```
+```bash
+> git clone https://github.com/remotemobprogramming/mob
+> cd mob
+> .\install.cmd
+# Now, you can use the mob tool from anywhere directory in the terminal
+```
+
+## How can one customize it?
+
+You can set several environment variables that will be picked up by `mob`:
+
+```bash
+# override default values if necessary
+export MOB_WIP_BRANCH=mob-session
+export MOB_BASE_BRANCH=master
+export MOB_REMOTE_NAME=origin
+export MOB_WIP_COMMIT_MESSAGE="Mob Session DONE [ci-skip]"
+export MOB_NEXT_STAY=false # set to true to stay in the MOB_WIP_BRANCH after 'mob next' instead of checking out MOB_BASE_BRANCH
+export MOB_DEBUG=false
+```
+
+The easiest way to enable them for a single call is as follows:
+
+```bash
+$ MOB_NEXT_STAY=true mob next
+```
 
 ## How to contribute
 

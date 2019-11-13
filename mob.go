@@ -13,6 +13,7 @@ var wipBranch = "mob-session"                       // override with MOB_WIP_BRA
 var baseBranch = "master"                           // override with MOB_BASE_BRANCH environment variable
 var remoteName = "origin"                           // override with MOB_REMOTE_NAME environment variable
 var wipCommitMessage = "Mob Session DONE [ci-skip]" // override with MOB_WIP_COMMIT_MESSAGE environment variable
+var mobNextStay = false                             // override with MOB_NEXT_STAY environment variable
 var debug = false                                   // override with MOB_DEBUG environment variable
 
 func parseEnvironmentVariables() {
@@ -40,6 +41,11 @@ func parseEnvironmentVariables() {
 	if userMobDebugSet {
 		debug = true
 		say("overriding MOB_DEBUG=" + strconv.FormatBool(debug))
+	}
+	_, userMobNextStaySet := os.LookupEnv("MOB_NEXT_STAY")
+	if userMobNextStaySet {
+		mobNextStay = true
+		say("overriding MOB_NEXT_STAY=" + strconv.FormatBool(debug))
 	}
 }
 
@@ -107,13 +113,15 @@ func start() {
 	}
 
 	git("fetch", "--prune")
-	git("pull")
+	git("pull", "--ff-only")
 
 	if hasMobbingBranch() && hasMobbingBranchOrigin() {
 		sayInfo("rejoining mob session")
-		git("branch", "-D", wipBranch)
-		git("checkout", wipBranch)
-		git("branch", "--set-upstream-to="+remoteName+"/"+wipBranch, wipBranch)
+		if !isMobbing() {
+			git("branch", "-D", wipBranch)
+			git("checkout", wipBranch)
+			git("branch", "--set-upstream-to="+remoteName+"/"+wipBranch, wipBranch)
+		}
 	} else if !hasMobbingBranch() && !hasMobbingBranchOrigin() {
 		sayInfo("create " + wipBranch + " from " + baseBranch)
 		git("checkout", baseBranch)
@@ -159,7 +167,9 @@ func next() {
 	}
 	showNext()
 
-	git("checkout", baseBranch)
+	if !mobNextStay {
+		git("checkout", baseBranch)
+	}
 }
 
 func getChangesOfLastCommit() string {
