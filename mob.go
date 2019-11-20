@@ -264,17 +264,6 @@ func getGitUserName() string {
 	return strings.TrimSpace(silentgit("config", "--get", "user.name"))
 }
 
-func isLastChangeSecondsAgo() bool {
-	changes := silentgit("--no-pager", "log", baseBranch+".."+wipBranch, "--pretty=format:%cr", "--abbrev-commit")
-	lines := strings.Split(strings.Replace(changes, "\r\n", "\n", -1), "\n")
-	numberOfLines := len(lines)
-	if numberOfLines < 1 {
-		return true
-	}
-
-	return strings.Contains(lines[0], "seconds ago") || strings.Contains(lines[0], "second ago")
-}
-
 func showNext() {
 	if debug {
 		say("determining next person based on previous changes")
@@ -309,7 +298,7 @@ func showNext() {
 func help() {
 	say("usage")
 	say("\tmob [s]tart \t# start mobbing as typist")
-	say("\tmob [n]ext \t# hand over to next typist")
+	say("\tmob [-s][-stay] [n]ext \t# hand over to next typist")
 	say("\tmob [d]one \t# finish mob session")
 	say("\tmob [r]eset \t# resets any unfinished mob session")
 	say("\tmob status \t# show status of mob session")
