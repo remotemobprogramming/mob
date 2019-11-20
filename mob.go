@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"os"
 	"os/exec"
@@ -16,7 +17,7 @@ var wipCommitMessage = "Mob Session DONE [ci-skip]" // override with MOB_WIP_COM
 var mobNextStay = false                             // override with MOB_NEXT_STAY environment variable
 var debug = false                                   // override with MOB_DEBUG environment variable
 
-func parseEnvironmentVariables() {
+func parseEnvironmentVariables() []string {
 	userBaseBranch, userBaseBranchSet := os.LookupEnv("MOB_BASE_BRANCH")
 	if userBaseBranchSet {
 		baseBranch = userBaseBranch
@@ -47,14 +48,27 @@ func parseEnvironmentVariables() {
 		mobNextStay = true
 		say("overriding MOB_NEXT_STAY=" + strconv.FormatBool(mobNextStay))
 	}
+
+	flagMobNextStaySet := *flag.Bool("stay", false, "don't change back")
+	if flagMobNextStaySet {
+		mobNextStay = true
+	}
+
+	flagMobNextSSet := *flag.Bool("s", false, "(shorthand)")
+	if flagMobNextSSet {
+		mobNextStay = true
+	}
+
+	flag.Parse()
+	return flag.Args()
 }
 
 func main() {
-	parseEnvironmentVariables()
+	args := parseEnvironmentVariables()
 
-	argument := getCommand()
+	argument := getCommand(args)
 	if argument == "s" || argument == "start" {
-		start()
+		start(args)
 		status()
 	} else if argument == "n" || argument == "next" {
 		next()
@@ -63,8 +77,8 @@ func main() {
 	} else if argument == "r" || argument == "reset" {
 		reset()
 	} else if argument == "t" || argument == "timer" {
-		if len(os.Args) > 2 {
-			timer := os.Args[2]
+		if len(args) > 2 {
+			timer := args[2]
 			startTimer(timer)
 		}
 	} else if argument == "h" || argument == "help" || argument == "--help" || argument == "-h" {
@@ -106,7 +120,7 @@ func reset() {
 	}
 }
 
-func start() {
+func start(args []string) {
 	if !isNothingToCommit() {
 		sayNote("uncommitted changes")
 		return
@@ -144,8 +158,8 @@ func start() {
 		git("push", "--set-upstream", remoteName, wipBranch)
 	}
 
-	if len(os.Args) > 2 {
-		timer := os.Args[2]
+	if len(args) > 2 {
+		timer := args[2]
 		startTimer(timer)
 	}
 }
@@ -398,8 +412,7 @@ func sayInfo(s string) {
 	fmt.Print("\n")
 }
 
-func getCommand() string {
-	args := os.Args
+func getCommand(args []string) string {
 	if len(args) <= 1 {
 		return ""
 	}
