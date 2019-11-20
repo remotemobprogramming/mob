@@ -49,23 +49,23 @@ func parseEnvironmentVariables() []string {
 		say("overriding MOB_NEXT_STAY=" + strconv.FormatBool(mobNextStay))
 	}
 
-	flagMobNextStaySet := *flag.Bool("stay", false, "don't change back")
-	if flagMobNextStaySet {
-		mobNextStay = true
-	}
-
-	flagMobNextSSet := *flag.Bool("s", false, "(shorthand)")
-	if flagMobNextSSet {
-		mobNextStay = true
-	}
+	flagMobNextStaySet := flag.Bool("stay", false, "don't change back")
+	flagMobNextSSet := flag.Bool("s", false, "(shorthand)")
 
 	flag.Parse()
+
+	if *flagMobNextStaySet {
+		mobNextStay = true
+	}
+	if *flagMobNextSSet {
+		mobNextStay = true
+	}
+
 	return flag.Args()
 }
 
 func main() {
 	args := parseEnvironmentVariables()
-
 	argument := getCommand(args)
 	if argument == "s" || argument == "start" {
 		start(args)
@@ -413,8 +413,8 @@ func sayInfo(s string) {
 }
 
 func getCommand(args []string) string {
-	if len(args) <= 1 {
+	if len(args) < 1 {
 		return ""
 	}
-	return args[1]
+	return args[0]
 }
