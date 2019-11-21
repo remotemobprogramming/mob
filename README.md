@@ -29,7 +29,7 @@ simon$ git commit --message "describe what the mob session was all about"
 ## How does it work?
 
 - `mob start 10` creates branch `mob-session` and pulls from `origin/mob-session`, and creates a ten minute timer
-- `mob next` pushes all changes to `origin/mob-session`in a `WIP [ci-skip]` commit
+- `mob next` pushes all changes to `origin/mob-session`in a `mob next [ci-skip]` commit
 - `mob done` squashes all changes in `mob-session` into staging of `master` and removes `mob-session` and `origin/mob-session`
 
 - `mob status` display the mob session status and all the created WIP commits
