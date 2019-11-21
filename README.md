@@ -77,7 +77,7 @@ You can set several environment variables that will be picked up by `mob`:
 export MOB_WIP_BRANCH=mob-session
 export MOB_BASE_BRANCH=master
 export MOB_REMOTE_NAME=origin
-export MOB_WIP_COMMIT_MESSAGE="Mob Session DONE [ci-skip]"
+export MOB_WIP_COMMIT_MESSAGE="mob next [ci-skip]"
 export MOB_NEXT_STAY=false # set to true to stay in the MOB_WIP_BRANCH after 'mob next' instead of checking out MOB_BASE_BRANCH
 export MOB_DEBUG=false
 ```
