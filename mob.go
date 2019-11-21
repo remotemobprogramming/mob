@@ -10,12 +10,12 @@ import (
 	"time"
 )
 
-var wipBranch = "mob-session"                       // override with MOB_WIP_BRANCH environment variable
-var baseBranch = "master"                           // override with MOB_BASE_BRANCH environment variable
-var remoteName = "origin"                           // override with MOB_REMOTE_NAME environment variable
-var wipCommitMessage = "Mob Session DONE [ci-skip]" // override with MOB_WIP_COMMIT_MESSAGE environment variable
-var mobNextStay = false                             // override with MOB_NEXT_STAY environment variable
-var debug = false                                   // override with MOB_DEBUG environment variable
+var wipBranch = "mob-session"               // override with MOB_WIP_BRANCH environment variable
+var baseBranch = "master"                   // override with MOB_BASE_BRANCH environment variable
+var remoteName = "origin"                   // override with MOB_REMOTE_NAME environment variable
+var wipCommitMessage = "mob next [ci-skip]" // override with MOB_WIP_COMMIT_MESSAGE environment variable
+var mobNextStay = false                     // override with MOB_NEXT_STAY environment variable
+var debug = false                           // override with MOB_DEBUG environment variable
 
 func parseEnvironmentVariables() []string {
 	userBaseBranch, userBaseBranchSet := os.LookupEnv("MOB_BASE_BRANCH")
