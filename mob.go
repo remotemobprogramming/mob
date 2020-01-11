@@ -66,24 +66,31 @@ func parseEnvironmentVariables() []string {
 
 func main() {
 	args := parseEnvironmentVariables()
-	argument := getCommand(args)
-	if argument == "s" || argument == "start" {
-		start(args)
+	command := getCommand(args)
+	parameter := getParameters(args)
+	if debug {
+		fmt.Println("Args '" + strings.Join(args, " ") + "'")
+		fmt.Println("command '" + command + "'")
+		fmt.Println("parameter '" + strings.Join(parameter, " ") + "'")
+	}
+
+	if command == "s" || command == "start" {
+		start(parameter)
 		status()
-	} else if argument == "n" || argument == "next" {
+	} else if command == "n" || command == "next" {
 		next()
-	} else if argument == "d" || argument == "done" || argument == "e" || argument == "end" {
+	} else if command == "d" || command == "done" || command == "e" || command == "end" {
 		done()
-	} else if argument == "r" || argument == "reset" {
+	} else if command == "r" || command == "reset" {
 		reset()
-	} else if argument == "t" || argument == "timer" {
-		if len(args) > 2 {
-			timer := args[2]
+	} else if command == "t" || command == "timer" {
+		if len(parameter) > 0 {
+			timer := parameter[0]
 			startTimer(timer)
 		}
-	} else if argument == "h" || argument == "help" || argument == "--help" || argument == "-h" {
+	} else if command == "h" || command == "help" || command == "--help" || command == "-h" {
 		help()
-	} else if argument == "v" || argument == "version" || argument == "--version" || argument == "-v" {
+	} else if command == "v" || command == "version" || command == "--version" || command == "-v" {
 		version()
 	} else {
 		status()
@@ -91,6 +98,9 @@ func main() {
 }
 
 func startTimer(timerInMinutes string) {
+	if debug {
+		fmt.Println("Starting timer for " + timerInMinutes + " minutes")
+	}
 	timeoutInMinutes, _ := strconv.Atoi(timerInMinutes)
 	timeoutInSeconds := timeoutInMinutes * 60
 	timerInSeconds := strconv.Itoa(timeoutInSeconds)
@@ -120,7 +130,7 @@ func reset() {
 	}
 }
 
-func start(args []string) {
+func start(parameter []string) {
 	if !isNothingToCommit() {
 		sayNote("uncommitted changes")
 		return
@@ -158,8 +168,8 @@ func start(args []string) {
 		git("push", "--set-upstream", remoteName, wipBranch)
 	}
 
-	if len(args) > 2 {
-		timer := args[2]
+	if len(parameter) > 0 {
+		timer := parameter[0]
 		startTimer(timer)
 	}
 }
@@ -406,4 +416,11 @@ func getCommand(args []string) string {
 		return ""
 	}
 	return args[0]
+}
+
+func getParameters(args []string) []string {
+	if len(args) == 0 {
+		return args
+	}
+	return args[1:]
 }
