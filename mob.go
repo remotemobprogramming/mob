@@ -16,7 +16,8 @@ var remoteName = "origin"                   // override with MOB_REMOTE_NAME env
 var wipCommitMessage = "mob next [ci-skip]" // override with MOB_WIP_COMMIT_MESSAGE environment variable
 var mobNextStay = false                     // override with MOB_NEXT_STAY environment variable
 var debug = false                           // override with MOB_DEBUG environment variable
-var wipPushFlags = ""               	    // override with MOB_WIP_PUSH_FLAGS environment variable
+var wipNoVerify = false               	    // override with MOB_WIP_NO_VERIFY environment variable
+var wipGitFlags = ""
 
 func parseEnvironmentVariables() []string {
 	userBaseBranch, userBaseBranchSet := os.LookupEnv("MOB_BASE_BRANCH")
@@ -39,10 +40,11 @@ func parseEnvironmentVariables() []string {
 		wipCommitMessage = userWipCommitMessage
 		say("overriding MOB_WIP_COMMIT_MESSAGE=" + wipCommitMessage)
 	}
-	userWipPushFlags, userWipPushFlagsSet := os.LookupEnv("MOB_WIP_PUSH_FLAGS")
-	if userWipPushFlagsSet {
-		wipPushFlags = userWipPushFlags
-		say("overriding MOB_WIP_PUSH_FLAGS=" + wipPushFlags)
+	_, userWipNoVerifySet := os.LookupEnv("MOB_WIP_NO_VERIFY")
+	if userWipNoVerifySet {
+		wipNoVerify = true
+		wipGitFlags = "--no-verify"
+		say("overriding MOB_WIP_NO_VERIFY=" + strconv.FormatBool(wipNoVerify))
 	}
 	_, userMobDebugSet := os.LookupEnv("MOB_DEBUG")
 	if userMobDebugSet {
@@ -190,9 +192,9 @@ func next() {
 		sayInfo("nothing was done, so nothing to commit")
 	} else {
 		git("add", "--all")
-		git("commit", "--message", "\""+wipCommitMessage+"\"")
+		git("commit", wipGitFlags, "--message", "\""+wipCommitMessage+"\"")
 		changes := getChangesOfLastCommit()
-		git("push", wipPushFlags, remoteName, wipBranch)
+		git("push", wipGitFlags, remoteName, wipBranch)
 		say(changes)
 	}
 	showNext()
