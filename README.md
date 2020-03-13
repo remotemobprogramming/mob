@@ -80,6 +80,7 @@ export MOB_REMOTE_NAME=origin
 export MOB_WIP_COMMIT_MESSAGE="mob next [ci-skip]"
 export MOB_NEXT_STAY=false # set to true to stay in the MOB_WIP_BRANCH after 'mob next' instead of checking out MOB_BASE_BRANCH
 export MOB_DEBUG=false
+export MOB_WIP_NO_VERIFY=false # set to true to make commit and push on WIP commits use the --no-verify flag
 ```
 
 The easiest way to enable them for a single call is as follows:
