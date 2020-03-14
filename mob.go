@@ -11,18 +11,13 @@ import (
 )
 
 var wipBranch = "mob-session"               // override with MOB_WIP_BRANCH environment variable
-var baseBranch = "master"                   // override with MOB_BASE_BRANCH environment variable
+var baseBranch = ""            				// will be set on start
 var remoteName = "origin"                   // override with MOB_REMOTE_NAME environment variable
 var wipCommitMessage = "mob next [ci-skip]" // override with MOB_WIP_COMMIT_MESSAGE environment variable
 var mobNextStay = false                     // override with MOB_NEXT_STAY environment variable
 var debug = false                           // override with MOB_DEBUG environment variable
 
 func parseEnvironmentVariables() []string {
-	userBaseBranch, userBaseBranchSet := os.LookupEnv("MOB_BASE_BRANCH")
-	if userBaseBranchSet {
-		baseBranch = userBaseBranch
-		say("overriding MOB_BASE_BRANCH=" + baseBranch)
-	}
 	userWipBranch, userWipBranchSet := os.LookupEnv("MOB_WIP_BRANCH")
 	if userWipBranchSet {
 		wipBranch = userWipBranch
@@ -73,6 +68,9 @@ func main() {
 		fmt.Println("command '" + command + "'")
 		fmt.Println("parameter '" + strings.Join(parameter, " ") + "'")
 	}
+
+	// set the baseBranch to the currently active branch
+	baseBranch = silentgit("symbolic-ref", "--short", "HEAD")
 
 	if command == "s" || command == "start" {
 		start(parameter)

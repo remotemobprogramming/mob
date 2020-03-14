@@ -4,7 +4,7 @@
 
 Swift handover for remote mobs using git.
 `mob` is a CLI tool written in GO.
-It keeps your master branch clean and creates WIP commits on `mob-session` branch.
+It keeps your working branch clean and creates WIP commits on `mob-session` branch.
 
 ## How to use it?
 
@@ -75,7 +75,6 @@ You can set several environment variables that will be picked up by `mob`:
 ```bash
 # override default values if necessary
 export MOB_WIP_BRANCH=mob-session
-export MOB_BASE_BRANCH=master
 export MOB_REMOTE_NAME=origin
 export MOB_WIP_COMMIT_MESSAGE="mob next [ci-skip]"
 export MOB_NEXT_STAY=false # set to true to stay in the MOB_WIP_BRANCH after 'mob next' instead of checking out MOB_BASE_BRANCH
