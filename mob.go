@@ -11,7 +11,7 @@ import (
 )
 
 var wipBranch = "mob-session"               // override with MOB_WIP_BRANCH environment variable
-var baseBranch = ""            				// will be set on start
+var baseBranch = ""                         // will be set on start
 var remoteName = "origin"                   // override with MOB_REMOTE_NAME environment variable
 var wipCommitMessage = "mob next [ci-skip]" // override with MOB_WIP_COMMIT_MESSAGE environment variable
 var mobNextStay = false                     // override with MOB_NEXT_STAY environment variable
