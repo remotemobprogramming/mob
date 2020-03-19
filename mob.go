@@ -15,6 +15,7 @@ var baseBranch = "master"                   // override with MOB_BASE_BRANCH env
 var remoteName = "origin"                   // override with MOB_REMOTE_NAME environment variable
 var wipCommitMessage = "mob next [ci-skip]" // override with MOB_WIP_COMMIT_MESSAGE environment variable
 var mobNextStay = false                     // override with MOB_NEXT_STAY environment variable
+var voiceCommand = "say"                    // override with MOB_VOICE_COMMAND environment variable
 var debug = false                           // override with MOB_DEBUG environment variable
 
 func parseEnvironmentVariables() []string {
@@ -37,6 +38,11 @@ func parseEnvironmentVariables() []string {
 	if userWipCommitMessageSet {
 		wipCommitMessage = userWipCommitMessage
 		say("overriding MOB_WIP_COMMIT_MESSAGE=" + wipCommitMessage)
+	}
+	userMobVoiceCommand, userMobVoiceCommandSet := os.LookupEnv("MOB_VOICE_COMMAND")
+	if userMobVoiceCommandSet {
+		voiceCommand = userMobVoiceCommand
+		say("overriding MOB_VOICE_COMMAND=" + voiceCommand)
 	}
 	_, userMobDebugSet := os.LookupEnv("MOB_DEBUG")
 	if userMobDebugSet {
@@ -105,7 +111,7 @@ func startTimer(timerInMinutes string) {
 	timeoutInSeconds := timeoutInMinutes * 60
 	timerInSeconds := strconv.Itoa(timeoutInSeconds)
 
-	command := exec.Command("sh", "-c", "( sleep "+timerInSeconds+" && say \"mob next\" && (/usr/bin/osascript -e 'display notification \"mob next\"' || /usr/bin/notify-send \"mob next\")  & )")
+	command := exec.Command("sh", "-c", "( sleep "+timerInSeconds+" && "+voiceCommand+" \"mob next\" && (/usr/bin/osascript -e 'display notification \"mob next\"' || /usr/bin/notify-send \"mob next\")  & )")
 	if debug {
 		fmt.Println(command.Args)
 	}
@@ -245,7 +251,7 @@ func status() {
 	}
 
 	if !hasSay() {
-		sayNote("text-to-speech disabled because 'say' not found")
+		sayNote("text-to-speech disabled because '"+voiceCommand+"' not found")
 	}
 }
 
@@ -345,7 +351,7 @@ func silentgit(args ...string) string {
 }
 
 func hasSay() bool {
-	command := exec.Command("which", "say")
+	command := exec.Command("which", voiceCommand)
 	if debug {
 		fmt.Println(command.Args)
 	}
