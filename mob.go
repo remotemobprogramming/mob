@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"runtime"
 	"strconv"
 	"strings"
 	"time"
@@ -111,17 +112,32 @@ func startTimer(timerInMinutes string) {
 	timeoutInSeconds := timeoutInMinutes * 60
 	timerInSeconds := strconv.Itoa(timeoutInSeconds)
 
-	command := exec.Command("sh", "-c", "( sleep "+timerInSeconds+" && "+voiceCommand+" \"mob next\" && (/usr/bin/osascript -e 'display notification \"mob next\"' || /usr/bin/notify-send \"mob next\")  & )")
-	if debug {
-		fmt.Println(command.Args)
-	}
-	err := command.Start()
-	if err != nil {
-		sayError("timer couldn't be started... (timer only works on OSX)")
-		sayError(err)
+	if runtime.GOOS == "windows" {
+		command := exec.Command("powershell", "/C", "Invoke-Command {sleep "+timerInSeconds+" ; msg * /W \"It's time to switch! Use 'mob next'\"}")
+		if debug {
+			fmt.Println(command.Args)
+		}
+		err := command.Start()
+		if err != nil {
+			sayError("timer couldn't be started... broken")
+			sayError(err)
+		} else {
+			timeOfTimeout := time.Now().Add(time.Minute * time.Duration(timeoutInMinutes)).Format("15:04")
+			sayOkay(timerInMinutes + " minutes timer started (finishes at approx. " + timeOfTimeout + ")")
+		}
 	} else {
-		timeOfTimeout := time.Now().Add(time.Minute * time.Duration(timeoutInMinutes)).Format("15:04")
-		sayOkay(timerInMinutes + " minutes timer started (finishes at approx. " + timeOfTimeout + ")")
+		command := exec.Command("sh", "-c", "( sleep "+timerInSeconds+" && "+voiceCommand+" \"mob next\" && (/usr/bin/osascript -e 'display notification \"mob next\"' || /usr/bin/notify-send \"mob next\")  & )")
+		if debug {
+			fmt.Println(command.Args)
+		}
+		err := command.Start()
+		if err != nil {
+			sayError("timer couldn't be started... (timer only works on OSX)")
+			sayError(err)
+		} else {
+			timeOfTimeout := time.Now().Add(time.Minute * time.Duration(timeoutInMinutes)).Format("15:04")
+			sayOkay(timerInMinutes + " minutes timer started (finishes at approx. " + timeOfTimeout + ")")
+		}
 	}
 }
 
@@ -251,7 +267,7 @@ func status() {
 	}
 
 	if !hasSay() {
-		sayNote("text-to-speech disabled because '"+voiceCommand+"' not found")
+		sayNote("text-to-speech disabled because '" + voiceCommand + "' not found")
 	}
 }
 
