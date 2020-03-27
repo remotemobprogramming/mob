@@ -94,6 +94,8 @@ func main() {
 			timer := parameter[0]
 			startTimer(timer)
 		}
+	} else if command == "share" {
+		startZoomScreenshare()
 	} else if command == "h" || command == "help" || command == "--help" || command == "-h" {
 		help()
 	} else if command == "v" || command == "version" || command == "--version" || command == "-v" {
@@ -178,6 +180,24 @@ func start(parameter []string) {
 		timer := parameter[0]
 		startTimer(timer)
 	}
+
+	if len(parameter) > 1 && parameter[1] == "share" {
+		startZoomScreenshare()
+	}
+}
+
+func startZoomScreenshare() {
+	command := exec.Command("sh", "-c", "(osascript -e 'tell application \"System Events\" to keystroke \"S\" using {shift down, command down}')")
+	if debug {
+		fmt.Println(command.Args)
+	}
+	err := command.Start()
+	if err != nil {
+		sayError("screenshare couldn't be started... (screenshare only works on OSX)")
+		sayError(err)
+	} else {
+		sayOkay("Sharing screen with zoom (requires the global shortcut SHIFT+COMMAND+S)")
+	}
 }
 
 func next() {
@@ -251,7 +271,7 @@ func status() {
 	}
 
 	if !hasSay() {
-		sayNote("text-to-speech disabled because '"+voiceCommand+"' not found")
+		sayNote("text-to-speech disabled because '" + voiceCommand + "' not found")
 	}
 }
 
