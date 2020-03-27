@@ -1,0 +1,3 @@
+#!/bin/sh
+osascript -e 'tell application "zoom.us" to activate'
+osascript -e 'tell application "zoom.us" to keystroke "S" using {option down, command down}'
