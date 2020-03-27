@@ -119,20 +119,20 @@ func startTimer(timerInMinutes string) {
 		}
 		err := command.Start()
 		if err != nil {
-			sayError("timer couldn't be started... broken")
+			sayError("timer couldn't be started...might be having issues running powershell")
 			sayError(err)
 		} else {
 			timeOfTimeout := time.Now().Add(time.Minute * time.Duration(timeoutInMinutes)).Format("15:04")
 			sayOkay(timerInMinutes + " minutes timer started (finishes at approx. " + timeOfTimeout + ")")
 		}
 	} else {
-		command := exec.Command("sh", "-c", "( sleep "+timerInSeconds+" && "+voiceCommand+" \"mob next\" && (/usr/bin/osascript -e 'display notification \"mob next\"' || /usr/bin/notify-send \"mob next\")  & )")
+		command := exec.Command("sh", "-c", "( sleep "+timerInSeconds+" && msg '*' \"It's time to switch! Use 'mob next'\"")
 		if debug {
 			fmt.Println(command.Args)
 		}
 		err := command.Start()
 		if err != nil {
-			sayError("timer couldn't be started... (timer only works on OSX)")
+			sayError("timer couldn't be started...might be having issues running bash")
 			sayError(err)
 		} else {
 			timeOfTimeout := time.Now().Add(time.Minute * time.Duration(timeoutInMinutes)).Format("15:04")
