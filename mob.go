@@ -190,7 +190,7 @@ func next() {
 		sayInfo("nothing was done, so nothing to commit")
 	} else {
 		git("add", "--all")
-		git("commit", "--message", "\""+wipCommitMessage+"\"")
+		git("commit", "--message", "\""+wipCommitMessage+"\"", "--no-verify")
 		changes := getChangesOfLastCommit()
 		git("push", remoteName, wipBranch)
 		say(changes)
@@ -221,7 +221,7 @@ func done() {
 	if hasMobbingBranchOrigin() {
 		if !isNothingToCommit() {
 			git("add", "--all")
-			git("commit", "--message", "\""+wipCommitMessage+"\"")
+			git("commit", "--message", "\""+wipCommitMessage+"\"", "--no-verify")
 		}
 		git("push", remoteName, wipBranch)
 
