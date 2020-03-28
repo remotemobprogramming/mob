@@ -36,6 +36,7 @@ Maria $ git commit --message "describe what the mob session was all about"
 
 - `mob status` display the mob session status and all the created WIP commits
 - `mob reset` deletes `mob-session` and `origin/mob-session`
+- `mob share` start screenshare with zoom (macOS only, requires configuration in zoom to work)
 
 ### Zoom Screenshare
 
