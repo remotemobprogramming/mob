@@ -9,21 +9,22 @@ It keeps your master branch clean and creates WIP commits on `mob-session` branc
 ## How to use it?
 
 ```bash
-# simon begins the mob session as typist
-simon$ mob start 10
-# WORK
-# after 10 minutes...
-simon$ mob next
-# carola takes over as the second typist
-carola$ mob start 10
-# WORK
-# after 10 minutes...
-carola$ mob next
-simon$ mob start 10
+# Simon begins the mob session as typist
+Simon $ cd secret-git-project
+Simon $ mob start 10
+# WORK with Simon as typist
+# after 10 minutes, the timer triggers (you'll hear a 'mob next' from your speakers)
+Simon $ mob next 
+# Carola takes over as the second typist
+Carola $ mob start 10
+# WORK with Carola as typist
+# after 10 minutes, timer triggers...
+Carola $ mob next
+Maria $ mob start 10 share # share immediately activates zoom screenshare
 # WORK
 # After 6 minutes the work is done.
-simon$ mob done
-simon$ git commit --message "describe what the mob session was all about"
+Maria $ mob done
+Maria $ git commit --message "describe what the mob session was all about"
 ```
 
 ## How does it work?
@@ -35,6 +36,10 @@ simon$ git commit --message "describe what the mob session was all about"
 
 - `mob status` display the mob session status and all the created WIP commits
 - `mob reset` deletes `mob-session` and `origin/mob-session`
+
+### Zoom Screenshare
+
+The `mob share` feature only works if you activate make the screenshare hotkey in zoom globally available, and keep the default shortcut at CMD+SHIFT+S. 
 
 ## How to install
 

@@ -338,13 +338,15 @@ func help() {
 	say("\tmob [d]one \t# finish mob session")
 	say("\tmob [r]eset \t# resets any unfinished mob session")
 	say("\tmob status \t# show status of mob session")
+	say("\tmob share \t# start screenshare with zoom")
 	say("\tmob --help \t# prints this help")
 	say("\tmob --version \t# prints the version")
 	say("")
 	say("examples")
-	say("\t mob start 10 \t# start session with 10 min.")
+	say("\t mob start 10 \t# start 10 min session")
+	say("\t mob start 10 share \t# start 10 min session with zoom screenshare")
 	say("\t mob next \t# after 10 minutes work ...")
-	say("\t mob done \t# After the work is done.")
+	say("\t mob done \t# After the work is done")
 
 }
 

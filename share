@@ -1,2 +1,0 @@
-#!/bin/sh
-osascript -e 'tell application "System Events" to keystroke "S" using {shift down, command down}'
