@@ -14,7 +14,7 @@ Simon $ cd secret-git-project
 Simon $ mob start 10
 # WORK with Simon as typist
 # after 10 minutes, the timer triggers (you'll hear a 'mob next' from your speakers)
-Simon $ mob next 
+Simon $ mob next
 # Carola takes over as the second typist
 Carola $ mob start 10
 # WORK with Carola as typist
@@ -30,17 +30,17 @@ Maria $ git commit --message "describe what the mob session was all about"
 ## How does it work?
 
 - `mob start 10` creates branch `mob-session` and pulls from `origin/mob-session`, and creates a ten minute timer
-- `mob start 10 share` also activates screenshare in zoom (macOS only, requires zoom configuration)
+- `mob start 10 share` also activates screenshare in zoom (macOS or Linux with xdotool, requires zoom configuration)
 - `mob next` pushes all changes to `origin/mob-session`in a `mob next [ci-skip]` commit
 - `mob done` squashes all changes in `mob-session` into staging of `master` and removes `mob-session` and `origin/mob-session`
 
 - `mob status` display the mob session status and all the created WIP commits
 - `mob reset` deletes `mob-session` and `origin/mob-session`
-- `mob share` start screenshare with zoom (macOS only, requires configuration in zoom to work)
+- `mob share` start screenshare with zoom (macOS or Linux with xdotool, requires configuration in zoom to work)
 
 ### Zoom Screenshare
 
-The `mob share` feature only works if you activate make the screenshare hotkey in zoom globally available, and keep the default shortcut at CMD+SHIFT+S. 
+The `mob share` feature only works if you activate make the screenshare hotkey in zoom globally available, and keep the default shortcut at CMD+SHIFT+S (macOS)/ ALT+S (Linux).
 
 ## How to install
 
