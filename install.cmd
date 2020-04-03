@@ -3,7 +3,10 @@
 
 echo Installing 'mob' ...
 
-setx MOB_HOME "%USERPROFILE%\.mob"
+REM set variable for local script
+set MOB_HOME=%USERPROFILE%\.mob
+REM set for user, not visible for current shell
+setx MOB_HOME "%MOB_HOME%"
 set target="%MOB_HOME%"
 
 if not exist %target% (
@@ -15,8 +18,8 @@ go build mob.go
 copy mob.exe %target%
 echo 'mob.exe' installed to %target%
 
-REM add MOB_HOME to PATH
-echo %path%|find /i "%MOB_HOME%">nul  || set path=%path%;%MOB_HOME%
+REM add MOB_HOME to PATH, not used in current shell
+echo %path%|find /i "%MOB_HOME%">nul || setx path "%path%;%MOB_HOME%"
 
 echo 'mob' successfully installed.
 pause
