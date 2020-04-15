@@ -364,7 +364,7 @@ func help() {
 }
 
 func version() {
-	say("BEST version")
+	say("v0.0.1")
 }
 
 func silentgit(args ...string) string {
