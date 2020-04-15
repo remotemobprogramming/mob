@@ -11,6 +11,8 @@ import (
 	"time"
 )
 
+const release = "0.0.2"
+
 var wipBranch = "mob-session"               // override with MOB_WIP_BRANCH environment variable
 var baseBranch = "master"                   // override with MOB_BASE_BRANCH environment variable
 var remoteName = "origin"                   // override with MOB_REMOTE_NAME environment variable
@@ -99,7 +101,7 @@ func main() {
 		startZoomScreenshare()
 	} else if command == "h" || command == "help" || command == "--help" || command == "-h" {
 		help()
-	} else if command == "v" || command == "version" || command == "--version" || command == "-v" {
+	} else if command == "v" || command == "version" {
 		version()
 	} else {
 		status()
@@ -352,8 +354,8 @@ func help() {
 	say("\tmob [r]eset \t# resets any unfinished mob session")
 	say("\tmob status \t# show status of mob session")
 	say("\tmob share \t# start screenshare with zoom")
-	say("\tmob --help \t# prints this help")
-	say("\tmob --version \t# prints the version")
+	say("\tmob help \t# prints this help")
+	say("\tmob version \t# prints the version")
 	say("")
 	say("examples")
 	say("\t mob start 10 \t# start 10 min session")
@@ -364,7 +366,7 @@ func help() {
 }
 
 func version() {
-	say("v0.0.1")
+	say("v" + release)
 }
 
 func silentgit(args ...string) string {
