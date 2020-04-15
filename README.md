@@ -44,23 +44,23 @@ The `mob share` feature only works if you activate make the screenshare hotkey i
 
 ## How to install
 
+
+### macOS 
+
 ```bash
-$ brew install golang
-$ git clone https://github.com/remotemobprogramming/mob
-$ cd mob
-$ ./install
-# Now, you can use the mob tool from any directory in the terminal
+$ curl -s https://raw.githubusercontent.com/remotemobprogramming/mob/master/install-macos.sh | sh
 ```
 
-On linux systems you need the GNUstep speech engine to get the timer running.
-
-On Ubuntu:
+### Linux
 
 ```bash
-sudo apt-get install gnustep-gui-runtime golang
-git clone https://github.com/remotemobprogramming/mob
-cd mob
-sudo ./install
+$ curl -s https://raw.githubusercontent.com/remotemobprogramming/mob/master/install-linux.sh | sh
+```
+
+To get the timer to work on Linux, you need the GNUstep speech engine. Install that on ubuntu as follows:
+
+```bash
+$ sudo apt-get install gnustep-gui-runtime
 ```
 
 ### Windows
