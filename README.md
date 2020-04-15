@@ -6,6 +6,12 @@ Swift handover for [remote mobs](https://remotemobprogramming.org) using git.
 `mob` is a CLI tool written in GO.
 It keeps your master branch clean and creates WIP commits on `mob-session` branch.
 
+## How to install
+
+```bash
+curl -s https://raw.githubusercontent.com/remotemobprogramming/mob/master/install.sh | sh
+```
+
 ## How to use it?
 
 ```bash
@@ -42,25 +48,14 @@ Maria $ git commit --message "describe what the mob session was all about"
 
 The `mob share` feature only works if you activate make the screenshare hotkey in zoom globally available, and keep the default shortcut at CMD+SHIFT+S (macOS)/ ALT+S (Linux).
 
-## How to install
+## More on Installation
 
-
-### macOS 
-
-```bash
-$ curl -s https://raw.githubusercontent.com/remotemobprogramming/mob/master/install-macos.sh | sh
-```
-
-### Linux
-
-```bash
-$ curl -s https://raw.githubusercontent.com/remotemobprogramming/mob/master/install-linux.sh | sh
-```
+### Linux Timer
 
 To get the timer to work on Linux, you need the GNUstep speech engine. Install that on ubuntu as follows:
 
 ```bash
-$ sudo apt-get install gnustep-gui-runtime
+sudo apt-get install gnustep-gui-runtime
 ```
 
 ### Windows
@@ -69,9 +64,9 @@ $ sudo apt-get install gnustep-gui-runtime
 - Open console and execute following commands
 
 ```bash
-> git clone https://github.com/remotemobprogramming/mob
-> cd mob
-> .\install.cmd
+git clone https://github.com/remotemobprogramming/mob
+cd mob
+.\install.cmd
 # Now, you can use the mob tool from anywhere directory in the terminal
 ```
 

@@ -2,9 +2,15 @@
 
 pushd /tmp/ > /dev/null
 
+if [[ "$OSTYPE" == "darwin"* ]]; then
+system="darwin"
+else
+system="linux"
+fi
+
 echo "Installing latest 'mob' release from GitHub"
 url=$(curl -s https://api.github.com/repos/remotemobprogramming/mob/releases/latest \
-| grep "browser_download_url.*mob_.*darwin_amd64\.tar\.gz" \
+| grep "browser_download_url.*mob_.*${system}_amd64\.tar\.gz" \
 | cut -d ":" -f 2,3 \
 | tr -d \")
 echo "$url"
