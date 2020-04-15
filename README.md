@@ -9,7 +9,7 @@ It keeps your master branch clean and creates WIP commits on `mob-session` branc
 ## How to install
 
 ```bash
-curl -s https://raw.githubusercontent.com/remotemobprogramming/mob/master/install.sh | sh
+sh -c "$(curl -s https://raw.githubusercontent.com/remotemobprogramming/mob/master/install.sh)"
 ```
 
 ## How to use it?
