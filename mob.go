@@ -143,8 +143,9 @@ func reset() {
 
 func start(parameter []string) {
 	if !isNothingToCommit() {
-		sayNote("uncommitted changes")
-		return
+		sayNote("cannot start; uncommitted changes present")
+		say(silentgit("diff", "--stat"))
+		os.Exit(1)
 	}
 
 	git("fetch", "--prune")
@@ -422,7 +423,7 @@ func git(args ...string) string {
 }
 
 func say(s string) {
-	fmt.Println(s)
+	fmt.Println(strings.TrimSpace(s))
 }
 
 func sayError(s string) {
