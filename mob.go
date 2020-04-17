@@ -11,7 +11,7 @@ import (
 	"time"
 )
 
-const release = "0.0.2"
+const release = "0.0.3"
 
 var wipBranch = "mob-session"               // override with MOB_WIP_BRANCH environment variable
 var baseBranch = "master"                   // override with MOB_BASE_BRANCH environment variable
@@ -123,7 +123,7 @@ func startTimer(timerInMinutes string) {
 	err := command.Start()
 	if err != nil {
 		sayError("timer couldn't be started... (timer only works on OSX)")
-		sayError(err)
+		sayError(err.Error())
 	} else {
 		timeOfTimeout := time.Now().Add(time.Minute * time.Duration(timeoutInMinutes)).Format("15:04")
 		sayOkay(timerInMinutes + " minutes timer started (finishes at approx. " + timeOfTimeout + ")")
@@ -205,7 +205,7 @@ func startZoomScreenshare() {
 	err := command.Start()
 	if err != nil {
 		sayError("screenshare couldn't be started... (screenshare only works on OSX or Linux with xdotool installed)")
-		sayError(err)
+		sayError(err.Error())
 	} else {
 		if runtime.GOOS == "linux" {
 			sayOkay("Sharing screen with zoom (requires the global shortcut ALT+S)")
@@ -411,11 +411,12 @@ func git(args ...string) string {
 		fmt.Println(output)
 	}
 	if err != nil {
-		sayError(command.Args)
-		sayError(err)
+		sayError("[" + strings.Join(command.Args, " ") + "]")
+		sayError(output)
+		sayError(err.Error())
 		os.Exit(1)
 	} else {
-		sayOkay(command.Args)
+		sayOkay("[" + strings.Join(command.Args, " ") + "]")
 	}
 	return output
 }
@@ -424,25 +425,28 @@ func say(s string) {
 	fmt.Println(s)
 }
 
-func sayError(s interface{}) {
-	fmt.Print(" ⚡ ")
-	fmt.Print(s)
-	fmt.Print("\n")
+func sayError(s string) {
+	lines := strings.Split(s, "\n")
+	for i := 0; i < len(lines); i++ {
+		fmt.Print(" ERROR ")
+		fmt.Print(lines[i])
+		fmt.Print("\n")
+	}
 }
 
-func sayOkay(s interface{}) {
+func sayOkay(s string) {
 	fmt.Print(" ✓ ")
 	fmt.Print(s)
 	fmt.Print("\n")
 }
 
-func sayNote(s interface{}) {
+func sayNote(s string) {
 	fmt.Print(" ❗ ")
 	fmt.Print(s)
 	fmt.Print("\n")
 }
 
-func sayTodo(s interface{}) {
+func sayTodo(s string) {
 	fmt.Print(" ☐ ")
 	fmt.Print(s)
 	fmt.Print("\n")
