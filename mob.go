@@ -11,7 +11,7 @@ import (
 	"time"
 )
 
-const release = "0.0.3"
+const release = "0.0.4"
 
 var wipBranch = "mob-session"               // override with MOB_WIP_BRANCH environment variable
 var baseBranch = "master"                   // override with MOB_BASE_BRANCH environment variable
@@ -133,10 +133,10 @@ func startTimer(timerInMinutes string) {
 func reset() {
 	git("fetch", "--prune")
 	git("checkout", baseBranch)
-	if hasMobbingBranch() {
+	if hasMobProgrammingBranch() {
 		git("branch", "-D", wipBranch)
 	}
-	if hasMobbingBranchOrigin() {
+	if hasMobProgrammingBranchOrigin() {
 		git("push", remoteName, "--delete", wipBranch)
 	}
 }
@@ -151,21 +151,21 @@ func start(parameter []string) {
 	git("fetch", "--prune")
 	git("pull", "--ff-only")
 
-	if hasMobbingBranch() && hasMobbingBranchOrigin() {
+	if hasMobProgrammingBranch() && hasMobProgrammingBranchOrigin() {
 		sayInfo("rejoining mob session")
-		if !isMobbing() {
+		if !isMobProgramming() {
 			git("branch", "-D", wipBranch)
 			git("checkout", wipBranch)
 			git("branch", "--set-upstream-to="+remoteName+"/"+wipBranch, wipBranch)
 		}
-	} else if !hasMobbingBranch() && !hasMobbingBranchOrigin() {
+	} else if !hasMobProgrammingBranch() && !hasMobProgrammingBranchOrigin() {
 		sayInfo("create " + wipBranch + " from " + baseBranch)
 		git("checkout", baseBranch)
 		git("merge", remoteName+"/"+baseBranch, "--ff-only")
 		git("branch", wipBranch)
 		git("checkout", wipBranch)
 		git("push", "--set-upstream", remoteName, wipBranch)
-	} else if !hasMobbingBranch() && hasMobbingBranchOrigin() {
+	} else if !hasMobProgrammingBranch() && hasMobProgrammingBranchOrigin() {
 		sayInfo("joining mob session")
 		git("checkout", wipBranch)
 		git("branch", "--set-upstream-to="+remoteName+"/"+wipBranch, wipBranch)
@@ -217,8 +217,8 @@ func startZoomScreenshare() {
 }
 
 func next() {
-	if !isMobbing() {
-		sayError("you aren't mobbing")
+	if !isMobProgramming() {
+		sayError("you aren't mob programming")
 		return
 	}
 
@@ -247,14 +247,14 @@ func getCachedChanges() string {
 }
 
 func done() {
-	if !isMobbing() {
-		sayError("you aren't mobbing")
+	if !isMobProgramming() {
+		sayError("you aren't mob programming")
 		return
 	}
 
 	git("fetch", "--prune")
 
-	if hasMobbingBranchOrigin() {
+	if hasMobProgrammingBranchOrigin() {
 		if !isNothingToCommit() {
 			git("add", "--all")
 			git("commit", "--message", "\""+wipCommitMessage+"\"", "--no-verify")
@@ -277,13 +277,13 @@ func done() {
 }
 
 func status() {
-	if isMobbing() {
-		sayInfo("mobbing in progress")
+	if isMobProgramming() {
+		sayInfo("mob programming in progress")
 
 		output := silentgit("--no-pager", "log", baseBranch+".."+wipBranch, "--pretty=format:%h %cr <%an>", "--abbrev-commit")
 		say(output)
 	} else {
-		sayInfo("you aren't mobbing right now")
+		sayInfo("you aren't mob programming right now")
 	}
 
 	if !hasSay() {
@@ -293,21 +293,21 @@ func status() {
 
 func isNothingToCommit() bool {
 	output := silentgit("status", "--short")
-	isMobbing := len(strings.TrimSpace(output)) == 0
-	return isMobbing
+	isMobProgramming := len(strings.TrimSpace(output)) == 0
+	return isMobProgramming
 }
 
-func isMobbing() bool {
+func isMobProgramming() bool {
 	output := silentgit("branch")
 	return strings.Contains(output, "* "+wipBranch)
 }
 
-func hasMobbingBranch() bool {
+func hasMobProgrammingBranch() bool {
 	output := silentgit("branch")
 	return strings.Contains(output, "  "+wipBranch) || strings.Contains(output, "* "+wipBranch)
 }
 
-func hasMobbingBranchOrigin() bool {
+func hasMobProgrammingBranchOrigin() bool {
 	output := silentgit("branch", "--remotes")
 	return strings.Contains(output, "  "+remoteName+"/"+wipBranch)
 }
@@ -349,7 +349,7 @@ func showNext() {
 
 func help() {
 	say("usage")
-	say("\tmob [s]tart \t# start mobbing as typist")
+	say("\tmob [s]tart \t# start mob programming as typist")
 	say("\tmob [-s][-stay] [n]ext \t# hand over to next typist")
 	say("\tmob [d]one \t# finish mob session")
 	say("\tmob [r]eset \t# resets any unfinished mob session")
