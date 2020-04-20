@@ -448,7 +448,7 @@ func sayNote(s string) {
 }
 
 func sayTodo(s string) {
-	fmt.Print(" ☐ ")
+	fmt.Print(" 👉 ")
 	fmt.Print(s)
 	fmt.Print("\n")
 }
