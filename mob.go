@@ -11,7 +11,7 @@ import (
 	"time"
 )
 
-const release = "0.0.5"
+const release = "0.0.6"
 
 var wipBranch = "mob-session"               // override with MOB_WIP_BRANCH environment variable
 var baseBranch = "master"                   // override with MOB_BASE_BRANCH environment variable
@@ -280,8 +280,7 @@ func status() {
 	if isMobProgramming() {
 		sayInfo("mob programming in progress")
 
-		output := silentgit("--no-pager", "log", baseBranch+".."+wipBranch, "--pretty=format:%h %cr <%an>", "--abbrev-commit")
-		say(output)
+		say(silentgit("--no-pager", "log", baseBranch+".."+wipBranch, "--pretty=format:%h %cr <%an>", "--abbrev-commit"))
 	} else {
 		sayInfo("you aren't mob programming right now")
 	}
@@ -381,8 +380,9 @@ func silentgit(args ...string) string {
 		fmt.Println(output)
 	}
 	if err != nil {
-		fmt.Println(output)
-		fmt.Println(err)
+		sayError("[" + strings.Join(command.Args, " ") + "]")
+		sayError(output)
+		sayError(err.Error())
 		os.Exit(1)
 	}
 	return output
@@ -423,11 +423,11 @@ func git(args ...string) string {
 }
 
 func say(s string) {
-	fmt.Println(strings.TrimSpace(s))
+	fmt.Println(strings.TrimRight(s, " \r\n\t\v\f\r"))
 }
 
 func sayError(s string) {
-	lines := strings.Split(s, "\n")
+	lines := strings.Split(strings.TrimSpace(s), "\n")
 	for i := 0; i < len(lines); i++ {
 		fmt.Print(" ERROR ")
 		fmt.Print(lines[i])
