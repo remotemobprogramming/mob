@@ -18,11 +18,12 @@ sh -c "$(curl -s https://raw.githubusercontent.com/remotemobprogramming/mob/mast
 
 ## How does it work?
 
-- `mob start 10` creates branch `mob-session` and pulls from `origin/mob-session`, and creates a ten minute timer
-- `mob start 10 share` also activates screenshare in zoom (macOS or Linux with xdotool, requires zoom configuration)
+- `mob start` creates branch `mob-session` and pulls from `origin/mob-session`
 - `mob next` pushes all changes to `origin/mob-session`in a `mob next [ci-skip]` commit
 - `mob done` squashes all changes in `mob-session` into staging of `master` and removes `mob-session` and `origin/mob-session`
 
+- `mob start 10` and creates a ten minute timer
+- `mob start 10 share` and activates screenshare in zoom (macOS or Linux with xdotool, requires zoom configuration)
 - `mob status` display the mob session status and all the created WIP commits
 - `mob reset` deletes `mob-session` and `origin/mob-session`
 - `mob share` start screenshare with zoom (macOS or Linux with xdotool, requires configuration in zoom to work)
