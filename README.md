@@ -9,8 +9,15 @@ It keeps your master branch clean and creates WIP commits on `mob-session` branc
 ## How to install
 
 ```bash
-sh -c "$(curl -s https://raw.githubusercontent.com/remotemobprogramming/mob/master/install.sh)"
+curl -s https://raw.githubusercontent.com/remotemobprogramming/mob/master/install.sh | sh
 ```
+
+or, if you wish to install the tool for all users, add a `sudo`.
+
+```bash
+curl -s https://raw.githubusercontent.com/remotemobprogramming/mob/master/install.sh | sudo sh
+```
+
 
 ## How to use it?
 
