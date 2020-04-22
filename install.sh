@@ -24,13 +24,18 @@ mv mob $target
 if [ $? != 0 ]
 then
   local_target=$(systemd-path user-binaries)
-  echo $local_target
+  if [ $local_target != "" ] && [ ! -d $local_target ]
+  then
+    mkdir $local_target
+  fi
+    
   if [ -d $local_target ]
   then
-    echo "you don't have root rights. will install mob to $local_target instead."
+    echo "installing to $local_target instead"
     mv mob $local_target
-  else 
-    echo "failed to install into $target."
+  else
+    echo "unfortunately, there is no user-binaries path on your system. aborting installation."
+    exit 1
   fi
 fi
 
