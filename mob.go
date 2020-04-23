@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-const versionNumber = "0.0.10"
+const versionNumber = "0.0.11"
 
 var wipBranch = "mob-session"                 // override with MOB_WIP_BRANCH environment variable
 var baseBranch = "master"                     // override with MOB_BASE_BRANCH environment variable
@@ -434,7 +434,7 @@ func showNext() {
 
 func help() {
 	say("usage")
-	say("\tmob start [<minutes> [share]]\t# start mob programming as typist")
+	say("\tmob start [<minutes> [share]] [--include-uncommitted-changes]\t# start mob programming as typist")
 	say("\tmob next [-s|--stay] \t# hand over to next typist")
 	say("\tmob done \t# finish mob session")
 	say("\tmob reset \t# resets any unfinished mob session")
