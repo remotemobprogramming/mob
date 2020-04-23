@@ -12,21 +12,23 @@ import (
 
 const versionNumber = "0.0.10"
 
-var wipBranch = "mob-session"               // override with MOB_WIP_BRANCH environment variable
-var baseBranch = "master"                   // override with MOB_BASE_BRANCH environment variable
-var remoteName = "origin"                   // override with MOB_REMOTE_NAME environment variable
-var wipCommitMessage = "mob next [ci-skip]" // override with MOB_WIP_COMMIT_MESSAGE environment variable
-var mobNextStay = false                     // override with MOB_NEXT_STAY environment variable
-var voiceCommand = "say"                    // override with MOB_VOICE_COMMAND environment variable
-var debug = false                           // override with MOB_DEBUG environment variable
+var wipBranch = "mob-session"                 // override with MOB_WIP_BRANCH environment variable
+var baseBranch = "master"                     // override with MOB_BASE_BRANCH environment variable
+var remoteName = "origin"                     // override with MOB_REMOTE_NAME environment variable
+var wipCommitMessage = "mob next [ci-skip]"   // override with MOB_WIP_COMMIT_MESSAGE environment variable
+var voiceCommand = "say"                      // override with MOB_VOICE_COMMAND environment variable
+var mobNextStay = false                       // override with MOB_NEXT_STAY environment variable
+var mobStartIncludeUncommittedChanges = false // override with MOB_START_INCLUDE_UNCOMMITTED_CHANGES variable
+var debug = false                             // override with MOB_DEBUG environment variable
 
 func config() {
 	say("baseBranch" + "=" + baseBranch)
 	say("wipBranch" + "=" + wipBranch)
 	say("remoteName" + "=" + remoteName)
 	say("wipCommitMessage" + "=" + wipCommitMessage)
-	say("mobNextStay" + "=" + strconv.FormatBool(mobNextStay))
 	say("voiceCommand" + "=" + voiceCommand)
+	say("mobNextStay" + "=" + strconv.FormatBool(mobNextStay))
+	say("mobStartIncludeUncommittedChanges" + "=" + strconv.FormatBool(mobStartIncludeUncommittedChanges))
 	say("debug" + "=" + strconv.FormatBool(debug))
 }
 
@@ -66,6 +68,11 @@ func parseEnvironmentVariables() {
 		mobNextStay = true
 		say("overriding MOB_NEXT_STAY=" + strconv.FormatBool(mobNextStay))
 	}
+	_, userMobStartIncludeUncommittedChangesSet := os.LookupEnv("MOB_START_INCLUDE_UNCOMMITTED_CHANGES")
+	if userMobStartIncludeUncommittedChangesSet {
+		mobStartIncludeUncommittedChanges = true
+		say("overriding MOB_START_INCLUDE_UNCOMMITTED_CHANGES=" + strconv.FormatBool(mobNextStay))
+	}
 }
 
 func parseFlagsForCommandNext(args []string) []string {
@@ -84,6 +91,15 @@ func parseDebugFlag(args []string) []string {
 	}
 
 	return arrayRemove(args, "--debug")
+}
+
+func parseIncludeUncommittedChangesFlag(args []string) []string {
+	if arrayContains(args, "--include-uncommitted-changes") {
+		sayInfo("overriding MOB_START_INCLUDE_UNCOMMITTED_CHANGES=true because of parameter")
+		mobStartIncludeUncommittedChanges = true
+	}
+
+	return arrayRemove(args, "--include-uncommitted-changes")
 }
 
 func arrayContains(items []string, item string) bool {
@@ -109,7 +125,7 @@ func arrayRemove(items []string, item string) []string {
 
 func main() {
 	parseEnvironmentVariables()
-	args := parseDebugFlag(parseFlagsForCommandNext(os.Args[1:]))
+	args := parseIncludeUncommittedChangesFlag(parseDebugFlag(parseFlagsForCommandNext(os.Args[1:])))
 	command := getCommand(args)
 	parameter := getParameters(args)
 	if debug {
@@ -176,10 +192,17 @@ func reset() {
 }
 
 func start(parameter []string) {
-	if !isNothingToCommit() {
-		sayNote("cannot start; uncommitted changes present")
-		say(silentgit("diff", "--stat"))
-		os.Exit(1)
+	stashed := false
+	if hasUncommittedChanges() {
+		if mobStartIncludeUncommittedChanges {
+			git("stash", "push", "--message", mobStashName)
+			stashed = true
+		} else {
+			sayNote("cannot start; uncommitted changes present")
+			sayInfo(silentgit("diff", "--stat"))
+			sayTodo("use 'mob start --include-uncommitted-changes' to pull those changes via 'git stash'")
+			os.Exit(1)
+		}
 	}
 
 	git("fetch", "--prune")
@@ -214,6 +237,12 @@ func start(parameter []string) {
 		git("push", "--set-upstream", remoteName, wipBranch)
 	}
 
+	if mobStartIncludeUncommittedChanges && stashed {
+		stashes := silentgit("stash", "list")
+		stash := findLatestMobStash(stashes)
+		git("stash", "pop", stash)
+	}
+
 	if len(parameter) > 0 {
 		timer := parameter[0]
 		startTimer(timer)
@@ -222,6 +251,19 @@ func start(parameter []string) {
 	if len(parameter) > 1 && parameter[1] == "share" {
 		startZoomScreenshare()
 	}
+}
+
+var mobStashName = "mob-stash-name"
+
+func findLatestMobStash(stashes string) string {
+	lines := strings.Split(stashes, "\n")
+	for i := 0; i < len(lines); i++ {
+		line := lines[i]
+		if strings.Contains(line, mobStashName) {
+			return line[:strings.Index(line, ":")]
+		}
+	}
+	return "unknown"
 }
 
 func startZoomScreenshare() {
@@ -324,6 +366,10 @@ func status() {
 func isNothingToCommit() bool {
 	output := silentgit("status", "--short")
 	return len(strings.TrimSpace(output)) == 0
+}
+
+func hasUncommittedChanges() bool {
+	return !isNothingToCommit()
 }
 
 func isMobProgramming() bool {
