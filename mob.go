@@ -106,7 +106,7 @@ func main() {
 		next()
 	} else if command == "d" || command == "done" {
 		done()
-	} else if command == "r" || command == "reset" {
+	} else if command == "reset" {
 		reset()
 	} else if command == "t" || command == "timer" {
 		if len(parameter) > 0 {
@@ -115,9 +115,9 @@ func main() {
 		}
 	} else if command == "share" {
 		startZoomScreenshare()
-	} else if command == "h" || command == "help" || command == "--help" || command == "-h" {
+	} else if command == "help" || command == "--help" || command == "-h" {
 		help()
-	} else if command == "v" || command == "version" {
+	} else if command == "version" || command == "--version" || command == "-v" {
 		version()
 	} else {
 		status()
@@ -311,13 +311,20 @@ func isMobProgramming() bool {
 }
 
 func hasMobProgrammingBranch() bool {
-	branches := silentgit("branch")
+	branches := gitBranches()
 	return strings.Contains(branches, "  "+wipBranch) || strings.Contains(branches, "* "+wipBranch)
 }
 
+func gitBranches() string {
+	return silentgit("branch")
+}
+
 func hasMobProgrammingBranchOrigin() bool {
-	remoteBranches := silentgit("branch", "--remotes")
-	return strings.Contains(remoteBranches, "  "+remoteName+"/"+wipBranch)
+	return strings.Contains(gitRemoteBranches(), "  "+remoteName+"/"+wipBranch)
+}
+
+func gitRemoteBranches() string {
+	return silentgit("branch", "--remotes")
 }
 
 func gitCurrentBranch() string {
@@ -361,19 +368,21 @@ func showNext() {
 
 func help() {
 	say("usage")
-	say("\tmob [s]tart \t# start mob programming as typist")
-	say("\tmob [-s][-stay] [n]ext \t# hand over to next typist")
-	say("\tmob [d]one \t# finish mob session")
-	say("\tmob [r]eset \t# resets any unfinished mob session")
+	say("\tmob start [<minutes> [share]]\t# start mob programming as typist")
+	say("\tmob next [-s|--stay] \t# hand over to next typist")
+	say("\tmob done \t# finish mob session")
+	say("\tmob reset \t# resets any unfinished mob session")
 	say("\tmob status \t# show status of mob session")
 	say("\tmob share \t# start screenshare with zoom")
-	say("\tmob help \t# prints this help")
+	say("\tmob timer <minutes>\t# start timer for <minutes>")
+	say("\tmob help \t# prints this help info")
 	say("\tmob version \t# prints the version")
 	say("")
 	say("examples")
 	say("\t mob start 10 \t# start 10 min session")
 	say("\t mob start 10 share \t# start 10 min session with zoom screenshare")
 	say("\t mob next \t# after 10 minutes work ...")
+	say("\t mob next --stay\t# after 10 minutes work ...")
 	say("\t mob done \t# After the work is done")
 
 }
