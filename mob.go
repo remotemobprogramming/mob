@@ -77,6 +77,15 @@ func parseFlagsForCommandNext(args []string) []string {
 	return arrayRemove(arrayRemove(args, "-s"), "--stay")
 }
 
+func parseDebugFlag(args []string) []string {
+	if arrayContains(args, "--debug") {
+		sayInfo("overriding MOB_DEBUG=true because of parameter")
+		debug = true
+	}
+
+	return arrayRemove(args, "--debug")
+}
+
 func arrayContains(items []string, item string) bool {
 	for _, n := range items {
 		if item == n {
@@ -100,7 +109,7 @@ func arrayRemove(items []string, item string) []string {
 
 func main() {
 	parseEnvironmentVariables()
-	args := parseFlagsForCommandNext(os.Args[1:])
+	args := parseDebugFlag(parseFlagsForCommandNext(os.Args[1:]))
 	command := getCommand(args)
 	parameter := getParameters(args)
 	if debug {
