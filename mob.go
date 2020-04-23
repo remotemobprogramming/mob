@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-const versionNumber = "0.0.9"
+const versionNumber = "0.0.10"
 
 var wipBranch = "mob-session"               // override with MOB_WIP_BRANCH environment variable
 var baseBranch = "master"                   // override with MOB_BASE_BRANCH environment variable
@@ -153,11 +153,10 @@ func startTimer(timerInMinutes string) {
 	timeoutInSeconds := timeoutInMinutes * 60
 	timerInSeconds := strconv.Itoa(timeoutInSeconds)
 
-	commandString, ouput, err := runCommand("sh", "-c", "( sleep "+timerInSeconds+" && "+voiceCommand+" \"mob next\" && (/usr/bin/notify-send \"mob next\" || /usr/bin/osascript -e 'display notification \"mob next\"')  & )")
+	commandString, err := startCommand("sh", "-c", "( sleep "+timerInSeconds+" && "+voiceCommand+" \"mob next\" && (/usr/bin/notify-send \"mob next\" || /usr/bin/osascript -e 'display notification \"mob next\"')  & )")
 	if err != nil {
 		sayError("timer couldn't be started... (timer only works on OSX)")
 		sayError(commandString)
-		sayError(ouput)
 		sayError(err.Error())
 	} else {
 		timeOfTimeout := time.Now().Add(time.Minute * time.Duration(timeoutInMinutes)).Format("15:04")
@@ -444,6 +443,16 @@ func runCommand(name string, args ...string) (string, string, error) {
 		sayDebug(output)
 	}
 	return commandString, output, err
+}
+
+func startCommand(name string, args ...string) (string, error) {
+	command := exec.Command(name, args...)
+	commandString := "[" + strings.Join(command.Args, " ") + "]"
+	if debug {
+		sayDebug("[" + strings.Join(command.Args, " ") + "]")
+	}
+	err := command.Start()
+	return commandString, err
 }
 
 func silentgit(args ...string) string {
