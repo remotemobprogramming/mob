@@ -104,7 +104,7 @@ func main() {
 		status()
 	} else if command == "n" || command == "next" {
 		next()
-	} else if command == "d" || command == "done" || command == "e" || command == "end" {
+	} else if command == "d" || command == "done" {
 		done()
 	} else if command == "r" || command == "reset" {
 		reset()
