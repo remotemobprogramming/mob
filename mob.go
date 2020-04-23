@@ -153,7 +153,7 @@ func startTimer(timerInMinutes string) {
 	timeoutInSeconds := timeoutInMinutes * 60
 	timerInSeconds := strconv.Itoa(timeoutInSeconds)
 
-	commandString, ouput, err := runCommand("sh", "-c", "( sleep "+timerInSeconds+" && ("+voiceCommand+" \"mob next\" || (/usr/bin/osascript -e 'display notification \"mob next\"' || /usr/bin/notify-send \"mob next\"))  & )")
+	commandString, ouput, err := runCommand("sh", "-c", "( sleep "+timerInSeconds+" && "+voiceCommand+" \"mob next\" && (/usr/bin/notify-send \"mob next\" || /usr/bin/osascript -e 'display notification \"mob next\"')  & )")
 	if err != nil {
 		sayError("timer couldn't be started... (timer only works on OSX)")
 		sayError(commandString)
