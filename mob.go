@@ -1,7 +1,6 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 	"os"
 	"os/exec"
@@ -11,7 +10,7 @@ import (
 	"time"
 )
 
-const release = "0.0.6"
+const versionNumber = "0.0.6"
 
 var wipBranch = "mob-session"               // override with MOB_WIP_BRANCH environment variable
 var baseBranch = "master"                   // override with MOB_BASE_BRANCH environment variable
@@ -21,7 +20,7 @@ var mobNextStay = false                     // override with MOB_NEXT_STAY envir
 var voiceCommand = "say"                    // override with MOB_VOICE_COMMAND environment variable
 var debug = false                           // override with MOB_DEBUG environment variable
 
-func parseEnvironmentVariables() []string {
+func parseEnvironmentVariables() {
 	userBaseBranch, userBaseBranchSet := os.LookupEnv("MOB_BASE_BRANCH")
 	if userBaseBranchSet {
 		baseBranch = userBaseBranch
@@ -57,30 +56,47 @@ func parseEnvironmentVariables() []string {
 		mobNextStay = true
 		say("overriding MOB_NEXT_STAY=" + strconv.FormatBool(mobNextStay))
 	}
+}
 
-	flagMobNextStaySet := flag.Bool("stay", false, "don't change back")
-	flagMobNextSSet := flag.Bool("s", false, "(shorthand)")
-
-	flag.Parse()
-
-	if *flagMobNextStaySet {
-		mobNextStay = true
-	}
-	if *flagMobNextSSet {
+func parseFlagsForCommandNext(args []string) []string {
+	if arrayContains(args, "-s") || arrayContains(args, "--stay") {
+		sayInfo("overriding MOB_NEXT_STAY=true because of parameter")
 		mobNextStay = true
 	}
 
-	return flag.Args()
+	return arrayRemove(arrayRemove(args, "-s"), "--stay")
+}
+
+func arrayContains(items []string, item string) bool {
+	for _, n := range items {
+		if item == n {
+			return true
+		}
+	}
+	return false
+}
+
+func arrayRemove(items []string, item string) []string {
+	newitems := []string{}
+
+	for _, i := range items {
+		if i != item {
+			newitems = append(newitems, i)
+		}
+	}
+
+	return newitems
 }
 
 func main() {
-	args := parseEnvironmentVariables()
+	parseEnvironmentVariables()
+	args := parseFlagsForCommandNext(os.Args[1:])
 	command := getCommand(args)
 	parameter := getParameters(args)
 	if debug {
-		fmt.Println("Args '" + strings.Join(args, " ") + "'")
-		fmt.Println("command '" + command + "'")
-		fmt.Println("parameter '" + strings.Join(parameter, " ") + "'")
+		sayDebug("Args '" + strings.Join(args, " ") + "'")
+		sayDebug("command '" + command + "'")
+		sayDebug("parameter '" + strings.Join(parameter, " ") + "'")
 	}
 
 	if command == "s" || command == "start" {
@@ -110,19 +126,17 @@ func main() {
 
 func startTimer(timerInMinutes string) {
 	if debug {
-		fmt.Println("Starting timer for " + timerInMinutes + " minutes")
+		sayDebug("Starting timer for " + timerInMinutes + " minutes")
 	}
 	timeoutInMinutes, _ := strconv.Atoi(timerInMinutes)
 	timeoutInSeconds := timeoutInMinutes * 60
 	timerInSeconds := strconv.Itoa(timeoutInSeconds)
 
-	command := exec.Command("sh", "-c", "( sleep "+timerInSeconds+" && "+voiceCommand+" \"mob next\" && (/usr/bin/osascript -e 'display notification \"mob next\"' || /usr/bin/notify-send \"mob next\")  & )")
-	if debug {
-		fmt.Println(command.Args)
-	}
-	err := command.Start()
+	commandString, ouput, err := runCommand("sh", "-c", "( sleep "+timerInSeconds+" && "+voiceCommand+" \"mob next\" && (/usr/bin/osascript -e 'display notification \"mob next\"' || /usr/bin/notify-send \"mob next\")  & )")
 	if err != nil {
 		sayError("timer couldn't be started... (timer only works on OSX)")
+		sayError(commandString)
+		sayError(ouput)
 		sayError(err.Error())
 	} else {
 		timeOfTimeout := time.Now().Add(time.Minute * time.Duration(timeoutInMinutes)).Format("15:04")
@@ -191,21 +205,18 @@ func start(parameter []string) {
 }
 
 func startZoomScreenshare() {
-	commandStr := "(osascript -e 'tell application \"System Events\" to keystroke \"S\" using {shift down, command down}')"
-
+	commandStr := ""
 	if runtime.GOOS == "linux" {
 		commandStr = "(xdotool windowactivate $(xdotool search --name --onlyvisible 'zoom meeting') && xdotool keydown Alt s)"
-
+	} else {
+		commandStr = "(osascript -e 'tell application \"System Events\" to keystroke \"S\" using {shift down, command down}')"
 	}
 
-	command := exec.Command("sh", "-c", commandStr)
-
-	if debug {
-		fmt.Println(command.Args)
-	}
-	err := command.Start()
+	commandString, output, err := runCommand("sh", "-c", commandStr)
 	if err != nil {
 		sayError("screenshare couldn't be started... (screenshare only works on OSX or Linux with xdotool installed)")
+		sayError(commandString)
+		sayError(output)
 		sayError(err.Error())
 	} else {
 		if runtime.GOOS == "linux" {
@@ -285,49 +296,51 @@ func status() {
 		sayInfo("you aren't mob programming right now")
 	}
 
-	if !hasSay() {
+	if !hasVoiceCommand() {
 		sayNote("text-to-speech disabled because '" + voiceCommand + "' not found")
 	}
 }
 
 func isNothingToCommit() bool {
 	output := silentgit("status", "--short")
-	isMobProgramming := len(strings.TrimSpace(output)) == 0
-	return isMobProgramming
+	return len(strings.TrimSpace(output)) == 0
 }
 
 func isMobProgramming() bool {
-	output := silentgit("branch")
-	return strings.Contains(output, "* "+wipBranch)
+	return gitCurrentBranch() == wipBranch
 }
 
 func hasMobProgrammingBranch() bool {
-	output := silentgit("branch")
-	return strings.Contains(output, "  "+wipBranch) || strings.Contains(output, "* "+wipBranch)
+	branches := silentgit("branch")
+	return strings.Contains(branches, "  "+wipBranch) || strings.Contains(branches, "* "+wipBranch)
 }
 
 func hasMobProgrammingBranchOrigin() bool {
-	output := silentgit("branch", "--remotes")
-	return strings.Contains(output, "  "+remoteName+"/"+wipBranch)
+	remoteBranches := silentgit("branch", "--remotes")
+	return strings.Contains(remoteBranches, "  "+remoteName+"/"+wipBranch)
 }
 
-func getGitUserName() string {
+func gitCurrentBranch() string {
+	return strings.TrimSpace(silentgit("branch", "--show-current"))
+}
+
+func gitUserName() string {
 	return strings.TrimSpace(silentgit("config", "--get", "user.name"))
 }
 
 func showNext() {
 	if debug {
-		say("determining next person based on previous changes")
+		sayDebug("determining next person based on previous changes")
 	}
 	changes := strings.TrimSpace(silentgit("--no-pager", "log", baseBranch+".."+wipBranch, "--pretty=format:%an", "--abbrev-commit"))
 	lines := strings.Split(strings.Replace(changes, "\r\n", "\n", -1), "\n")
 	numberOfLines := len(lines)
 	if debug {
-		say("there have been " + strconv.Itoa(numberOfLines) + " changes")
+		sayDebug("there have been " + strconv.Itoa(numberOfLines) + " changes")
 	}
-	gitUserName := getGitUserName()
+	gitUserName := gitUserName()
 	if debug {
-		say("current git user.name is '" + gitUserName + "'")
+		sayDebug("current git user.name is '" + gitUserName + "'")
 	}
 	if numberOfLines < 1 {
 		return
@@ -366,97 +379,12 @@ func help() {
 }
 
 func version() {
-	say("v" + release)
+	say("v" + versionNumber)
 }
 
-func silentgit(args ...string) string {
-	command := exec.Command("git", args...)
-	if debug {
-		fmt.Println(command.Args)
-	}
-	outputBinary, err := command.CombinedOutput()
-	output := string(outputBinary)
-	if debug {
-		fmt.Println(output)
-	}
-	if err != nil {
-		sayError("[" + strings.Join(command.Args, " ") + "]")
-		sayError(output)
-		sayError(err.Error())
-		os.Exit(1)
-	}
-	return output
-}
-
-func hasSay() bool {
-	command := exec.Command("which", voiceCommand)
-	if debug {
-		fmt.Println(command.Args)
-	}
-	outputBinary, err := command.CombinedOutput()
-	output := string(outputBinary)
-	if debug {
-		fmt.Println(output)
-	}
+func hasVoiceCommand() bool {
+	_, _, err := runCommand("which", voiceCommand)
 	return err == nil
-}
-
-func git(args ...string) string {
-	command := exec.Command("git", args...)
-	if debug {
-		fmt.Println(command.Args)
-	}
-	outputBinary, err := command.CombinedOutput()
-	output := string(outputBinary)
-	if debug {
-		fmt.Println(output)
-	}
-	if err != nil {
-		sayError("[" + strings.Join(command.Args, " ") + "]")
-		sayError(output)
-		sayError(err.Error())
-		os.Exit(1)
-	} else {
-		sayOkay("[" + strings.Join(command.Args, " ") + "]")
-	}
-	return output
-}
-
-func say(s string) {
-	fmt.Println(strings.TrimRight(s, " \r\n\t\v\f\r"))
-}
-
-func sayError(s string) {
-	lines := strings.Split(strings.TrimSpace(s), "\n")
-	for i := 0; i < len(lines); i++ {
-		fmt.Print(" ERROR ")
-		fmt.Print(lines[i])
-		fmt.Print("\n")
-	}
-}
-
-func sayOkay(s string) {
-	fmt.Print(" ✓ ")
-	fmt.Print(s)
-	fmt.Print("\n")
-}
-
-func sayNote(s string) {
-	fmt.Print(" ❗ ")
-	fmt.Print(s)
-	fmt.Print("\n")
-}
-
-func sayTodo(s string) {
-	fmt.Print(" 👉 ")
-	fmt.Print(s)
-	fmt.Print("\n")
-}
-
-func sayInfo(s string) {
-	fmt.Print(" > ")
-	fmt.Print(s)
-	fmt.Print("\n")
 }
 
 func getCommand(args []string) string {
@@ -471,4 +399,84 @@ func getParameters(args []string) []string {
 		return args
 	}
 	return args[1:]
+}
+
+func runCommand(name string, args ...string) (string, string, error) {
+	command := exec.Command(name, args...)
+	commandString := "[" + strings.Join(command.Args, " ") + "]"
+	if debug {
+		sayDebug("[" + strings.Join(command.Args, " ") + "]")
+	}
+	outputBinary, err := command.CombinedOutput()
+	output := string(outputBinary)
+	if debug {
+		sayDebug(output)
+	}
+	return commandString, output, err
+}
+
+func silentgit(args ...string) string {
+	commandString, output, err := runCommand("git", args...)
+
+	if err != nil {
+		sayError(commandString)
+		sayError(output)
+		sayError(err.Error())
+		os.Exit(1)
+	}
+	return output
+}
+
+func git(args ...string) {
+	commandString, output, err := runCommand("git", args...)
+
+	if err != nil {
+		sayError(commandString)
+		sayError(output)
+		sayError(err.Error())
+		os.Exit(1)
+	} else {
+		sayOkay(commandString)
+	}
+}
+
+var printToConsole = func(message string) {
+	fmt.Print(message)
+}
+
+func say(s string) {
+	printToConsole(strings.TrimRight(s, " \r\n\t\v\f\r") + "\n")
+}
+
+func sayError(s string) {
+	sayWithPrefix(s, " ERROR ")
+}
+
+func sayDebug(s string) {
+	sayWithPrefix(s, " DEBUG ")
+}
+
+func sayWithPrefix(s string, prefix string) {
+	lines := strings.Split(strings.TrimSpace(s), "\n")
+	for i := 0; i < len(lines); i++ {
+		printToConsole(prefix)
+		printToConsole(lines[i])
+		printToConsole("\n")
+	}
+}
+
+func sayOkay(s string) {
+	sayWithPrefix(s, " ✓ ")
+}
+
+func sayNote(s string) {
+	sayWithPrefix(s, " ❗ ")
+}
+
+func sayTodo(s string) {
+	sayWithPrefix(s, " 👉 ")
+}
+
+func sayInfo(s string) {
+	sayWithPrefix(s, " > ")
 }
