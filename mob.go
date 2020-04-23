@@ -20,6 +20,16 @@ var mobNextStay = false                     // override with MOB_NEXT_STAY envir
 var voiceCommand = "say"                    // override with MOB_VOICE_COMMAND environment variable
 var debug = false                           // override with MOB_DEBUG environment variable
 
+func config() {
+	say("baseBranch" + "=" + baseBranch)
+	say("wipBranch" + "=" + wipBranch)
+	say("remoteName" + "=" + remoteName)
+	say("wipCommitMessage" + "=" + wipCommitMessage)
+	say("mobNextStay" + "=" + strconv.FormatBool(mobNextStay))
+	say("voiceCommand" + "=" + voiceCommand)
+	say("debug" + "=" + strconv.FormatBool(debug))
+}
+
 func parseEnvironmentVariables() {
 	userBaseBranch, userBaseBranchSet := os.LookupEnv("MOB_BASE_BRANCH")
 	if userBaseBranchSet {
@@ -108,6 +118,8 @@ func main() {
 		done()
 	} else if command == "reset" {
 		reset()
+	} else if command == "config" {
+		config()
 	} else if command == "t" || command == "timer" {
 		if len(parameter) > 0 {
 			timer := parameter[0]
@@ -375,6 +387,7 @@ func help() {
 	say("\tmob status \t# show status of mob session")
 	say("\tmob share \t# start screenshare with zoom")
 	say("\tmob timer <minutes>\t# start timer for <minutes>")
+	say("\tmob config \t# shows config")
 	say("\tmob help \t# prints this help info")
 	say("\tmob version \t# prints the version")
 	say("")
