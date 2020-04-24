@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-const versionNumber = "0.0.12"
+const versionNumber = "0.0.13"
 
 var wipBranch = "mob-session"                 // override with MOB_WIP_BRANCH environment variable
 var baseBranch = "master"                     // override with MOB_BASE_BRANCH environment variable
@@ -394,7 +394,8 @@ func gitRemoteBranches() string {
 }
 
 func gitCurrentBranch() string {
-	return strings.TrimSpace(silentgit("branch", "--show-current"))
+	// upgrade to branch --show-current when git v2.21 is more widely spread
+	return strings.TrimSpace(silentgit("rev-parse", "--abbrev-ref", "HEAD"))
 }
 
 func gitUserName() string {
