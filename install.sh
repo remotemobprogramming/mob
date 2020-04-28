@@ -8,7 +8,7 @@ readme_location="https://github.com/remotemobprogramming/mob/blob/master/README.
 handle_user_installation() {
   if [ "$user_arg" = "--user" ]
   then
-    if [ "$local_target" != "" ] && [ ! -d $local_target ]
+    if [ "$local_target" != "" ] && [ ! -d "$local_target" ]
     then
       mkdir $local_target
     fi
