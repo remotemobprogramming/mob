@@ -30,7 +30,9 @@ sh -c "$(curl -s https://raw.githubusercontent.com/remotemobprogramming/mob/mast
 
 ### Zoom Screenshare
 
-The `mob share` feature only works if you activate make the screenshare hotkey in zoom globally available, and keep the default shortcut at CMD+SHIFT+S (macOS)/ ALT+S (Linux).
+The `mob share` feature uses the zoom keyboard shortcut "Start/Stop Screen Sharing". This only works if you
+- make the shortcut globally available (Zoom > Preferences > Keyboard Shortcuts), and
+- keep the default shortcut at CMD+SHIFT+S (macOS)/ ALT+S (Linux).
 
 ## More on Installation
 
