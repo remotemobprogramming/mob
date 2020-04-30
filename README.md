@@ -43,7 +43,7 @@ Install that on Debian/Ubuntu/Mint as follows:
 sudo apt-get install espeak-ng-espeak mbrola-us1
 ```
 
-Create a little script in your $PATH with the following content:
+Create a little script in your $PATH called `say` with the following content:
 
 ```bash
 #!/bin/sh
