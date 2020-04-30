@@ -1,16 +1,20 @@
 #!/bin/sh   
 target=/usr/local/bin
-local_target=$(systemd-path user-binaries)
 user_arg=$1
 stream_cmd="curl -s https://raw.githubusercontent.com/remotemobprogramming/mob/master/install.sh"
-readme_location="https://github.com/remotemobprogramming/mob/blob/master/README.md"
+readme_say="https://github.com/remotemobprogramming/mob/blob/master/README.md#linux-timer"
+
+determine_local_target() {
+  systemd-path user-binaries
+}
 
 handle_user_installation() {
   if [ "$user_arg" = "--user" ]
   then
+    local_target=$(determine_local_target)
     if [ "$local_target" != "" ] && [ ! -d "$local_target" ]
     then
-      mkdir $local_target
+      mkdir -p "$local_target"
     fi
       
     if [ -d "$local_target" ]
@@ -24,10 +28,11 @@ handle_user_installation() {
 }
 
 check_access_rights() {
-  if [ ! -w $target ]
+  if [ ! -w "$target" ]
   then
     echo "you do not have access rights to $target."
     echo
+    local_target=$(determine_local_target)
     if [ "$local_target" != "" ]
     then
       echo "we recommend that you use the --user flag"
@@ -37,7 +42,6 @@ check_access_rights() {
       echo
     fi
     echo "calling the installation with sudo might help."
-    echo "please do it ONLY if you understand the implications of calling some remote script with ROOT rights."
     echo
     echo "  $stream_cmd | sudo sh"
     echo
@@ -45,8 +49,8 @@ check_access_rights() {
   fi
 }
 
-download_binary() {
-  echo "downloading latest 'mob' release from GitHub..."
+install_remote_binary() {
+  echo "installing latest 'mob' release from GitHub to $target..."
   case "$(uname -s)" in
     Darwin)
         system="darwin"
@@ -58,15 +62,15 @@ download_binary() {
   url=$(curl -s https://api.github.com/repos/remotemobprogramming/mob/releases/latest \
   | grep "browser_download_url.*mob_.*${system}_amd64\.tar\.gz" \
   | cut -d ":" -f 2,3 \
-  | tr -d \")
-  # echo "$url"
-  tarball="${url##*/}"
+  | tr -d ' \"')
+#  echo "URL:$url:"
+#  tarball="${url##*/}"
 
-  curl -sSL $url | tar xz -C $target mob && chmod +x $target/mob
+  curl -sSL "$url" | tar xz -C "$target" mob && chmod +x "$target"/mob
 }
 
 display_success() {
-  location="$(which mob)"
+  location="$(command -v mob)"
   echo "Mob binary location: $location"
 
   version="$(mob version)"
@@ -74,7 +78,7 @@ display_success() {
 }
 
 check_say() {
-  say=$(which say)
+  say=$(command -v say)
   if [ ! -e "$say" ]
   then
     echo
@@ -82,7 +86,7 @@ check_say() {
     echo "while 'mob' will still work, you won't get any nice spoken indication that your time is up."
     echo "please refer to the README.md how to setup text to speech on a *NIX system."
     echo
-    echo "$readme_location#linux-timer"
+    echo "$readme_say"
     echo
   fi
 }
@@ -90,7 +94,7 @@ check_say() {
 main() {
   handle_user_installation
   check_access_rights
-  download_binary
+  install_remote_binary
   display_success
   check_say
 }
