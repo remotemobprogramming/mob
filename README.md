@@ -9,7 +9,7 @@ It keeps your master branch clean and creates WIP commits on `mob-session` branc
 ## How to install
 
 ```bash
-sh -c "$(curl -s https://raw.githubusercontent.com/remotemobprogramming/mob/master/install.sh)"
+curl -s https://raw.githubusercontent.com/remotemobprogramming/mob/master/install.sh | sh
 ```
 
 ## How to use it?
@@ -38,10 +38,21 @@ The `mob share` feature uses the zoom keyboard shortcut "Start/Stop Screen Shari
 
 ### Linux Timer
 
-To get the timer to work on Linux, you need the GNUstep speech engine. Install that on ubuntu as follows:
+To get the timer to play "mob next" when your time is up, you'll need an installed speech engine. 
+Install that on Debian/Ubuntu/Mint as follows:
 
 ```bash
-sudo apt-get install gnustep-gui-runtime
+sudo apt-get install espeak-ng-espeak mbrola-us1
+```
+
+Create a little script in your $PATH called `say` with the following content:
+
+```bash
+#!/bin/sh
+# please install espeak-ng-espeak and mbrola-us-1 (multiverse) for this to work!
+# sudo apt install espeak-nq-espeak mbrola-us1
+# you might also try out different speakers as well ;-)
+espeak -v us-mbrola-1 "$@"
 ```
 
 ### Windows
