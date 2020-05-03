@@ -1,4 +1,4 @@
-# Tool for Remote Mob Programming
+# mob: Swift Handover using git
 
 ![mob Logo](logo.svg)
 
