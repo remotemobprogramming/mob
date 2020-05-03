@@ -442,7 +442,7 @@ func help() {
 	say("\tmob status \t# show status of mob session")
 	say("\tmob share \t# start screen sharing in Zoom (requires Zoom configuration)")
 	say("\tmob timer <minutes>\t# start a <minutes> timer")
-	say("\tmob config \t# show configuration")
+	say("\tmob config \t# print configuration")
 	say("\tmob help \t# print usage")
 	say("\tmob version \t# print version number")
 	say("")

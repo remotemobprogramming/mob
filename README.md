@@ -1,10 +1,12 @@
-# Tool for swift handover using git
+# Swift git handover with 'mob'
 
 ![mob Logo](logo.svg)
 
-Swift handover for [remote mobs](https://remotemobprogramming.org) using git.
-`mob` is a CLI tool written in GO.
-It keeps your master branch clean and creates WIP commits on `mob-session` branch.
+Swift [git handover](https://www.remotemobprogramming.org/#git-handover) with 'mob'.
+
+- `mob` is the perfect companion tool for teams doing [remote mob programming](https://remotemobprogramming.org)
+- `mob` is a command line tool written in go
+- `mob` keeps your master branch clean and creates WIP commits on `mob-session` branch.
 
 ## How to install
 
@@ -12,27 +14,28 @@ It keeps your master branch clean and creates WIP commits on `mob-session` branc
 curl -s https://raw.githubusercontent.com/remotemobprogramming/mob/master/install.sh | sh
 ```
 
-## How to use it?
+You can also install it on macOS via homebrew: `brew install remotemobprogramming/brew/mob`.
+
+## How to use
+
+You only need three commands: `mob start`, `mob next`, and `mob done`.
 
 [![asciicast](https://asciinema.org/a/321885.svg)](https://asciinema.org/a/321885)
 
-## How does it work?
-
-You only need three commands.
+## How does it work
 
 - `mob start` creates branch `mob-session` and pulls from `origin/mob-session`
 - `mob next` pushes all changes to `origin/mob-session`in a `mob next [ci-skip]` commit
 - `mob done` squashes all changes in `mob-session` into staging of `master` and removes `mob-session` and `origin/mob-session`
-
-There are a few more commands and options for even more convenience.
-
-- `mob start 10` also creates a ten minute timer
-- `mob start 10 share` also start screen sharing in Zoom (requires Zoom configuration)
+- `mob timer 10` start a ten minute timer
+- `mob share` start screen sharing in Zoom (requires Zoom configuration)
+- `mob start 10` combines mob start and mob timer 10
+- `mob start 10 share` combines mob start and mob timer 10 and mob share
 - `mob status` display the mob session status and all the created WIP commits
 - `mob reset` deletes `mob-session` and `origin/mob-session`
-- `mob share` start screen sharing in Zoom (requires Zoom configuration)
+- `mob config` print configuration
 
-### Zoom Screenshare
+### Zoom Screen Share Integration
 
 The `mob share` feature uses the zoom keyboard shortcut "Start/Stop Screen Sharing". This only works if you
 - make the shortcut globally available (Zoom > Preferences > Keyboard Shortcuts), and
@@ -44,24 +47,21 @@ The `mob share` feature uses the zoom keyboard shortcut "Start/Stop Screen Shari
 
 ### Linux Timer
 
-To get the timer to play "mob next" when your time is up, you'll need an installed speech engine. 
+To get the timer to play "mob next" on your speakers when your time is up, you'll need an installed speech engine. 
 Install that on Debian/Ubuntu/Mint as follows:
 
 ```bash
 sudo apt-get install espeak-ng-espeak mbrola-us1
 ```
 
-Create a little script in your $PATH called `say` with the following content:
+Create a little script in your `$PATH` called `say` with the following content:
 
 ```bash
 #!/bin/sh
-# please install espeak-ng-espeak and mbrola-us-1 (multiverse) for this to work!
-# sudo apt install espeak-nq-espeak mbrola-us1
-# you might also try out different speakers as well ;-)
 espeak -v us-mbrola-1 "$@"
 ```
 
-## How can one configure it?
+## How to configure
 
 Show your current configuration with `mob config`:
 
@@ -82,10 +82,10 @@ Override default value permanently via environment variables:
 export MOB_NEXT_STAY=true
 ```
 
-Or override default value just for a single call:
+Override default value just for a single call:
 
 ```bash
-$ MOB_NEXT_STAY=true mob next
+MOB_NEXT_STAY=true mob next
 ```
 
 ## How to contribute
