@@ -11,7 +11,7 @@ Swift [git handover](https://www.remotemobprogramming.org/#git-handover) with 'm
 ## How to install
 
 ```bash
-curl -s https://raw.githubusercontent.com/remotemobprogramming/mob/master/install.sh | sh
+curl -sL install.mob.sh | sh
 ```
 
 You can also install it on macOS via homebrew: `brew install remotemobprogramming/brew/mob`.
