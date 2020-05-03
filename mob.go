@@ -22,14 +22,14 @@ var mobStartIncludeUncommittedChanges = false // override with MOB_START_INCLUDE
 var debug = false                             // override with MOB_DEBUG environment variable
 
 func config() {
-	say("baseBranch" + "=" + baseBranch)
-	say("wipBranch" + "=" + wipBranch)
-	say("remoteName" + "=" + remoteName)
-	say("wipCommitMessage" + "=" + wipCommitMessage)
-	say("voiceCommand" + "=" + voiceCommand)
-	say("mobNextStay" + "=" + strconv.FormatBool(mobNextStay))
-	say("mobStartIncludeUncommittedChanges" + "=" + strconv.FormatBool(mobStartIncludeUncommittedChanges))
-	say("debug" + "=" + strconv.FormatBool(debug))
+	say("MOB_BASE_BRANCH" + "=" + baseBranch)
+	say("MOB_WIP_BRANCH" + "=" + wipBranch)
+	say("MOB_REMOTE_NAME" + "=" + remoteName)
+	say("MOB_WIP_COMMIT_MESSAGE" + "=" + wipCommitMessage)
+	say("MOB_VOICE_COMMAND" + "=" + voiceCommand)
+	say("MOB_NEXT_STAY" + "=" + strconv.FormatBool(mobNextStay))
+	say("MOB_START_INCLUDE_UNCOMMITTED_CHANGES" + "=" + strconv.FormatBool(mobStartIncludeUncommittedChanges))
+	say("MOB_DEBUG" + "=" + strconv.FormatBool(debug))
 }
 
 func parseEnvironmentVariables() {
@@ -438,13 +438,13 @@ func help() {
 	say("\tmob start [<minutes> [share]] [--include-uncommitted-changes]\t# start mob programming as typist")
 	say("\tmob next [-s|--stay] \t# hand over to next typist")
 	say("\tmob done \t# finish mob session")
-	say("\tmob reset \t# resets any unfinished mob session")
+	say("\tmob reset \t# reset any unfinished mob session (local & remote)")
 	say("\tmob status \t# show status of mob session")
-	say("\tmob share \t# start screenshare with zoom")
-	say("\tmob timer <minutes>\t# start timer for <minutes>")
-	say("\tmob config \t# shows config")
-	say("\tmob help \t# prints this help info")
-	say("\tmob version \t# prints the version")
+	say("\tmob share \t# start screen sharing in Zoom (requires Zoom configuration)")
+	say("\tmob timer <minutes>\t# start a <minutes> timer")
+	say("\tmob config \t# show configuration")
+	say("\tmob help \t# print usage")
+	say("\tmob version \t# print version number")
 	say("")
 	say("examples")
 	say("\t mob start 10 \t# start 10 min session")

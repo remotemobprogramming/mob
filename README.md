@@ -18,21 +18,27 @@ curl -s https://raw.githubusercontent.com/remotemobprogramming/mob/master/instal
 
 ## How does it work?
 
+You only need three commands.
+
 - `mob start` creates branch `mob-session` and pulls from `origin/mob-session`
 - `mob next` pushes all changes to `origin/mob-session`in a `mob next [ci-skip]` commit
 - `mob done` squashes all changes in `mob-session` into staging of `master` and removes `mob-session` and `origin/mob-session`
 
-- `mob start 10` and creates a ten minute timer
-- `mob start 10 share` and activates screenshare in zoom (macOS or Linux with xdotool, requires zoom configuration)
+There are a few more commands and options for even more convenience.
+
+- `mob start 10` also creates a ten minute timer
+- `mob start 10 share` also start screen sharing in Zoom (requires Zoom configuration)
 - `mob status` display the mob session status and all the created WIP commits
 - `mob reset` deletes `mob-session` and `origin/mob-session`
-- `mob share` start screenshare with zoom (macOS or Linux with xdotool, requires configuration in zoom to work)
+- `mob share` start screen sharing in Zoom (requires Zoom configuration)
 
 ### Zoom Screenshare
 
 The `mob share` feature uses the zoom keyboard shortcut "Start/Stop Screen Sharing". This only works if you
 - make the shortcut globally available (Zoom > Preferences > Keyboard Shortcuts), and
 - keep the default shortcut at CMD+SHIFT+S (macOS)/ ALT+S (Linux).
+
+[More tips on setting up Zoom for effective screen sharing.](https://effectivehomeoffice.com/setup-zoom-for-effective-screen-sharing/)
 
 ## More on Installation
 
@@ -55,34 +61,28 @@ Create a little script in your $PATH called `say` with the following content:
 espeak -v us-mbrola-1 "$@"
 ```
 
-### Windows
+## How can one configure it?
 
-- Install [Golang](https://golang.org/): Download and execute MSI from Download page
-- Open console and execute following commands
+Show your current configuration with `mob config`:
 
-```bash
-git clone https://github.com/remotemobprogramming/mob
-cd mob
-.\install.cmd
-# Now, you can use the mob tool from anywhere directory in the terminal
+```
+MOB_BASE_BRANCH=master
+MOB_WIP_BRANCH=mob-session
+MOB_REMOTE_NAME=origin
+MOB_WIP_COMMIT_MESSAGE=mob next [ci-skip]
+MOB_VOICE_COMMAND=say
+MOB_NEXT_STAY=false
+MOB_START_INCLUDE_UNCOMMITTED_CHANGES=false
+MOB_DEBUG=false
 ```
 
-## How can one customize it?
-
-You can set several environment variables that will be picked up by `mob`:
+Override default value permanently via environment variables:
 
 ```bash
-# override default values if necessary
-export MOB_WIP_BRANCH=mob-session
-export MOB_BASE_BRANCH=master
-export MOB_REMOTE_NAME=origin
-export MOB_WIP_COMMIT_MESSAGE="mob next [ci-skip]"
-export MOB_NEXT_STAY=false # set to true to stay in the MOB_WIP_BRANCH after 'mob next' instead of checking out MOB_BASE_BRANCH
-export MOB_VOICE_COMMAND=espeak # for using alternatives to 'say'
-export MOB_DEBUG=false
+export MOB_NEXT_STAY=true
 ```
 
-The easiest way to enable them for a single call is as follows:
+Or override default value just for a single call:
 
 ```bash
 $ MOB_NEXT_STAY=true mob next
@@ -90,7 +90,7 @@ $ MOB_NEXT_STAY=true mob next
 
 ## How to contribute
 
-Create a pull request.
+Open an issue or create a pull request.
 
 ## Credits
 
