@@ -1,4 +1,4 @@
 plugins:
   - jekyll-sitemap
 markdown: kramdown
-title: "mob: Swift Handover using git"
+title: "Tool for swift handover using git"

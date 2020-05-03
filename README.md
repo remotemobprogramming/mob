@@ -1,4 +1,4 @@
-# mob: Swift Handover using git
+# Tool for swift handover using git
 
 ![mob Logo](logo.svg)
 
