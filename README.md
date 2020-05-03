@@ -97,3 +97,6 @@ Create a pull request.
 - Developed and maintained by [Simon Harrer](https://twitter.com/simonharrer).
 - Contributions and testing by Jochen Christ, Martin Huber, Franziska Dessart, and Nikolas Hermann. Thank you!
 - Logo designed by [Sonja Scheungrab](https://twitter.com/multebaerr).
+
+<script async defer src="https://cdn.simpleanalytics.io/hello.js"></script>
+<noscript><img src="https://api.simpleanalytics.io/hello.gif" alt=""></noscript>
