@@ -12,13 +12,13 @@ Swift [git handover](https://www.remotemobprogramming.org/#git-handover) with 'm
 
 ## How to install
 
-```bash
+```
 curl -sL install.mob.sh | sh
 ```
 
 You can also install it on macOS via homebrew: 
 
-```bash
+```
 brew install remotemobprogramming/brew/mob
 ```
 
@@ -104,9 +104,11 @@ Open an issue or create a pull request.
 
 ## Credits
 
-- Developed and maintained by [Simon Harrer](https://twitter.com/simonharrer).
-- Contributions and testing by Jochen Christ, Martin Huber, Franziska Dessart, and Nikolas Hermann. Thank you!
-- Logo designed by [Sonja Scheungrab](https://twitter.com/multebaerr).
+Developed and maintained by [Dr. Simon Harrer](https://twitter.com/simonharrer).
+
+Contributions and testing by Jochen Christ, Martin Huber, Franziska Dessart, and Nikolas Hermann. Thank you!
+
+Logo designed by [Sonja Scheungrab](https://twitter.com/multebaerr).
 
 <script async defer src="https://cdn.simpleanalytics.io/hello.js"></script>
 <noscript><img src="https://api.simpleanalytics.io/hello.gif" alt=""></noscript>
