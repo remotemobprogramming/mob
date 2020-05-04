@@ -34,6 +34,26 @@ When you're done, get your changes into the staging area of the `master` branch 
 
 [![asciicast](https://asciinema.org/a/321885.svg)](https://asciinema.org/a/321885)
 
+```
+USAGE
+mob start [<minutes> [share]] [--include-uncommitted-changes]	# start mob session
+mob next [-s|--stay] 	# handover to next person
+mob done 		# finish mob session
+mob reset 		# reset any unfinished mob session (local & remote)
+mob status 		# show status of mob session
+mob share 		# start screen sharing in Zoom (requires Zoom configuration)
+mob timer <minutes>	# start a <minutes> timer
+mob config 		# print configuration
+mob help 		# print usage
+mob version 		# print version number
+
+EXAMPLES
+mob start 10 		# start 10 min session
+mob start 10 share 	# start 10 min session with zoom screenshare
+mob next --stay		# handover code and stay on mob session branch
+mob done 		# get changes back to master branch
+```
+
 ## How does it work
 
 - `mob start` creates branch `mob-session` and pulls from `origin/mob-session`
