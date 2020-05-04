@@ -4,8 +4,8 @@
 
 Swift [git handover](https://www.remotemobprogramming.org/#git-handover) with 'mob'.
 
-- `mob` is a command line tool written in go
-- `mob` is the fasted way to handover code via git
+- `mob` is [an open source command line tool written in go](https://github.com/remotemobprogramming/mob)
+- `mob` is the fasted way to [handover code via git](https://www.remotemobprogramming.org/#git-handover)
 - `mob` keeps your `master` branch clean
 - `mob` creates WIP commits on the `mob-session` branch
 - `mob` notifies you when it's time to handover
