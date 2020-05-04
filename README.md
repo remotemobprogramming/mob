@@ -1,4 +1,4 @@
-# Swift git handover with 'mob'
+# Swift git handover with mob
 
 ![mob Logo](logo.svg)
 
@@ -14,11 +14,19 @@ Swift [git handover](https://www.remotemobprogramming.org/#git-handover) with 'm
 curl -sL install.mob.sh | sh
 ```
 
-You can also install it on macOS via homebrew: `brew install remotemobprogramming/brew/mob`.
+You can also install it on macOS via homebrew: 
+
+```bash
+brew install remotemobprogramming/brew/mob
+```
 
 ## How to use
 
-You only need three commands: `mob start`, `mob next`, and `mob done`.
+You only need three commands: `mob start`, `mob next`, and `mob done`. 
+Switch to a separate branch with `mob start` and handover to the next person with `mob next`.
+Continue with `mob start` and handover to the next person with `mob next`.
+Repeat until you're done.
+Finish with `mob done`.  
 
 [![asciicast](https://asciinema.org/a/321885.svg)](https://asciinema.org/a/321885)
 

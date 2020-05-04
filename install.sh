@@ -1,7 +1,7 @@
 #!/bin/sh
 target=/usr/local/bin
 user_arg=$1
-stream_cmd="curl -s https://raw.githubusercontent.com/remotemobprogramming/mob/master/install.sh"
+stream_cmd="curl -sL install.mob.sh"
 readme_say="https://github.com/remotemobprogramming/mob/blob/master/README.md#linux-timer"
 
 determine_local_target() {
@@ -58,9 +58,6 @@ install_remote_binary() {
     grep "browser_download_url.*mob_.*${system}_amd64\.tar\.gz" |
     cut -d ":" -f 2,3 |
     tr -d ' \"')
-  #  echo "URL:$url:"
-  #  tarball="${url##*/}"
-
   curl -sSL "$url" | tar xz -C "$target" mob && chmod +x "$target"/mob
 }
 
