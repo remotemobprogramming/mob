@@ -2,7 +2,7 @@
 target=/usr/local/bin
 user_arg=$1
 stream_cmd="curl -sL install.mob.sh"
-readme_say="https://github.com/remotemobprogramming/mob/blob/master/README.md#linux-timer"
+readme_say="https://mob.sh#linux-timer"
 
 determine_local_target() {
   systemd-path user-binaries
@@ -73,9 +73,9 @@ check_say() {
   say=$(command -v say)
   if [ ! -e "$say" ]; then
     echo
-    echo "you do not have an installed 'say' command on your system."
-    echo "while 'mob' will still work, you won't get any nice spoken indication that your time is up."
-    echo "please refer to the README.md how to setup text to speech on a *NIX system."
+    echo "Couldn't find a 'say' command on your system."
+    echo "While 'mob' will still work, you won't get any spoken indication that your time is up."
+    echo "Please refer to the documentation how to setup text to speech on a *NIX system."
     echo
     echo "$readme_say"
     echo

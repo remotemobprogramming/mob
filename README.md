@@ -27,8 +27,10 @@ brew install remotemobprogramming/brew/mob
 You only need three commands: `mob start`, `mob next`, and `mob done`. 
 Switch to a separate branch with `mob start` and handover to the next person with `mob next`.
 Continue with `mob start` and handover to the next person with `mob next`.
-Repeat until you're done.
-Finish with `mob done`.  
+Continue with `mob start` and handover to the next person with `mob next`.
+Continue with `mob start` and handover to the next person with `mob next`.
+...
+When you're done, get your changes into the staging area of the `master` branch with `mob done` and commit them.  
 
 [![asciicast](https://asciinema.org/a/321885.svg)](https://asciinema.org/a/321885)
 
