@@ -10,6 +10,8 @@ Swift [git handover](https://www.remotemobprogramming.org/#git-handover) with 'm
 - `mob` creates WIP commits on the `mob-session` branch
 - `mob` notifies you when it's time to handover
 
+[__TOC__]
+
 ## How to install
 
 ```
@@ -91,6 +93,15 @@ Create a little script in your `$PATH` called `say` with the following content:
 ```bash
 #!/bin/sh
 espeak -v us-mbrola-1 "$@"
+```
+
+eSpeak NG works even on a MINGW64 installation such as **Git-Bash under Windows**
+(assuming you have [installed the binary through their MSI](https://github.com/espeak-ng/espeak-ng/releases)):
+
+```bash
+#!/bin/sh
+# eSpeak does not set any path, so we specify its installation directory instead
+"$PROGRAMFILES/eSpeak NG/espeak-ng" "$@"
 ```
 
 ## How to configure
