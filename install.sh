@@ -85,7 +85,7 @@ install_remote_binary() {
     grep "browser_download_url.*mob_.*$(determine_os)_amd64\.tar\.gz" |
     cut -d ":" -f 2,3 |
     tr -d ' \"')
-  curl -ksSL "$url" | tar xz -C "$target" "$(determine_mob_binary)" && chmod +x "$target"/mob
+  curl -sSL "$url" | tar xz -C "$target" "$(determine_mob_binary)" && chmod +x "$target"/mob
 }
 
 display_success() {
