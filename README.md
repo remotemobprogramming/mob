@@ -10,8 +10,6 @@ Swift [git handover](https://www.remotemobprogramming.org/#git-handover) with 'm
 - `mob` creates WIP commits on the `mob-session` branch
 - `mob` notifies you when it's time to handover
 
-[__TOC__]
-
 ## How to install
 
 ```
