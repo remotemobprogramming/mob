@@ -72,6 +72,7 @@ mob done 		# get changes back to master branch
 The `mob share` feature uses the zoom keyboard shortcut "Start/Stop Screen Sharing". This only works if you
 - make the shortcut globally available (Zoom > Preferences > Keyboard Shortcuts), and
 - keep the default shortcut at CMD+SHIFT+S (macOS)/ ALT+S (Linux).
+- following setting under System Preferences is required on macOS Catalina (or later?); Security & Privacy -> Privacy tab -> Accessibility, Add `/usr/bin/osascript`
 
 [More tips on setting up Zoom for effective screen sharing.](https://effectivehomeoffice.com/setup-zoom-for-effective-screen-sharing/)
 
