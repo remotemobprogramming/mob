@@ -4,8 +4,41 @@ user_arg=$1
 stream_cmd="curl -sL install.mob.sh"
 readme_say="https://mob.sh#linux-timer"
 
+determine_os() {
+  case "$(uname -s)" in
+  Darwin)
+    echo "darwin"
+    ;;
+  MINGW64*)
+    echo "windows"
+    ;;
+  *)
+    echo "linux"
+    ;;
+  esac
+}
+
 determine_local_target() {
-  systemd-path user-binaries
+  case "$(determine_os)" in
+  windows)
+    # shellcheck disable=SC1003
+    echo "$USERPROFILE/bin" | tr '\\' '/'
+    ;;
+  linux)
+    systemd-path user-binaries
+    ;;
+  esac
+}
+
+determine_mob_binary() {
+ case "$(determine_os)" in
+  windows)
+    echo "mob.exe"
+    ;;
+  *)
+    echo "mob"
+    ;;
+  esac
 }
 
 handle_user_installation() {
@@ -36,29 +69,23 @@ check_access_rights() {
       echo "  $stream_cmd | sh -s - --user"
       echo
     fi
-    echo "calling the installation with sudo might help."
-    echo
-    echo "  $stream_cmd | sudo sh"
-    echo
+    if [ "$(command -v sudo)" != "" ]; then
+      echo "calling the installation with sudo might help."
+      echo
+      echo "  $stream_cmd | sudo sh"
+      echo
+    fi
     exit 1
   fi
 }
 
 install_remote_binary() {
   echo "installing latest 'mob' release from GitHub to $target..."
-  case "$(uname -s)" in
-  Darwin)
-    system="darwin"
-    ;;
-  *)
-    system="linux"
-    ;;
-  esac
   url=$(curl -s https://api.github.com/repos/remotemobprogramming/mob/releases/latest |
-    grep "browser_download_url.*mob_.*${system}_amd64\.tar\.gz" |
+    grep "browser_download_url.*mob_.*$(determine_os)_amd64\.tar\.gz" |
     cut -d ":" -f 2,3 |
     tr -d ' \"')
-  curl -sSL "$url" | tar xz -C "$target" mob && chmod +x "$target"/mob
+  curl -ksSL "$url" | tar xz -C "$target" "$(determine_mob_binary)" && chmod +x "$target"/mob
 }
 
 display_success() {
