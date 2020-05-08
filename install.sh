@@ -2,7 +2,7 @@
 target=/usr/local/bin
 user_arg=$1
 stream_cmd="curl -sL install.mob.sh"
-readme_say="https://mob.sh#linux-timer"
+readme="https://mob.sh"
 
 determine_os() {
   case "$(uname -s)" in
@@ -104,7 +104,7 @@ check_say() {
     echo "While 'mob' will still work, you won't get any spoken indication that your time is up."
     echo "Please refer to the documentation how to setup text to speech on a *NIX system."
     echo
-    echo "$readme_say"
+    echo "$readme#$(determine_os)-timer"
     echo
   fi
 }

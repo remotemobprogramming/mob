@@ -93,8 +93,16 @@ Create a little script in your `$PATH` called `say` with the following content:
 espeak -v us-mbrola-1 "$@"
 ```
 
-eSpeak NG works even on a MINGW64 installation such as **Git-Bash under Windows**
-(assuming you have [installed the binary through their MSI](https://github.com/espeak-ng/espeak-ng/releases)):
+### Windows Timer
+
+To get the timer to play "mob next" on your speakers when your time is up, you'll need an installed speech engine.
+We recommand that you install [eSpeak NG for Windows through the MSI](https://github.com/espeak-ng/espeak-ng/releases)
+as it is open source, platform independent and produces quiet a good quality.
+
+Also please note that the speech support **will only work in a MINGW environment**, such
+as `git-bash` as the timer functionality needs a *NIX shell.
+
+Create a little script in `$USERPROFILE/bin` called `say` with the following content:
 
 ```bash
 #!/bin/sh
@@ -137,7 +145,8 @@ Open an issue or create a pull request.
 
 Developed and maintained by [Dr. Simon Harrer](https://twitter.com/simonharrer).
 
-Contributions and testing by Jochen Christ, Martin Huber, Franziska Dessart, and Nikolas Hermann. Thank you!
+Contributions and testing by Jochen Christ, Martin Huber, Franziska Dessart, Nikolas Hermann
+and Christoph Welcz. Thank you!
 
 Logo designed by [Sonja Scheungrab](https://twitter.com/multebaerr).
 
