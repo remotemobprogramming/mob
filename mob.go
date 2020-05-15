@@ -198,7 +198,7 @@ func start(parameter []string) {
 			git("stash", "push", "--message", mobStashName)
 			stashed = true
 		} else {
-			sayNote("cannot start; uncommitted changes present")
+			sayNote("cannot start; clean working tree required")
 			sayInfo(silentgit("diff", "--stat"))
 			sayTodo("use 'mob start --include-uncommitted-changes' to pull those changes via 'git stash'")
 			os.Exit(1)
