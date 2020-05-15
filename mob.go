@@ -181,7 +181,7 @@ func startTimer(timerInMinutes string) {
 }
 
 func reset() {
-	git("fetch", "--prune")
+	git("fetch")
 	git("checkout", baseBranch)
 	if hasMobProgrammingBranch() {
 		git("branch", "-D", wipBranch)
