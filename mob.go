@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-const versionNumber = "0.0.15-dev"
+const versionNumber = "0.0.15"
 
 var wipBranch = "mob-session"                 // override with MOB_WIP_BRANCH environment variable
 var baseBranch = "master"                     // override with MOB_BASE_BRANCH environment variable
@@ -187,7 +187,7 @@ func reset() {
 		git("branch", "-D", wipBranch)
 	}
 	if hasMobProgrammingBranchOrigin() {
-		git("push", remoteName, "--delete", wipBranch)
+		git("push", "--no-verify", remoteName, "--delete", wipBranch)
 	}
 }
 
@@ -221,7 +221,7 @@ func start(parameter []string) {
 		git("merge", remoteName+"/"+baseBranch, "--ff-only")
 		git("branch", wipBranch)
 		git("checkout", wipBranch)
-		git("push", "--set-upstream", remoteName, wipBranch)
+		git("push", "--no-verify", "--set-upstream", remoteName, wipBranch)
 	} else if !hasMobProgrammingBranch() && hasMobProgrammingBranchOrigin() {
 		sayInfo("joining mob session")
 		git("checkout", wipBranch)
@@ -234,7 +234,7 @@ func start(parameter []string) {
 		git("merge", remoteName+"/"+baseBranch, "--ff-only")
 		git("branch", wipBranch)
 		git("checkout", wipBranch)
-		git("push", "--set-upstream", remoteName, wipBranch)
+		git("push", "--no-verify", "--set-upstream", remoteName, wipBranch)
 	}
 
 	if mobStartIncludeUncommittedChanges && stashed {
@@ -301,7 +301,7 @@ func next() {
 		git("add", "--all")
 		git("commit", "--message", "\""+wipCommitMessage+"\"", "--no-verify")
 		changes := getChangesOfLastCommit()
-		git("push", remoteName, wipBranch)
+		git("push", "--no-verify", remoteName, wipBranch)
 		say(changes)
 	}
 	showNext()
@@ -332,14 +332,14 @@ func done() {
 			git("add", "--all")
 			git("commit", "--message", "\""+wipCommitMessage+"\"", "--no-verify")
 		}
-		git("push", remoteName, wipBranch)
+		git("push", "--no-verify", remoteName, wipBranch)
 
 		git("checkout", baseBranch)
 		git("merge", remoteName+"/"+baseBranch, "--ff-only")
 		git("merge", "--squash", "--ff", wipBranch)
 
 		git("branch", "-D", wipBranch)
-		git("push", remoteName, "--delete", wipBranch)
+		git("push", "--no-verify", remoteName, "--delete", wipBranch)
 		say(getCachedChanges())
 		sayTodo("git commit -m 'describe the changes'")
 	} else {
