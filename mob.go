@@ -221,7 +221,8 @@ func start(parameter []string) {
 		git("merge", remoteName+"/"+baseBranch, "--ff-only")
 		git("branch", wipBranch)
 		git("checkout", wipBranch)
-		git("push", "--no-verify", "--set-upstream", remoteName, wipBranch)
+		git("branch", "--set-upstream-to="+remoteName+"/"+wipBranch, wipBranch)
+		git("push", "--no-verify")
 	} else if !hasMobProgrammingBranch() && hasMobProgrammingBranchOrigin() {
 		sayInfo("joining mob session")
 		git("checkout", wipBranch)
@@ -234,7 +235,8 @@ func start(parameter []string) {
 		git("merge", remoteName+"/"+baseBranch, "--ff-only")
 		git("branch", wipBranch)
 		git("checkout", wipBranch)
-		git("push", "--no-verify", "--set-upstream", remoteName, wipBranch)
+		git("branch", "--set-upstream-to="+remoteName+"/"+wipBranch, wipBranch)
+		git("push", "--no-verify")
 	}
 
 	if mobStartIncludeUncommittedChanges && stashed {
@@ -301,7 +303,7 @@ func next() {
 		git("add", "--all")
 		git("commit", "--message", "\""+wipCommitMessage+"\"", "--no-verify")
 		changes := getChangesOfLastCommit()
-		git("push", "--no-verify", remoteName, wipBranch)
+		git("push", "--no-verify")
 		say(changes)
 	}
 	showNext()
