@@ -139,7 +139,7 @@ MOB_NEXT_STAY=true mob next
 
 ## How to contribute
 
-Open an issue or create a pull request.
+[Open an issue](https://github.com/remotemobprogramming/mob/issues) or [create a pull request](https://github.com/remotemobprogramming/mob/pulls).
 
 ## Credits
 
