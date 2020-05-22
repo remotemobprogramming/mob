@@ -21,6 +21,8 @@ var mobNextStay = false                       // override with MOB_NEXT_STAY env
 var mobStartIncludeUncommittedChanges = false // override with MOB_START_INCLUDE_UNCOMMITTED_CHANGES variable
 var debug = false                             // override with MOB_DEBUG environment variable
 
+var workingDir = ""
+
 func config() {
 	say("MOB_BASE_BRANCH" + "=" + baseBranch)
 	say("MOB_WIP_BRANCH" + "=" + wipBranch)
@@ -135,7 +137,18 @@ func main() {
 	}
 
 	if command == "s" || command == "start" {
-		start(parameter)
+		start()
+		if !isMobProgramming() {
+			return
+		}
+		if len(parameter) > 0 {
+			timer := parameter[0]
+			startTimer(timer)
+		}
+
+		if len(parameter) > 1 && parameter[1] == "share" {
+			startZoomScreenshare()
+		}
 		status()
 	} else if command == "n" || command == "next" {
 		next()
@@ -191,7 +204,7 @@ func reset() {
 	}
 }
 
-func start(parameter []string) {
+func start() {
 	stashed := false
 	if hasUncommittedChanges() {
 		if mobStartIncludeUncommittedChanges {
@@ -201,7 +214,7 @@ func start(parameter []string) {
 			sayNote("cannot start; clean working tree required")
 			sayInfo(silentgit("diff", "--stat"))
 			sayTodo("use 'mob start --include-uncommitted-changes' to pull those changes via 'git stash'")
-			os.Exit(1)
+			return
 		}
 	}
 
@@ -241,15 +254,6 @@ func start(parameter []string) {
 		stashes := silentgit("stash", "list")
 		stash := findLatestMobStash(stashes)
 		git("stash", "pop", stash)
-	}
-
-	if len(parameter) > 0 {
-		timer := parameter[0]
-		startTimer(timer)
-	}
-
-	if len(parameter) > 1 && parameter[1] == "share" {
-		startZoomScreenshare()
 	}
 }
 
@@ -479,9 +483,12 @@ func getParameters(args []string) []string {
 
 func runCommand(name string, args ...string) (string, string, error) {
 	command := exec.Command(name, args...)
-	commandString := "[" + strings.Join(command.Args, " ") + "]"
+	if len(workingDir) > 0 {
+		command.Dir = workingDir
+	}
+	commandString := strings.Join(command.Args, " ")
 	if debug {
-		sayDebug("[" + strings.Join(command.Args, " ") + "]")
+		sayDebug(command.String())
 	}
 	outputBinary, err := command.CombinedOutput()
 	output := string(outputBinary)
@@ -493,9 +500,12 @@ func runCommand(name string, args ...string) (string, string, error) {
 
 func startCommand(name string, args ...string) (string, error) {
 	command := exec.Command(name, args...)
-	commandString := "[" + strings.Join(command.Args, " ") + "]"
+	if len(workingDir) > 0 {
+		command.Dir = workingDir
+	}
+	commandString := strings.Join(command.Args, " ")
 	if debug {
-		sayDebug("[" + strings.Join(command.Args, " ") + "]")
+		sayDebug(command.String())
 	}
 	err := command.Start()
 	return commandString, err
@@ -508,7 +518,7 @@ func silentgit(args ...string) string {
 		sayError(commandString)
 		sayError(output)
 		sayError(err.Error())
-		os.Exit(1)
+		exit(1)
 	}
 	return output
 }
@@ -520,10 +530,14 @@ func git(args ...string) {
 		sayError(commandString)
 		sayError(output)
 		sayError(err.Error())
-		os.Exit(1)
+		exit(1)
 	} else {
 		sayOkay(commandString)
 	}
+}
+
+var exit = func(code int) {
+	os.Exit(code)
 }
 
 var printToConsole = func(message string) {
@@ -531,6 +545,9 @@ var printToConsole = func(message string) {
 }
 
 func say(s string) {
+	if len(s) == 0 {
+		return
+	}
 	printToConsole(strings.TrimRight(s, " \r\n\t\v\f\r") + "\n")
 }
 

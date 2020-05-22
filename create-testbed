@@ -1,0 +1,13 @@
+#!/bin/bash
+set -e
+
+tmpdir="/tmp/mob"
+localdir="${tmpdir}/local"
+remotedir="${tmpdir}/remote"
+echo "localdir=${localdir}"
+mkdir -p "${localdir}" "${remotedir}"
+rm -rf "${localdir}" "${remotedir}"
+mkdir -p "${localdir}" "${remotedir}"
+
+(cd "${remotedir}" && git init && echo "test" >test.txt && git add . && git commit -m "initial import")
+(cd "${localdir}" && git clone "file://${remotedir}" .)
