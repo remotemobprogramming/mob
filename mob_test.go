@@ -49,12 +49,13 @@ func TestResetCommit(t *testing.T) {
 	start()
 	createFile(t, "example.txt", "content")
 	next()
+	assertMobProgramming(t)
 
 	reset()
 
-	assertNotMobProgramming(t)
-	assertNoLocalMobSessionBranch(t)
-	assertNoRemoteMobSessionBranch(t)
+	assertMobProgramming(t)
+	assertLocalMobSessionBranch(t)
+	assertRemoteMobSessionBranch(t)
 }
 
 func TestStartUnstagedChanges(t *testing.T) {
@@ -113,17 +114,17 @@ func TestStartNextBackToMaster(t *testing.T) {
 	createFile(t, "example.txt", "content")
 
 	next()
+	git("checkout", baseBranch)
 
 	assertNotMobProgramming(t)
 	assertLocalMobSessionBranch(t)
 	assertRemoteMobSessionBranch(t)
 }
 
-func TestStartNextStay(t *testing.T) {
+func TestStartNext(t *testing.T) {
 	setDefaults()
 	captureOutput()
 	createTestbed(t)
-	mobNextStay = true
 	start()
 	createFile(t, "file1.txt", "asdf")
 
@@ -143,6 +144,175 @@ func TestStartDone(t *testing.T) {
 	assertNotMobProgramming(t)
 	assertNoLocalMobSessionBranch(t)
 	assertNoRemoteMobSessionBranch(t)
+}
+
+func TestConflictingMobSessions(t *testing.T) {
+	setDefaults()
+	captureOutput()
+	createTestbed(t)
+
+	workingDir = "/tmp/mob/local"
+	start()
+	createFile(t, "example.txt", "content")
+	next()
+
+	workingDir = "/tmp/mob/localother"
+	start()
+	next()
+
+	workingDir = "/tmp/mob/local"
+	start()
+	done()
+	git("commit", "-m", "\"finished mob session\"")
+
+	workingDir = "/tmp/mob/local"
+	start()
+	createFile(t, "example2.txt", "content")
+	next()
+
+	workingDir = "/tmp/mob/localother"
+	git("fetch", "origin")
+	git("status", "--untracked-files=no")
+	start()
+}
+
+func TestDoneMergeConflict(t *testing.T) {
+	setDefaults()
+	captureOutput()
+	createTestbed(t)
+
+	workingDir = "/tmp/mob/local"
+	start()
+	createFile(t, "example.txt", "content")
+	next()
+
+	workingDir = "/tmp/mob/localother"
+	createFile(t, "example.txt", "asdf")
+	git("add", "--all")
+	git("commit", "-m", "\"asdf\"")
+	git("push")
+
+	workingDir = "/tmp/mob/local"
+	start()
+	done()
+	git("add", "--all") // necessary
+	git("commit", "-m", "\"finished mob session\"")
+}
+
+func TestDoneMerge(t *testing.T) {
+	setDefaults()
+	captureOutput()
+	createTestbed(t)
+
+	workingDir = "/tmp/mob/local"
+	start()
+	createFile(t, "example.txt", "content")
+	next()
+
+	workingDir = "/tmp/mob/localother"
+	createFile(t, "example2.txt", "asdf")
+	git("add", "--all")
+	git("commit", "-m", "\"asdf\"")
+	git("push")
+
+	workingDir = "/tmp/mob/local"
+	start()
+	done()
+	git("commit", "-m", "\"finished mob session\"")
+}
+
+func TestDonePull(t *testing.T) {
+	setDefaults()
+	captureOutput()
+	createTestbed(t)
+
+	workingDir = "/tmp/mob/local"
+	createFile(t, "example3.txt", "asdf")
+	git("add", "--all")
+	git("commit", "-m", "\"asdf\"")
+	start()
+	createFile(t, "example.txt", "content")
+	next()
+
+	workingDir = "/tmp/mob/localother"
+	createFile(t, "example2.txt", "asdf")
+	git("add", "--all")
+	git("commit", "-m", "\"asdf\"")
+	git("push")
+
+	workingDir = "/tmp/mob/local"
+	start()
+	done()
+	git("pull")
+	start()
+	done()
+	git("commit", "-m", "\"finished mob session\"")
+}
+
+func TestBothCreateEmptyCommitWithNext(t *testing.T) {
+	setDefaults()
+	debug = true
+	captureOutput()
+	createTestbed(t)
+
+	workingDir = "/tmp/mob/local"
+	start()
+	assertCommits(t, 1)
+
+	workingDir = "/tmp/mob/localother"
+	start()
+	assertCommits(t, 1)
+
+	workingDir = "/tmp/mob/local"
+	next()
+	// TODO WHY?????
+	assertCommits(t, 2)
+
+	workingDir = "/tmp/mob/localother"
+	next()
+	git("pull")
+	git("push")
+	assertCommits(t, 3)
+
+	workingDir = "/tmp/mob/local"
+	start()
+	assertCommits(t, 3)
+
+	workingDir = "/tmp/mob/localother"
+	start()
+	assertCommits(t, 3)
+}
+
+func TestBothCreateNonemptyCommitWithNext(t *testing.T) {
+	setDefaults()
+	captureOutput()
+	createTestbed(t)
+
+	workingDir = "/tmp/mob/local"
+	start()
+	createFile(t, "file1.txt", "asdf")
+
+	workingDir = "/tmp/mob/localother"
+	start()
+	createFile(t, "file2.txt", "asdf")
+
+	workingDir = "/tmp/mob/local"
+	next()
+
+	workingDir = "/tmp/mob/localother"
+	next()
+	git("pull")
+	git("push")
+
+	workingDir = "/tmp/mob/local"
+	start()
+	assertFileExist(t, "file1.txt")
+	assertFileExist(t, "file2.txt")
+
+	workingDir = "/tmp/mob/localother"
+	start()
+	assertFileExist(t, "file1.txt")
+	assertFileExist(t, "file2.txt")
 }
 
 func assertCommits(t *testing.T, commits int) {

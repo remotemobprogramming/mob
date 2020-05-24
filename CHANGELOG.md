@@ -1,3 +1,11 @@
+# 1.0.0-alpha
+- BREAKING: removed option MOB_NEXT_STAY. `mob next` always stays on the `mob-session` branch and doesn't switch back to master anymore (the tool can now handle any previous issues regarding staying on the mob-session branch)
+- BREAKING: `mob next` will always create a new commit, even if there's nothing to commit. 
+- BREAKING: mob no longer creates merge commits, but will fail and provide a way to fix (git commands to copy and run)
+- reworked the used git commands for `mob start`, `mob next` and `mob done`. They require less commands, meaning less steps, meaning a faster mob tool 
+- several tests ensure the correctness of the mob tool now
+- BREAKING: `mob reset` cannot be run when currently on the `mob-session` branch
+
 # 0.0.19
 - Removes zoom screen share integration. See 
 

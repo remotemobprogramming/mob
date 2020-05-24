@@ -9,14 +9,13 @@ import (
 	"time"
 )
 
-const versionNumber = "0.0.18"
+const versionNumber = "1.0.0-alpha"
 
 var wipBranch string                       // override with MOB_WIP_BRANCH environment variable
 var baseBranch string                      // override with MOB_BASE_BRANCH environment variable
 var remoteName string                      // override with MOB_REMOTE_NAME environment variable
 var wipCommitMessage string                // override with MOB_WIP_COMMIT_MESSAGE environment variable
 var voiceCommand string                    // override with MOB_VOICE_COMMAND environment variable
-var mobNextStay bool                       // override with MOB_NEXT_STAY environment variable
 var mobStartIncludeUncommittedChanges bool // override with MOB_START_INCLUDE_UNCOMMITTED_CHANGES variable
 var debug bool                             // override with MOB_DEBUG environment variable
 
@@ -26,7 +25,6 @@ func setDefaults() {
 	remoteName = "origin"
 	voiceCommand = "say"
 	wipCommitMessage = "mob next [ci-skip]"
-	mobNextStay = false
 	mobStartIncludeUncommittedChanges = false
 	debug = false
 }
@@ -39,7 +37,6 @@ func config() {
 	say("MOB_REMOTE_NAME" + "=" + remoteName)
 	say("MOB_WIP_COMMIT_MESSAGE" + "=" + wipCommitMessage)
 	say("MOB_VOICE_COMMAND" + "=" + voiceCommand)
-	say("MOB_NEXT_STAY" + "=" + strconv.FormatBool(mobNextStay))
 	say("MOB_START_INCLUDE_UNCOMMITTED_CHANGES" + "=" + strconv.FormatBool(mobStartIncludeUncommittedChanges))
 	say("MOB_DEBUG" + "=" + strconv.FormatBool(debug))
 }
@@ -75,11 +72,6 @@ func parseEnvironmentVariables() {
 		debug = true
 		say("overriding MOB_DEBUG=" + strconv.FormatBool(debug))
 	}
-	userMobNextStay, userMobNextStaySet := os.LookupEnv("MOB_NEXT_STAY")
-	if userMobNextStaySet && userMobNextStay == "true" {
-		mobNextStay = true
-		say("overriding MOB_NEXT_STAY=" + strconv.FormatBool(mobNextStay))
-	}
 
 	key := "MOB_START_INCLUDE_UNCOMMITTED_CHANGES"
 	userMobStartIncludeUncommittedChanges, userMobStartIncludeUncommittedChangesSet := os.LookupEnv(key)
@@ -87,15 +79,6 @@ func parseEnvironmentVariables() {
 		mobStartIncludeUncommittedChanges = true
 		say("overriding " + key + "=" + strconv.FormatBool(mobStartIncludeUncommittedChanges))
 	}
-}
-
-func parseFlagsForCommandNext(args []string) []string {
-	if arrayContains(args, "-s") || arrayContains(args, "--stay") {
-		sayInfo("overriding MOB_NEXT_STAY=true because of parameter")
-		mobNextStay = true
-	}
-
-	return arrayRemove(arrayRemove(args, "-s"), "--stay")
 }
 
 func parseDebugFlag(args []string) []string {
@@ -140,7 +123,7 @@ func arrayRemove(items []string, item string) []string {
 func main() {
 	setDefaults()
 	parseEnvironmentVariables()
-	args := parseIncludeUncommittedChangesFlag(parseDebugFlag(parseFlagsForCommandNext(os.Args[1:])))
+	args := parseIncludeUncommittedChangesFlag(parseDebugFlag(os.Args[1:]))
 	command := getCommand(args)
 	parameter := getParameters(args)
 	if debug {
@@ -205,7 +188,16 @@ func startTimer(timerInMinutes string) {
 
 func reset() {
 	git("fetch", remoteName)
-	git("checkout", baseBranch)
+	if isMobProgramming() {
+		sayError("you are mob programming")
+		sayEmptyLine()
+		sayTodo("fix with 'git checkout " + baseBranch + " && mob reset'")
+		return
+	}
+	resetMobSessionLocalAndRemoteBranch()
+}
+
+func resetMobSessionLocalAndRemoteBranch() {
 	if hasMobProgrammingBranch() {
 		git("branch", "--delete", "--force", wipBranch)
 	}
@@ -215,6 +207,8 @@ func reset() {
 }
 
 func start() {
+	targetBranch := baseBranch
+
 	stashed := false
 	if hasUncommittedChanges() {
 		if mobStartIncludeUncommittedChanges {
@@ -240,29 +234,16 @@ func start() {
 		}
 	}
 
-	git("fetch", "--prune")
-	git("pull", "--ff-only")
+	git("fetch", remoteName, "--prune")
+	if !isMobProgramming() {
+		// move master branch forward
+		git("pull", "--ff-only")
+	}
 
-	if hasMobProgrammingBranch() && hasMobProgrammingBranchOrigin() {
-		startJoinMobSession()
-	} else if !hasMobProgrammingBranch() && !hasMobProgrammingBranchOrigin() {
-		sayInfo("create " + wipBranch + " from " + baseBranch)
-		git("checkout", baseBranch)
-		git("merge", remoteName+"/"+baseBranch, "--ff-only")
-		git("branch", wipBranch)
-		git("checkout", wipBranch)
-		git("push", "--no-verify", "--set-upstream", remoteName, wipBranch)
-	} else if !hasMobProgrammingBranch() && hasMobProgrammingBranchOrigin() {
+	if hasMobProgrammingBranchOrigin() {
 		startJoinMobSession()
 	} else {
-		sayInfo("purging local branch and start new " + wipBranch + " branch from " + baseBranch)
-		git("branch", "-D", wipBranch) // check if unmerged commits
-
-		git("checkout", baseBranch)
-		git("merge", remoteName+"/"+baseBranch, "--ff-only")
-		git("branch", wipBranch)
-		git("checkout", wipBranch)
-		git("push", "--no-verify", "--set-upstream", remoteName, wipBranch)
+		startNewMobSession(targetBranch)
 	}
 
 	if mobStartIncludeUncommittedChanges && stashed {
@@ -283,6 +264,7 @@ func startNewMobSession(targetBranch string) {
 	git("checkout", "-B", wipBranch, remoteName+"/"+targetBranch)
 	git("push", "--no-verify", "--set-upstream", remoteName, wipBranch)
 }
+
 func getUntrackedFiles() string {
 	return silentgit("ls-files", "--others", "--exclude-standard")
 }
@@ -312,19 +294,22 @@ func next() {
 		return
 	}
 
-	if isNothingToCommit() {
-		sayInfo("nothing was done, so nothing to commit")
+	git("fetch", remoteName)
+	mobNext()
+	showNext()
+}
+
+func mobNext() {
+	git("add", "--all")
+	git("commit", "--allow-empty", "--message", "\""+wipCommitMessage+"\"", "--no-verify")
+	changes := getChangesOfLastCommit()
+	mergeConflict := gitignorefailure("merge", "--ff-only", remoteName+"/"+wipBranch)
+	if mergeConflict != nil {
+		sayNote("cannot fast forward " + wipBranch + "to " + remoteName + "/" + wipBranch)
+		sayTodo("fix with 'git pull && git push'")
 	} else {
-		git("add", "--all")
-		git("commit", "--message", "\""+wipCommitMessage+"\"", "--no-verify")
-		changes := getChangesOfLastCommit()
 		git("push", "--no-verify", remoteName, wipBranch)
 		say(changes)
-	}
-	showNext()
-
-	if !mobNextStay {
-		git("checkout", baseBranch)
 	}
 }
 
@@ -346,25 +331,31 @@ func done() {
 
 	git("fetch", remoteName, "--prune")
 
+	targetBranch := baseBranch
 	if hasMobProgrammingBranchOrigin() {
-		if !isNothingToCommit() {
-			git("add", "--all")
-			git("commit", "--message", "\""+wipCommitMessage+"\"", "--no-verify")
+		mobNext()
+
+		git("checkout", targetBranch)
+		masterDiverged := gitignorefailure("merge", remoteName+"/"+targetBranch, "--ff-only")
+		if masterDiverged != nil {
+			sayNote("cannot fast forward " + targetBranch + " to " + remoteName + "/" + targetBranch)
+			sayTodo("fix with 'git pull && mob start && mob done'")
+			return
 		}
-		git("push", "--no-verify", remoteName, wipBranch)
 
-		git("checkout", baseBranch)
-		git("merge", remoteName+"/"+baseBranch, "--ff-only")
-		git("merge", "--squash", "--ff", wipBranch)
+		mergeConflict := gitignorefailure("merge", "--no-commit", "--squash", "--ff", wipBranch)
 
-		git("branch", "-D", wipBranch)
-		git("push", "--no-verify", remoteName, "--delete", wipBranch)
+		resetMobSessionLocalAndRemoteBranch()
+
 		say(getCachedChanges())
-		sayTodo("git commit -m 'describe the changes'")
+		if mergeConflict != nil {
+			sayTodo("fix merge conflicts manually")
+		}
+		sayTodo("run 'git commit'")
 	} else {
-		git("checkout", baseBranch)
-		git("branch", "-D", wipBranch)
 		sayInfo("someone else already ended your mob session")
+		git("checkout", targetBranch)
+		resetMobSessionLocalAndRemoteBranch()
 	}
 }
 
@@ -456,7 +447,7 @@ func showNext() {
 func help() {
 	say("USAGE")
 	say("mob start [<minutes>] [--include-uncommitted-changes]\t# start mob session")
-	say("mob next [-s|--stay] \t# handover to next person")
+	say("mob next \t# handover to next person")
 	say("mob done \t\t# finish mob session")
 	say("mob reset \t\t# reset any unfinished mob session (local & remote)")
 	say("mob status \t\t# show status of mob session")
@@ -467,7 +458,6 @@ func help() {
 	say("")
 	say("EXAMPLES")
 	say("mob start 10 \t\t# start 10 min session")
-	say("mob next --stay\t\t# handover code and stay on mob session branch")
 	say("mob done \t\t# get changes back to master branch")
 }
 
@@ -529,6 +519,7 @@ func gitignorefailure(args ...string) error {
 	}
 	return err
 }
+
 func runCommand(name string, args ...string) (string, string, error) {
 	command := exec.Command(name, args...)
 	if len(workingDir) > 0 {

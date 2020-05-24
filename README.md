@@ -37,7 +37,7 @@ When you're done, get your changes into the staging area of the `master` branch 
 ```
 USAGE
 mob start [<minutes>] [--include-uncommitted-changes]	# start mob session
-mob next [-s|--stay] 	# handover to next person
+mob next      	# handover to next person
 mob done 		# finish mob session
 mob reset 		# reset any unfinished mob session (local & remote)
 mob status 		# show status of mob session
@@ -48,7 +48,6 @@ mob version 		# print version number
 
 EXAMPLES
 mob start 10 		# start 10 min session
-mob next --stay		# handover code and stay on mob session branch
 mob done 		# get changes back to master branch
 ```
 
@@ -117,7 +116,6 @@ MOB_WIP_BRANCH=mob-session
 MOB_REMOTE_NAME=origin
 MOB_WIP_COMMIT_MESSAGE=mob next [ci-skip]
 MOB_VOICE_COMMAND=say
-MOB_NEXT_STAY=false
 MOB_START_INCLUDE_UNCOMMITTED_CHANGES=false
 MOB_DEBUG=false
 ```
