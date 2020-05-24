@@ -128,13 +128,13 @@ MOB_DEBUG=false
 Override default value permanently via environment variables:
 
 ```bash
-export MOB_NEXT_STAY=true
+export MOB_DEBUG=true
 ```
 
 Override default value just for a single call:
 
 ```bash
-MOB_NEXT_STAY=true mob next
+MOB_DEBUG=true mob next
 ```
 
 ## How to contribute
