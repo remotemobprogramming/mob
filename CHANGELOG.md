@@ -1,4 +1,6 @@
 # 0.0.16
+- `mob start` prints out untracked files as well 
+- `mob start --include-uncommitted-changes` now includes untracked files in the stash 'n' pop as well 
 - keying in an unknown command like `mob conf` will internally call `mob help` to print out the usage options instead of calling `mob status`
 - fixed a bug where overriding `MOB_START_INCLUDE_UNCOMMITTED_CHANGES` via an environment variable could print out a wrong value (didn't affect any logic, just wrong console output)
 

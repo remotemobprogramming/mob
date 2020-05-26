@@ -211,7 +211,7 @@ func reset() {
 	git("fetch", remoteName)
 	git("checkout", baseBranch)
 	if hasMobProgrammingBranch() {
-		git("branch", "-D", wipBranch)
+		git("branch", "--delete", "--force", wipBranch)
 	}
 	if hasMobProgrammingBranchOrigin() {
 		git("push", "--no-verify", remoteName, "--delete", wipBranch)
@@ -222,12 +222,24 @@ func start() {
 	stashed := false
 	if hasUncommittedChanges() {
 		if mobStartIncludeUncommittedChanges {
-			git("stash", "push", "--message", mobStashName)
+			git("stash", "push", "--include-untracked", "--message", mobStashName)
 			stashed = true
 		} else {
 			sayNote("cannot start; clean working tree required")
-			sayInfo(silentgit("diff", "--stat"))
-			sayTodo("use 'mob start --include-uncommitted-changes' to pull those changes via 'git stash'")
+			unstagedChanges := getUnstagedChanges()
+			untrackedFiles := getUntrackedFiles()
+			hasUnstagedChanges := len(unstagedChanges) > 0
+			hasUntrackedFiles := len(untrackedFiles) > 0
+			if hasUnstagedChanges {
+				sayNote("unstaged changes present:")
+				sayInfo(unstagedChanges)
+			}
+			if hasUntrackedFiles {
+				sayNote("untracked files present:")
+				sayInfo(untrackedFiles)
+			}
+			sayEmptyLine()
+			sayTodo("fix with 'mob start --include-uncommitted-changes'")
 			return
 		}
 	}
@@ -269,6 +281,14 @@ func start() {
 		stash := findLatestMobStash(stashes)
 		git("stash", "pop", stash)
 	}
+}
+
+func getUntrackedFiles() string {
+	return silentgit("ls-files", "--others", "--exclude-standard")
+}
+
+func getUnstagedChanges() string {
+	return silentgit("diff", "--stat")
 }
 
 var mobStashName = "mob-stash-name"
@@ -347,7 +367,7 @@ func done() {
 		return
 	}
 
-	git("fetch", "--prune")
+	git("fetch", remoteName, "--prune")
 
 	if hasMobProgrammingBranchOrigin() {
 		if !isNothingToCommit() {
