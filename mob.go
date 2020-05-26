@@ -12,14 +12,25 @@ import (
 
 const versionNumber = "0.0.16-dev"
 
-var wipBranch = "mob-session"                 // override with MOB_WIP_BRANCH environment variable
-var baseBranch = "master"                     // override with MOB_BASE_BRANCH environment variable
-var remoteName = "origin"                     // override with MOB_REMOTE_NAME environment variable
-var wipCommitMessage = "mob next [ci-skip]"   // override with MOB_WIP_COMMIT_MESSAGE environment variable
-var voiceCommand = "say"                      // override with MOB_VOICE_COMMAND environment variable
-var mobNextStay = false                       // override with MOB_NEXT_STAY environment variable
-var mobStartIncludeUncommittedChanges = false // override with MOB_START_INCLUDE_UNCOMMITTED_CHANGES variable
-var debug = false                             // override with MOB_DEBUG environment variable
+var wipBranch string                       // override with MOB_WIP_BRANCH environment variable
+var baseBranch string                      // override with MOB_BASE_BRANCH environment variable
+var remoteName string                      // override with MOB_REMOTE_NAME environment variable
+var wipCommitMessage string                // override with MOB_WIP_COMMIT_MESSAGE environment variable
+var voiceCommand string                    // override with MOB_VOICE_COMMAND environment variable
+var mobNextStay bool                       // override with MOB_NEXT_STAY environment variable
+var mobStartIncludeUncommittedChanges bool // override with MOB_START_INCLUDE_UNCOMMITTED_CHANGES variable
+var debug bool                             // override with MOB_DEBUG environment variable
+
+func setDefaults() {
+	wipBranch = "mob-session"
+	baseBranch = "master"
+	remoteName = "origin"
+	voiceCommand = "say"
+	wipCommitMessage = "mob next [ci-skip]"
+	mobNextStay = false
+	mobStartIncludeUncommittedChanges = false
+	debug = false
+}
 
 var workingDir = ""
 
@@ -126,6 +137,7 @@ func arrayRemove(items []string, item string) []string {
 }
 
 func main() {
+	setDefaults()
 	parseEnvironmentVariables()
 	args := parseIncludeUncommittedChangesFlag(parseDebugFlag(parseFlagsForCommandNext(os.Args[1:])))
 	command := getCommand(args)
@@ -162,6 +174,8 @@ func main() {
 		if len(parameter) > 0 {
 			timer := parameter[0]
 			startTimer(timer)
+		} else {
+			help()
 		}
 	} else if command == "share" {
 		startZoomScreenshare()
@@ -170,7 +184,7 @@ func main() {
 	} else if command == "version" || command == "--version" || command == "-v" {
 		version()
 	} else {
-		status()
+		help()
 	}
 }
 
@@ -194,7 +208,7 @@ func startTimer(timerInMinutes string) {
 }
 
 func reset() {
-	git("fetch")
+	git("fetch", remoteName)
 	git("checkout", baseBranch)
 	if hasMobProgrammingBranch() {
 		git("branch", "-D", wipBranch)
@@ -296,6 +310,8 @@ func startZoomScreenshare() {
 func next() {
 	if !isMobProgramming() {
 		sayError("you aren't mob programming")
+		sayEmptyLine()
+		sayTodo("use 'mob start' to start mob programming")
 		return
 	}
 
@@ -326,6 +342,8 @@ func getCachedChanges() string {
 func done() {
 	if !isMobProgramming() {
 		sayError("you aren't mob programming")
+		sayEmptyLine()
+		sayTodo("use 'mob start' to start mob programming")
 		return
 	}
 
@@ -355,11 +373,13 @@ func done() {
 
 func status() {
 	if isMobProgramming() {
-		sayInfo("mob programming in progress")
+		sayInfo("you are mob programming")
 
 		say(silentgit("--no-pager", "log", baseBranch+".."+wipBranch, "--pretty=format:%h %cr <%an>", "--abbrev-commit"))
 	} else {
-		sayInfo("you aren't mob programming right now")
+		sayInfo("you aren't mob programming")
+		sayEmptyLine()
+		sayTodo("use 'mob start' to start mob programming")
 	}
 
 	if !hasVoiceCommand() {
@@ -385,12 +405,11 @@ func hasMobProgrammingBranch() bool {
 	return strings.Contains(branches, "  "+wipBranch) || strings.Contains(branches, "* "+wipBranch)
 }
 
-func gitBranches() string {
-	return silentgit("branch")
-}
-
 func hasMobProgrammingBranchOrigin() bool {
 	return strings.Contains(gitRemoteBranches(), "  "+remoteName+"/"+wipBranch)
+}
+func gitBranches() string {
+	return silentgit("branch")
 }
 
 func gitRemoteBranches() string {
@@ -455,7 +474,6 @@ func help() {
 	say("mob start 10 share \t# start 10 min session with zoom screenshare")
 	say("mob next --stay\t\t# handover code and stay on mob session branch")
 	say("mob done \t\t# get changes back to master branch")
-
 }
 
 func version() {
@@ -481,6 +499,41 @@ func getParameters(args []string) []string {
 	return args[1:]
 }
 
+func silentgit(args ...string) string {
+	commandString, output, err := runCommand("git", args...)
+
+	if err != nil {
+		sayError(commandString)
+		sayError(output)
+		sayError(err.Error())
+		exit(1)
+	}
+	return output
+}
+
+func git(args ...string) {
+	commandString, output, err := runCommand("git", args...)
+
+	if err != nil {
+		sayError(commandString)
+		sayError(output)
+		sayError(err.Error())
+		exit(1)
+	} else {
+		sayOkay(commandString)
+	}
+}
+
+func gitignorefailure(args ...string) error {
+	commandString, output, err := runCommand("git", args...)
+
+	sayOkay(commandString)
+	if err != nil {
+		sayError(output)
+		sayError(err.Error())
+	}
+	return err
+}
 func runCommand(name string, args ...string) (string, string, error) {
 	command := exec.Command(name, args...)
 	if len(workingDir) > 0 {
@@ -511,44 +564,8 @@ func startCommand(name string, args ...string) (string, error) {
 	return commandString, err
 }
 
-func silentgit(args ...string) string {
-	commandString, output, err := runCommand("git", args...)
-
-	if err != nil {
-		sayError(commandString)
-		sayError(output)
-		sayError(err.Error())
-		exit(1)
-	}
-	return output
-}
-
-func git(args ...string) {
-	commandString, output, err := runCommand("git", args...)
-
-	if err != nil {
-		sayError(commandString)
-		sayError(output)
-		sayError(err.Error())
-		exit(1)
-	} else {
-		sayOkay(commandString)
-	}
-}
-
 var exit = func(code int) {
 	os.Exit(code)
-}
-
-var printToConsole = func(message string) {
-	fmt.Print(message)
-}
-
-func say(s string) {
-	if len(s) == 0 {
-		return
-	}
-	printToConsole(strings.TrimRight(s, " \r\n\t\v\f\r") + "\n")
 }
 
 func sayError(s string) {
@@ -557,15 +574,6 @@ func sayError(s string) {
 
 func sayDebug(s string) {
 	sayWithPrefix(s, " DEBUG ")
-}
-
-func sayWithPrefix(s string, prefix string) {
-	lines := strings.Split(strings.TrimSpace(s), "\n")
-	for i := 0; i < len(lines); i++ {
-		printToConsole(prefix)
-		printToConsole(lines[i])
-		printToConsole("\n")
-	}
 }
 
 func sayOkay(s string) {
@@ -582,4 +590,28 @@ func sayTodo(s string) {
 
 func sayInfo(s string) {
 	sayWithPrefix(s, " > ")
+}
+
+func sayWithPrefix(s string, prefix string) {
+	lines := strings.Split(strings.TrimSpace(s), "\n")
+	for i := 0; i < len(lines); i++ {
+		printToConsole(prefix)
+		printToConsole(lines[i])
+		printToConsole("\n")
+	}
+}
+
+func say(s string) {
+	if len(s) == 0 {
+		return
+	}
+	printToConsole(strings.TrimRight(s, " \r\n\t\v\f\r") + "\n")
+}
+
+func sayEmptyLine() {
+	printToConsole("\n")
+}
+
+var printToConsole = func(message string) {
+	fmt.Print(message)
 }
