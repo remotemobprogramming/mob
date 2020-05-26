@@ -73,7 +73,7 @@ func parseEnvironmentVariables() {
 	_, userMobStartIncludeUncommittedChangesSet := os.LookupEnv("MOB_START_INCLUDE_UNCOMMITTED_CHANGES")
 	if userMobStartIncludeUncommittedChangesSet {
 		mobStartIncludeUncommittedChanges = true
-		say("overriding MOB_START_INCLUDE_UNCOMMITTED_CHANGES=" + strconv.FormatBool(mobNextStay))
+		say("overriding MOB_START_INCLUDE_UNCOMMITTED_CHANGES=" + strconv.FormatBool(mobStartIncludeUncommittedChanges))
 	}
 }
 

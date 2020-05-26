@@ -1,3 +1,6 @@
+# 0.0.16
+- fixed a bug where overriding `MOB_START_INCLUDE_UNCOMMITTED_CHANGES` via an environment variable could print out a wrong value (didn't affect any logic, just wrong console output)
+
 # 0.0.15
 - Any `git push` command now uses the `--no-verify` flag
 
