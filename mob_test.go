@@ -3,11 +3,14 @@ package main
 import (
 	fmt "fmt"
 	"io/ioutil"
+	"os"
+	"strconv"
 	"strings"
 	"testing"
 )
 
 func TestVersion(t *testing.T) {
+	setDefaults()
 	output := captureOutput()
 
 	version()
@@ -16,6 +19,7 @@ func TestVersion(t *testing.T) {
 }
 
 func TestStart(t *testing.T) {
+	setDefaults()
 	captureOutput()
 	createTestbed(t)
 
@@ -27,7 +31,7 @@ func TestStart(t *testing.T) {
 }
 
 func TestReset(t *testing.T) {
-	debug = true
+	setDefaults()
 	captureOutput()
 	createTestbed(t)
 
@@ -39,7 +43,7 @@ func TestReset(t *testing.T) {
 }
 
 func TestResetCommit(t *testing.T) {
-	debug = true
+	setDefaults()
 	captureOutput()
 	createTestbed(t)
 	start()
@@ -53,8 +57,8 @@ func TestResetCommit(t *testing.T) {
 	assertNoRemoteMobSessionBranch(t)
 }
 
-func TestStartWithUncommittedChanges(t *testing.T) {
-	debug = false
+func TestStartUnstagedChanges(t *testing.T) {
+	setDefaults()
 	printOutput()
 	createTestbed(t)
 	createFile(t, "test.txt", "content")
@@ -66,6 +70,7 @@ func TestStartWithUncommittedChanges(t *testing.T) {
 }
 
 func TestStartIncludeUnstagedChanges(t *testing.T) {
+	setDefaults()
 	printOutput()
 	createTestbed(t)
 	createFile(t, "test.txt", "content")
@@ -77,8 +82,7 @@ func TestStartIncludeUnstagedChanges(t *testing.T) {
 }
 
 func TestStartIncludeUntrackedFiles(t *testing.T) {
-	t.Skip("not yet implemented")
-
+	setDefaults()
 	printOutput()
 	createTestbed(t)
 	createFile(t, "example.txt", "content")
@@ -89,7 +93,20 @@ func TestStartIncludeUntrackedFiles(t *testing.T) {
 	assertMobProgramming(t)
 }
 
-func TestStartNext(t *testing.T) {
+func TestStartUntrackedFiles(t *testing.T) {
+	setDefaults()
+	printOutput()
+	createTestbed(t)
+	createFile(t, "example.txt", "content")
+	mobStartIncludeUncommittedChanges = false
+
+	start()
+
+	assertNotMobProgramming(t)
+}
+
+func TestStartNextBackToMaster(t *testing.T) {
+	setDefaults()
 	captureOutput()
 	createTestbed(t)
 	start()
@@ -103,10 +120,12 @@ func TestStartNext(t *testing.T) {
 }
 
 func TestStartNextStay(t *testing.T) {
+	setDefaults()
 	captureOutput()
 	createTestbed(t)
 	mobNextStay = true
 	start()
+	createFile(t, "file1.txt", "asdf")
 
 	next()
 
@@ -114,6 +133,7 @@ func TestStartNextStay(t *testing.T) {
 }
 
 func TestStartDone(t *testing.T) {
+	setDefaults()
 	captureOutput()
 	createTestbed(t)
 	start()
@@ -123,6 +143,21 @@ func TestStartDone(t *testing.T) {
 	assertNotMobProgramming(t)
 	assertNoLocalMobSessionBranch(t)
 	assertNoRemoteMobSessionBranch(t)
+}
+
+func assertCommits(t *testing.T, commits int) {
+	result := silentgit("rev-list", "--count", "HEAD")
+	number, _ := strconv.Atoi(strings.TrimSpace(result))
+	if number != commits {
+		t.Error("expected " + strconv.Itoa(commits) + " commits but got " + strconv.Itoa(number) + " in " + workingDir)
+	}
+}
+
+func assertFileExist(t *testing.T, filename string) {
+	path := workingDir + "/" + filename
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		t.Error("file " + path + " doesn't exist")
+	}
 }
 
 func createFile(t *testing.T, filename string, content string) {
