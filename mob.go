@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-const versionNumber = "0.0.17-dev"
+const versionNumber = "0.0.17"
 
 var wipBranch string                       // override with MOB_WIP_BRANCH environment variable
 var baseBranch string                      // override with MOB_BASE_BRANCH environment variable
@@ -561,7 +561,7 @@ func runCommand(name string, args ...string) (string, string, error) {
 	}
 	commandString := strings.Join(command.Args, " ")
 	if debug {
-		sayDebug(command.String())
+		sayDebug(commandString)
 	}
 	outputBinary, err := command.CombinedOutput()
 	output := string(outputBinary)
@@ -578,7 +578,7 @@ func startCommand(name string, args ...string) (string, error) {
 	}
 	commandString := strings.Join(command.Args, " ")
 	if debug {
-		sayDebug(command.String())
+		sayDebug(commandString)
 	}
 	err := command.Start()
 	return commandString, err
