@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-const versionNumber = "0.0.16"
+const versionNumber = "0.0.17-dev"
 
 var wipBranch string                       // override with MOB_WIP_BRANCH environment variable
 var baseBranch string                      // override with MOB_BASE_BRANCH environment variable
