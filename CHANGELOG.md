@@ -1,3 +1,8 @@
+# 0.0.18
+- Fixes a bug where boolean environment variables such as `MOB_NEXT_STAY` set to any value (including empty value) falsely activated their respective option.
+- Simplified `mob start` when joining a mob session. It uses `git checkout -B mob-session origin/mob-session` to override any local `mob-session` in the process. It reduces the amount of commands necessary and makes the mob tool more predictable: the `origin/mob-session` always contains the truth.
+- Removes `mob share` command. You can still enable the zoom integration via `mob start 10 share` although this is now DEPRECATED and will eventually be removed in the future.
+
 # 0.0.16
 - `mob start` prints out untracked files as well 
 - `mob start --include-uncommitted-changes` now includes untracked files in the stash 'n' pop as well 

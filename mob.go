@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-const versionNumber = "0.0.18-dev"
+const versionNumber = "0.0.18"
 
 var wipBranch string                       // override with MOB_WIP_BRANCH environment variable
 var baseBranch string                      // override with MOB_BASE_BRANCH environment variable
@@ -71,20 +71,22 @@ func parseEnvironmentVariables() {
 		voiceCommand = userMobVoiceCommand
 		say("overriding MOB_VOICE_COMMAND=" + voiceCommand)
 	}
-	_, userMobDebugSet := os.LookupEnv("MOB_DEBUG")
-	if userMobDebugSet {
+	userMobDebug, userMobDebugSet := os.LookupEnv("MOB_DEBUG")
+	if userMobDebugSet && userMobDebug == "true" {
 		debug = true
 		say("overriding MOB_DEBUG=" + strconv.FormatBool(debug))
 	}
-	_, userMobNextStaySet := os.LookupEnv("MOB_NEXT_STAY")
-	if userMobNextStaySet {
+	userMobNextStay, userMobNextStaySet := os.LookupEnv("MOB_NEXT_STAY")
+	if userMobNextStaySet && userMobNextStay == "true" {
 		mobNextStay = true
 		say("overriding MOB_NEXT_STAY=" + strconv.FormatBool(mobNextStay))
 	}
-	_, userMobStartIncludeUncommittedChangesSet := os.LookupEnv("MOB_START_INCLUDE_UNCOMMITTED_CHANGES")
-	if userMobStartIncludeUncommittedChangesSet {
+
+	key := "MOB_START_INCLUDE_UNCOMMITTED_CHANGES"
+	userMobStartIncludeUncommittedChanges, userMobStartIncludeUncommittedChangesSet := os.LookupEnv(key)
+	if userMobStartIncludeUncommittedChangesSet && userMobStartIncludeUncommittedChanges == "true" {
 		mobStartIncludeUncommittedChanges = true
-		say("overriding MOB_START_INCLUDE_UNCOMMITTED_CHANGES=" + strconv.FormatBool(mobStartIncludeUncommittedChanges))
+		say("overriding " + key + "=" + strconv.FormatBool(mobStartIncludeUncommittedChanges))
 	}
 }
 
@@ -177,8 +179,6 @@ func main() {
 		} else {
 			help()
 		}
-	} else if command == "share" {
-		startZoomScreenshare()
 	} else if command == "help" || command == "--help" || command == "-h" {
 		help()
 	} else if command == "version" || command == "--version" || command == "-v" {
@@ -309,6 +309,7 @@ func findLatestMobStash(stashes string) string {
 }
 
 func startZoomScreenshare() {
+	sayInfo("DEPRECATED; will be removed some time in the future")
 	commandStr := ""
 	if runtime.GOOS == "linux" {
 		commandStr = "(xdotool windowactivate $(xdotool search --name --onlyvisible 'zoom meeting') && xdotool keydown Alt s)"
@@ -482,12 +483,11 @@ func showNext() {
 
 func help() {
 	say("USAGE")
-	say("mob start [<minutes> [share]] [--include-uncommitted-changes]\t# start mob session")
+	say("mob start [<minutes>] [--include-uncommitted-changes]\t# start mob session")
 	say("mob next [-s|--stay] \t# handover to next person")
 	say("mob done \t\t# finish mob session")
 	say("mob reset \t\t# reset any unfinished mob session (local & remote)")
 	say("mob status \t\t# show status of mob session")
-	say("mob share \t\t# start screen sharing in Zoom (requires Zoom configuration)")
 	say("mob timer <minutes>\t# start a <minutes> timer")
 	say("mob config \t\t# print configuration")
 	say("mob help \t\t# print usage")
@@ -495,7 +495,6 @@ func help() {
 	say("")
 	say("EXAMPLES")
 	say("mob start 10 \t\t# start 10 min session")
-	say("mob start 10 share \t# start 10 min session with zoom screenshare")
 	say("mob next --stay\t\t# handover code and stay on mob session branch")
 	say("mob done \t\t# get changes back to master branch")
 }

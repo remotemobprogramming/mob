@@ -36,12 +36,11 @@ When you're done, get your changes into the staging area of the `master` branch 
 
 ```
 USAGE
-mob start [<minutes> [share]] [--include-uncommitted-changes]	# start mob session
+mob start [<minutes>] [--include-uncommitted-changes]	# start mob session
 mob next [-s|--stay] 	# handover to next person
 mob done 		# finish mob session
 mob reset 		# reset any unfinished mob session (local & remote)
 mob status 		# show status of mob session
-mob share 		# start screen sharing in Zoom (requires Zoom configuration)
 mob timer <minutes>	# start a <minutes> timer
 mob config 		# print configuration
 mob help 		# print usage
@@ -49,7 +48,6 @@ mob version 		# print version number
 
 EXAMPLES
 mob start 10 		# start 10 min session
-mob start 10 share 	# start 10 min session with zoom screenshare
 mob next --stay		# handover code and stay on mob session branch
 mob done 		# get changes back to master branch
 ```
@@ -60,16 +58,14 @@ mob done 		# get changes back to master branch
 - `mob next` pushes all changes to `origin/mob-session`in a `mob next [ci-skip]` commit
 - `mob done` squashes all changes in `mob-session` into staging of `master` and removes `mob-session` and `origin/mob-session`
 - `mob timer 10` start a ten minute timer
-- `mob share` start screen sharing in Zoom (requires Zoom configuration)
 - `mob start 10` combines mob start and mob timer 10
-- `mob start 10 share` combines mob start and mob timer 10 and mob share
 - `mob status` display the mob session status and all the created WIP commits
 - `mob reset` deletes `mob-session` and `origin/mob-session`
 - `mob config` print configuration
 
-### Zoom Screen Share Integration
+### DEPRECATED Zoom Screen Share Integration
 
-The `mob share` feature uses the zoom keyboard shortcut "Start/Stop Screen Sharing". This only works if you
+The `mob start 10 share` feature uses the zoom keyboard shortcut "Start/Stop Screen Sharing". This only works if you
 - make the shortcut globally available (Zoom > Preferences > Keyboard Shortcuts), and
 - keep the default shortcut at CMD+SHIFT+S (macOS)/ ALT+S (Linux).
 
