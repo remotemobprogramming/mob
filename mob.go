@@ -248,12 +248,7 @@ func start() {
 	git("pull", "--ff-only")
 
 	if hasMobProgrammingBranch() && hasMobProgrammingBranchOrigin() {
-		sayInfo("rejoining mob session")
-		if !isMobProgramming() {
-			git("branch", "-D", wipBranch)
-			git("checkout", wipBranch)
-			git("branch", "--set-upstream-to="+remoteName+"/"+wipBranch, wipBranch)
-		}
+		startJoinMobSession()
 	} else if !hasMobProgrammingBranch() && !hasMobProgrammingBranchOrigin() {
 		sayInfo("create " + wipBranch + " from " + baseBranch)
 		git("checkout", baseBranch)
@@ -262,9 +257,7 @@ func start() {
 		git("checkout", wipBranch)
 		git("push", "--no-verify", "--set-upstream", remoteName, wipBranch)
 	} else if !hasMobProgrammingBranch() && hasMobProgrammingBranchOrigin() {
-		sayInfo("joining mob session")
-		git("checkout", wipBranch)
-		git("branch", "--set-upstream-to="+remoteName+"/"+wipBranch, wipBranch)
+		startJoinMobSession()
 	} else {
 		sayInfo("purging local branch and start new " + wipBranch + " branch from " + baseBranch)
 		git("branch", "-D", wipBranch) // check if unmerged commits
@@ -283,6 +276,17 @@ func start() {
 	}
 }
 
+func startJoinMobSession() {
+	sayInfo("joining existing mob session")
+	git("checkout", "-B", wipBranch, remoteName+"/"+wipBranch)
+	git("branch", "--set-upstream-to="+remoteName+"/"+wipBranch, wipBranch)
+}
+
+func startNewMobSession(targetBranch string) {
+	sayInfo("starting new mob session")
+	git("checkout", "-B", wipBranch, remoteName+"/"+targetBranch)
+	git("push", "--no-verify", "--set-upstream", remoteName, wipBranch)
+}
 func getUntrackedFiles() string {
 	return silentgit("ls-files", "--others", "--exclude-standard")
 }
