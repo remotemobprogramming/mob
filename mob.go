@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	"runtime"
 	"strconv"
 	"strings"
 	"time"
@@ -160,9 +159,6 @@ func main() {
 			startTimer(timer)
 		}
 
-		if len(parameter) > 1 && parameter[1] == "share" {
-			startZoomScreenshare()
-		}
 		status()
 	} else if command == "n" || command == "next" {
 		next()
@@ -306,30 +302,6 @@ func findLatestMobStash(stashes string) string {
 		}
 	}
 	return "unknown"
-}
-
-func startZoomScreenshare() {
-	sayInfo("DEPRECATED; will be removed some time in the future")
-	commandStr := ""
-	if runtime.GOOS == "linux" {
-		commandStr = "(xdotool windowactivate $(xdotool search --name --onlyvisible 'zoom meeting') && xdotool keydown Alt s)"
-	} else {
-		commandStr = "(osascript -e 'tell application \"System Events\" to keystroke \"S\" using {shift down, command down}')"
-	}
-
-	commandString, output, err := runCommand("sh", "-c", commandStr)
-	if err != nil {
-		sayError("screenshare couldn't be started... (screenshare only works on OSX or Linux with xdotool installed)")
-		sayError(commandString)
-		sayError(output)
-		sayError(err.Error())
-	} else {
-		if runtime.GOOS == "linux" {
-			sayOkay("Sharing screen with zoom (requires the global shortcut ALT+S)")
-		} else {
-			sayOkay("Sharing screen with zoom (requires the global shortcut SHIFT+COMMAND+S)")
-		}
-	}
 }
 
 func next() {
