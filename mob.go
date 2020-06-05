@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"runtime"
 	"strconv"
 	"strings"
 	"time"
@@ -191,14 +192,32 @@ func startTimer(timerInMinutes string) {
 	timeoutInMinutes, _ := strconv.Atoi(timerInMinutes)
 	timeoutInSeconds := timeoutInMinutes * 60
 	timerInSeconds := strconv.Itoa(timeoutInSeconds)
+	timeOfTimeout := time.Now().Add(time.Minute * time.Duration(timeoutInMinutes)).Format("15:04")
 
-	commandString, err := startCommand("sh", "-c", "( sleep "+timerInSeconds+" && "+voiceCommand+" \"mob next\" && (/usr/bin/notify-send \"mob next\" || /usr/bin/osascript -e 'display notification \"mob next\"')  & )")
+	voiceMessage := "mob next"
+	textMessage := "mob next"
+
+	var commandString string
+	var err error
+	if debug {
+		sayDebug("Operating System " + runtime.GOOS)
+	}
+	if runtime.GOOS == "windows" {
+		commandString, err = startCommand("powershell", "-command", "start-process powershell -NoNewWindow -ArgumentList '-command \"sleep "+timerInSeconds+"; (New-Object -ComObject SAPI.SPVoice).Speak(\\\""+voiceMessage+"\\\")\"'")
+	} else if runtime.GOOS == "darwin" {
+		commandString, err = startCommand("sh", "-c", "( sleep "+timerInSeconds+" && "+voiceCommand+" \""+voiceMessage+"\" && /usr/bin/osascript -e 'display notification \""+textMessage+"\"')  &")
+	} else if runtime.GOOS == "linux" {
+		commandString, err = startCommand("sh", "-c", "( sleep "+timerInSeconds+" && "+voiceCommand+" \""+voiceMessage+"\" && /usr/bin/notify-send \""+textMessage+"\")  &")
+	} else {
+		sayError("Cannot start timer at " + runtime.GOOS)
+		return
+	}
+
 	if err != nil {
 		sayError("timer couldn't be started... (timer only works on OSX)")
 		sayError(commandString)
 		sayError(err.Error())
 	} else {
-		timeOfTimeout := time.Now().Add(time.Minute * time.Duration(timeoutInMinutes)).Format("15:04")
 		sayOkay(timerInMinutes + " minutes timer started (finishes at approx. " + timeOfTimeout + ")")
 	}
 }
