@@ -240,27 +240,13 @@ func start() {
 		}
 	}
 
-	git("fetch", "--prune")
+	git("fetch", remoteName, "--prune")
 	git("pull", "--ff-only")
 
 	if hasMobProgrammingBranchOrigin() {
 		startJoinMobSession()
-	} else if !hasMobProgrammingBranch() {
-		sayInfo("create " + wipBranch + " from " + baseBranch)
-		git("checkout", baseBranch)
-		git("merge", remoteName+"/"+baseBranch, "--ff-only")
-		git("branch", wipBranch)
-		git("checkout", wipBranch)
-		git("push", "--no-verify", "--set-upstream", remoteName, wipBranch)
 	} else {
-		sayInfo("purging local branch and start new " + wipBranch + " branch from " + baseBranch)
-		git("branch", "-D", wipBranch) // check if unmerged commits
-
-		git("checkout", baseBranch)
-		git("merge", remoteName+"/"+baseBranch, "--ff-only")
-		git("branch", wipBranch)
-		git("checkout", wipBranch)
-		git("push", "--no-verify", "--set-upstream", remoteName, wipBranch)
+		startNewMobSession()
 	}
 
 	if mobStartIncludeUncommittedChanges && stashed {
@@ -271,16 +257,17 @@ func start() {
 }
 
 func startJoinMobSession() {
-	sayInfo("joining existing mob session")
+	sayInfo("joining existing mob session from " + remoteName + "/" + wipBranch)
 	git("checkout", "-B", wipBranch, remoteName+"/"+wipBranch)
 	git("branch", "--set-upstream-to="+remoteName+"/"+wipBranch, wipBranch)
 }
 
-func startNewMobSession(targetBranch string) {
-	sayInfo("starting new mob session")
-	git("checkout", "-B", wipBranch, remoteName+"/"+targetBranch)
+func startNewMobSession() {
+	sayInfo("starting new mob session from " + remoteName + "/" + baseBranch)
+	git("checkout", "-B", wipBranch, remoteName+"/"+baseBranch)
 	git("push", "--no-verify", "--set-upstream", remoteName, wipBranch)
 }
+
 func getUntrackedFiles() string {
 	return silentgit("ls-files", "--others", "--exclude-standard")
 }

@@ -1,5 +1,6 @@
 # 0.0.19
-- Removes zoom screen share integration. See 
+- Removes zoom screen share integration.
+- Less git commands necessary for 'mob start'
 
 # 0.0.18
 - Fixes a bug where boolean environment variables such as `MOB_NEXT_STAY` set to any value (including empty value) falsely activated their respective option.
