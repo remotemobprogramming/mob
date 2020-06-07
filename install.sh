@@ -18,6 +18,17 @@ determine_os() {
   esac
 }
 
+determine_user_install() {
+  case "$(determine_os)" in
+  windows)
+    echo "--user"
+    ;;
+  *)
+    $user_arg
+    ;;
+  esac
+}
+
 determine_local_target() {
   case "$(determine_os)" in
   windows)
@@ -42,7 +53,8 @@ determine_mob_binary() {
 }
 
 handle_user_installation() {
-  if [ "$user_arg" = "--user" ]; then
+  user_install=$(determine_user_install)
+  if [ "$user_install" = "--user" ]; then
     local_target=$(determine_local_target)
     if [ "$local_target" != "" ] && [ ! -d "$local_target" ]; then
       mkdir -p "$local_target"
