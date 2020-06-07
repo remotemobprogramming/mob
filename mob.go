@@ -243,17 +243,15 @@ func start() {
 	git("fetch", "--prune")
 	git("pull", "--ff-only")
 
-	if hasMobProgrammingBranch() && hasMobProgrammingBranchOrigin() {
+	if hasMobProgrammingBranchOrigin() {
 		startJoinMobSession()
-	} else if !hasMobProgrammingBranch() && !hasMobProgrammingBranchOrigin() {
+	} else if !hasMobProgrammingBranch() {
 		sayInfo("create " + wipBranch + " from " + baseBranch)
 		git("checkout", baseBranch)
 		git("merge", remoteName+"/"+baseBranch, "--ff-only")
 		git("branch", wipBranch)
 		git("checkout", wipBranch)
 		git("push", "--no-verify", "--set-upstream", remoteName, wipBranch)
-	} else if !hasMobProgrammingBranch() && hasMobProgrammingBranchOrigin() {
-		startJoinMobSession()
 	} else {
 		sayInfo("purging local branch and start new " + wipBranch + " branch from " + baseBranch)
 		git("branch", "-D", wipBranch) // check if unmerged commits
