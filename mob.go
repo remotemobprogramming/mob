@@ -218,7 +218,7 @@ func startTimer(timerInMinutes string) {
 		sayError(commandString)
 		sayError(err.Error())
 	} else {
-		sayOkay(timerInMinutes + " minutes timer started (finishes at approx. " + timeOfTimeout + ")")
+		sayInfo(timerInMinutes + " minutes timer started (finishes at approx. " + timeOfTimeout + ")")
 	}
 }
 
@@ -240,17 +240,17 @@ func start() {
 			git("stash", "push", "--include-untracked", "--message", mobStashName)
 			stashed = true
 		} else {
-			sayNote("cannot start; clean working tree required")
+			sayInfo("cannot start; clean working tree required")
 			unstagedChanges := getUnstagedChanges()
 			untrackedFiles := getUntrackedFiles()
 			hasUnstagedChanges := len(unstagedChanges) > 0
 			hasUntrackedFiles := len(untrackedFiles) > 0
 			if hasUnstagedChanges {
-				sayNote("unstaged changes present:")
+				sayInfo("unstaged changes present:")
 				sayInfo(unstagedChanges)
 			}
 			if hasUntrackedFiles {
-				sayNote("untracked files present:")
+				sayInfo("untracked files present:")
 				sayInfo(untrackedFiles)
 			}
 			sayEmptyLine()
@@ -382,10 +382,6 @@ func status() {
 		sayEmptyLine()
 		sayTodo("use 'mob start' to start mob programming")
 	}
-
-	if !hasVoiceCommand() {
-		sayNote("text-to-speech disabled because '" + voiceCommand + "' not found")
-	}
 }
 
 func isNothingToCommit() bool {
@@ -477,11 +473,6 @@ func help() {
 
 func version() {
 	say("v" + versionNumber)
-}
-
-func hasVoiceCommand() bool {
-	_, _, err := runCommand("which", voiceCommand)
-	return err == nil
 }
 
 func getCommand(args []string) string {
@@ -576,11 +567,7 @@ func sayDebug(s string) {
 }
 
 func sayOkay(s string) {
-	sayWithPrefix(s, " ✓ ")
-}
-
-func sayNote(s string) {
-	sayWithPrefix(s, " ❗ ")
+	sayWithPrefix(s, "   ")
 }
 
 func sayTodo(s string) {

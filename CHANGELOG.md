@@ -1,6 +1,7 @@
 # 0.0.19
 - Removes zoom screen share integration.
 - Less git commands necessary for 'mob start'
+- Mob automatically provides sound output on windows without any installation
 
 # 0.0.18
 - Fixes a bug where boolean environment variables such as `MOB_NEXT_STAY` set to any value (including empty value) falsely activated their respective option.
