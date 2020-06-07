@@ -88,6 +88,14 @@ install_remote_binary() {
   curl -sSL "$url" | tar xz -C "$target" "$(determine_mob_binary)" && chmod +x "$target"/mob
 }
 
+add_to_path() {
+  case "$(determine_os)" in
+  windows)
+    powershell -command "[System.Environment]::SetEnvironmentVariable('Path', [System.Environment]::GetEnvironmentVariable('Path', [System.EnvironmentVariableTarget]::User)+';$target', [System.EnvironmentVariableTarget]::User)"
+    ;;
+  esac
+}
+
 display_success() {
   location="$(command -v mob)"
   echo "Mob binary location: $location"
@@ -97,22 +105,27 @@ display_success() {
 }
 
 check_say() {
-  say=$(command -v say)
-  if [ ! -e "$say" ]; then
-    echo
-    echo "Couldn't find a 'say' command on your system."
-    echo "While 'mob' will still work, you won't get any spoken indication that your time is up."
-    echo "Please refer to the documentation how to setup text to speech on a *NIX system."
-    echo
-    echo "$readme#$(determine_os)-timer"
-    echo
-  fi
+  case "$(determine_os)" in
+  linux)
+    say=$(command -v say)
+    if [ ! -e "$say" ]; then
+      echo
+      echo "Couldn't find a 'say' command on your system."
+      echo "While 'mob' will still work, you won't get any spoken indication that your time is up."
+      echo "Please refer to the documentation how to setup text to speech on a *NIX system."
+      echo
+      echo "$readme#$(determine_os)-timer"
+      echo
+    fi
+    ;;
+  esac
 }
 
 main() {
   handle_user_installation
   check_access_rights
   install_remote_binary
+  add_to_path
   display_success
   check_say
 }
