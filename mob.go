@@ -292,18 +292,14 @@ func determineCurrentBranches() (string, string) {
 	var currentBaseBranch string
 	var currentWipBranch string
 
-	if currentBranch == "mob-session" {
-		currentBaseBranch = "master"
-	} else if strings.HasPrefix(currentBranch, "mob-session") {
-		currentBaseBranch = strings.ReplaceAll(currentBranch, "mob-session-", "")
-	} else {
-		currentBaseBranch = currentBranch
-	}
+	prefix := "mob-session/"
 
-	if currentBaseBranch == "master" {
+	if currentBranch == "mob-session" || currentBranch == "master" {
+		currentBaseBranch = "master"
 		currentWipBranch = "mob-session"
 	} else {
-		currentWipBranch = "mob-session-" + currentBaseBranch
+		currentBaseBranch = strings.ReplaceAll(currentBranch, prefix, "")
+		currentWipBranch = prefix + currentBaseBranch
 	}
 
 	if debug {

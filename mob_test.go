@@ -150,14 +150,13 @@ func TestStartDone(t *testing.T) {
 
 func TestStartDoneFeatureBranch(t *testing.T) {
 	setDefaults()
-	debug = true
 	captureOutput()
 	createTestbed(t)
 	git("checkout", "-b", "feature1")
 	git("push", "origin", "feature1", "--set-upstream")
 	assertOnBranch(t, "feature1")
 	start()
-	assertOnBranch(t, "mob-session-feature1")
+	assertOnBranch(t, "mob-session/feature1")
 
 	done()
 	assertOnBranch(t, "feature1")
