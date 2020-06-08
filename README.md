@@ -15,6 +15,7 @@ Swift [git handover](https://www.remotemobprogramming.org/#git-handover) with 'm
 ```
 curl -sL install.mob.sh | sh
 ```
+If you are under Windows, you should use `git bash` to install `mob`.
 
 You can also install it on macOS via homebrew: 
 
