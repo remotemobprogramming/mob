@@ -209,7 +209,7 @@ func startTimer(timerInMinutes string) {
 func reset() {
 	git("fetch", remoteName)
 
-	currentBaseBranch, currentWipBranch := determineCurrentBranches()
+	currentBaseBranch, currentWipBranch := determineCurrentBranches(gitCurrentBranch())
 
 	git("checkout", currentBaseBranch)
 	if hasLocalBranch(currentWipBranch) {
@@ -248,7 +248,7 @@ func start() {
 
 	git("fetch", remoteName, "--prune")
 
-	currentBaseBranch, currentWipBranch := determineCurrentBranches()
+	currentBaseBranch, currentWipBranch := determineCurrentBranches(gitCurrentBranch())
 
 	if !hasRemoteBranch(currentBaseBranch) {
 		sayError("Remote branch " + remoteName + "/" + currentBaseBranch + " is missing")
@@ -272,7 +272,7 @@ func start() {
 }
 
 func startJoinMobSession() {
-	_, currentWipBranch := determineCurrentBranches()
+	_, currentWipBranch := determineCurrentBranches(gitCurrentBranch())
 
 	sayInfo("joining existing mob session from " + remoteName + "/" + currentWipBranch)
 	git("checkout", "-B", currentWipBranch, remoteName+"/"+currentWipBranch)
@@ -280,15 +280,14 @@ func startJoinMobSession() {
 }
 
 func startNewMobSession() {
-	currentBaseBranch, currentWipBranch := determineCurrentBranches()
+	currentBaseBranch, currentWipBranch := determineCurrentBranches(gitCurrentBranch())
 
 	sayInfo("starting new mob session from " + remoteName + "/" + currentBaseBranch)
 	git("checkout", "-B", currentWipBranch, remoteName+"/"+currentBaseBranch)
 	git("push", "--no-verify", "--set-upstream", remoteName, currentWipBranch)
 }
 
-func determineCurrentBranches() (string, string) {
-	currentBranch := gitCurrentBranch()
+func determineCurrentBranches(currentBranch string) (string, string) {
 	var currentBaseBranch string
 	var currentWipBranch string
 
@@ -337,7 +336,7 @@ func next() {
 		return
 	}
 
-	currentBaseBranch, currentWipBranch := determineCurrentBranches()
+	currentBaseBranch, currentWipBranch := determineCurrentBranches(gitCurrentBranch())
 
 	if isNothingToCommit() {
 		sayInfo("nothing was done, so nothing to commit")
@@ -373,7 +372,7 @@ func done() {
 
 	git("fetch", remoteName, "--prune")
 
-	currentBaseBranch, currentWipBranch := determineCurrentBranches()
+	currentBaseBranch, currentWipBranch := determineCurrentBranches(gitCurrentBranch())
 
 	if hasRemoteBranch(currentWipBranch) {
 		if !isNothingToCommit() {
@@ -401,7 +400,7 @@ func status() {
 	if isMobProgramming() {
 		sayInfo("you are mob programming")
 
-		currentBaseBranch, currentWipBranch := determineCurrentBranches()
+		currentBaseBranch, currentWipBranch := determineCurrentBranches(gitCurrentBranch())
 
 		say(silentgit("--no-pager", "log", currentBaseBranch+".."+currentWipBranch, "--pretty=format:%h %cr <%an>", "--abbrev-commit"))
 	} else {
@@ -421,7 +420,9 @@ func hasUncommittedChanges() bool {
 }
 
 func isMobProgramming() bool {
-	return strings.HasPrefix(gitCurrentBranch(), "mob-session")
+	currentBranch := gitCurrentBranch()
+	_, currentWipBranch := determineCurrentBranches(currentBranch)
+	return currentWipBranch == currentBranch
 }
 
 func hasLocalBranch(branch string) bool {
@@ -455,7 +456,7 @@ func showNext() {
 		sayDebug("determining next person based on previous changes")
 	}
 
-	currentBaseBranch, currentWipBranch := determineCurrentBranches()
+	currentBaseBranch, currentWipBranch := determineCurrentBranches(gitCurrentBranch())
 
 	changes := strings.TrimSpace(silentgit("--no-pager", "log", currentBaseBranch+".."+currentWipBranch, "--pretty=format:%an", "--abbrev-commit"))
 	lines := strings.Split(strings.Replace(changes, "\r\n", "\n", -1), "\n")
