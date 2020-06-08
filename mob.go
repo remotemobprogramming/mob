@@ -12,8 +12,6 @@ import (
 
 const versionNumber = "0.0.19-dev"
 
-var wipBranch string                       // override with MOB_WIP_BRANCH environment variable
-var baseBranch string                      // override with MOB_BASE_BRANCH environment variable
 var remoteName string                      // override with MOB_REMOTE_NAME environment variable
 var wipCommitMessage string                // override with MOB_WIP_COMMIT_MESSAGE environment variable
 var voiceCommand string                    // override with MOB_VOICE_COMMAND environment variable
@@ -22,8 +20,6 @@ var mobStartIncludeUncommittedChanges bool // override with MOB_START_INCLUDE_UN
 var debug bool                             // override with MOB_DEBUG environment variable
 
 func setDefaults() {
-	wipBranch = "mob-session"
-	baseBranch = "master"
 	remoteName = "origin"
 	voiceCommand = "say"
 	wipCommitMessage = "mob next [ci-skip]"
@@ -35,8 +31,6 @@ func setDefaults() {
 var workingDir = ""
 
 func config() {
-	say("MOB_BASE_BRANCH" + "=" + baseBranch)
-	say("MOB_WIP_BRANCH" + "=" + wipBranch)
 	say("MOB_REMOTE_NAME" + "=" + remoteName)
 	say("MOB_WIP_COMMIT_MESSAGE" + "=" + wipCommitMessage)
 	say("MOB_VOICE_COMMAND" + "=" + voiceCommand)
@@ -46,16 +40,6 @@ func config() {
 }
 
 func parseEnvironmentVariables() {
-	userBaseBranch, userBaseBranchSet := os.LookupEnv("MOB_BASE_BRANCH")
-	if userBaseBranchSet {
-		baseBranch = userBaseBranch
-		say("overriding MOB_BASE_BRANCH=" + baseBranch)
-	}
-	userWipBranch, userWipBranchSet := os.LookupEnv("MOB_WIP_BRANCH")
-	if userWipBranchSet {
-		wipBranch = userWipBranch
-		say("overriding MOB_WIP_BRANCH=" + wipBranch)
-	}
 	userRemoteName, userRemoteNameSet := os.LookupEnv("MOB_REMOTE_NAME")
 	if userRemoteNameSet {
 		remoteName = userRemoteName
@@ -165,8 +149,6 @@ func main() {
 		next()
 	} else if command == "d" || command == "done" {
 		done()
-	} else if command == "reset" {
-		reset()
 	} else if command == "config" {
 		config()
 	} else if command == "t" || command == "timer" {
@@ -222,17 +204,6 @@ func startTimer(timerInMinutes string) {
 	}
 }
 
-func reset() {
-	git("fetch", remoteName)
-	git("checkout", baseBranch)
-	if hasMobProgrammingBranch() {
-		git("branch", "--delete", "--force", wipBranch)
-	}
-	if hasMobProgrammingBranchOrigin() {
-		git("push", "--no-verify", remoteName, "--delete", wipBranch)
-	}
-}
-
 func start() {
 	stashed := false
 	if hasUncommittedChanges() {
@@ -262,7 +233,13 @@ func start() {
 	git("fetch", remoteName, "--prune")
 	git("pull", "--ff-only")
 
-	_, currentWipBranch := determineCurrentBranches()
+	currentBaseBranch, currentWipBranch := determineCurrentBranches()
+
+	if !hasRemoteBranch(currentBaseBranch) {
+		sayError("Remote branch " + remoteName + "/" + currentBaseBranch + " is missing")
+		sayTodo("fix with 'git push " + remoteName + " " + currentBaseBranch + " --set-upstream'")
+		return
+	}
 
 	if hasMobProgrammingBranchOrigin2(currentWipBranch) {
 		startJoinMobSession()
@@ -432,17 +409,17 @@ func isMobProgramming() bool {
 	return strings.HasPrefix(gitCurrentBranch(), "mob-session")
 }
 
-func hasMobProgrammingBranch() bool {
+func hasBranch(branch string) bool {
 	branches := gitBranches()
-	return strings.Contains(branches, "  "+wipBranch) || strings.Contains(branches, "* "+wipBranch)
+	return strings.Contains(branches, "  "+branch) || strings.Contains(branches, "* "+branch)
 }
 
-func hasMobProgrammingBranchOrigin() bool {
-	return strings.Contains(gitRemoteBranches(), "  "+remoteName+"/"+wipBranch)
+func hasRemoteBranch(branch string) bool {
+	return strings.Contains(gitRemoteBranches(), "  "+remoteName+"/"+branch)
 }
 
 func hasMobProgrammingBranchOrigin2(currentWipBranch string) bool {
-	return strings.Contains(gitRemoteBranches(), "  "+remoteName+"/"+currentWipBranch)
+	return hasRemoteBranch(currentWipBranch)
 }
 
 func gitBranches() string {
@@ -501,7 +478,6 @@ func help() {
 	say("mob start [<minutes>] [--include-uncommitted-changes]\t# start mob session")
 	say("mob next [-s|--stay] \t# handover to next person")
 	say("mob done \t\t# finish mob session")
-	say("mob reset \t\t# reset any unfinished mob session (local & remote)")
 	say("mob status \t\t# show status of mob session")
 	say("mob timer <minutes>\t# start a <minutes> timer")
 	say("mob config \t\t# print configuration")
