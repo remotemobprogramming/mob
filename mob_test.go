@@ -136,9 +136,31 @@ func TestStartDone(t *testing.T) {
 	setDefaults()
 	captureOutput()
 	createTestbed(t)
+	assertOnBranch(t, "master")
 	start()
+	assertOnBranch(t, "mob-session")
 
 	done()
+	assertOnBranch(t, "master")
+
+	assertNotMobProgramming(t)
+	assertNoLocalMobSessionBranch(t)
+	assertNoRemoteMobSessionBranch(t)
+}
+
+func TestStartDoneFeatureBranch(t *testing.T) {
+	setDefaults()
+	debug = true
+	captureOutput()
+	createTestbed(t)
+	git("checkout","-b","feature1")
+	git("push","origin","feature1","--set-upstream")
+	assertOnBranch(t, "feature1")
+	start()
+	assertOnBranch(t, "mob-session-feature1")
+
+	done()
+	assertOnBranch(t, "feature1")
 
 	assertNotMobProgramming(t)
 	assertNoLocalMobSessionBranch(t)
@@ -222,6 +244,13 @@ func assertNoLocalMobSessionBranch(t *testing.T) {
 func assertNotMobProgramming(t *testing.T) {
 	if isMobProgramming() {
 		t.Error("should not be mob programming")
+	}
+}
+
+func assertOnBranch(t *testing.T, branch string) {
+	currentBranch := gitCurrentBranch()
+	if currentBranch != branch {
+		t.Error("should be on branch " + branch + " but is on branch " + currentBranch)
 	}
 }
 
