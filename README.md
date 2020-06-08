@@ -94,7 +94,7 @@ espeak -v us-mbrola-1 "$@"
 
 To get the timer to play "mob next" on your speakers when your time is up, you'll need an installed speech engine.
 We recommand that you install [eSpeak NG for Windows through the MSI](https://github.com/espeak-ng/espeak-ng/releases)
-as it is open source, platform independent and produces quiet a good quality.
+as it is open source, platform independent and produces quite a good quality.
 
 Also please note that the speech support **will only work in a MINGW environment**, such
 as `git-bash` as the timer functionality needs a *NIX shell.
