@@ -149,6 +149,8 @@ func main() {
 		next()
 	} else if command == "d" || command == "done" {
 		done()
+	} else if command == "reset" {
+		reset()
 	} else if command == "config" {
 		config()
 	} else if command == "t" || command == "timer" {
@@ -204,6 +206,20 @@ func startTimer(timerInMinutes string) {
 	}
 }
 
+func reset() {
+	git("fetch", remoteName)
+
+	currentBaseBranch, currentWipBranch := determineCurrentBranches()
+
+	git("checkout", currentBaseBranch)
+	if hasLocalBranch(currentWipBranch) {
+		git("branch", "--delete", "--force", currentWipBranch)
+	}
+	if hasRemoteBranch(currentWipBranch) {
+		git("push", "--no-verify", remoteName, "--delete", currentWipBranch)
+	}
+}
+
 func start() {
 	stashed := false
 	if hasUncommittedChanges() {
@@ -242,7 +258,7 @@ func start() {
 
 	git("pull", "--ff-only")
 
-	if hasMobProgrammingBranchOrigin2(currentWipBranch) {
+	if hasRemoteBranch(currentWipBranch) {
 		startJoinMobSession()
 	} else {
 		startNewMobSession()
@@ -290,7 +306,9 @@ func determineCurrentBranches() (string, string) {
 		currentWipBranch = "mob-session-" + currentBaseBranch
 	}
 
-	sayInfo("on branch " + currentBranch + " => BASE " + currentBaseBranch + " WIP " + currentWipBranch)
+	if debug {
+		sayInfo("on branch " + currentBranch + " => BASE " + currentBaseBranch + " WIP " + currentWipBranch)
+	}
 	return currentBaseBranch, currentWipBranch
 }
 
@@ -361,7 +379,7 @@ func done() {
 
 	currentBaseBranch, currentWipBranch := determineCurrentBranches()
 
-	if hasMobProgrammingBranchOrigin2(currentWipBranch) {
+	if hasRemoteBranch(currentWipBranch) {
 		if !isNothingToCommit() {
 			git("add", "--all")
 			git("commit", "--message", "\""+wipCommitMessage+"\"", "--no-verify")
@@ -410,17 +428,13 @@ func isMobProgramming() bool {
 	return strings.HasPrefix(gitCurrentBranch(), "mob-session")
 }
 
-func hasBranch(branch string) bool {
+func hasLocalBranch(branch string) bool {
 	branches := gitBranches()
 	return strings.Contains(branches, "  "+branch) || strings.Contains(branches, "* "+branch)
 }
 
 func hasRemoteBranch(branch string) bool {
 	return strings.Contains(gitRemoteBranches(), "  "+remoteName+"/"+branch)
-}
-
-func hasMobProgrammingBranchOrigin2(currentWipBranch string) bool {
-	return hasRemoteBranch(currentWipBranch)
 }
 
 func gitBranches() string {
@@ -479,6 +493,7 @@ func help() {
 	say("mob start [<minutes>] [--include-uncommitted-changes]\t# start mob session")
 	say("mob next [-s|--stay] \t# handover to next person")
 	say("mob done \t\t# finish mob session")
+	say("mob reset \t\t# reset any unfinished mob session (local & remote)")
 	say("mob status \t\t# show status of mob session")
 	say("mob timer <minutes>\t# start a <minutes> timer")
 	say("mob config \t\t# print configuration")

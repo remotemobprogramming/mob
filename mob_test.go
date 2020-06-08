@@ -30,6 +30,33 @@ func TestStart(t *testing.T) {
 	assertRemoteMobSessionBranch(t)
 }
 
+func TestReset(t *testing.T) {
+	setDefaults()
+	captureOutput()
+	createTestbed(t)
+
+	reset()
+
+	assertNotMobProgramming(t)
+	assertNoLocalMobSessionBranch(t)
+	assertNoRemoteMobSessionBranch(t)
+}
+
+func TestResetCommit(t *testing.T) {
+	setDefaults()
+	captureOutput()
+	createTestbed(t)
+	start()
+	createFile(t, "example.txt", "content")
+	next()
+
+	reset()
+
+	assertNotMobProgramming(t)
+	assertNoLocalMobSessionBranch(t)
+	assertNoRemoteMobSessionBranch(t)
+}
+
 func TestStartUnstagedChanges(t *testing.T) {
 	setDefaults()
 	printOutput()
@@ -205,7 +232,7 @@ func createTestbed(t *testing.T) {
 	if isMobProgramming() {
 		t.Error("should not be mob programming")
 	}
-	if hasBranch("mob-session") {
+	if hasLocalBranch("mob-session") {
 		t.Error("should have no mob programming branch")
 	}
 	if hasRemoteBranch("mob-session") {
@@ -220,7 +247,7 @@ func assertNoRemoteMobSessionBranch(t *testing.T) {
 }
 
 func assertNoLocalMobSessionBranch(t *testing.T) {
-	if hasBranch("mob-session") {
+	if hasLocalBranch("mob-session") {
 		t.Error("should have no mob programming branch")
 	}
 }
@@ -251,7 +278,7 @@ func assertRemoteMobSessionBranch(t *testing.T) {
 }
 
 func assertLocalMobSessionBranch(t *testing.T) {
-	if !hasBranch("mob-session") {
+	if !hasLocalBranch("mob-session") {
 		t.Error("should have mob programming branch")
 	}
 }
