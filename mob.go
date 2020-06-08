@@ -231,7 +231,6 @@ func start() {
 	}
 
 	git("fetch", remoteName, "--prune")
-	git("pull", "--ff-only")
 
 	currentBaseBranch, currentWipBranch := determineCurrentBranches()
 
@@ -240,6 +239,8 @@ func start() {
 		sayTodo("fix with 'git push " + remoteName + " " + currentBaseBranch + " --set-upstream'")
 		return
 	}
+
+	git("pull", "--ff-only")
 
 	if hasMobProgrammingBranchOrigin2(currentWipBranch) {
 		startJoinMobSession()
