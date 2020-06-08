@@ -156,7 +156,7 @@ func TestStartDoneFeatureBranch(t *testing.T) {
 	git("push", "origin", "feature1", "--set-upstream")
 	assertOnBranch(t, "feature1")
 	start()
-	assertOnBranch(t, "mob-session/feature1")
+	assertOnBranch(t, "mob/feature1")
 
 	done()
 	assertOnBranch(t, "feature1")

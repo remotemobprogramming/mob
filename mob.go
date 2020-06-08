@@ -291,7 +291,7 @@ func determineCurrentBranches(currentBranch string) (string, string) {
 	var currentBaseBranch string
 	var currentWipBranch string
 
-	prefix := "mob-session/"
+	prefix := "mob/"
 
 	if currentBranch == "mob-session" || currentBranch == "master" {
 		currentBaseBranch = "master"
