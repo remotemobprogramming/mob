@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-const versionNumber = "0.0.19-dev"
+const versionNumber = "0.0.20"
 
 var remoteName string                      // override with MOB_REMOTE_NAME environment variable
 var wipCommitMessage string                // override with MOB_WIP_COMMIT_MESSAGE environment variable
@@ -223,6 +223,7 @@ func reset() {
 	if hasRemoteBranch(currentWipBranch) {
 		git("push", "--no-verify", remoteName, "--delete", currentWipBranch)
 	}
+	sayInfo("Branches " + currentWipBranch + " and " + remoteName + "/" + currentWipBranch + " deleted")
 }
 
 func start() {
