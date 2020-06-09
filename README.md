@@ -113,8 +113,6 @@ Create a little script in `$USERPROFILE/bin` called `say` with the following con
 Show your current configuration with `mob config`:
 
 ```
-MOB_BASE_BRANCH=master
-MOB_WIP_BRANCH=mob-session
 MOB_REMOTE_NAME=origin
 MOB_WIP_COMMIT_MESSAGE=mob next [ci-skip]
 MOB_VOICE_COMMAND=say
