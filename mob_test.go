@@ -21,8 +21,8 @@ func TestVersion(t *testing.T) {
 func TestStatusNotMobProgramming(t *testing.T) {
 	setDefaults()
 	output := captureOutput()
-  createTestbed(t)
-  reset()
+	createTestbed(t)
+	reset()
 
 	status()
 
@@ -32,8 +32,8 @@ func TestStatusNotMobProgramming(t *testing.T) {
 func TestStatusMobProgramming(t *testing.T) {
 	setDefaults()
 	output := captureOutput()
-  createTestbed(t)
-  start()
+	createTestbed(t)
+	start()
 
 	status()
 
@@ -41,15 +41,15 @@ func TestStatusMobProgramming(t *testing.T) {
 }
 
 func TestExecuteKicksOffStatus(t *testing.T) {
-  setDefaults()
-  output := captureOutput()
-  createTestbed(t)
-  reset()
-  var parameters []string
+	setDefaults()
+	output := captureOutput()
+	createTestbed(t)
+	reset()
+	var parameters []string
 
-  execute("status", parameters)
+	execute("status", parameters)
 
-  assertOutputContains(t, output, "you aren't mob programming")
+	assertOutputContains(t, output, "you aren't mob programming")
 }
 
 func TestStart(t *testing.T) {
