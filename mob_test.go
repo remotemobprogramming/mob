@@ -170,13 +170,45 @@ func TestStartDone(t *testing.T) {
 	setDefaults()
 	captureOutput()
 	createTestbed(t)
+	assertOnBranch(t, "master")
 	start()
+	assertOnBranch(t, "mob-session")
 
 	done()
+	assertOnBranch(t, "master")
 
 	assertNotMobProgramming(t)
 	assertNoLocalMobSessionBranch(t)
 	assertNoRemoteMobSessionBranch(t)
+}
+
+func TestStartDoneFeatureBranch(t *testing.T) {
+	setDefaults()
+	captureOutput()
+	createTestbed(t)
+	git("checkout", "-b", "feature1")
+	git("push", "origin", "feature1", "--set-upstream")
+	assertOnBranch(t, "feature1")
+	start()
+	assertOnBranch(t, "mob/feature1")
+
+	done()
+	assertOnBranch(t, "feature1")
+
+	assertNotMobProgramming(t)
+	assertNoLocalMobSessionBranch(t)
+	assertNoRemoteMobSessionBranch(t)
+}
+
+func TestStartDoneLocalFeatureBranch(t *testing.T) {
+	setDefaults()
+	debug = true
+	captureOutput()
+	createTestbed(t)
+	git("checkout", "-b", "feature1")
+	assertOnBranch(t, "feature1")
+	start()
+	assertOnBranch(t, "feature1")
 }
 
 func assertCommits(t *testing.T, commits int) {
@@ -233,22 +265,22 @@ func createTestbed(t *testing.T) {
 	if isMobProgramming() {
 		t.Error("should not be mob programming")
 	}
-	if hasMobProgrammingBranch() {
+	if hasLocalBranch("mob-session") {
 		t.Error("should have no mob programming branch")
 	}
-	if hasMobProgrammingBranchOrigin() {
+	if hasRemoteBranch("mob-session") {
 		t.Error("should have no mob programming branch on origin")
 	}
 }
 
 func assertNoRemoteMobSessionBranch(t *testing.T) {
-	if hasMobProgrammingBranchOrigin() {
+	if hasRemoteBranch("mob-session") {
 		t.Error("should have no mob programming branch on origin")
 	}
 }
 
 func assertNoLocalMobSessionBranch(t *testing.T) {
-	if hasMobProgrammingBranch() {
+	if hasLocalBranch("mob-session") {
 		t.Error("should have no mob programming branch")
 	}
 }
@@ -259,6 +291,13 @@ func assertNotMobProgramming(t *testing.T) {
 	}
 }
 
+func assertOnBranch(t *testing.T, branch string) {
+	currentBranch := gitCurrentBranch()
+	if currentBranch != branch {
+		t.Error("should be on branch " + branch + " but is on branch " + currentBranch)
+	}
+}
+
 func assertOutputContains(t *testing.T, output *string, contains string) {
 	if !strings.Contains(*output, contains) {
 		t.Error("expected output to contain " + contains + ", but does not.\nOutput:\n" + *output)
@@ -266,13 +305,13 @@ func assertOutputContains(t *testing.T, output *string, contains string) {
 }
 
 func assertRemoteMobSessionBranch(t *testing.T) {
-	if !hasMobProgrammingBranchOrigin() {
+	if !hasRemoteBranch("mob-session") {
 		t.Error("should have mob programming branch on origin")
 	}
 }
 
 func assertLocalMobSessionBranch(t *testing.T) {
-	if !hasMobProgrammingBranch() {
+	if !hasLocalBranch("mob-session") {
 		t.Error("should have mob programming branch")
 	}
 }
