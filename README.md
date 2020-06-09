@@ -91,23 +91,6 @@ Create a little script in your `$PATH` called `say` with the following content:
 espeak -v us-mbrola-1 "$@"
 ```
 
-### Windows Timer
-
-To get the timer to play "mob next" on your speakers when your time is up, you'll need an installed speech engine.
-We recommand that you install [eSpeak NG for Windows through the MSI](https://github.com/espeak-ng/espeak-ng/releases)
-as it is open source, platform independent and produces quite a good quality.
-
-Also please note that the speech support **will only work in a MINGW environment**, such
-as `git-bash` as the timer functionality needs a *NIX shell.
-
-Create a little script in `$USERPROFILE/bin` called `say` with the following content:
-
-```bash
-#!/bin/sh
-# eSpeak does not set any path, so we specify its installation directory instead
-"$PROGRAMFILES/eSpeak NG/espeak-ng" "$@"
-```
-
 ## How to configure
 
 Show your current configuration with `mob config`:
