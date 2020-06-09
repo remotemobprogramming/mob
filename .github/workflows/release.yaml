@@ -7,36 +7,30 @@ jobs:
     steps:
     - uses: actions/checkout@master
     - name: compile and release
-      uses: ngs/go-release.action@master
+      uses: remotemobprogramming/go-release.action@go1.14.1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         GOARCH: amd64
         GOOS: linux
-        PROJECT_NAME: mob
-        EXTRA_FILES:
   release-darwin-amd64:
     name: release darwin/amd64
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@master
     - name: compile and release
-      uses: ngs/go-release.action@master
+      uses: remotemobprogramming/go-release.action@go1.14.1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         GOARCH: amd64
         GOOS: darwin
-        PROJECT_NAME: mob
-        EXTRA_FILES:
   release-windows-amd64:
     name: release windows/amd64
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@master
     - name: compile and release
-      uses: ngs/go-release.action@master
+      uses: remotemobprogramming/go-release.action@go1.14.1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         GOARCH: amd64
         GOOS: windows
-        PROJECT_NAME: mob
-        EXTRA_FILES:
