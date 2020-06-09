@@ -18,6 +18,40 @@ func TestVersion(t *testing.T) {
 	assertOutputContains(t, output, versionNumber)
 }
 
+func TestStatusNotMobProgramming(t *testing.T) {
+	setDefaults()
+	output := captureOutput()
+  createTestbed(t)
+  reset()
+
+	status()
+
+	assertOutputContains(t, output, "you aren't mob programming")
+}
+
+func TestStatusMobProgramming(t *testing.T) {
+	setDefaults()
+	output := captureOutput()
+  createTestbed(t)
+  start()
+
+	status()
+
+	assertOutputContains(t, output, "you are mob programming")
+}
+
+func TestExecuteKicksOffStatus(t *testing.T) {
+  setDefaults()
+  output := captureOutput()
+  createTestbed(t)
+  reset()
+  var parameters []string
+
+  execute("status", parameters)
+
+  assertOutputContains(t, output, "you aren't mob programming")
+}
+
 func TestStart(t *testing.T) {
 	setDefaults()
 	captureOutput()

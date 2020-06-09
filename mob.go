@@ -149,7 +149,10 @@ func main() {
 		sayDebug("command '" + command + "'")
 		sayDebug("parameter '" + strings.Join(parameter, " ") + "'")
 	}
+	execute(command, parameter)
+}
 
+func execute(command string, parameter []string) {
 	if command == "s" || command == "start" {
 		start()
 		if !isMobProgramming() {
@@ -169,6 +172,8 @@ func main() {
 		reset()
 	} else if command == "config" {
 		config()
+	} else if command == "status" {
+		status()
 	} else if command == "t" || command == "timer" {
 		if len(parameter) > 0 {
 			timer := parameter[0]
