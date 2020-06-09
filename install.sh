@@ -55,10 +55,10 @@ determine_mob_binary() {
 determine_ending() {
  case "$(determine_os)" in
   windows)
-    echo "zip"
+    echo "tar.gz"
     ;;
   *)
-    echo "tgz"
+    echo "tar.gz"
     ;;
   esac
 }
