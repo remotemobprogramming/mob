@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-const versionNumber = "0.0.22"
+const versionNumber = "0.0.20"
 
 var remoteName string                      // override with MOB_REMOTE_NAME environment variable
 var wipCommitMessage string                // override with MOB_WIP_COMMIT_MESSAGE environment variable
