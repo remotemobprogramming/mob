@@ -64,14 +64,16 @@ mob done 		# get changes back to master branch
 - `mob reset` deletes `mob-session` and `origin/mob-session`
 - `mob config` print configuration
 
-### Zoom Screen Share Integration
+### Screen Share Integration
 
-Mob no longer supports starting the screen sharing feature in Zoom.
-Why? At first, this feature sounds awesome. But in practice, mob wasn't much help.
-It only simulated keying in a keyboard shortcut, which needed to be configured correctly, only toggled screen share (you had to keep in mind whether you were already screen sharing or not), and solely supported Zoom on macOS and Linux.
+Mob no longer supports starting the screen share on 'mob start'.
+Why? 
+At first, this feature sounds awesome. 
+In practice, however, that feature wasn't much help.
+It only simulated keying in a keyboard shortcut and had several shortcomings: a) it needed to be configured correctly, b) only toggled screen share, so one had to keep in mind whether one was already screen sharing or not, and c) solely supported Zoom on macOS and Linux.
 The feature promised too much, and hold very little of it.
 
-Still, that keyboard shortcut to toggle screen sharing in Zoom is still very helpful. Important thing is: make the shortcut globally available (Zoom > Preferences > Keyboard Shortcuts). [More tips on setting up Zoom for effective screen sharing.](https://effectivehomeoffice.com/setup-zoom-for-effective-screen-sharing/)
+Still, that keyboard shortcut to toggle screen sharing in Zoom is still very helpful. Just press the hotkey yourself. It is, however, essential to make the shortcut globally available (Zoom > Preferences > Keyboard Shortcuts). Otherwise, the hotkey won't work. [More tips on setting up Zoom for effective screen sharing.](https://effectivehomeoffice.com/setup-zoom-for-effective-screen-sharing/)
 
 ## More on Installation
 
