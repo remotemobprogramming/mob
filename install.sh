@@ -52,6 +52,17 @@ determine_mob_binary() {
   esac
 }
 
+determine_ending() {
+ case "$(determine_os)" in
+  windows)
+    echo "zip"
+    ;;
+  *)
+    echo "tgz"
+    ;;
+  esac
+}
+
 handle_user_installation() {
   user_install=$(determine_user_install)
   if [ "$user_install" = "--user" ]; then
@@ -94,7 +105,7 @@ check_access_rights() {
 install_remote_binary() {
   echo "installing latest 'mob' release from GitHub to $target..."
   url=$(curl -s https://api.github.com/repos/remotemobprogramming/mob/releases/latest |
-    grep "browser_download_url.*mob_.*$(determine_os)_amd64\.*" |
+    grep "browser_download_url.*mob_.*$(determine_os)_amd64\.$(determine_ending)" |
     cut -d ":" -f 2,3 |
     tr -d ' \"')
   curl -sSL "$url" | tar xz -C "$target" "$(determine_mob_binary)" && chmod +x "$target"/mob
