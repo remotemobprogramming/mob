@@ -43,6 +43,15 @@ func TestExecuteKicksOffStatus(t *testing.T) {
 	assertOutputContains(t, output, "you aren't mob programming")
 }
 
+func TestExecuteInvalidCommandKicksOffHelp(t *testing.T) {
+	output := setup(t)
+	var parameters []string
+
+	execute("whatever", parameters)
+
+	assertOutputContains(t, output, "USAGE")
+}
+
 func TestStart(t *testing.T) {
 	setup(t)
 
