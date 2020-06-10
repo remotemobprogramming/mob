@@ -25,6 +25,22 @@ func TestStatusNotMobProgramming(t *testing.T) {
 	assertOutputContains(t, output, "you aren't mob programming")
 }
 
+func TestNextNotMobProgramming(t *testing.T) {
+	output := setup(t)
+
+	next()
+
+	assertOutputContains(t, output, "you aren't mob programming")
+}
+
+func TestDoneNotMobProgramming(t *testing.T) {
+	output := setup(t)
+
+	done()
+
+	assertOutputContains(t, output, "you aren't mob programming")
+}
+
 func TestStatusMobProgramming(t *testing.T) {
 	output := setup(t)
 	start()
@@ -84,13 +100,15 @@ func TestResetCommit(t *testing.T) {
 }
 
 func TestStartUnstagedChanges(t *testing.T) {
-	setup(t)
+	output := setup(t)
 	createFile(t, "test.txt", "content")
 	mobStartIncludeUncommittedChanges = false
 
 	start()
 
 	assertOnBranch(t, "master")
+	assertNoMobSessionBranches(t)
+	assertOutputContains(t, output, "fix with 'mob start --include-uncommitted-changes'")
 }
 
 func TestStartIncludeUnstagedChanges(t *testing.T) {
@@ -101,6 +119,7 @@ func TestStartIncludeUnstagedChanges(t *testing.T) {
 	start()
 
 	assertOnBranch(t, "mob-session")
+	assertMobSessionBranches(t)
 }
 
 func TestStartIncludeUntrackedFiles(t *testing.T) {
@@ -193,7 +212,7 @@ func TestStartDoneLocalFeatureBranch(t *testing.T) {
 	start()
 
 	assertOnBranch(t, "feature1")
-	assertOutputContains(t, output, "git push origin feature1")
+	assertOutputContains(t, output, "fix with 'git push origin feature1 --set-upstream'")
 }
 
 func setup(t *testing.T) *string {
