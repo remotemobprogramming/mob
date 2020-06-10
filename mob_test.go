@@ -10,8 +10,7 @@ import (
 )
 
 func TestVersion(t *testing.T) {
-	setDefaults()
-	output := captureOutput()
+	output := setup(t)
 
 	version()
 
@@ -19,10 +18,7 @@ func TestVersion(t *testing.T) {
 }
 
 func TestStatusNotMobProgramming(t *testing.T) {
-	setDefaults()
-	output := captureOutput()
-	createTestbed(t)
-	reset()
+	output := setup(t)
 
 	status()
 
@@ -30,9 +26,7 @@ func TestStatusNotMobProgramming(t *testing.T) {
 }
 
 func TestStatusMobProgramming(t *testing.T) {
-	setDefaults()
-	output := captureOutput()
-	createTestbed(t)
+	output := setup(t)
 	start()
 
 	status()
@@ -41,10 +35,7 @@ func TestStatusMobProgramming(t *testing.T) {
 }
 
 func TestExecuteKicksOffStatus(t *testing.T) {
-	setDefaults()
-	output := captureOutput()
-	createTestbed(t)
-	reset()
+	output := setup(t)
 	var parameters []string
 
 	execute("status", parameters)
@@ -53,139 +44,113 @@ func TestExecuteKicksOffStatus(t *testing.T) {
 }
 
 func TestStart(t *testing.T) {
-	setDefaults()
-	captureOutput()
-	createTestbed(t)
+	setup(t)
 
 	start()
 
-	assertMobProgramming(t)
-	assertLocalMobSessionBranch(t)
-	assertRemoteMobSessionBranch(t)
+	assertOnBranch(t, "mob-session")
+	assertMobSessionBranches(t)
 }
 
 func TestReset(t *testing.T) {
-	setDefaults()
-	captureOutput()
-	createTestbed(t)
+	setup(t)
 
 	reset()
 
-	assertNotMobProgramming(t)
-	assertNoLocalMobSessionBranch(t)
-	assertNoRemoteMobSessionBranch(t)
+	assertOnBranch(t, "master")
+	assertNoMobSessionBranches(t)
 }
 
 func TestResetCommit(t *testing.T) {
-	setDefaults()
-	captureOutput()
-	createTestbed(t)
+	setup(t)
 	start()
 	createFile(t, "example.txt", "content")
 	next()
+	assertMobSessionBranches(t)
 
 	reset()
 
-	assertNotMobProgramming(t)
-	assertNoLocalMobSessionBranch(t)
-	assertNoRemoteMobSessionBranch(t)
+	assertOnBranch(t, "master")
+	assertNoMobSessionBranches(t)
 }
 
 func TestStartUnstagedChanges(t *testing.T) {
-	setDefaults()
-	printOutput()
-	createTestbed(t)
+	setup(t)
 	createFile(t, "test.txt", "content")
 	mobStartIncludeUncommittedChanges = false
 
 	start()
 
-	assertNotMobProgramming(t)
+	assertOnBranch(t, "master")
 }
 
 func TestStartIncludeUnstagedChanges(t *testing.T) {
-	setDefaults()
-	printOutput()
-	createTestbed(t)
+	setup(t)
 	createFile(t, "test.txt", "content")
 	mobStartIncludeUncommittedChanges = true
 
 	start()
 
-	assertMobProgramming(t)
+	assertOnBranch(t, "mob-session")
 }
 
 func TestStartIncludeUntrackedFiles(t *testing.T) {
-	setDefaults()
-	printOutput()
-	createTestbed(t)
+	setup(t)
 	createFile(t, "example.txt", "content")
 	mobStartIncludeUncommittedChanges = true
 
 	start()
 
-	assertMobProgramming(t)
+	assertOnBranch(t, "mob-session")
 }
 
 func TestStartUntrackedFiles(t *testing.T) {
-	setDefaults()
-	printOutput()
-	createTestbed(t)
+	setup(t)
 	createFile(t, "example.txt", "content")
 	mobStartIncludeUncommittedChanges = false
 
 	start()
 
-	assertNotMobProgramming(t)
+	assertOnBranch(t, "master")
 }
 
 func TestStartNextBackToMaster(t *testing.T) {
-	setDefaults()
-	captureOutput()
-	createTestbed(t)
+	setup(t)
 	start()
 	createFile(t, "example.txt", "content")
+	assertOnBranch(t, "mob-session")
 
 	next()
 
-	assertNotMobProgramming(t)
-	assertLocalMobSessionBranch(t)
-	assertRemoteMobSessionBranch(t)
+	assertOnBranch(t, "master")
+	assertMobSessionBranches(t)
 }
 
 func TestStartNextStay(t *testing.T) {
-	setDefaults()
-	captureOutput()
-	createTestbed(t)
+	setup(t)
 	mobNextStay = true
 	start()
 	createFile(t, "file1.txt", "asdf")
+	assertOnBranch(t, "mob-session")
 
 	next()
 
-	assertMobProgramming(t)
+	assertOnBranch(t, "mob-session")
 }
 
 func TestStartDone(t *testing.T) {
-	setDefaults()
-	captureOutput()
-	createTestbed(t)
-	assertOnBranch(t, "master")
+	setup(t)
 	start()
 	assertOnBranch(t, "mob-session")
 
 	done()
-	assertOnBranch(t, "master")
 
-	assertNotMobProgramming(t)
-	assertNoLocalMobSessionBranch(t)
-	assertNoRemoteMobSessionBranch(t)
+	assertOnBranch(t, "master")
+	assertNoMobSessionBranches(t)
 }
 
 func TestStartDoneFeatureBranch(t *testing.T) {
-	setDefaults()
-	captureOutput()
-	createTestbed(t)
+	setup(t)
 	git("checkout", "-b", "feature1")
 	git("push", "origin", "feature1", "--set-upstream")
 	assertOnBranch(t, "feature1")
@@ -193,22 +158,42 @@ func TestStartDoneFeatureBranch(t *testing.T) {
 	assertOnBranch(t, "mob/feature1")
 
 	done()
-	assertOnBranch(t, "feature1")
 
-	assertNotMobProgramming(t)
-	assertNoLocalMobSessionBranch(t)
-	assertNoRemoteMobSessionBranch(t)
+	assertOnBranch(t, "feature1")
+	assertNoMobSessionBranches(t)
+}
+
+func TestStartNextFeatureBranch(t *testing.T) {
+	setup(t)
+	git("checkout", "-b", "feature1")
+	git("push", "origin", "feature1", "--set-upstream")
+	assertOnBranch(t, "feature1")
+	start()
+	assertOnBranch(t, "mob/feature1")
+
+	next()
+
+	assertOnBranch(t, "feature1")
+	assertNoMobSessionBranches(t)
 }
 
 func TestStartDoneLocalFeatureBranch(t *testing.T) {
-	setDefaults()
-	debug = true
-	captureOutput()
-	createTestbed(t)
+	output := setup(t)
 	git("checkout", "-b", "feature1")
-	assertOnBranch(t, "feature1")
+
 	start()
+
 	assertOnBranch(t, "feature1")
+	assertOutputContains(t, output, "git push origin feature1")
+}
+
+func setup(t *testing.T) *string {
+	setDefaults()
+	output := captureOutput()
+	createTestbed(t)
+	assertOnBranch(t, "master")
+	assertNoMobSessionBranches(t)
+	return output
 }
 
 func assertCommits(t *testing.T, commits int) {
@@ -243,10 +228,6 @@ func captureOutput() *string {
 	return &messages
 }
 
-func printOutput() *string {
-	return captureOutput()
-}
-
 func run(t *testing.T, name string, args ...string) {
 	commandString, output, err := runCommand(name, args...)
 	if err != nil {
@@ -273,21 +254,12 @@ func createTestbed(t *testing.T) {
 	}
 }
 
-func assertNoRemoteMobSessionBranch(t *testing.T) {
+func assertNoMobSessionBranches(t *testing.T) {
 	if hasRemoteBranch("mob-session") {
 		t.Error("should have no mob programming branch on origin")
 	}
-}
-
-func assertNoLocalMobSessionBranch(t *testing.T) {
 	if hasLocalBranch("mob-session") {
 		t.Error("should have no mob programming branch")
-	}
-}
-
-func assertNotMobProgramming(t *testing.T) {
-	if isMobProgramming() {
-		t.Error("should not be mob programming")
 	}
 }
 
@@ -304,20 +276,11 @@ func assertOutputContains(t *testing.T, output *string, contains string) {
 	}
 }
 
-func assertRemoteMobSessionBranch(t *testing.T) {
+func assertMobSessionBranches(t *testing.T) {
 	if !hasRemoteBranch("mob-session") {
 		t.Error("should have mob programming branch on origin")
 	}
-}
-
-func assertLocalMobSessionBranch(t *testing.T) {
 	if !hasLocalBranch("mob-session") {
 		t.Error("should have mob programming branch")
-	}
-}
-
-func assertMobProgramming(t *testing.T) {
-	if !isMobProgramming() {
-		t.Error("should be mob programming")
 	}
 }
