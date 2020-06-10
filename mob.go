@@ -389,10 +389,14 @@ func done() {
 
 		git("checkout", currentBaseBranch)
 		git("merge", remoteName+"/"+currentBaseBranch, "--ff-only")
-		git("merge", "--squash", "--ff", currentWipBranch)
+		mergeFailed := gitignorefailure("merge", "--squash", "--ff", currentWipBranch)
+		if mergeFailed != nil {
+			return
+		}
 
 		git("branch", "-D", currentWipBranch)
 		git("push", "--no-verify", remoteName, "--delete", currentWipBranch)
+
 		say(getCachedChanges())
 		sayTodo("git commit -m 'describe the changes'")
 	} else {

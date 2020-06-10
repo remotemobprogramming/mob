@@ -215,6 +215,128 @@ func TestStartDoneLocalFeatureBranch(t *testing.T) {
 	assertOutputContains(t, output, "fix with 'git push origin feature1 --set-upstream'")
 }
 
+func TestBothCreateNonemptyCommitWithNext(t *testing.T) {
+	setup(t)
+
+	setWorkingDir("/tmp/mob/local")
+	start()
+	createFile(t, "file1.txt", "asdf")
+
+	setWorkingDir("/tmp/mob/localother")
+	start()
+	createFile(t, "file2.txt", "asdf")
+
+	setWorkingDir("/tmp/mob/local")
+	next()
+
+	setWorkingDir("/tmp/mob/localother")
+	// next() not possible, would fail
+	git("pull")
+	next()
+
+	setWorkingDir("/tmp/mob/local")
+	start()
+	assertFileExist(t, "file1.txt")
+	assertFileExist(t, "file2.txt")
+
+	setWorkingDir("/tmp/mob/localother")
+	start()
+	assertFileExist(t, "file1.txt")
+	assertFileExist(t, "file2.txt")
+}
+
+func TestNothingToCommitCreatesNoCommits(t *testing.T) {
+	setup(t)
+
+	setWorkingDir("/tmp/mob/local")
+	start()
+	assertCommits(t, 1)
+
+	setWorkingDir("/tmp/mob/localother")
+	start()
+	assertCommits(t, 1)
+
+	setWorkingDir("/tmp/mob/local")
+	next()
+
+	setWorkingDir("/tmp/mob/localother")
+	next()
+
+	setWorkingDir("/tmp/mob/local")
+	start()
+	assertCommits(t, 1)
+
+	setWorkingDir("/tmp/mob/localother")
+	start()
+	assertCommits(t, 1)
+}
+
+func TestConflictingMobSessions(t *testing.T) {
+	setup(t)
+
+	setWorkingDir("/tmp/mob/local")
+	start()
+	createFile(t, "example.txt", "content")
+	next()
+
+	setWorkingDir("/tmp/mob/localother")
+	start()
+	next()
+
+	setWorkingDir("/tmp/mob/local")
+	start()
+	done()
+	git("commit", "-m", "\"finished mob session\"")
+
+	setWorkingDir("/tmp/mob/local")
+	start()
+	createFile(t, "example2.txt", "content")
+	next()
+
+	setWorkingDir("/tmp/mob/localother")
+	start()
+}
+
+func TestDoneMergeConflict(t *testing.T) {
+	output := setup(t)
+
+	setWorkingDir("/tmp/mob/local")
+	start()
+	createFile(t, "example.txt", "content")
+	next()
+
+	setWorkingDir("/tmp/mob/localother")
+	createFile(t, "example.txt", "asdf")
+	git("add", "--all")
+	git("commit", "-m", "\"asdf\"")
+	git("push")
+
+	setWorkingDir("/tmp/mob/local")
+	start()
+	done()
+	assertOutputContains(t, output, "Automatic merge failed; fix conflicts and then commit the result.")
+}
+
+func TestDoneMerge(t *testing.T) {
+	output := setup(t)
+
+	setWorkingDir("/tmp/mob/local")
+	start()
+	createFile(t, "example.txt", "content")
+	next()
+
+	setWorkingDir("/tmp/mob/localother")
+	createFile(t, "example2.txt", "asdf")
+	git("add", "--all")
+	git("commit", "-m", "\"asdf\"")
+	git("push")
+
+	setWorkingDir("/tmp/mob/local")
+	start()
+	done()
+	assertOutputContains(t, output, "git commit -m 'describe the changes'")
+}
+
 func setup(t *testing.T) *string {
 	setDefaults()
 	output := captureOutput()
@@ -270,16 +392,14 @@ func createTestbed(t *testing.T) {
 	workingDir = ""
 	run(t, "./create-testbed")
 
-	workingDir = "/tmp/mob/local"
-	if isMobProgramming() {
-		t.Error("should not be mob programming")
-	}
-	if hasLocalBranch("mob-session") {
-		t.Error("should have no mob programming branch")
-	}
-	if hasRemoteBranch("mob-session") {
-		t.Error("should have no mob programming branch on origin")
-	}
+	setWorkingDir("/tmp/mob/local")
+	assertOnBranch(t, "master")
+	assertNoMobSessionBranches(t)
+}
+
+func setWorkingDir(dir string) {
+	workingDir = dir
+	say("\nSET WORKING DIR TO " + dir + "\n======================\n")
 }
 
 func assertNoMobSessionBranches(t *testing.T) {
