@@ -24,7 +24,7 @@ determine_user_install() {
     echo "--user"
     ;;
   *)
-    $user_arg
+    echo "$user_arg"
     ;;
   esac
 }
