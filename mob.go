@@ -12,12 +12,29 @@ import (
 
 const versionNumber = "0.0.21"
 
-var remoteName string                      // override with MOB_REMOTE_NAME environment variable
-var wipCommitMessage string                // override with MOB_WIP_COMMIT_MESSAGE environment variable
-var voiceCommand string                    // override with MOB_VOICE_COMMAND environment variable
-var mobNextStay bool                       // override with MOB_NEXT_STAY environment variable
-var mobStartIncludeUncommittedChanges bool // override with MOB_START_INCLUDE_UNCOMMITTED_CHANGES variable
-var debug bool                             // override with MOB_DEBUG environment variable
+var (
+	remoteName                        string // override with MOB_REMOTE_NAME environment variable
+	wipCommitMessage                  string // override with MOB_WIP_COMMIT_MESSAGE environment variable
+	voiceCommand                      string // override with MOB_VOICE_COMMAND environment variable
+	mobNextStay                       bool   // override with MOB_NEXT_STAY environment variable
+	mobStartIncludeUncommittedChanges bool   // override with MOB_START_INCLUDE_UNCOMMITTED_CHANGES variable
+	debug                             bool   // override with MOB_DEBUG environment variable
+	workingDir                        = ""
+)
+
+func main() {
+	setDefaults()
+	parseEnvironmentVariables()
+	args := parseIncludeUncommittedChangesFlag(parseDebugFlag(parseFlagsForCommandNext(os.Args[1:])))
+	command := getCommand(args)
+	parameter := getParameters(args)
+	if debug {
+		sayDebug("Args '" + strings.Join(args, " ") + "'")
+		sayDebug("command '" + command + "'")
+		sayDebug("parameter '" + strings.Join(parameter, " ") + "'")
+	}
+	execute(command, parameter)
+}
 
 func setDefaults() {
 	remoteName = "origin"
@@ -26,17 +43,6 @@ func setDefaults() {
 	mobNextStay = false
 	mobStartIncludeUncommittedChanges = false
 	debug = false
-}
-
-var workingDir = ""
-
-func config() {
-	say("MOB_REMOTE_NAME" + "=" + remoteName)
-	say("MOB_WIP_COMMIT_MESSAGE" + "=" + wipCommitMessage)
-	say("MOB_VOICE_COMMAND" + "=" + voiceCommand)
-	say("MOB_NEXT_STAY" + "=" + strconv.FormatBool(mobNextStay))
-	say("MOB_START_INCLUDE_UNCOMMITTED_CHANGES" + "=" + strconv.FormatBool(mobStartIncludeUncommittedChanges))
-	say("MOB_DEBUG" + "=" + strconv.FormatBool(debug))
 }
 
 func parseEnvironmentVariables() {
@@ -72,6 +78,15 @@ func parseEnvironmentVariables() {
 		mobStartIncludeUncommittedChanges = true
 		say("overriding " + key + "=" + strconv.FormatBool(mobStartIncludeUncommittedChanges))
 	}
+}
+
+func config() {
+	say("MOB_REMOTE_NAME" + "=" + remoteName)
+	say("MOB_WIP_COMMIT_MESSAGE" + "=" + wipCommitMessage)
+	say("MOB_VOICE_COMMAND" + "=" + voiceCommand)
+	say("MOB_NEXT_STAY" + "=" + strconv.FormatBool(mobNextStay))
+	say("MOB_START_INCLUDE_UNCOMMITTED_CHANGES" + "=" + strconv.FormatBool(mobStartIncludeUncommittedChanges))
+	say("MOB_DEBUG" + "=" + strconv.FormatBool(debug))
 }
 
 func parseFlagsForCommandNext(args []string) []string {
@@ -122,22 +137,10 @@ func arrayRemove(items []string, item string) []string {
 	return newitems
 }
 
-func main() {
-	setDefaults()
-	parseEnvironmentVariables()
-	args := parseIncludeUncommittedChangesFlag(parseDebugFlag(parseFlagsForCommandNext(os.Args[1:])))
-	command := getCommand(args)
-	parameter := getParameters(args)
-	if debug {
-		sayDebug("Args '" + strings.Join(args, " ") + "'")
-		sayDebug("command '" + command + "'")
-		sayDebug("parameter '" + strings.Join(parameter, " ") + "'")
-	}
-	execute(command, parameter)
-}
-
 func execute(command string, parameter []string) {
-	if command == "s" || command == "start" {
+
+	switch command {
+	case "s", "start":
 		start()
 		if !isMobProgramming() {
 			return
@@ -148,29 +151,30 @@ func execute(command string, parameter []string) {
 		}
 
 		status()
-	} else if command == "n" || command == "next" {
+	case "n", "next":
 		next()
-	} else if command == "d" || command == "done" {
+	case "d", "done":
 		done()
-	} else if command == "reset" {
+	case "reset":
 		reset()
-	} else if command == "config" {
+	case "config":
 		config()
-	} else if command == "status" {
+	case "status":
 		status()
-	} else if command == "t" || command == "timer" {
+	case "t", "timer":
 		if len(parameter) > 0 {
 			timer := parameter[0]
 			startTimer(timer)
 		} else {
 			help()
 		}
-	} else if command == "help" || command == "--help" || command == "-h" {
-		help()
-	} else if command == "version" || command == "--version" || command == "-v" {
+	case "version", "--version", "-v":
 		version()
-	} else {
+	case "help", "--help", "-h":
 		help()
+	default:
+		help()
+
 	}
 }
 
