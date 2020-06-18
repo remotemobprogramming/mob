@@ -10,131 +10,115 @@ import (
 	"time"
 )
 
-const versionNumber = "0.0.21"
-
-var (
-	remoteName                        string // override with MOB_REMOTE_NAME environment variable
-	wipCommitMessage                  string // override with MOB_WIP_COMMIT_MESSAGE environment variable
-	voiceCommand                      string // override with MOB_VOICE_COMMAND environment variable
-	mobNextStay                       bool   // override with MOB_NEXT_STAY environment variable
-	mobStartIncludeUncommittedChanges bool   // override with MOB_START_INCLUDE_UNCOMMITTED_CHANGES variable
-	debug                             bool   // override with MOB_DEBUG environment variable
-	workingDir                        = ""
+const (
+	versionNumber = "0.0.21"
+	mobStashName  = "mob-stash-name"
 )
 
+var (
+	workingDir    = ""
+	configuration Configuration
+)
+
+type Configuration struct {
+	RemoteName                        string // override with MOB_REMOTE_NAME environment variable
+	WipCommitMessage                  string // override with MOB_WIP_COMMIT_MESSAGE environment variable
+	VoiceCommand                      string // override with MOB_VOICE_COMMAND environment variable
+	MobNextStay                       bool   // override with MOB_NEXT_STAY environment variable
+	MobStartIncludeUncommittedChanges bool   // override with MOB_START_INCLUDE_UNCOMMITTED_CHANGES variable
+	Debug                             bool   // override with MOB_DEBUG environment variable
+}
+
 func main() {
-	setDefaults()
-	parseEnvironmentVariables()
-	args := parseIncludeUncommittedChangesFlag(parseDebugFlag(parseFlagsForCommandNext(os.Args[1:])))
-	command := getCommand(args)
-	parameter := getParameters(args)
-	if debug {
-		sayDebug("Args '" + strings.Join(args, " ") + "'")
-		sayDebug("command '" + command + "'")
-		sayDebug("parameter '" + strings.Join(parameter, " ") + "'")
+	configuration = parseEnvironmentVariables(getDefaultConfiguration())
+	sayDebug("Args '" + strings.Join(os.Args, " ") + "'")
+
+	command, parameters := parseArgs(os.Args[1:])
+	sayDebug("command '" + command + "'")
+	sayDebug("parameters '" + strings.Join(parameters, " ") + "'")
+
+	execute(command, parameters)
+}
+
+func getDefaultConfiguration() Configuration {
+	return Configuration{
+		RemoteName:                        "origin",
+		WipCommitMessage:                  "mob next [ci-skip]",
+		VoiceCommand:                      "say",
+		MobNextStay:                       false,
+		MobStartIncludeUncommittedChanges: false,
+		Debug:                             false,
 	}
-	execute(command, parameter)
 }
 
-func setDefaults() {
-	remoteName = "origin"
-	voiceCommand = "say"
-	wipCommitMessage = "mob next [ci-skip]"
-	mobNextStay = false
-	mobStartIncludeUncommittedChanges = false
-	debug = false
-}
-
-func parseEnvironmentVariables() {
+func parseEnvironmentVariables(configuration Configuration) Configuration {
 	userRemoteName, userRemoteNameSet := os.LookupEnv("MOB_REMOTE_NAME")
 	if userRemoteNameSet {
-		remoteName = userRemoteName
-		say("overriding MOB_REMOTE_NAME=" + remoteName)
+		configuration.RemoteName = userRemoteName
+		say("overriding MOB_REMOTE_NAME=" + configuration.RemoteName)
 	}
 	userWipCommitMessage, userWipCommitMessageSet := os.LookupEnv("MOB_WIP_COMMIT_MESSAGE")
 	if userWipCommitMessageSet {
-		wipCommitMessage = userWipCommitMessage
-		say("overriding MOB_WIP_COMMIT_MESSAGE=" + wipCommitMessage)
+		configuration.WipCommitMessage = userWipCommitMessage
+		say("overriding MOB_WIP_COMMIT_MESSAGE=" + configuration.WipCommitMessage)
 	}
 	userMobVoiceCommand, userMobVoiceCommandSet := os.LookupEnv("MOB_VOICE_COMMAND")
 	if userMobVoiceCommandSet {
-		voiceCommand = userMobVoiceCommand
-		say("overriding MOB_VOICE_COMMAND=" + voiceCommand)
+		configuration.VoiceCommand = userMobVoiceCommand
+		say("overriding MOB_VOICE_COMMAND=" + configuration.VoiceCommand)
 	}
 	userMobDebug, userMobDebugSet := os.LookupEnv("MOB_DEBUG")
 	if userMobDebugSet && userMobDebug == "true" {
-		debug = true
-		say("overriding MOB_DEBUG=" + strconv.FormatBool(debug))
+		configuration.Debug = true
+		say("overriding MOB_DEBUG=" + strconv.FormatBool(configuration.Debug))
 	}
 	userMobNextStay, userMobNextStaySet := os.LookupEnv("MOB_NEXT_STAY")
 	if userMobNextStaySet && userMobNextStay == "true" {
-		mobNextStay = true
-		say("overriding MOB_NEXT_STAY=" + strconv.FormatBool(mobNextStay))
+		configuration.MobNextStay = true
+		say("overriding MOB_NEXT_STAY=" + strconv.FormatBool(configuration.MobNextStay))
 	}
 
 	key := "MOB_START_INCLUDE_UNCOMMITTED_CHANGES"
 	userMobStartIncludeUncommittedChanges, userMobStartIncludeUncommittedChangesSet := os.LookupEnv(key)
 	if userMobStartIncludeUncommittedChangesSet && userMobStartIncludeUncommittedChanges == "true" {
-		mobStartIncludeUncommittedChanges = true
-		say("overriding " + key + "=" + strconv.FormatBool(mobStartIncludeUncommittedChanges))
+		configuration.MobStartIncludeUncommittedChanges = true
+		say("overriding " + key + "=" + strconv.FormatBool(configuration.MobStartIncludeUncommittedChanges))
 	}
+
+	return configuration
 }
 
 func config() {
-	say("MOB_REMOTE_NAME" + "=" + remoteName)
-	say("MOB_WIP_COMMIT_MESSAGE" + "=" + wipCommitMessage)
-	say("MOB_VOICE_COMMAND" + "=" + voiceCommand)
-	say("MOB_NEXT_STAY" + "=" + strconv.FormatBool(mobNextStay))
-	say("MOB_START_INCLUDE_UNCOMMITTED_CHANGES" + "=" + strconv.FormatBool(mobStartIncludeUncommittedChanges))
-	say("MOB_DEBUG" + "=" + strconv.FormatBool(debug))
+	say("MOB_REMOTE_NAME" + "=" + configuration.RemoteName)
+	say("MOB_WIP_COMMIT_MESSAGE" + "=" + configuration.WipCommitMessage)
+	say("MOB_VOICE_COMMAND" + "=" + configuration.VoiceCommand)
+	say("MOB_NEXT_STAY" + "=" + strconv.FormatBool(configuration.MobNextStay))
+	say("MOB_START_INCLUDE_UNCOMMITTED_CHANGES" + "=" + strconv.FormatBool(configuration.MobStartIncludeUncommittedChanges))
+	say("MOB_DEBUG" + "=" + strconv.FormatBool(configuration.Debug))
 }
 
-func parseFlagsForCommandNext(args []string) []string {
-	if arrayContains(args, "-s") || arrayContains(args, "--stay") {
-		sayInfo("overriding MOB_NEXT_STAY=true because of parameter")
-		mobNextStay = true
-	}
-
-	return arrayRemove(arrayRemove(args, "-s"), "--stay")
-}
-
-func parseDebugFlag(args []string) []string {
-	if arrayContains(args, "--debug") {
-		sayInfo("overriding MOB_DEBUG=true because of parameter")
-		debug = true
-	}
-
-	return arrayRemove(args, "--debug")
-}
-
-func parseIncludeUncommittedChangesFlag(args []string) []string {
-	if arrayContains(args, "--include-uncommitted-changes") {
-		sayInfo("overriding MOB_START_INCLUDE_UNCOMMITTED_CHANGES=true because of parameter")
-		mobStartIncludeUncommittedChanges = true
-	}
-
-	return arrayRemove(args, "--include-uncommitted-changes")
-}
-
-func arrayContains(items []string, item string) bool {
-	for _, n := range items {
-		if item == n {
-			return true
-		}
-	}
-	return false
-}
-
-func arrayRemove(items []string, item string) []string {
-	newitems := []string{}
-
-	for _, i := range items {
-		if i != item {
-			newitems = append(newitems, i)
+func parseArgs(args []string) (command string, parameters []string) {
+	for i, arg := range args {
+		switch arg {
+		case "--include-uncommitted-changes":
+			sayInfo("overriding MOB_START_INCLUDE_UNCOMMITTED_CHANGES=true because of parameter")
+			configuration.MobStartIncludeUncommittedChanges = true
+		case "--debug":
+			sayInfo("overriding MOB_DEBUG=true because of parameter")
+			configuration.Debug = true
+		case "-s", "--stay":
+			sayInfo("overriding MOB_NEXT_STAY=true because of parameter")
+			configuration.MobNextStay = true
+		default:
+			if i == 0 {
+				command = arg
+			} else {
+				parameters = append(parameters, arg)
+			}
 		}
 	}
 
-	return newitems
+	return
 }
 
 func execute(command string, parameter []string) {
@@ -174,14 +158,29 @@ func execute(command string, parameter []string) {
 		help()
 	default:
 		help()
-
 	}
 }
 
-func startTimer(timerInMinutes string) {
-	if debug {
-		sayDebug("Starting timer for " + timerInMinutes + " minutes")
+func determineCurrentBranches(currentBranch string) (string, string) {
+	var currentBaseBranch string
+	var currentWipBranch string
+
+	prefix := "mob/"
+
+	if currentBranch == "mob-session" || currentBranch == "master" {
+		currentBaseBranch = "master"
+		currentWipBranch = "mob-session"
+	} else {
+		currentBaseBranch = strings.ReplaceAll(currentBranch, prefix, "")
+		currentWipBranch = prefix + currentBaseBranch
 	}
+
+	sayDebug("on branch " + currentBranch + " => BASE " + currentBaseBranch + " WIP " + currentWipBranch)
+	return currentBaseBranch, currentWipBranch
+}
+
+func startTimer(timerInMinutes string) {
+	sayDebug("Starting timer for " + timerInMinutes + " minutes")
 	timeoutInMinutes, _ := strconv.Atoi(timerInMinutes)
 	timeoutInSeconds := timeoutInMinutes * 60
 	timerInSeconds := strconv.Itoa(timeoutInSeconds)
@@ -192,15 +191,13 @@ func startTimer(timerInMinutes string) {
 
 	var commandString string
 	var err error
-	if debug {
-		sayDebug("Operating System " + runtime.GOOS)
-	}
+	sayDebug("Operating System " + runtime.GOOS)
 	if runtime.GOOS == "windows" {
 		commandString, err = startCommand("powershell", "-command", "start-process powershell -NoNewWindow -ArgumentList '-command \"sleep "+timerInSeconds+"; (New-Object -ComObject SAPI.SPVoice).Speak(\\\""+voiceMessage+"\\\")\"'")
 	} else if runtime.GOOS == "darwin" {
-		commandString, err = startCommand("sh", "-c", "( sleep "+timerInSeconds+" && "+voiceCommand+" \""+voiceMessage+"\" && /usr/bin/osascript -e 'display notification \""+textMessage+"\"')  &")
+		commandString, err = startCommand("sh", "-c", "( sleep "+timerInSeconds+" && "+configuration.VoiceCommand+" \""+voiceMessage+"\" && /usr/bin/osascript -e 'display notification \""+textMessage+"\"')  &")
 	} else if runtime.GOOS == "linux" {
-		commandString, err = startCommand("sh", "-c", "( sleep "+timerInSeconds+" && "+voiceCommand+" \""+voiceMessage+"\" && /usr/bin/notify-send \""+textMessage+"\")  &")
+		commandString, err = startCommand("sh", "-c", "( sleep "+timerInSeconds+" && "+configuration.VoiceCommand+" \""+voiceMessage+"\" && /usr/bin/notify-send \""+textMessage+"\")  &")
 	} else {
 		sayError("Cannot start timer at " + runtime.GOOS)
 		return
@@ -216,7 +213,7 @@ func startTimer(timerInMinutes string) {
 }
 
 func reset() {
-	git("fetch", remoteName)
+	git("fetch", configuration.RemoteName)
 
 	currentBaseBranch, currentWipBranch := determineCurrentBranches(gitCurrentBranch())
 
@@ -225,15 +222,15 @@ func reset() {
 		git("branch", "--delete", "--force", currentWipBranch)
 	}
 	if hasRemoteBranch(currentWipBranch) {
-		git("push", "--no-verify", remoteName, "--delete", currentWipBranch)
+		git("push", "--no-verify", configuration.RemoteName, "--delete", currentWipBranch)
 	}
-	sayInfo("Branches " + currentWipBranch + " and " + remoteName + "/" + currentWipBranch + " deleted")
+	sayInfo("Branches " + currentWipBranch + " and " + configuration.RemoteName + "/" + currentWipBranch + " deleted")
 }
 
 func start() {
 	stashed := false
 	if hasUncommittedChanges() {
-		if mobStartIncludeUncommittedChanges {
+		if configuration.MobStartIncludeUncommittedChanges {
 			git("stash", "push", "--include-untracked", "--message", mobStashName)
 			stashed = true
 		} else {
@@ -256,13 +253,13 @@ func start() {
 		}
 	}
 
-	git("fetch", remoteName, "--prune")
+	git("fetch", configuration.RemoteName, "--prune")
 
 	currentBaseBranch, currentWipBranch := determineCurrentBranches(gitCurrentBranch())
 
 	if !hasRemoteBranch(currentBaseBranch) {
-		sayError("Remote branch " + remoteName + "/" + currentBaseBranch + " is missing")
-		sayTodo("fix with 'git push " + remoteName + " " + currentBaseBranch + " --set-upstream'")
+		sayError("Remote branch " + configuration.RemoteName + "/" + currentBaseBranch + " is missing")
+		sayTodo("fix with 'git push " + configuration.RemoteName + " " + currentBaseBranch + " --set-upstream'")
 		return
 	}
 
@@ -274,7 +271,7 @@ func start() {
 		startNewMobSession()
 	}
 
-	if mobStartIncludeUncommittedChanges && stashed {
+	if configuration.MobStartIncludeUncommittedChanges && stashed {
 		stashes := silentgit("stash", "list")
 		stash := findLatestMobStash(stashes)
 		git("stash", "pop", stash)
@@ -284,37 +281,17 @@ func start() {
 func startJoinMobSession() {
 	_, currentWipBranch := determineCurrentBranches(gitCurrentBranch())
 
-	sayInfo("joining existing mob session from " + remoteName + "/" + currentWipBranch)
-	git("checkout", "-B", currentWipBranch, remoteName+"/"+currentWipBranch)
-	git("branch", "--set-upstream-to="+remoteName+"/"+currentWipBranch, currentWipBranch)
+	sayInfo("joining existing mob session from " + configuration.RemoteName + "/" + currentWipBranch)
+	git("checkout", "-B", currentWipBranch, configuration.RemoteName+"/"+currentWipBranch)
+	git("branch", "--set-upstream-to="+configuration.RemoteName+"/"+currentWipBranch, currentWipBranch)
 }
 
 func startNewMobSession() {
 	currentBaseBranch, currentWipBranch := determineCurrentBranches(gitCurrentBranch())
 
-	sayInfo("starting new mob session from " + remoteName + "/" + currentBaseBranch)
-	git("checkout", "-B", currentWipBranch, remoteName+"/"+currentBaseBranch)
-	git("push", "--no-verify", "--set-upstream", remoteName, currentWipBranch)
-}
-
-func determineCurrentBranches(currentBranch string) (string, string) {
-	var currentBaseBranch string
-	var currentWipBranch string
-
-	prefix := "mob/"
-
-	if currentBranch == "mob-session" || currentBranch == "master" {
-		currentBaseBranch = "master"
-		currentWipBranch = "mob-session"
-	} else {
-		currentBaseBranch = strings.ReplaceAll(currentBranch, prefix, "")
-		currentWipBranch = prefix + currentBaseBranch
-	}
-
-	if debug {
-		sayInfo("on branch " + currentBranch + " => BASE " + currentBaseBranch + " WIP " + currentWipBranch)
-	}
-	return currentBaseBranch, currentWipBranch
+	sayInfo("starting new mob session from " + configuration.RemoteName + "/" + currentBaseBranch)
+	git("checkout", "-B", currentWipBranch, configuration.RemoteName+"/"+currentBaseBranch)
+	git("push", "--no-verify", "--set-upstream", configuration.RemoteName, currentWipBranch)
 }
 
 func getUntrackedFiles() string {
@@ -324,8 +301,6 @@ func getUntrackedFiles() string {
 func getUnstagedChanges() string {
 	return silentgit("diff", "--stat")
 }
-
-var mobStashName = "mob-stash-name"
 
 func findLatestMobStash(stashes string) string {
 	lines := strings.Split(stashes, "\n")
@@ -352,14 +327,14 @@ func next() {
 		sayInfo("nothing was done, so nothing to commit")
 	} else {
 		git("add", "--all")
-		git("commit", "--message", "\""+wipCommitMessage+"\"", "--no-verify")
+		git("commit", "--message", "\""+configuration.WipCommitMessage+"\"", "--no-verify")
 		changes := getChangesOfLastCommit()
-		git("push", "--no-verify", remoteName, currentWipBranch)
+		git("push", "--no-verify", configuration.RemoteName, currentWipBranch)
 		say(changes)
 	}
 	showNext()
 
-	if !mobNextStay {
+	if !configuration.MobNextStay {
 		git("checkout", currentBaseBranch)
 	}
 }
@@ -380,26 +355,26 @@ func done() {
 		return
 	}
 
-	git("fetch", remoteName, "--prune")
+	git("fetch", configuration.RemoteName, "--prune")
 
 	currentBaseBranch, currentWipBranch := determineCurrentBranches(gitCurrentBranch())
 
 	if hasRemoteBranch(currentWipBranch) {
 		if !isNothingToCommit() {
 			git("add", "--all")
-			git("commit", "--message", "\""+wipCommitMessage+"\"", "--no-verify")
+			git("commit", "--message", "\""+configuration.WipCommitMessage+"\"", "--no-verify")
 		}
-		git("push", "--no-verify", remoteName, currentWipBranch)
+		git("push", "--no-verify", configuration.RemoteName, currentWipBranch)
 
 		git("checkout", currentBaseBranch)
-		git("merge", remoteName+"/"+currentBaseBranch, "--ff-only")
+		git("merge", configuration.RemoteName+"/"+currentBaseBranch, "--ff-only")
 		mergeFailed := gitignorefailure("merge", "--squash", "--ff", currentWipBranch)
 		if mergeFailed != nil {
 			return
 		}
 
 		git("branch", "-D", currentWipBranch)
-		git("push", "--no-verify", remoteName, "--delete", currentWipBranch)
+		git("push", "--no-verify", configuration.RemoteName, "--delete", currentWipBranch)
 
 		say(getCachedChanges())
 		sayTodo("git commit -m 'describe the changes'")
@@ -445,7 +420,7 @@ func hasLocalBranch(branch string) bool {
 }
 
 func hasRemoteBranch(branch string) bool {
-	return strings.Contains(gitRemoteBranches(), "  "+remoteName+"/"+branch)
+	return strings.Contains(gitRemoteBranches(), "  "+configuration.RemoteName+"/"+branch)
 }
 
 func gitBranches() string {
@@ -466,22 +441,16 @@ func gitUserName() string {
 }
 
 func showNext() {
-	if debug {
-		sayDebug("determining next person based on previous changes")
-	}
+	sayDebug("determining next person based on previous changes")
 
 	currentBaseBranch, currentWipBranch := determineCurrentBranches(gitCurrentBranch())
 
 	changes := strings.TrimSpace(silentgit("--no-pager", "log", currentBaseBranch+".."+currentWipBranch, "--pretty=format:%an", "--abbrev-commit"))
 	lines := strings.Split(strings.Replace(changes, "\r\n", "\n", -1), "\n")
 	numberOfLines := len(lines)
-	if debug {
-		sayDebug("there have been " + strconv.Itoa(numberOfLines) + " changes")
-	}
+	sayDebug("there have been " + strconv.Itoa(numberOfLines) + " changes")
 	gitUserName := gitUserName()
-	if debug {
-		sayDebug("current git user.name is '" + gitUserName + "'")
-	}
+	sayDebug("current git user.name is '" + gitUserName + "'")
 	if numberOfLines < 1 {
 		return
 	}
@@ -519,20 +488,6 @@ func help() {
 
 func version() {
 	say("v" + versionNumber)
-}
-
-func getCommand(args []string) string {
-	if len(args) < 1 {
-		return ""
-	}
-	return args[0]
-}
-
-func getParameters(args []string) []string {
-	if len(args) == 0 {
-		return args
-	}
-	return args[1:]
 }
 
 func silentgit(args ...string) string {
@@ -576,14 +531,10 @@ func runCommand(name string, args ...string) (string, string, error) {
 		command.Dir = workingDir
 	}
 	commandString := strings.Join(command.Args, " ")
-	if debug {
-		sayDebug(commandString)
-	}
+	sayDebug(commandString)
 	outputBinary, err := command.CombinedOutput()
 	output := string(outputBinary)
-	if debug {
-		sayDebug(output)
-	}
+	sayDebug(output)
 	return commandString, output, err
 }
 
@@ -593,9 +544,7 @@ func startCommand(name string, args ...string) (string, error) {
 		command.Dir = workingDir
 	}
 	commandString := strings.Join(command.Args, " ")
-	if debug {
-		sayDebug(commandString)
-	}
+	sayDebug(commandString)
 	err := command.Start()
 	return commandString, err
 }
@@ -609,7 +558,9 @@ func sayError(s string) {
 }
 
 func sayDebug(s string) {
-	sayWithPrefix(s, " DEBUG ")
+	if configuration.Debug {
+		sayWithPrefix(s, " DEBUG ")
+	}
 }
 
 func sayOkay(s string) {

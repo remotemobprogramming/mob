@@ -102,7 +102,7 @@ func TestResetCommit(t *testing.T) {
 func TestStartUnstagedChanges(t *testing.T) {
 	output := setup(t)
 	createFile(t, "test.txt", "content")
-	mobStartIncludeUncommittedChanges = false
+	configuration.MobStartIncludeUncommittedChanges = false
 
 	start()
 
@@ -114,7 +114,7 @@ func TestStartUnstagedChanges(t *testing.T) {
 func TestStartIncludeUnstagedChanges(t *testing.T) {
 	setup(t)
 	createFile(t, "test.txt", "content")
-	mobStartIncludeUncommittedChanges = true
+	configuration.MobStartIncludeUncommittedChanges = true
 
 	start()
 
@@ -125,7 +125,7 @@ func TestStartIncludeUnstagedChanges(t *testing.T) {
 func TestStartIncludeUntrackedFiles(t *testing.T) {
 	setup(t)
 	createFile(t, "example.txt", "content")
-	mobStartIncludeUncommittedChanges = true
+	configuration.MobStartIncludeUncommittedChanges = true
 
 	start()
 
@@ -135,7 +135,7 @@ func TestStartIncludeUntrackedFiles(t *testing.T) {
 func TestStartUntrackedFiles(t *testing.T) {
 	setup(t)
 	createFile(t, "example.txt", "content")
-	mobStartIncludeUncommittedChanges = false
+	configuration.MobStartIncludeUncommittedChanges = false
 
 	start()
 
@@ -156,7 +156,7 @@ func TestStartNextBackToMaster(t *testing.T) {
 
 func TestStartNextStay(t *testing.T) {
 	setup(t)
-	mobNextStay = true
+	configuration.MobNextStay = true
 	start()
 	createFile(t, "file1.txt", "asdf")
 	assertOnBranch(t, "mob-session")
@@ -338,7 +338,7 @@ func TestDoneMerge(t *testing.T) {
 }
 
 func setup(t *testing.T) *string {
-	setDefaults()
+	configuration = getDefaultConfiguration()
 	output := captureOutput()
 	createTestbed(t)
 	assertOnBranch(t, "master")
