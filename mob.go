@@ -57,40 +57,63 @@ func getDefaultConfiguration() Configuration {
 }
 
 func parseEnvironmentVariables(configuration Configuration) Configuration {
+	removed("MOB_BASE_BRANCH", "Use 'mob start' on your base branch instead.")
+	removed("MOB_WIP_BRANCH", "Use 'mob start --branch <branch>' instead.")
+
+	deprecated("MOB_DEBUG", "Use the parameter --debug instead.")
+	deprecated("MOB_START_INCLUDE_UNCOMMITTED_CHANGES", "Use the parameter --include-uncommitted-changes instead.")
+
 	userRemoteName, userRemoteNameSet := os.LookupEnv("MOB_REMOTE_NAME")
 	if userRemoteNameSet {
 		configuration.RemoteName = userRemoteName
-		say("overriding MOB_REMOTE_NAME=" + configuration.RemoteName)
+		sayDebug("overriding MOB_REMOTE_NAME=" + configuration.RemoteName)
 	}
+
 	userWipCommitMessage, userWipCommitMessageSet := os.LookupEnv("MOB_WIP_COMMIT_MESSAGE")
 	if userWipCommitMessageSet {
 		configuration.WipCommitMessage = userWipCommitMessage
-		say("overriding MOB_WIP_COMMIT_MESSAGE=" + configuration.WipCommitMessage)
+		sayDebug("overriding MOB_WIP_COMMIT_MESSAGE=" + configuration.WipCommitMessage)
 	}
+
 	userMobVoiceCommand, userMobVoiceCommandSet := os.LookupEnv("MOB_VOICE_COMMAND")
 	if userMobVoiceCommandSet {
 		configuration.VoiceCommand = userMobVoiceCommand
-		say("overriding MOB_VOICE_COMMAND=" + configuration.VoiceCommand)
+		sayDebug("overriding MOB_VOICE_COMMAND=" + configuration.VoiceCommand)
 	}
+
 	userMobDebug, userMobDebugSet := os.LookupEnv("MOB_DEBUG")
 	if userMobDebugSet && userMobDebug == "true" {
 		configuration.Debug = true
-		say("overriding MOB_DEBUG=" + strconv.FormatBool(configuration.Debug))
+		sayDebug("overriding MOB_DEBUG=" + strconv.FormatBool(configuration.Debug))
 	}
+
 	userMobNextStay, userMobNextStaySet := os.LookupEnv("MOB_NEXT_STAY")
 	if userMobNextStaySet && userMobNextStay == "true" {
 		configuration.MobNextStay = true
-		say("overriding MOB_NEXT_STAY=" + strconv.FormatBool(configuration.MobNextStay))
+		sayDebug("overriding MOB_NEXT_STAY=" + strconv.FormatBool(configuration.MobNextStay))
 	}
 
-	key := "MOB_START_INCLUDE_UNCOMMITTED_CHANGES"
-	userMobStartIncludeUncommittedChanges, userMobStartIncludeUncommittedChangesSet := os.LookupEnv(key)
+	userMobStartIncludeUncommittedChanges, userMobStartIncludeUncommittedChangesSet := os.LookupEnv("MOB_START_INCLUDE_UNCOMMITTED_CHANGES")
 	if userMobStartIncludeUncommittedChangesSet && userMobStartIncludeUncommittedChanges == "true" {
 		configuration.MobStartIncludeUncommittedChanges = true
-		say("overriding " + key + "=" + strconv.FormatBool(configuration.MobStartIncludeUncommittedChanges))
+		sayDebug("overriding MOB_START_INCLUDE_UNCOMMITTED_CHANGES=" + strconv.FormatBool(configuration.MobStartIncludeUncommittedChanges))
 	}
 
 	return configuration
+}
+
+func removed(key string, message string) {
+	if _, set := os.LookupEnv(key); set {
+		say("'mob' no longer supports the configuration option '" + key + "'")
+		say(message)
+	}
+}
+
+func deprecated(key string, message string) {
+	if _, set := os.LookupEnv(key); set {
+		say("'mob' will stop supporting the configuration option '" + key + "' sometime in the future")
+		say(message)
+	}
 }
 
 func config() {
@@ -308,7 +331,7 @@ func start() {
 
 	remoteBranches := gitRemoteBranches()
 
-	if !isMobProgramming() && strings.Contains(remoteBranches, configuration.RemoteName+"/"+wipBranchPrefix+currentBaseBranch+"/")  && !configuration.WipBranchQualifierSet {
+	if !isMobProgramming() && strings.Contains(remoteBranches, configuration.RemoteName+"/"+wipBranchPrefix+currentBaseBranch+"/") && !configuration.WipBranchQualifierSet {
 		sayInfo("qualified mob branches detected")
 		sayTodo("fix with 'mob start --branch <branch>' (use \"\" for the default mob branch)")
 		return
@@ -538,6 +561,8 @@ func help() {
 	say("mob moo \t\t\t# moo!")
 	say("mob version \t\t\t# print version number")
 	say("mob help \t\t\t# print usage")
+	say("")
+	say("Add --debug to any option to enable verbose logging")
 	say("")
 	say("EXAMPLES")
 	say("mob start 10 \t\t\t# start 10 min session in wip branch 'mob-session'")

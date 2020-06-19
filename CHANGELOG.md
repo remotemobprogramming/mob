@@ -1,6 +1,9 @@
 # 0.0.22
-- Adds `mob start --branch <branch>` to allow multiple wip branches for a base branch.
+- Adds `mob start --branch <branch>` to allow multiple wip branches in the form of 'mob/<base-branch>/<branch>' for a base branch. For example, when being on branch 'main' a `mob start --branch green` would switch to a wip branch named 'mob/main/green'.
 - Adds `mob moo` (Thanks Niko for the idea)
+- Deprecated `MOB_DEBUG` in favor of the parameter `--debug`
+- Deprecated `MOB_START_INCLUDE_UNCOMMITTED_CHANGES` in favor of the parameter `--include-uncommitted-changes` instead
+- Show warning if removed configuration option `MOB_BASE_BRANCH` or `MOB_WIP_BRANCH` is used.
 
 # 0.0.20
 - `mob start` on a branch named `feature1` will switch to the branch `mob/feature1` and will merge the changes back to `feature1` after `mob done`. For the `master` branch, the `mob-session` branch will still work (but this may change in the future, switching to `mob/master` at some point).
