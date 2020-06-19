@@ -42,6 +42,30 @@ func assertDetermineBranches(t *testing.T, branch string, qualifier, expectedBas
 	equals(t, expectedWip, wipBranch)
 }
 
+func TestEnvironmentVariables(t *testing.T){
+	configuration = getDefaultConfiguration()
+
+	os.Setenv("MOB_REMOTE_NAME", "GITHUB")
+	defer os.Unsetenv("MOB_REMOTE_NAME")
+
+	os.Setenv("MOB_DEBUG", "true")
+	defer os.Unsetenv("MOB_DEBUG")
+
+	configuration = parseEnvironmentVariables(getDefaultConfiguration())
+	equals(t, "GITHUB", configuration.RemoteName)
+	equals(t, true, configuration.Debug)
+}
+
+func TestEnvironmentVariablesEmptyString(t *testing.T){
+	configuration = getDefaultConfiguration()
+
+	os.Setenv("MOB_REMOTE_NAME", "")
+	defer os.Unsetenv("MOB_REMOTE_NAME")
+
+	configuration = parseEnvironmentVariables(getDefaultConfiguration())
+	equals(t, "origin", configuration.RemoteName)
+}
+
 func TestVersion(t *testing.T) {
 	output := setup(t)
 

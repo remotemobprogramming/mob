@@ -63,43 +63,31 @@ func parseEnvironmentVariables(configuration Configuration) Configuration {
 	deprecated("MOB_DEBUG", "Use the parameter --debug instead.")
 	deprecated("MOB_START_INCLUDE_UNCOMMITTED_CHANGES", "Use the parameter --include-uncommitted-changes instead.")
 
-	userRemoteName, userRemoteNameSet := os.LookupEnv("MOB_REMOTE_NAME")
-	if userRemoteNameSet {
-		configuration.RemoteName = userRemoteName
-		sayDebug("overriding MOB_REMOTE_NAME=" + configuration.RemoteName)
-	}
+	setStringFromEnvVariable(&configuration.RemoteName, "MOB_REMOTE_NAME")
+	setStringFromEnvVariable(&configuration.WipCommitMessage, "MOB_WIP_COMMIT_MESSAGE")
+	setStringFromEnvVariable(&configuration.VoiceCommand, "MOB_VOICE_COMMAND")
 
-	userWipCommitMessage, userWipCommitMessageSet := os.LookupEnv("MOB_WIP_COMMIT_MESSAGE")
-	if userWipCommitMessageSet {
-		configuration.WipCommitMessage = userWipCommitMessage
-		sayDebug("overriding MOB_WIP_COMMIT_MESSAGE=" + configuration.WipCommitMessage)
-	}
-
-	userMobVoiceCommand, userMobVoiceCommandSet := os.LookupEnv("MOB_VOICE_COMMAND")
-	if userMobVoiceCommandSet {
-		configuration.VoiceCommand = userMobVoiceCommand
-		sayDebug("overriding MOB_VOICE_COMMAND=" + configuration.VoiceCommand)
-	}
-
-	userMobDebug, userMobDebugSet := os.LookupEnv("MOB_DEBUG")
-	if userMobDebugSet && userMobDebug == "true" {
-		configuration.Debug = true
-		sayDebug("overriding MOB_DEBUG=" + strconv.FormatBool(configuration.Debug))
-	}
-
-	userMobNextStay, userMobNextStaySet := os.LookupEnv("MOB_NEXT_STAY")
-	if userMobNextStaySet && userMobNextStay == "true" {
-		configuration.MobNextStay = true
-		sayDebug("overriding MOB_NEXT_STAY=" + strconv.FormatBool(configuration.MobNextStay))
-	}
-
-	userMobStartIncludeUncommittedChanges, userMobStartIncludeUncommittedChangesSet := os.LookupEnv("MOB_START_INCLUDE_UNCOMMITTED_CHANGES")
-	if userMobStartIncludeUncommittedChangesSet && userMobStartIncludeUncommittedChanges == "true" {
-		configuration.MobStartIncludeUncommittedChanges = true
-		sayDebug("overriding MOB_START_INCLUDE_UNCOMMITTED_CHANGES=" + strconv.FormatBool(configuration.MobStartIncludeUncommittedChanges))
-	}
+	setBoolFromEnvVariable(&configuration.Debug, "MOB_DEBUG")
+	setBoolFromEnvVariable(&configuration.MobNextStay, "MOB_NEXT_STAY")
+	setBoolFromEnvVariable(&configuration.MobStartIncludeUncommittedChanges, "MOB_START_INCLUDE_UNCOMMITTED_CHANGES")
 
 	return configuration
+}
+
+func setStringFromEnvVariable(s *string, key string) {
+	value, set := os.LookupEnv(key)
+	if set && value != "" {
+		*s = value
+		sayDebug("overriding " + key + " =" + *s)
+	}
+}
+
+func setBoolFromEnvVariable(s *bool, key string) {
+	value, set := os.LookupEnv(key)
+	if set && value == "true"{
+		*s = true
+		sayDebug("overriding " + key + " =" + strconv.FormatBool(*s))
+	}
 }
 
 func removed(key string, message string) {
