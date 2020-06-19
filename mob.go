@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	versionNumber   = "0.0.21"
+	versionNumber   = "0.0.22"
 	mobStashName    = "mob-stash-name"
 	wipBranchPrefix = "mob/"
 )
@@ -84,7 +84,7 @@ func setStringFromEnvVariable(s *string, key string) {
 
 func setBoolFromEnvVariable(s *bool, key string) {
 	value, set := os.LookupEnv(key)
-	if set && value == "true"{
+	if set && value == "true" {
 		*s = true
 		sayDebug("overriding " + key + " =" + strconv.FormatBool(*s))
 	}
