@@ -42,7 +42,7 @@ func assertDetermineBranches(t *testing.T, branch string, qualifier, expectedBas
 	equals(t, expectedWip, wipBranch)
 }
 
-func TestEnvironmentVariables(t *testing.T){
+func TestEnvironmentVariables(t *testing.T) {
 	configuration = getDefaultConfiguration()
 
 	os.Setenv("MOB_REMOTE_NAME", "GITHUB")
@@ -56,7 +56,7 @@ func TestEnvironmentVariables(t *testing.T){
 	equals(t, true, configuration.Debug)
 }
 
-func TestEnvironmentVariablesEmptyString(t *testing.T){
+func TestEnvironmentVariablesEmptyString(t *testing.T) {
 	configuration = getDefaultConfiguration()
 
 	os.Setenv("MOB_REMOTE_NAME", "")
@@ -313,6 +313,7 @@ func TestStartNextStay(t *testing.T) {
 
 	next()
 
+	equals(t, strings.TrimSpace(silentgit("log", "--format=%B", "-n", "1", "HEAD")), configuration.WipCommitMessage)
 	assertOnBranch(t, "mob-session")
 }
 

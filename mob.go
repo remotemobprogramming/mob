@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	versionNumber   = "0.0.22"
+	versionNumber   = "0.0.23"
 	mobStashName    = "mob-stash-name"
 	wipBranchPrefix = "mob/"
 )
@@ -395,7 +395,7 @@ func next() {
 		sayInfo("nothing was done, so nothing to commit")
 	} else {
 		git("add", "--all")
-		git("commit", "--message", "\""+configuration.WipCommitMessage+"\"", "--no-verify")
+		git("commit", "--message", configuration.WipCommitMessage, "--no-verify")
 		changes := getChangesOfLastCommit()
 		git("push", "--no-verify", configuration.RemoteName, currentWipBranch)
 		say(changes)
@@ -430,7 +430,7 @@ func done() {
 	if hasRemoteBranch(currentWipBranch) {
 		if !isNothingToCommit() {
 			git("add", "--all")
-			git("commit", "--message", "\""+configuration.WipCommitMessage+"\"", "--no-verify")
+			git("commit", "--message", configuration.WipCommitMessage, "--no-verify")
 		}
 		git("push", "--no-verify", configuration.RemoteName, currentWipBranch)
 

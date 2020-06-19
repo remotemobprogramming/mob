@@ -1,3 +1,6 @@
+# 0.0.23
+- Commit message of wip commits is no longer quoted (see #52)
+
 # 0.0.22
 - Adds `mob start --branch <branch>` to allow multiple wip branches in the form of 'mob/<base-branch>/<branch>' for a base branch. For example, when being on branch 'main' a `mob start --branch green` would switch to a wip branch named 'mob/main/green'.
 - Adds `mob moo` (Thanks Niko for the idea)
