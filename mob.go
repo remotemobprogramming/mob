@@ -11,8 +11,9 @@ import (
 )
 
 const (
-	versionNumber = "0.0.21"
-	mobStashName  = "mob-stash-name"
+	versionNumber   = "0.0.21"
+	mobStashName    = "mob-stash-name"
+	wipBranchPrefix = "mob/"
 )
 
 var (
@@ -27,13 +28,15 @@ type Configuration struct {
 	MobNextStay                       bool   // override with MOB_NEXT_STAY environment variable
 	MobStartIncludeUncommittedChanges bool   // override with MOB_START_INCLUDE_UNCOMMITTED_CHANGES variable
 	Debug                             bool   // override with MOB_DEBUG environment variable
+	WipBranchQualifier                string
+	WipBranchQualifierSet             bool
 }
 
 func main() {
 	configuration = parseEnvironmentVariables(getDefaultConfiguration())
 	sayDebug("Args '" + strings.Join(os.Args, " ") + "'")
 
-	command, parameters := parseArgs(os.Args[1:])
+	command, parameters := parseArgs(os.Args)
 	sayDebug("command '" + command + "'")
 	sayDebug("parameters '" + strings.Join(parameters, " ") + "'")
 
@@ -48,6 +51,8 @@ func getDefaultConfiguration() Configuration {
 		MobNextStay:                       false,
 		MobStartIncludeUncommittedChanges: false,
 		Debug:                             false,
+		WipBranchQualifier:                "",
+		WipBranchQualifierSet:             false,
 	}
 }
 
@@ -98,19 +103,23 @@ func config() {
 }
 
 func parseArgs(args []string) (command string, parameters []string) {
-	for i, arg := range args {
+	for i := 1; i < len(args); i++ {
+		arg := args[i]
 		switch arg {
 		case "--include-uncommitted-changes":
-			sayInfo("overriding MOB_START_INCLUDE_UNCOMMITTED_CHANGES=true because of parameter")
 			configuration.MobStartIncludeUncommittedChanges = true
 		case "--debug":
-			sayInfo("overriding MOB_DEBUG=true because of parameter")
 			configuration.Debug = true
-		case "-s", "--stay":
-			sayInfo("overriding MOB_NEXT_STAY=true because of parameter")
+		case "--stay", "-s":
 			configuration.MobNextStay = true
+		case "--branch", "-b":
+			if i+1 != len(args) {
+				configuration.WipBranchQualifier = args[i+1]
+				configuration.WipBranchQualifierSet = true
+			}
+			i++
 		default:
-			if i == 0 {
+			if i == 1 {
 				command = arg
 			} else {
 				parameters = append(parameters, arg)
@@ -152,6 +161,8 @@ func execute(command string, parameter []string) {
 		} else {
 			help()
 		}
+	case "moo":
+		moo()
 	case "version", "--version", "-v":
 		version()
 	case "help", "--help", "-h":
@@ -161,22 +172,33 @@ func execute(command string, parameter []string) {
 	}
 }
 
-func determineCurrentBranches(currentBranch string) (string, string) {
-	var currentBaseBranch string
-	var currentWipBranch string
+func determineBranches(branch string, branchQualifier string) (baseBranch string, wipBranch string) {
+	suffix := ""
 
-	prefix := "mob/"
-
-	if currentBranch == "mob-session" || currentBranch == "master" {
-		currentBaseBranch = "master"
-		currentWipBranch = "mob-session"
-	} else {
-		currentBaseBranch = strings.ReplaceAll(currentBranch, prefix, "")
-		currentWipBranch = prefix + currentBaseBranch
+	if branchQualifier != "" {
+		suffix = "/" + branchQualifier
 	}
 
-	sayDebug("on branch " + currentBranch + " => BASE " + currentBaseBranch + " WIP " + currentWipBranch)
-	return currentBaseBranch, currentWipBranch
+	preparedBranch := strings.ReplaceAll(branch, wipBranchPrefix, "")
+	index := strings.LastIndex(preparedBranch, "/")
+	if index != -1 {
+		suffix = preparedBranch[index:]
+	}
+
+	if branch == "mob-session" || branch == "master" {
+		baseBranch = "master"
+		if branchQualifier != "" {
+			wipBranch = wipBranchPrefix + baseBranch + suffix
+		} else {
+			wipBranch = "mob-session"
+		}
+	} else {
+		baseBranch = strings.ReplaceAll(strings.ReplaceAll(branch, wipBranchPrefix, ""), suffix, "")
+		wipBranch = wipBranchPrefix + baseBranch + suffix
+	}
+
+	sayDebug("on branch " + branch + " => BASE " + baseBranch + " WIP " + wipBranch)
+	return
 }
 
 func startTimer(timerInMinutes string) {
@@ -192,13 +214,14 @@ func startTimer(timerInMinutes string) {
 	var commandString string
 	var err error
 	sayDebug("Operating System " + runtime.GOOS)
-	if runtime.GOOS == "windows" {
+	switch runtime.GOOS {
+	case "windows":
 		commandString, err = startCommand("powershell", "-command", "start-process powershell -NoNewWindow -ArgumentList '-command \"sleep "+timerInSeconds+"; (New-Object -ComObject SAPI.SPVoice).Speak(\\\""+voiceMessage+"\\\")\"'")
-	} else if runtime.GOOS == "darwin" {
+	case "darwin":
 		commandString, err = startCommand("sh", "-c", "( sleep "+timerInSeconds+" && "+configuration.VoiceCommand+" \""+voiceMessage+"\" && /usr/bin/osascript -e 'display notification \""+textMessage+"\"')  &")
-	} else if runtime.GOOS == "linux" {
+	case "linux":
 		commandString, err = startCommand("sh", "-c", "( sleep "+timerInSeconds+" && "+configuration.VoiceCommand+" \""+voiceMessage+"\" && /usr/bin/notify-send \""+textMessage+"\")  &")
-	} else {
+	default:
 		sayError("Cannot start timer at " + runtime.GOOS)
 		return
 	}
@@ -212,10 +235,36 @@ func startTimer(timerInMinutes string) {
 	}
 }
 
+func moo() {
+	voiceMessage := "moo"
+
+	var commandString string
+	var err error
+
+	switch runtime.GOOS {
+	case "windows":
+		commandString, err = startCommand("powershell", "-command", "start-process powershell -NoNewWindow -ArgumentList '-command \"(New-Object -ComObject SAPI.SPVoice).Speak(\\\""+voiceMessage+"\\\")\"'")
+	case "darwin":
+		commandString, err = startCommand("sh", "-c", "( "+configuration.VoiceCommand+" \""+voiceMessage+"\")  &")
+	case "linux":
+		commandString, err = startCommand("sh", "-c", "( "+configuration.VoiceCommand+" \""+voiceMessage+"\")  &")
+	default:
+		sayError("Cannot run voice command on your system " + runtime.GOOS)
+		return
+	}
+
+	if err != nil {
+		sayError(commandString)
+		sayError(err.Error())
+	} else {
+		sayInfo(voiceMessage)
+	}
+}
+
 func reset() {
 	git("fetch", configuration.RemoteName)
 
-	currentBaseBranch, currentWipBranch := determineCurrentBranches(gitCurrentBranch())
+	currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), configuration.WipBranchQualifier)
 
 	git("checkout", currentBaseBranch)
 	if hasLocalBranch(currentWipBranch) {
@@ -255,7 +304,15 @@ func start() {
 
 	git("fetch", configuration.RemoteName, "--prune")
 
-	currentBaseBranch, currentWipBranch := determineCurrentBranches(gitCurrentBranch())
+	currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), configuration.WipBranchQualifier)
+
+	remoteBranches := gitRemoteBranches()
+
+	if !isMobProgramming() && strings.Contains(remoteBranches, configuration.RemoteName+"/"+wipBranchPrefix+currentBaseBranch+"/")  && !configuration.WipBranchQualifierSet {
+		sayInfo("qualified mob branches detected")
+		sayTodo("fix with 'mob start --branch <branch>' (use \"\" for the default mob branch)")
+		return
+	}
 
 	if !hasRemoteBranch(currentBaseBranch) {
 		sayError("Remote branch " + configuration.RemoteName + "/" + currentBaseBranch + " is missing")
@@ -279,7 +336,7 @@ func start() {
 }
 
 func startJoinMobSession() {
-	_, currentWipBranch := determineCurrentBranches(gitCurrentBranch())
+	_, currentWipBranch := determineBranches(gitCurrentBranch(), configuration.WipBranchQualifier)
 
 	sayInfo("joining existing mob session from " + configuration.RemoteName + "/" + currentWipBranch)
 	git("checkout", "-B", currentWipBranch, configuration.RemoteName+"/"+currentWipBranch)
@@ -287,7 +344,7 @@ func startJoinMobSession() {
 }
 
 func startNewMobSession() {
-	currentBaseBranch, currentWipBranch := determineCurrentBranches(gitCurrentBranch())
+	currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), configuration.WipBranchQualifier)
 
 	sayInfo("starting new mob session from " + configuration.RemoteName + "/" + currentBaseBranch)
 	git("checkout", "-B", currentWipBranch, configuration.RemoteName+"/"+currentBaseBranch)
@@ -321,7 +378,7 @@ func next() {
 		return
 	}
 
-	currentBaseBranch, currentWipBranch := determineCurrentBranches(gitCurrentBranch())
+	currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), configuration.WipBranchQualifier)
 
 	if isNothingToCommit() {
 		sayInfo("nothing was done, so nothing to commit")
@@ -357,7 +414,7 @@ func done() {
 
 	git("fetch", configuration.RemoteName, "--prune")
 
-	currentBaseBranch, currentWipBranch := determineCurrentBranches(gitCurrentBranch())
+	currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), configuration.WipBranchQualifier)
 
 	if hasRemoteBranch(currentWipBranch) {
 		if !isNothingToCommit() {
@@ -389,7 +446,7 @@ func status() {
 	if isMobProgramming() {
 		sayInfo("you are mob programming")
 
-		currentBaseBranch, currentWipBranch := determineCurrentBranches(gitCurrentBranch())
+		currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), configuration.WipBranchQualifier)
 
 		say(silentgit("--no-pager", "log", currentBaseBranch+".."+currentWipBranch, "--pretty=format:%h %cr <%an>", "--abbrev-commit"))
 	} else {
@@ -410,7 +467,8 @@ func hasUncommittedChanges() bool {
 
 func isMobProgramming() bool {
 	currentBranch := gitCurrentBranch()
-	_, currentWipBranch := determineCurrentBranches(currentBranch)
+	_, currentWipBranch := determineBranches(currentBranch, configuration.WipBranchQualifier)
+	sayDebug("current branch " + currentBranch + " and currentWipBranch " + currentWipBranch)
 	return currentWipBranch == currentBranch
 }
 
@@ -443,7 +501,7 @@ func gitUserName() string {
 func showNext() {
 	sayDebug("determining next person based on previous changes")
 
-	currentBaseBranch, currentWipBranch := determineCurrentBranches(gitCurrentBranch())
+	currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), configuration.WipBranchQualifier)
 
 	changes := strings.TrimSpace(silentgit("--no-pager", "log", currentBaseBranch+".."+currentWipBranch, "--pretty=format:%an", "--abbrev-commit"))
 	lines := strings.Split(strings.Replace(changes, "\r\n", "\n", -1), "\n")
@@ -470,20 +528,23 @@ func showNext() {
 
 func help() {
 	say("USAGE")
-	say("mob start [<minutes>] [--include-uncommitted-changes]\t# start mob session")
-	say("mob next [-s|--stay] \t# handover to next person")
-	say("mob done \t\t# finish mob session")
-	say("mob reset \t\t# reset any unfinished mob session (local & remote)")
-	say("mob status \t\t# show status of mob session")
-	say("mob timer <minutes>\t# start a <minutes> timer")
-	say("mob config \t\t# print configuration")
-	say("mob help \t\t# print usage")
-	say("mob version \t\t# print version number")
+	say("mob start [<minutes>] [--include-uncommitted-changes] [--branch|-b <branch>]\t# start mob session in wip branch")
+	say("mob next [-s|--stay] \t\t# handover to next person and switch back to base branch")
+	say("mob done \t\t\t# finish mob session by squashing all changes in wip branch to index in base branch")
+	say("mob reset [--branch|-b <branch>]# removes local and remote wip branch")
+	say("mob status \t\t\t# show status")
+	say("mob timer <minutes>\t\t# start a <minutes> timer")
+	say("mob config \t\t\t# print configuration")
+	say("mob moo \t\t\t# moo!")
+	say("mob version \t\t\t# print version number")
+	say("mob help \t\t\t# print usage")
 	say("")
 	say("EXAMPLES")
-	say("mob start 10 \t\t# start 10 min session")
-	say("mob next --stay\t\t# handover code and stay on mob session branch")
-	say("mob done \t\t# get changes back to master branch")
+	say("mob start 10 \t\t\t# start 10 min session in wip branch 'mob-session'")
+	say("mob start --branch green \t# start session in wip branch 'mob/<base-branch>/green'")
+	say("mob next --stay\t\t\t# handover code and stay on wip branch")
+	say("mob done \t\t\t# get changes back to base branch")
+	say("mob moo \t\t\t# be amazed")
 }
 
 func version() {

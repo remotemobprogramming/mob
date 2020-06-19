@@ -37,20 +37,22 @@ When you're done, get your changes into the staging area of the `master` branch 
 
 ```
 USAGE
-mob start [<minutes>] [--include-uncommitted-changes]	# start mob session
-mob next [-s|--stay] 	# handover to next person
-mob done 		# finish mob session
-mob reset 		# reset any unfinished mob session (local & remote)
-mob status 		# show status of mob session
-mob timer <minutes>	# start a <minutes> timer
-mob config 		# print configuration
-mob help 		# print usage
-mob version 		# print version number
-
+mob start [<minutes>] [--include-uncommitted-changes] [--branch|-b <branch>]	# start mob session in wip branch
+mob next [-s|--stay] 		# handover to next person and switch back to base branch
+mob done 			# finish mob session by squashing all changes in wip branch to index in base branch
+mob reset [--branch|-b <branch>]# removes local and remote wip branch
+mob status 			# show status
+mob timer <minutes>		# start a <minutes> timer
+mob config 			# print configuration
+mob moo 			# moo!
+mob version 			# print version number
+mob help 			# print usage
 EXAMPLES
-mob start 10 		# start 10 min session
-mob next --stay		# handover code and stay on mob session branch
-mob done 		# get changes back to master branch
+mob start 10 			# start 10 min session in wip branch 'mob-session'
+mob start --branch green 	# start session in wip branch 'mob/<base-branch>/green'
+mob next --stay			# handover code and stay on wip branch
+mob done 			# get changes back to base branch
+mob moo 			# be amazed
 ```
 
 ## How does it work

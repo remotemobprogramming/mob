@@ -1,3 +1,7 @@
+# 0.0.22
+- Adds `mob start --branch <branch>` to allow multiple wip branches for a base branch.
+- Adds `mob moo` (Thanks Niko for the idea)
+
 # 0.0.20
 - `mob start` on a branch named `feature1` will switch to the branch `mob/feature1` and will merge the changes back to `feature1` after `mob done`. For the `master` branch, the `mob-session` branch will still work (but this may change in the future, switching to `mob/master` at some point).
 - Removes configuration options for base branch and wip branch. These are no longer necessary.
@@ -28,4 +32,3 @@
 
 # 0.0.13
 - Fixes bug that prevented users wih git versions below 2.21 to be able to use 'mob'.
- 
