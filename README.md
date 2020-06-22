@@ -135,6 +135,16 @@ go test # runs all tests
 go test -run TestDetermineBranches # runs the single test named 'TestDetermineBranches'
 ```
 
+## Design Concepts
+
+- 'mob' is a thin wrapper around git.
+- 'mob' is not interactive.
+- 'mob' owns its wip branches. It will create wip branches, make commits, push them, but also delete them.
+- 'mob' requires the user to do changes in non-wip branches.
+- 'mob' provides a copy'n'paste solution if it encounters an error.
+- 'mob' relies on information accessiable via git.
+- 'mob' provides only a few environment variables for configuration. 
+
 ## Credits
 
 Developed and maintained by [Dr. Simon Harrer](https://twitter.com/simonharrer).
