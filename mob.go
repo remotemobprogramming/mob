@@ -183,7 +183,9 @@ func execute(command string, parameter []string) {
 	}
 }
 
-func determineBranches(branch string, branchQualifier string) (baseBranch string, wipBranch string) {
+func determineBranches(branch string, branchQualifier string, branches string) (baseBranch string, wipBranch string) {
+	localBranches := strings.Split(branches, "\n")
+
 	suffix := ""
 
 	if branchQualifier != "" {
@@ -191,8 +193,16 @@ func determineBranches(branch string, branchQualifier string) (baseBranch string
 	}
 
 	preparedBranch := strings.ReplaceAll(branch, wipBranchPrefix, "")
+
+	branchExists := false
+	for i := 0; i < len(localBranches); i++ {
+		if localBranches[i] == preparedBranch {
+			branchExists = true
+		}
+	}
+
 	index := strings.LastIndex(preparedBranch, "/")
-	if index != -1 {
+	if index != -1 && !branchExists {
 		suffix = preparedBranch[index:]
 	}
 
@@ -208,7 +218,7 @@ func determineBranches(branch string, branchQualifier string) (baseBranch string
 		wipBranch = wipBranchPrefix + baseBranch + suffix
 	}
 
-	sayDebug("on branch " + branch + " => BASE " + baseBranch + " WIP " + wipBranch)
+	sayDebug("on branch " + branch + " => BASE " + baseBranch + " WIP " + wipBranch + " with branches " + strings.Join(localBranches, ","))
 	return
 }
 
@@ -275,7 +285,7 @@ func moo() {
 func reset() {
 	git("fetch", configuration.RemoteName)
 
-	currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), configuration.WipBranchQualifier)
+	currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), configuration.WipBranchQualifier, gitBranches())
 
 	git("checkout", currentBaseBranch)
 	if hasLocalBranch(currentWipBranch) {
@@ -315,11 +325,12 @@ func start() {
 
 	git("fetch", configuration.RemoteName, "--prune")
 
-	currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), configuration.WipBranchQualifier)
+	currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), configuration.WipBranchQualifier, gitBranches())
 
 	remoteBranches := gitRemoteBranches()
+	hasWipBranchesWithQualifier := strings.Contains(remoteBranches, configuration.RemoteName+"/"+wipBranchPrefix+currentBaseBranch+"/")
 
-	if !isMobProgramming() && strings.Contains(remoteBranches, configuration.RemoteName+"/"+wipBranchPrefix+currentBaseBranch+"/") && !configuration.WipBranchQualifierSet {
+	if !isMobProgramming() && hasWipBranchesWithQualifier && !configuration.WipBranchQualifierSet {
 		sayInfo("qualified mob branches detected")
 		sayTodo("fix with 'mob start --branch <branch>' (use \"\" for the default mob branch)")
 		return
@@ -347,7 +358,7 @@ func start() {
 }
 
 func startJoinMobSession() {
-	_, currentWipBranch := determineBranches(gitCurrentBranch(), configuration.WipBranchQualifier)
+	_, currentWipBranch := determineBranches(gitCurrentBranch(), configuration.WipBranchQualifier, gitBranches())
 
 	sayInfo("joining existing mob session from " + configuration.RemoteName + "/" + currentWipBranch)
 	git("checkout", "-B", currentWipBranch, configuration.RemoteName+"/"+currentWipBranch)
@@ -355,7 +366,7 @@ func startJoinMobSession() {
 }
 
 func startNewMobSession() {
-	currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), configuration.WipBranchQualifier)
+	currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), configuration.WipBranchQualifier, gitBranches())
 
 	sayInfo("starting new mob session from " + configuration.RemoteName + "/" + currentBaseBranch)
 	git("checkout", "-B", currentWipBranch, configuration.RemoteName+"/"+currentBaseBranch)
@@ -389,7 +400,7 @@ func next() {
 		return
 	}
 
-	currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), configuration.WipBranchQualifier)
+	currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), configuration.WipBranchQualifier, gitBranches())
 
 	if isNothingToCommit() {
 		sayInfo("nothing was done, so nothing to commit")
@@ -425,7 +436,7 @@ func done() {
 
 	git("fetch", configuration.RemoteName, "--prune")
 
-	currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), configuration.WipBranchQualifier)
+	currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), configuration.WipBranchQualifier, gitBranches())
 
 	if hasRemoteBranch(currentWipBranch) {
 		if !isNothingToCommit() {
@@ -457,7 +468,7 @@ func status() {
 	if isMobProgramming() {
 		sayInfo("you are mob programming")
 
-		currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), configuration.WipBranchQualifier)
+		currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), configuration.WipBranchQualifier, gitBranches())
 
 		say(silentgit("--no-pager", "log", currentBaseBranch+".."+currentWipBranch, "--pretty=format:%h %cr <%an>", "--abbrev-commit"))
 	} else {
@@ -478,26 +489,25 @@ func hasUncommittedChanges() bool {
 
 func isMobProgramming() bool {
 	currentBranch := gitCurrentBranch()
-	_, currentWipBranch := determineBranches(currentBranch, configuration.WipBranchQualifier)
+	_, currentWipBranch := determineBranches(currentBranch, configuration.WipBranchQualifier, gitBranches())
 	sayDebug("current branch " + currentBranch + " and currentWipBranch " + currentWipBranch)
 	return currentWipBranch == currentBranch
 }
 
 func hasLocalBranch(branch string) bool {
-	branches := gitBranches()
-	return strings.Contains(branches, "  "+branch) || strings.Contains(branches, "* "+branch)
+	return strings.Contains(gitBranches(), branch)
 }
 
 func hasRemoteBranch(branch string) bool {
-	return strings.Contains(gitRemoteBranches(), "  "+configuration.RemoteName+"/"+branch)
+	return strings.Contains(gitRemoteBranches(), configuration.RemoteName+"/"+branch)
 }
 
 func gitBranches() string {
-	return silentgit("branch")
+	return silentgit("branch", "--format='%(refname:short)'")
 }
 
 func gitRemoteBranches() string {
-	return silentgit("branch", "--remotes")
+	return silentgit("branch", "--remotes", "--format='%(refname:short)'")
 }
 
 func gitCurrentBranch() string {
@@ -512,7 +522,7 @@ func gitUserName() string {
 func showNext() {
 	sayDebug("determining next person based on previous changes")
 
-	currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), configuration.WipBranchQualifier)
+	currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), configuration.WipBranchQualifier, gitBranches())
 
 	changes := strings.TrimSpace(silentgit("--no-pager", "log", currentBaseBranch+".."+currentWipBranch, "--pretty=format:%an", "--abbrev-commit"))
 	lines := strings.Split(strings.Replace(changes, "\r\n", "\n", -1), "\n")

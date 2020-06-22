@@ -24,20 +24,23 @@ func TestParseArgs(t *testing.T) {
 }
 
 func TestDetermineBranches(t *testing.T) {
-	assertDetermineBranches(t, "master", "", "master", "mob-session")
-	assertDetermineBranches(t, "mob-session", "", "master", "mob-session")
+	assertDetermineBranches(t, "master", "", "", "master", "mob-session")
+	assertDetermineBranches(t, "mob-session", "", "", "master", "mob-session")
 
-	assertDetermineBranches(t, "master", "green", "master", "mob/master/green")
-	assertDetermineBranches(t, "mob/master/green", "", "master", "mob/master/green")
+	assertDetermineBranches(t, "master", "green", "", "master", "mob/master/green")
+	assertDetermineBranches(t, "mob/master/green", "", "", "master", "mob/master/green")
 
-	assertDetermineBranches(t, "feature1", "", "feature1", "mob/feature1")
-	assertDetermineBranches(t, "mob/feature1", "", "feature1", "mob/feature1")
-	assertDetermineBranches(t, "mob/feature1/green", "", "feature1", "mob/feature1/green")
-	assertDetermineBranches(t, "feature1", "green", "feature1", "mob/feature1/green")
+	assertDetermineBranches(t, "feature1", "", "", "feature1", "mob/feature1")
+	assertDetermineBranches(t, "mob/feature1", "", "", "feature1", "mob/feature1")
+	assertDetermineBranches(t, "mob/feature1/green", "", "", "feature1", "mob/feature1/green")
+	assertDetermineBranches(t, "feature1", "green", "", "feature1", "mob/feature1/green")
+
+	assertDetermineBranches(t, "feature/test", "", "feature/test", "feature/test", "mob/feature/test")
+	assertDetermineBranches(t, "mob/feature/test", "", "feature/test\nmob/feature/test", "feature/test", "mob/feature/test")
 }
 
-func assertDetermineBranches(t *testing.T, branch string, qualifier, expectedBase string, expectedWip string) {
-	baseBranch, wipBranch := determineBranches(branch, qualifier)
+func assertDetermineBranches(t *testing.T, branch string, qualifier string, branches string, expectedBase string, expectedWip string) {
+	baseBranch, wipBranch := determineBranches(branch, qualifier, branches)
 	equals(t, expectedBase, baseBranch)
 	equals(t, expectedWip, wipBranch)
 }
