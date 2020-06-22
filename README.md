@@ -123,7 +123,17 @@ MOB_DEBUG=true mob next
 
 ## How to contribute
 
-[Open an issue](https://github.com/remotemobprogramming/mob/issues) or [create a pull request](https://github.com/remotemobprogramming/mob/pulls).
+[Propose your change in an issue](https://github.com/remotemobprogramming/mob/issues) or [directly create a pull request with your improvements](https://github.com/remotemobprogramming/mob/pulls).
+
+```bash
+git version # >= 2.17
+go version # >= 1.14.4 
+
+go build # builds 'mob'
+
+go test # runs all tests
+go test -run TestDetermineBranches # runs the single test named 'TestDetermineBranches'
+```
 
 ## Credits
 
