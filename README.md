@@ -133,6 +133,9 @@ go build # builds 'mob'
 
 go test # runs all tests
 go test -run TestDetermineBranches # runs the single test named 'TestDetermineBranches'
+
+# run tests and show test coverage in browser
+go test -coverprofile=cover.out && go tool cover -html=cover.out
 ```
 
 ## Design Concepts
