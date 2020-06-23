@@ -37,6 +37,8 @@ func TestDetermineBranches(t *testing.T) {
 
 	assertDetermineBranches(t, "feature/test", "", "feature/test", "feature/test", "mob/feature/test")
 	assertDetermineBranches(t, "mob/feature/test", "", "feature/test\nmob/feature/test", "feature/test", "mob/feature/test")
+
+	assertDetermineBranches(t, "feature/test-ch", "", "DPL-2638-update-apis\nDPL-2814-create-project\nfeature/test-ch\nfix/smallChanges\nmaster\npipeship/pipelineupdate-pipeship-pipeline.yaml\n", "feature/test-ch", "mob/feature/test-ch")
 }
 
 func assertDetermineBranches(t *testing.T, branch string, qualifier string, branches string, expectedBase string, expectedWip string) {
@@ -496,6 +498,8 @@ func setup(t *testing.T) *string {
 	output := captureOutput()
 	createTestbed(t)
 	assertOnBranch(t, "master")
+	equals(t, "master", gitBranches())
+	equals(t, "origin/master", gitRemoteBranches())
 	assertNoMobSessionBranches(t, "mob-session")
 	return output
 }

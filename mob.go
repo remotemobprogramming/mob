@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	versionNumber   = "0.0.23"
+	versionNumber   = "0.0.24-dev"
 	mobStashName    = "mob-stash-name"
 	wipBranchPrefix = "mob/"
 )
@@ -34,11 +34,11 @@ type Configuration struct {
 
 func main() {
 	configuration = parseEnvironmentVariables(getDefaultConfiguration())
-	sayDebug("Args '" + strings.Join(os.Args, " ") + "'")
+	debug("Args '" + strings.Join(os.Args, " ") + "'")
 
 	command, parameters := parseArgs(os.Args)
-	sayDebug("command '" + command + "'")
-	sayDebug("parameters '" + strings.Join(parameters, " ") + "'")
+	debug("command '" + command + "'")
+	debug("parameters '" + strings.Join(parameters, " ") + "'")
 
 	execute(command, parameters)
 }
@@ -78,7 +78,7 @@ func setStringFromEnvVariable(s *string, key string) {
 	value, set := os.LookupEnv(key)
 	if set && value != "" {
 		*s = value
-		sayDebug("overriding " + key + " =" + *s)
+		debug("overriding " + key + " =" + *s)
 	}
 }
 
@@ -86,7 +86,7 @@ func setBoolFromEnvVariable(s *bool, key string) {
 	value, set := os.LookupEnv(key)
 	if set && value == "true" {
 		*s = true
-		sayDebug("overriding " + key + " =" + strconv.FormatBool(*s))
+		debug("overriding " + key + " =" + strconv.FormatBool(*s))
 	}
 }
 
@@ -218,12 +218,12 @@ func determineBranches(branch string, branchQualifier string, branches string) (
 		wipBranch = wipBranchPrefix + baseBranch + suffix
 	}
 
-	sayDebug("on branch " + branch + " => BASE " + baseBranch + " WIP " + wipBranch + " with branches " + strings.Join(localBranches, ","))
+	debug("on branch " + branch + " => BASE " + baseBranch + " WIP " + wipBranch + " with branches " + strings.Join(localBranches, ","))
 	return
 }
 
 func startTimer(timerInMinutes string) {
-	sayDebug("Starting timer for " + timerInMinutes + " minutes")
+	debug("Starting timer for " + timerInMinutes + " minutes")
 	timeoutInMinutes, _ := strconv.Atoi(timerInMinutes)
 	timeoutInSeconds := timeoutInMinutes * 60
 	timerInSeconds := strconv.Itoa(timeoutInSeconds)
@@ -234,7 +234,7 @@ func startTimer(timerInMinutes string) {
 
 	var commandString string
 	var err error
-	sayDebug("Operating System " + runtime.GOOS)
+	debug("Operating System " + runtime.GOOS)
 	switch runtime.GOOS {
 	case "windows":
 		commandString, err = startCommand("powershell", "-command", "start-process powershell -NoNewWindow -ArgumentList '-command \"sleep "+timerInSeconds+"; (New-Object -ComObject SAPI.SPVoice).Speak(\\\""+voiceMessage+"\\\")\"'")
@@ -327,8 +327,7 @@ func start() {
 
 	currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), configuration.WipBranchQualifier, gitBranches())
 
-	remoteBranches := gitRemoteBranches()
-	hasWipBranchesWithQualifier := strings.Contains(remoteBranches, configuration.RemoteName+"/"+wipBranchPrefix+currentBaseBranch+"/")
+	hasWipBranchesWithQualifier := hasQualifiedBranches(currentBaseBranch, gitRemoteBranches())
 
 	if !isMobProgramming() && hasWipBranchesWithQualifier && !configuration.WipBranchQualifierSet {
 		sayInfo("qualified mob branches detected")
@@ -355,6 +354,12 @@ func start() {
 		stash := findLatestMobStash(stashes)
 		git("stash", "pop", stash)
 	}
+}
+
+func hasQualifiedBranches(currentBaseBranch string, remoteBranches string) bool {
+	debug("check on current base branch " + currentBaseBranch + " with remote branches " + strings.Join(strings.Split(remoteBranches, "\n"), ","))
+	hasWipBranchesWithQualifier := strings.Contains(remoteBranches, configuration.RemoteName+"/"+wipBranchPrefix+currentBaseBranch+"/")
+	return hasWipBranchesWithQualifier
 }
 
 func startJoinMobSession() {
@@ -490,7 +495,7 @@ func hasUncommittedChanges() bool {
 func isMobProgramming() bool {
 	currentBranch := gitCurrentBranch()
 	_, currentWipBranch := determineBranches(currentBranch, configuration.WipBranchQualifier, gitBranches())
-	sayDebug("current branch " + currentBranch + " and currentWipBranch " + currentWipBranch)
+	debug("current branch " + currentBranch + " and currentWipBranch " + currentWipBranch)
 	return currentWipBranch == currentBranch
 }
 
@@ -503,11 +508,11 @@ func hasRemoteBranch(branch string) bool {
 }
 
 func gitBranches() string {
-	return silentgit("branch", "--format='%(refname:short)'")
+	return strings.TrimSpace(silentgit("branch", "--format=%(refname:short)"))
 }
 
 func gitRemoteBranches() string {
-	return silentgit("branch", "--remotes", "--format='%(refname:short)'")
+	return strings.TrimSpace(silentgit("branch", "--remotes", "--format=%(refname:short)"))
 }
 
 func gitCurrentBranch() string {
@@ -520,16 +525,16 @@ func gitUserName() string {
 }
 
 func showNext() {
-	sayDebug("determining next person based on previous changes")
+	debug("determining next person based on previous changes")
 
 	currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), configuration.WipBranchQualifier, gitBranches())
 
 	changes := strings.TrimSpace(silentgit("--no-pager", "log", currentBaseBranch+".."+currentWipBranch, "--pretty=format:%an", "--abbrev-commit"))
 	lines := strings.Split(strings.Replace(changes, "\r\n", "\n", -1), "\n")
 	numberOfLines := len(lines)
-	sayDebug("there have been " + strconv.Itoa(numberOfLines) + " changes")
+	debug("there have been " + strconv.Itoa(numberOfLines) + " changes")
 	gitUserName := gitUserName()
-	sayDebug("current git user.name is '" + gitUserName + "'")
+	debug("current git user.name is '" + gitUserName + "'")
 	if numberOfLines < 1 {
 		return
 	}
@@ -615,10 +620,10 @@ func runCommand(name string, args ...string) (string, string, error) {
 		command.Dir = workingDir
 	}
 	commandString := strings.Join(command.Args, " ")
-	sayDebug(commandString)
+	debug(commandString)
 	outputBinary, err := command.CombinedOutput()
 	output := string(outputBinary)
-	sayDebug(output)
+	debug(output)
 	return commandString, output, err
 }
 
@@ -628,7 +633,7 @@ func startCommand(name string, args ...string) (string, error) {
 		command.Dir = workingDir
 	}
 	commandString := strings.Join(command.Args, " ")
-	sayDebug(commandString)
+	debug(commandString)
 	err := command.Start()
 	return commandString, err
 }
@@ -641,7 +646,7 @@ func sayError(s string) {
 	sayWithPrefix(s, " ERROR ")
 }
 
-func sayDebug(s string) {
+func debug(s string) {
 	if configuration.Debug {
 		sayWithPrefix(s, " DEBUG ")
 	}
