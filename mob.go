@@ -39,6 +39,7 @@ func main() {
 	command, parameters := parseArgs(os.Args)
 	debug("command '" + command + "'")
 	debug("parameters '" + strings.Join(parameters, " ") + "'")
+	debug("version " + versionNumber)
 
 	execute(command, parameters)
 }
