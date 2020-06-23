@@ -1,3 +1,6 @@
+# 0.0.24
+- Fixes a bug where mob couldn't handle branch names with the '/' character 
+
 # 0.0.23
 - Commit message of wip commits is no longer quoted (see #52)
 
