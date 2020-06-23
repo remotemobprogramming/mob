@@ -40,6 +40,7 @@ func main() {
 	debug("command '" + command + "'")
 	debug("parameters '" + strings.Join(parameters, " ") + "'")
 	debug("version " + versionNumber)
+	debug("workingDir " + workingDir)
 
 	execute(command, parameters)
 }
