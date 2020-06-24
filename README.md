@@ -4,12 +4,12 @@
 
 Swift [git handover](https://www.remotemobprogramming.org/#git-handover) with 'mob'.
 
-- `mob` is [an open source command line tool written in go](https://github.com/remotemobprogramming/mob)
-- `mob` is the fastest way to [hand over code via git](https://www.remotemobprogramming.org/#git-handover)
-- `mob` keeps your branches clean and only creates WIP commits on temporary wip branches
-- `mob` supports multiple wip branches per base branch
-- `mob` notifies you when it's time to handover
-- `mob` can moo
+- **mob** is [an open source command line tool written in go](https://github.com/remotemobprogramming/mob)
+- **mob** is the fastest way to [hand over code via git](https://www.remotemobprogramming.org/#git-handover)
+- **mob** keeps your branches clean and only creates WIP commits on temporary wip branches
+- **mob** supports multiple wip branches per base branch
+- **mob** notifies you when it's time to handover
+- **mob** can moo
 
 ## How to install
 
@@ -140,13 +140,14 @@ go test -coverprofile=cover.out && go tool cover -html=cover.out
 
 ## Design Concepts
 
-- 'mob' is a thin wrapper around git.
-- 'mob' is not interactive.
-- 'mob' owns its wip branches. It will create wip branches, make commits, push them, but also delete them.
-- 'mob' requires the user to do changes in non-wip branches.
-- 'mob' provides a copy'n'paste solution if it encounters an error.
-- 'mob' relies on information accessiable via git.
-- 'mob' provides only a few environment variables for configuration. 
+- **mob** is a thin wrapper around git.
+- **mob** is not interactive.
+- **mob** owns its wip branches. It will create wip branches, make commits, push them, but also delete them.
+- **mob** requires the user to do changes in non-wip branches.
+- **mob** provides a copy'n'paste solution if it encounters an error.
+- **mob** relies on information accessiable via git.
+- **mob** provides only a few environment variables for configuration. 
+- **mob** only uses the Go standard library and no 3rd party plugins.
 
 ## Credits
 
