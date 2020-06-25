@@ -16,7 +16,13 @@ Swift [git handover](https://www.remotemobprogramming.org/#git-handover) with 'm
 ```
 curl -sL install.mob.sh | sh
 ```
-If you are under Windows, you should use `git bash` to install `mob`.
+If you are under Windows, you can use `git bash` to install `mob`.
+
+Alternatively, if you use [Scoop](https://scoop.netlify.app/) (alernative to chocolatey, "brew for Windows") then just download the mob.json file, open a PowerShell terminal in that directory and:
+```
+scoop install mob
+```
+
 
 You can also install it on macOS via homebrew: 
 

@@ -1,0 +1,10 @@
+{
+  "version": "0.0.24",
+  "homepage": "https://github.com/remotemobprogramming/mob",
+  "checkver": "github",
+  "url": "https://github.com/remotemobprogramming/mob/releases/latest",
+  "extract_dir": "mob-githandover",
+  "hash": {
+    "url": "https://github.com/remotemobprogramming/mob/releases/download/v$version/mob_v$version_windows_amd64_checksum.txt"
+  }
+}
