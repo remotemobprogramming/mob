@@ -16,7 +16,7 @@ Swift [git handover](https://www.remotemobprogramming.org/#git-handover) with 'm
 ```
 curl -sL install.mob.sh | sh
 ```
-If you are under Windows, you should use `git bash` to install `mob`.
+If you are under Windows, you can use `git bash` to install `mob`. 
 
 You can also install it on macOS via homebrew: 
 
@@ -80,6 +80,13 @@ Still, that keyboard shortcut to toggle screen sharing in Zoom is still very hel
 
 ## More on Installation
 
+### Scoop
+
+On Windows, if you use [Scoop](https://scoop.netlify.app/) then just download the mob.json file, open a PowerShell terminal in that directory and:
+```
+scoop install mob
+```
+
 ### Linux Timer
 
 To get the timer to play "mob next" on your speakers when your time is up, you'll need an installed speech engine. 
@@ -120,6 +127,7 @@ Override default value just for a single call:
 ```bash
 MOB_DEBUG=true mob next
 ```
+
 
 ## How to contribute
 
