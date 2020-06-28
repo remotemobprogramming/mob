@@ -2,12 +2,14 @@
 
 ![mob Logo](logo.svg)
 <p align="center">
-    <a href="https://github.com/remotemobprogramming/mob/graphs/contributors" alt="Contributors">
-        <img src="https://img.shields.io/github/contributors/remotemobprogramming/mob" /></a>
-     <a href="https://github.com/remotemobprogramming/mob/releases" alt="Downloads">
-        <img src="https://img.shields.io/github/downloads/remotemobprogramming/mob/total" /></a>
-    <a href="https://github.com/remotemobprogramming/mob/releases" alt="Downloads">
-        <img src="https://img.shields.io/github/downloads/remotemobprogramming/mob/latest/total" /></a>
+  <a href="https://github.com/remotemobprogramming/mob/actions?query=workflow%3ATest" alt="Test Workflow">
+    <img src="https://img.shields.io/github/workflow/status/remotemobprogramming/mob/Test" /></a>
+  <a href="https://github.com/remotemobprogramming/mob/graphs/contributors" alt="Contributors">
+    <img src="https://img.shields.io/github/contributors/remotemobprogramming/mob" /></a>
+  <a href="https://github.com/remotemobprogramming/mob/releases" alt="Downloads">
+    <img src="https://img.shields.io/github/downloads/remotemobprogramming/mob/total" /></a>
+  <a href="https://github.com/remotemobprogramming/mob/releases" alt="Downloads">
+    <img src="https://img.shields.io/github/downloads/remotemobprogramming/mob/latest/total" /></a>
 </p>
 
 Swift [git handover](https://www.remotemobprogramming.org/#git-handover) with 'mob'.
