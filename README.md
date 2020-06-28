@@ -1,6 +1,14 @@
 # Swift git handover with mob
 
 ![mob Logo](logo.svg)
+<p align="center">
+    <a href="https://github.com/remotemobprogramming/mob/graphs/contributors" alt="Contributors">
+        <img src="https://img.shields.io/github/contributors/remotemobprogramming/mob" /></a>
+     <a href="https://github.com/remotemobprogramming/mob/releases" alt="Downloads">
+        <img src="https://img.shields.io/github/downloads/remotemobprogramming/mob/total" /></a>
+    <a href="https://github.com/remotemobprogramming/mob/releases" alt="Downloads">
+        <img src="https://img.shields.io/github/downloads/remotemobprogramming/mob/latest/total" /></a>
+</p>
 
 Swift [git handover](https://www.remotemobprogramming.org/#git-handover) with 'mob'.
 
