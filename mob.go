@@ -119,7 +119,7 @@ func parseArgs(args []string) (command string, parameters []string) {
 	for i := 1; i < len(args); i++ {
 		arg := args[i]
 		switch arg {
-		case "--include-uncommitted-changes":
+		case "--include-uncommitted-changes", "-i":
 			configuration.MobStartIncludeUncommittedChanges = true
 		case "--debug":
 			configuration.Debug = true
