@@ -1,3 +1,6 @@
+# 0.0.25
+- Adds flag `--return-to-base-branch` (with shorthand `-r`) to return to base branch on `mob next`. Because 'mob' will change the default behavior from returning to the base branch to staying on the wip branch on `mob next`, this flag provides the inverse operation of `--stay`. If both are provided, the latter one wins.
+
 # 0.0.24
 - Fixes a bug where mob couldn't handle branch names with the '/' character 
 

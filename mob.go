@@ -125,6 +125,8 @@ func parseArgs(args []string) (command string, parameters []string) {
 			configuration.Debug = true
 		case "--stay", "-s":
 			configuration.MobNextStay = true
+		case "--return-to-base-branch", "-r":
+			configuration.MobNextStay = false
 		case "--branch", "-b":
 			if i+1 != len(args) {
 				configuration.WipBranchQualifier = args[i+1]
@@ -557,7 +559,7 @@ func showNext() {
 func help() {
 	say("USAGE")
 	say("mob start [<minutes>] [--include-uncommitted-changes] [--branch|-b <branch>]\t# start mob session in wip branch")
-	say("mob next [-s|--stay] \t\t# handover to next person and switch back to base branch")
+	say("mob next [--stay|-s] [--return-to-base-branch|-r]\t\t# handover to next person and switch back to base branch")
 	say("mob done \t\t\t# finish mob session by squashing all changes in wip branch to index in base branch")
 	say("mob reset [--branch|-b <branch>]# removes local and remote wip branch")
 	say("mob status \t\t\t# show status")
