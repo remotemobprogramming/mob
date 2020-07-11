@@ -3,3 +3,5 @@ mob.exe
 .idea
 mob.test
 /cover.out
+*.tar.gz
+*_checksum.txt
