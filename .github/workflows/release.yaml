@@ -7,34 +7,46 @@ jobs:
     strategy:
       matrix:
         os: [linux, darwin, windows]
+    env:
+      GOPATH: ${{ github.workspace }}
+      GOARCH: amd64
+      GOOS: ${{ matrix.os }}
     name: release
     runs-on: ubuntu-latest
     steps:
-      - name: Get version
-        id: get_version
-        run: echo ::set-output name=version::${GITHUB_REF/refs\/tags\//}
       - uses: actions/checkout@master
       - run: git config --global user.email "test@test.test"
       - run: git config --global user.name "${{github.actor}}"
       - run: go test
-      - name: compile and release
-        uses: remotemobprogramming/go-release.action@go1.14.1
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GOARCH: amd64
-          GOOS: ${{ matrix.os }}
+          GOOS: linux # the tests will only run if the os matches the os of the system of run-on
+      - name: Use Go 1.14 to build
+        uses: cedrickring/golang-action/go1.14@1.5.2
+        with:
+          args: go build
+      - name: Create release artifacts using .github/build
+        run: .github/build
+        env:
+          VERSION: ${{ github.event.release.tag_name }}
+      - name: Upload artifacts to release
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: "*{.tar.gz,_checksum.txt}"
+          tag: ${{ github.event.release.tag_name }}
+          file_glob: true
       - name: Set SHA
         if: matrix.os == 'darwin'
         id: shasum
         run: |
-          echo ::set-output name=sha::"$(shasum -a 256 ./tmp.tgz | awk '{printf $1}')"
+          echo ::set-output name=sha::"$(shasum -a 256 *.tar.gz | awk '{printf $1}')"
       - name: Bump homebrew formula
         if: matrix.os == 'darwin'
         env:
           HOMEBREW_GITHUB_API_TOKEN: ${{ secrets.HOMEBREW }}
         run: |
           brew tap ${{github.repository_owner}}/homebrew-brew
-          brew bump-formula-pr -f --version=${{ steps.get_version.outputs.version }} --no-browse --no-audit \
+          brew bump-formula-pr -f --version=${{ github.event.release.tag_name }} --no-browse --no-audit \
           --sha256=${{ steps.shasum.outputs.sha }} \
-          --url="https://github.com/${{github.repository_owner}}/mob/releases/download/${{ steps.get_version.outputs.version }}/mob_${{steps.get_version.outputs.version}}_darwin_amd64.tar.gz" \
+          --url="https://github.com/${{github.repository_owner}}/mob/releases/download/${{ github.event.release.tag_name }}/mob_${{ github.event.release.tag_name }}_darwin_amd64.tar.gz" \
           ${{github.repository_owner}}/homebrew-brew/mob
