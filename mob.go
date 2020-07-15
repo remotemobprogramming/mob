@@ -414,6 +414,7 @@ func next() {
 	currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), configuration.WipBranchQualifier, gitBranches())
 
 	if isNothingToCommit() {
+		git("push", "--no-verify", configuration.RemoteName, currentWipBranch)
 		sayInfo("nothing was done, so nothing to commit")
 	} else {
 		git("add", "--all")

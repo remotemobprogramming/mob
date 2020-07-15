@@ -427,6 +427,22 @@ func TestNothingToCommitCreatesNoCommits(t *testing.T) {
 	assertCommits(t, 1)
 }
 
+func TestStartNextPushManualCommit(t *testing.T) {
+	setup(t)
+
+	setWorkingDir("/tmp/mob/local")
+
+	start()
+	createFile(t, "example.txt", "content")
+	git("add", "--all")
+	git("commit", "-m", "\"asdf\"")
+	next()
+
+	setWorkingDir("/tmp/mob/localother")
+	start()
+	assertFileExist(t, "example.txt")
+}
+
 func TestConflictingMobSessions(t *testing.T) {
 	setup(t)
 
