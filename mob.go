@@ -345,7 +345,9 @@ func start() {
 		return
 	}
 
-	git("pull", "--ff-only")
+	if !isMobProgramming() {
+		git("pull", "--ff-only")
+	}
 
 	if hasRemoteBranch(currentWipBranch) {
 		startJoinMobSession()

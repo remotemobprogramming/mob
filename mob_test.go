@@ -453,6 +453,28 @@ func TestConflictingMobSessions(t *testing.T) {
 	start()
 }
 
+func TestConflictingMobSessionsNextStay(t *testing.T) {
+	setup(t)
+	configuration.MobNextStay = true
+
+	setWorkingDir("/tmp/mob/local")
+	start()
+	createFile(t, "example.txt", "content")
+	next()
+
+	setWorkingDir("/tmp/mob/localother")
+	start()
+	next()
+
+	setWorkingDir("/tmp/mob/local")
+	start()
+	done()
+	git("commit", "-m", "\"finished mob session\"")
+
+	setWorkingDir("/tmp/mob/localother")
+	start()
+}
+
 func TestDoneMergeConflict(t *testing.T) {
 	output := setup(t)
 
