@@ -414,8 +414,11 @@ func next() {
 	currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), configuration.WipBranchQualifier, gitBranches())
 
 	if isNothingToCommit() {
-		git("push", "--no-verify", configuration.RemoteName, currentWipBranch)
-		sayInfo("nothing was done, so nothing to commit")
+		if hasLocalCommits(currentWipBranch) {
+			git("push", "--no-verify", configuration.RemoteName, currentWipBranch)
+		} else {
+			sayInfo("nothing was done, so nothing to commit")
+		}
 	} else {
 		git("add", "--all")
 		git("commit", "--message", configuration.WipCommitMessage, "--no-verify")
@@ -493,6 +496,14 @@ func status() {
 func isNothingToCommit() bool {
 	output := silentgit("status", "--short")
 	return len(strings.TrimSpace(output)) == 0
+}
+
+func hasLocalCommits(currentWipBranch string) bool {
+	local := silentgit("for-each-ref", "--format=%(objectname)",
+		"refs/heads/"+currentWipBranch)
+	remote := silentgit("for-each-ref", "--format=%(objectname)",
+		"refs/remotes/"+configuration.RemoteName+"/"+currentWipBranch)
+	return strings.TrimSpace(local) != strings.TrimSpace(remote)
 }
 
 func hasUncommittedChanges() bool {
