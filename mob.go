@@ -558,7 +558,7 @@ func showNext() {
 
 func help() {
 	say("USAGE")
-	say("mob start [<minutes>] [--include-uncommitted-changes] [--branch|-b <branch>]\t# start mob session in wip branch")
+	say("mob start [<minutes>] [--include-uncommitted-changes|-i] [--branch|-b <branch>]\t# start mob session in wip branch")
 	say("mob next [--stay|-s] [--return-to-base-branch|-r]\t\t# handover to next person and switch back to base branch")
 	say("mob done \t\t\t# finish mob session by squashing all changes in wip branch to index in base branch")
 	say("mob reset [--branch|-b <branch>]# removes local and remote wip branch")

@@ -48,8 +48,8 @@ When you're done, get your changes into the staging area of the `master` branch 
 
 ```
 USAGE
-mob start [<minutes>] [--include-uncommitted-changes] [--branch|-b <branch>]	# start mob session in wip branch
-mob next [-s|--stay] 		# handover to next person and switch back to base branch
+mob start [<minutes>] [--include-uncommitted-changes|-i] [--branch|-b <branch>]# start mob session in wip branch
+mob next [--stay|-s] [--return-to-base-branch|-r]		# handover to next person and switch back to base branch
 mob done 			# finish mob session by squashing all changes in wip branch to index in base branch
 mob reset [--branch|-b <branch>]# removes local and remote wip branch
 mob status 			# show status
@@ -58,6 +58,9 @@ mob config 			# print configuration
 mob moo 			# moo!
 mob version 			# print version number
 mob help 			# print usage
+
+Add --debug to any option to enable verbose logging
+
 EXAMPLES
 mob start 10 			# start 10 min session in wip branch 'mob-session'
 mob start --branch green 	# start session in wip branch 'mob/<base-branch>/green'
