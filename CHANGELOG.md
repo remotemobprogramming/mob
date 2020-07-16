@@ -2,6 +2,7 @@
 - Adds flag `--return-to-base-branch` (with shorthand `-r`) to return to base branch on `mob next`. Because 'mob' will change the default behavior from returning to the base branch to staying on the wip branch on `mob next`, this flag provides the inverse operation of `--stay`. If both are provided, the latter one wins.
 - Adds flag `-i` as a shorthand notation for `--include-uncommitted-changes`.
 - Fixes a bug that prevented `mob start` to work when on an outdated the WIP branch 
+- `mob next` push if there are commits but no changes.
 
 # 0.0.24
 - Fixes a bug where mob couldn't handle branch names with the '/' character 
