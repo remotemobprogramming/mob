@@ -435,7 +435,7 @@ func TestStartNextPushManualCommits(t *testing.T) {
 	start()
 	createFile(t, "example.txt", "content")
 	git("add", "--all")
-	git("commit", "-m", "\"asdf\"")
+	git("commit", "-m", "asdf")
 	next()
 
 	setWorkingDir("/tmp/mob/localother")
@@ -456,7 +456,7 @@ func TestStartNextPushManualCommitsFeatureBranch(t *testing.T) {
 
 	createFile(t, "example.txt", "content")
 	git("add", "--all")
-	git("commit", "-m", "\"asdf\"")
+	git("commit", "-m", "asdf")
 	next()
 
 	setWorkingDir("/tmp/mob/localother")

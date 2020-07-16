@@ -498,11 +498,11 @@ func isNothingToCommit() bool {
 	return len(strings.TrimSpace(output)) == 0
 }
 
-func hasLocalCommits(currentWipBranch string) bool {
+func hasLocalCommits(branch string) bool {
 	local := silentgit("for-each-ref", "--format=%(objectname)",
-		"refs/heads/"+currentWipBranch)
+		"refs/heads/"+branch)
 	remote := silentgit("for-each-ref", "--format=%(objectname)",
-		"refs/remotes/"+configuration.RemoteName+"/"+currentWipBranch)
+		"refs/remotes/"+configuration.RemoteName+"/"+branch)
 	return strings.TrimSpace(local) != strings.TrimSpace(remote)
 }
 
