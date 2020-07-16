@@ -427,6 +427,45 @@ func TestNothingToCommitCreatesNoCommits(t *testing.T) {
 	assertCommits(t, 1)
 }
 
+func TestStartNextPushManualCommits(t *testing.T) {
+	setup(t)
+
+	setWorkingDir("/tmp/mob/local")
+
+	start()
+	createFile(t, "example.txt", "content")
+	git("add", "--all")
+	git("commit", "-m", "asdf")
+	next()
+
+	setWorkingDir("/tmp/mob/localother")
+	start()
+	assertFileExist(t, "example.txt")
+}
+
+func TestStartNextPushManualCommitsFeatureBranch(t *testing.T) {
+	setup(t)
+
+	setWorkingDir("/tmp/mob/local")
+
+	git("checkout", "-b", "feature1")
+	git("push", "origin", "feature1", "--set-upstream")
+	assertOnBranch(t, "feature1")
+	start()
+	assertOnBranch(t, "mob/feature1")
+
+	createFile(t, "example.txt", "content")
+	git("add", "--all")
+	git("commit", "-m", "asdf")
+	next()
+
+	setWorkingDir("/tmp/mob/localother")
+	git("fetch")
+	git("checkout", "feature1")
+	start()
+	assertFileExist(t, "example.txt")
+}
+
 func TestConflictingMobSessions(t *testing.T) {
 	setup(t)
 
