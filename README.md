@@ -10,8 +10,8 @@
     <img src="https://img.shields.io/github/downloads/remotemobprogramming/mob/total" /></a>
   <a href="https://github.com/remotemobprogramming/mob/releases" alt="Downloads">
     <img src="https://img.shields.io/github/downloads/remotemobprogramming/mob/latest/total" /></a>
-  <a href="https://github.com/remotemobprogramming/mob/releases/tag/v0.0.24" alt="Version">
-    <img src="https://img.shields.io/badge/mob-v0.0.24-a845e6.svg?style=flat" /></a>
+  <a href="https://github.com/remotemobprogramming/mob/releases/latest" alt="Version">
+    <img src="https://img.shields.io/github/v/release/remotemobprogramming/mob?sort=semver" /></a>
 </p>
 
 Swift [git handover](https://www.remotemobprogramming.org/#git-handover) with 'mob'.
