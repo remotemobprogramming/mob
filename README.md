@@ -2,16 +2,16 @@
 
 ![mob Logo](logo.svg)
 <p align="center">
-  <a href="https://github.com/remotemobprogramming/mob/actions?query=workflow%3ATest" alt="Test Workflow">
-    <img src="https://img.shields.io/github/workflow/status/remotemobprogramming/mob/Test" /></a>
-  <a href="https://github.com/remotemobprogramming/mob/graphs/contributors" alt="Contributors">
-    <img src="https://img.shields.io/github/contributors/remotemobprogramming/mob" /></a>
-  <a href="https://github.com/remotemobprogramming/mob/releases" alt="Downloads">
-    <img src="https://img.shields.io/github/downloads/remotemobprogramming/mob/total" /></a>
-  <a href="https://github.com/remotemobprogramming/mob/releases" alt="Downloads">
-    <img src="https://img.shields.io/github/downloads/remotemobprogramming/mob/latest/total" /></a>
-  <a href="https://github.com/remotemobprogramming/mob/releases/latest" alt="Version">
-    <img src="https://img.shields.io/github/v/release/remotemobprogramming/mob?sort=semver" /></a>
+  <a href="https://github.com/remotemobprogramming/mob/actions?query=workflow%3ATest">
+    <img alt="Test Workflow" src="https://img.shields.io/github/workflow/status/remotemobprogramming/mob/Test" /></a>
+  <a href="https://github.com/remotemobprogramming/mob/graphs/contributors">
+    <img alt="Contributors" src="https://img.shields.io/github/contributors/remotemobprogramming/mob" /></a>
+  <a href="https://github.com/remotemobprogramming/mob/releases">
+    <img alt="Downloads" src="https://img.shields.io/github/downloads/remotemobprogramming/mob/total" /></a>
+  <a href="https://github.com/remotemobprogramming/mob/releases">
+    <img  alt="Downloads of latest" src="https://img.shields.io/github/downloads/remotemobprogramming/mob/latest/total" /></a>
+  <a href="https://github.com/remotemobprogramming/mob/releases/latest">
+    <img alt="Version" src="https://img.shields.io/github/v/release/remotemobprogramming/mob?sort=semver" /></a>
 </p>
 
 Swift [git handover](https://www.remotemobprogramming.org/#git-handover) with 'mob'.
@@ -88,10 +88,17 @@ Mob no longer supports starting the screen share on 'mob start'.
 Why? 
 At first, this feature sounds awesome. 
 In practice, however, that feature wasn't much help.
-It only simulated keying in a keyboard shortcut and had several shortcomings: a) it needed to be configured correctly, b) only toggled screen share, so one had to keep in mind whether one was already screen sharing or not, and c) solely supported Zoom on macOS and Linux.
-The feature promised too much, and hold very little of it.
+It only simulated keying in a keyboard shortcut and had several shortcomings:
+1. it needed to be configured correctly,
+1. it only toggled screen share, so one had to keep in mind whether one was already screen sharing or not,
+and
+1. it solely supported Zoom on macOS and Linux.
 
-Still, that keyboard shortcut to toggle screen sharing in Zoom is still very helpful. Just press the hotkey yourself. It is, however, essential to make the shortcut globally available (Zoom > Preferences > Keyboard Shortcuts). Otherwise, the hotkey won't work. [More tips on setting up Zoom for effective screen sharing.](https://effectivehomeoffice.com/setup-zoom-for-effective-screen-sharing/)
+The feature promised too much, and delivered very little of it.
+
+Still, that keyboard shortcut to toggle screen sharing in Zoom is still very helpful.
+Just press the hotkey yourself. It is, however, essential to make the shortcut globally available
+(Zoom > Preferences > Keyboard Shortcuts). Otherwise, the hotkey won't work. [More tips on setting up Zoom for effective screen sharing.](https://effectivehomeoffice.com/setup-zoom-for-effective-screen-sharing/)
 
 ## More on Installation
 
@@ -168,7 +175,7 @@ go test -coverprofile=cover.out && go tool cover -html=cover.out
 - **mob** owns its wip branches. It will create wip branches, make commits, push them, but also delete them.
 - **mob** requires the user to do changes in non-wip branches.
 - **mob** provides a copy'n'paste solution if it encounters an error.
-- **mob** relies on information accessiable via git.
+- **mob** relies on information accessible via git.
 - **mob** provides only a few environment variables for configuration. 
 - **mob** only uses the Go standard library and no 3rd party plugins.
 
