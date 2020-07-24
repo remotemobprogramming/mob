@@ -9,12 +9,12 @@ import (
 func TestParseArgs(t *testing.T) {
 	configuration = getDefaultConfiguration()
 	args := []string{"mob", "start", "--branch", "green"}
-	equals(t, configuration.WipBranchQualifier, "")
+	assertEquals(t, configuration.WipBranchQualifier, "")
 	command, parameters := parseArgs(args)
 
-	equals(t, "start", command)
-	equals(t, "", strings.Join(parameters, ""))
-	equals(t, "green", configuration.WipBranchQualifier)
+	assertEquals(t, "start", command)
+	assertEquals(t, "", strings.Join(parameters, ""))
+	assertEquals(t, "green", configuration.WipBranchQualifier)
 }
 
 func TestDetermineBranches(t *testing.T) {
@@ -37,8 +37,8 @@ func TestDetermineBranches(t *testing.T) {
 
 func assertDetermineBranches(t *testing.T, branch string, qualifier string, branches string, expectedBase string, expectedWip string) {
 	baseBranch, wipBranch := determineBranches(branch, qualifier, branches)
-	equals(t, expectedBase, baseBranch)
-	equals(t, expectedWip, wipBranch)
+	assertEquals(t, expectedBase, baseBranch)
+	assertEquals(t, expectedWip, wipBranch)
 }
 
 func TestEnvironmentVariables(t *testing.T) {
@@ -51,8 +51,8 @@ func TestEnvironmentVariables(t *testing.T) {
 	defer os.Unsetenv("MOB_DEBUG")
 
 	configuration = parseEnvironmentVariables(getDefaultConfiguration())
-	equals(t, "GITHUB", configuration.RemoteName)
-	equals(t, true, configuration.Debug)
+	assertEquals(t, "GITHUB", configuration.RemoteName)
+	assertEquals(t, true, configuration.Debug)
 }
 
 func TestEnvironmentVariablesEmptyString(t *testing.T) {
@@ -62,7 +62,7 @@ func TestEnvironmentVariablesEmptyString(t *testing.T) {
 	defer os.Unsetenv("MOB_REMOTE_NAME")
 
 	configuration = parseEnvironmentVariables(getDefaultConfiguration())
-	equals(t, "origin", configuration.RemoteName)
+	assertEquals(t, "origin", configuration.RemoteName)
 }
 
 func TestVersion(t *testing.T) {
@@ -312,7 +312,7 @@ func TestStartNextStay(t *testing.T) {
 
 	next()
 
-	equals(t, strings.TrimSpace(silentgit("log", "--format=%B", "-n", "1", "HEAD")), configuration.WipCommitMessage)
+	assertEquals(t, strings.TrimSpace(silentgit("log", "--format=%B", "-n", "1", "HEAD")), configuration.WipCommitMessage)
 	assertOnBranch(t, "mob-session")
 }
 
