@@ -10,19 +10,19 @@ func TestStartCommitDoneOnFeatureBranch(t *testing.T) {
 	git("checkout", "-b", "feature1")
 	git("push", "origin", "feature1", "--set-upstream")
 	assertOnBranch(t, "feature1")
+	assertCommits(t, 1) // feature1 branch fresh state
 	start()
 	assertOnBranch(t, "mob/feature1")
-	createFile(t, "dm_example.txt", "content")
+	createFile(t, "example.txt", "content")
 
 	// act
 	done()
-	// assertOnBranch(t, "feature1")
-	// assertNoMobSessionBranches(t, "mob-session")
-	// assertFileExist(t, "dm_example.txt")
 	git("reset", "--hard")
 
 	// assert
-	assertFileExist(t, "dm_example.txt")
+	assertOnBranch(t, "feature1")
+	assertCommits(t, 2) // feature1 branch should have a 2nd commit
+	assertFileExist(t, "example.txt")
 
 	// cleanup
 	reset()
