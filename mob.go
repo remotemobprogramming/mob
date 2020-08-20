@@ -25,6 +25,7 @@ type Configuration struct {
 	RemoteName                        string // override with MOB_REMOTE_NAME environment variable
 	WipCommitMessage                  string // override with MOB_WIP_COMMIT_MESSAGE environment variable
 	VoiceCommand                      string // override with MOB_VOICE_COMMAND environment variable
+	NotifyCommand                     string // override with MOB_NOTIFY_COMMAND environment variable
 	MobNextStay                       bool   // override with MOB_NEXT_STAY environment variable
 	MobStartIncludeUncommittedChanges bool   // override with MOB_START_INCLUDE_UNCOMMITTED_CHANGES variable
 	Debug                             bool   // override with MOB_DEBUG environment variable
@@ -50,6 +51,7 @@ func getDefaultConfiguration() Configuration {
 		RemoteName:                        "origin",
 		WipCommitMessage:                  "mob next [ci-skip]",
 		VoiceCommand:                      "say",
+		NotifyCommand:                     "",
 		MobNextStay:                       false,
 		MobStartIncludeUncommittedChanges: false,
 		Debug:                             false,
@@ -68,6 +70,7 @@ func parseEnvironmentVariables(configuration Configuration) Configuration {
 	setStringFromEnvVariable(&configuration.RemoteName, "MOB_REMOTE_NAME")
 	setStringFromEnvVariable(&configuration.WipCommitMessage, "MOB_WIP_COMMIT_MESSAGE")
 	setStringFromEnvVariable(&configuration.VoiceCommand, "MOB_VOICE_COMMAND")
+	setStringFromEnvVariable(&configuration.NotifyCommand, "MOB_NOTIFY_COMMAND")
 
 	setBoolFromEnvVariable(&configuration.Debug, "MOB_DEBUG")
 	setBoolFromEnvVariable(&configuration.MobNextStay, "MOB_NEXT_STAY")
@@ -110,6 +113,7 @@ func config() {
 	say("MOB_REMOTE_NAME" + "=" + configuration.RemoteName)
 	say("MOB_WIP_COMMIT_MESSAGE" + "=" + configuration.WipCommitMessage)
 	say("MOB_VOICE_COMMAND" + "=" + configuration.VoiceCommand)
+	say("MOB_NOTIFY_COMMAND" + "=" + configuration.NotifyCommand)
 	say("MOB_NEXT_STAY" + "=" + strconv.FormatBool(configuration.MobNextStay))
 	say("MOB_START_INCLUDE_UNCOMMITTED_CHANGES" + "=" + strconv.FormatBool(configuration.MobStartIncludeUncommittedChanges))
 	say("MOB_DEBUG" + "=" + strconv.FormatBool(configuration.Debug))
@@ -226,60 +230,83 @@ func determineBranches(branch string, branchQualifier string, branches string) (
 	return
 }
 
-func startTimer(timerInMinutes string) {
-	debug("Starting timer for " + timerInMinutes + " minutes")
-	timeoutInMinutes, _ := strconv.Atoi(timerInMinutes)
-	timeoutInSeconds := timeoutInMinutes * 60
-	timerInSeconds := strconv.Itoa(timeoutInSeconds)
-	timeOfTimeout := time.Now().Add(time.Minute * time.Duration(timeoutInMinutes)).Format("15:04")
+func getSleepCommand(timeoutInSeconds int) string {
+	return fmt.Sprintf("sleep %d", timeoutInSeconds)
+}
 
-	voiceMessage := "mob next"
-	textMessage := "mob next"
-
-	var commandString string
-	var err error
-	debug("Operating System " + runtime.GOOS)
+func getVoiceCommand(message string) string {
 	switch runtime.GOOS {
 	case "windows":
-		commandString, err = startCommand("powershell", "-command", "start-process powershell -NoNewWindow -ArgumentList '-command \"sleep "+timerInSeconds+"; (New-Object -ComObject SAPI.SPVoice).Speak(\\\""+voiceMessage+"\\\")\"'")
+		return fmt.Sprintf("(New-Object -ComObject SAPI.SPVoice).Speak(\\\"%s\\\")\"", message)
+	default:
+		return fmt.Sprintf("%s \"%s\"", configuration.VoiceCommand, message)
+	}
+}
+
+func getNotifyCommand(message string) string {
+	// use configured command if available
+	if configuration.NotifyCommand != "" {
+		return fmt.Sprintf("%s \"%s\"", configuration.NotifyCommand, message)
+	}
+	// otherwise use default for the current platform
+	switch runtime.GOOS {
 	case "darwin":
-		commandString, err = startCommand("sh", "-c", "( sleep "+timerInSeconds+" ; "+configuration.VoiceCommand+" \""+voiceMessage+"\" ; /usr/bin/osascript -e 'display notification \""+textMessage+"\"')  &")
+		return fmt.Sprintf("/usr/bin/osascript -e 'display notification \"%s\"'", message)
 	case "linux":
-		commandString, err = startCommand("sh", "-c", "( sleep "+timerInSeconds+" ; "+configuration.VoiceCommand+" \""+voiceMessage+"\" ; /usr/bin/notify-send \""+textMessage+"\")  &")
+		return fmt.Sprintf("/usr/bin/notify-send \"%s\"", message)
+	default:
+		return ""
+	}
+}
+
+func executeCommands(commands []string) (err error) {
+	cmds := make([]string, 0)
+	for _,c := range commands {
+		if len(c) > 0 {
+			cmds = append(cmds, c)
+		}
+	}
+	debug(fmt.Sprintf("Operating System %s", runtime.GOOS))
+	switch runtime.GOOS {
+	case "windows":
+		_, err = startCommand("powershell", "-command", fmt.Sprintf("start-process powershell -NoNewWindow -ArgumentList '-command \"%s\"'", strings.Join(cmds, ";")))
+	case "darwin":
+	case "linux":
+		_, err = startCommand("sh", "-c", fmt.Sprintf("(%s) &", strings.Join(cmds, ";")))
 	default:
 		sayError("Cannot start timer at " + runtime.GOOS)
-		return
 	}
+	return err
+}
+
+func startTimer(timerInMinutes string) {
+	debug(fmt.Sprintf("Starting timer for %s minutes", timerInMinutes))
+	timeoutInMinutes, _ := strconv.Atoi(timerInMinutes)
+	timeoutInSeconds := timeoutInMinutes * 60
+	timeOfTimeout := time.Now().Add(time.Minute * time.Duration(timeoutInMinutes)).Format("15:04")
+
+	err := executeCommands([]string{
+		getSleepCommand(timeoutInSeconds),
+		getVoiceCommand("mob next"),
+		getNotifyCommand("mob next"),
+	})
 
 	if err != nil {
-		sayError("timer couldn't be started... (timer only works on OSX)")
-		sayError(commandString)
+		sayError(fmt.Sprintf("timer couldn't be started on your system (%s)", runtime.GOOS))
 		sayError(err.Error())
 	} else {
-		sayInfo(timerInMinutes + " minutes timer started (finishes at approx. " + timeOfTimeout + ")")
+		sayInfo(fmt.Sprintf("%s minutes timer started (finishes at approx. %s)", timerInMinutes, timeOfTimeout))
 	}
 }
 
 func moo() {
 	voiceMessage := "moo"
-
-	var commandString string
-	var err error
-
-	switch runtime.GOOS {
-	case "windows":
-		commandString, err = startCommand("powershell", "-command", "start-process powershell -NoNewWindow -ArgumentList '-command \"(New-Object -ComObject SAPI.SPVoice).Speak(\\\""+voiceMessage+"\\\")\"'")
-	case "darwin":
-		commandString, err = startCommand("sh", "-c", "( "+configuration.VoiceCommand+" \""+voiceMessage+"\")  &")
-	case "linux":
-		commandString, err = startCommand("sh", "-c", "( "+configuration.VoiceCommand+" \""+voiceMessage+"\")  &")
-	default:
-		sayError("Cannot run voice command on your system " + runtime.GOOS)
-		return
-	}
+	err := executeCommands([]string{
+		getVoiceCommand(voiceMessage),
+	})
 
 	if err != nil {
-		sayError(commandString)
+		sayError(fmt.Sprintf("can't run voice command on your system (%s)", runtime.GOOS))
 		sayError(err.Error())
 	} else {
 		sayInfo(voiceMessage)
