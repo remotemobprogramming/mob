@@ -243,9 +243,9 @@ func startTimer(timerInMinutes string) {
 	case "windows":
 		commandString, err = startCommand("powershell", "-command", "start-process powershell -NoNewWindow -ArgumentList '-command \"sleep "+timerInSeconds+"; (New-Object -ComObject SAPI.SPVoice).Speak(\\\""+voiceMessage+"\\\")\"'")
 	case "darwin":
-		commandString, err = startCommand("sh", "-c", "( sleep "+timerInSeconds+" && "+configuration.VoiceCommand+" \""+voiceMessage+"\" && /usr/bin/osascript -e 'display notification \""+textMessage+"\"')  &")
+		commandString, err = startCommand("sh", "-c", "( sleep "+timerInSeconds+" ; "+configuration.VoiceCommand+" \""+voiceMessage+"\" ; /usr/bin/osascript -e 'display notification \""+textMessage+"\"')  &")
 	case "linux":
-		commandString, err = startCommand("sh", "-c", "( sleep "+timerInSeconds+" && "+configuration.VoiceCommand+" \""+voiceMessage+"\" && /usr/bin/notify-send \""+textMessage+"\")  &")
+		commandString, err = startCommand("sh", "-c", "( sleep "+timerInSeconds+" ; "+configuration.VoiceCommand+" \""+voiceMessage+"\" ; /usr/bin/notify-send \""+textMessage+"\")  &")
 	default:
 		sayError("Cannot start timer at " + runtime.GOOS)
 		return
