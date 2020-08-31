@@ -259,7 +259,7 @@ func getNotifyCommand(message string) string {
 	}
 }
 
-func executeCommands(commands []string) (err error) {
+func executeCommandsInBackgroundProcess(commands ...string) (err error) {
 	cmds := make([]string, 0)
 	for _,c := range commands {
 		if len(c) > 0 {
@@ -285,11 +285,7 @@ func startTimer(timerInMinutes string) {
 	timeoutInSeconds := timeoutInMinutes * 60
 	timeOfTimeout := time.Now().Add(time.Minute * time.Duration(timeoutInMinutes)).Format("15:04")
 
-	err := executeCommands([]string{
-		getSleepCommand(timeoutInSeconds),
-		getVoiceCommand("mob next"),
-		getNotifyCommand("mob next"),
-	})
+	err := executeCommandsInBackgroundProcess(getSleepCommand(timeoutInSeconds), getVoiceCommand("mob next"), getNotifyCommand("mob next"))
 
 	if err != nil {
 		sayError(fmt.Sprintf("timer couldn't be started on your system (%s)", runtime.GOOS))
@@ -301,9 +297,7 @@ func startTimer(timerInMinutes string) {
 
 func moo() {
 	voiceMessage := "moo"
-	err := executeCommands([]string{
-		getVoiceCommand(voiceMessage),
-	})
+	err := executeCommandsInBackgroundProcess(getVoiceCommand(voiceMessage))
 
 	if err != nil {
 		sayError(fmt.Sprintf("can't run voice command on your system (%s)", runtime.GOOS))
