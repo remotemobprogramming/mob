@@ -234,26 +234,37 @@ func getSleepCommand(timeoutInSeconds int) string {
 	return fmt.Sprintf("sleep %d", timeoutInSeconds)
 }
 
-func getVoiceCommand(message string) string {
-	switch runtime.GOOS {
-	case "windows":
-		return fmt.Sprintf("(New-Object -ComObject SAPI.SPVoice).Speak(\\\"%s\\\")\"", message)
-	default:
-		return fmt.Sprintf("%s \"%s\"", configuration.VoiceCommand, message)
+func injectCommandWithMessage(command string, message string) string {
+	placeHolders := strings.Count(command, "%s")
+	if placeHolders > 1 {
+		sayError(fmt.Sprintf("Too many placeholders (%d) in format command string: %s", placeHolders, command))
+		exit(1)
 	}
+	if placeHolders == 0 {
+		return fmt.Sprintf("%s %s", command, message)
+	}
+	return fmt.Sprintf(command, message)
+}
+
+func getVoiceCommand(message string) string {
+	// provide a default command for windows, while still allow overriding
+	if runtime.GOOS == "windows" && configuration.VoiceCommand == getDefaultConfiguration().VoiceCommand {
+		return injectCommandWithMessage("(New-Object -ComObject SAPI.SPVoice).Speak(\\\"%s\\\")\"", message)
+	}
+	return injectCommandWithMessage(configuration.VoiceCommand, message)
 }
 
 func getNotifyCommand(message string) string {
 	// use configured command if available
 	if configuration.NotifyCommand != "" {
-		return fmt.Sprintf("%s \"%s\"", configuration.NotifyCommand, message)
+		return injectCommandWithMessage(configuration.NotifyCommand, message)
 	}
 	// otherwise use default for the current platform
 	switch runtime.GOOS {
 	case "darwin":
-		return fmt.Sprintf("/usr/bin/osascript -e 'display notification \"%s\"'", message)
+		return injectCommandWithMessage("/usr/bin/osascript -e 'display notification \"%s\"'", message)
 	case "linux":
-		return fmt.Sprintf("/usr/bin/notify-send \"%s\"", message)
+		return injectCommandWithMessage("/usr/bin/notify-send \"%s\"", message)
 	default:
 		return ""
 	}
