@@ -133,6 +133,7 @@ Show your current configuration with `mob config`:
 MOB_REMOTE_NAME=origin
 MOB_WIP_COMMIT_MESSAGE=mob next [ci-skip]
 MOB_VOICE_COMMAND=say
+MOB_NOTIFY_COMMAND=/usr/bin/osascript -e 'display notification "%s"'
 MOB_NEXT_STAY=false
 MOB_START_INCLUDE_UNCOMMITTED_CHANGES=false
 MOB_DEBUG=false

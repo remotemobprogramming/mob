@@ -1,3 +1,8 @@
+# 0.0.26
+- Adds way to configure the `MOB_VOICE_COMMAND` configuration.
+- Allow disabling voice or notification by setting `MOB_VOICE_COMMAND` or `MOB_NOTIFY_COMMAND` to empty string.
+- Fixes a bug where a failure in executing the voice command would lead to omitting the notification.
+
 # 0.0.25
 - Adds flag `--return-to-base-branch` (with shorthand `-r`) to return to base branch on `mob next`. Because 'mob' will change the default behavior from returning to the base branch to staying on the wip branch on `mob next`, this flag provides the inverse operation of `--stay`. If both are provided, the latter one wins.
 - Adds flag `-i` as a shorthand notation for `--include-uncommitted-changes`.
