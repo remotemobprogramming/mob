@@ -285,7 +285,7 @@ func executeCommandsInBackgroundProcess(commands ...string) (err error) {
 	case "linux":
 		_, err = startCommand("sh", "-c", fmt.Sprintf("(%s) &", strings.Join(cmds, ";")))
 	default:
-		sayError("Cannot start timer at " + runtime.GOOS)
+		sayError(fmt.Sprintf("Cannot execute background commands on your os: %s", runtime.GOOS))
 	}
 	return err
 }
