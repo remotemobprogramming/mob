@@ -81,8 +81,8 @@ func parseEnvironmentVariables(configuration Configuration) Configuration {
 
 	setStringFromEnvVariable(&configuration.RemoteName, "MOB_REMOTE_NAME")
 	setStringFromEnvVariable(&configuration.WipCommitMessage, "MOB_WIP_COMMIT_MESSAGE")
-	setStringFromEnvVariable(&configuration.VoiceCommand, "MOB_VOICE_COMMAND")
-	setStringFromEnvVariable(&configuration.NotifyCommand, "MOB_NOTIFY_COMMAND")
+	setOptionalStringFromEnvVariable(&configuration.VoiceCommand, "MOB_VOICE_COMMAND")
+	setOptionalStringFromEnvVariable(&configuration.NotifyCommand, "MOB_NOTIFY_COMMAND")
 
 	setBoolFromEnvVariable(&configuration.Debug, "MOB_DEBUG")
 	setBoolFromEnvVariable(&configuration.MobNextStay, "MOB_NEXT_STAY")
@@ -94,6 +94,14 @@ func parseEnvironmentVariables(configuration Configuration) Configuration {
 func setStringFromEnvVariable(s *string, key string) {
 	value, set := os.LookupEnv(key)
 	if set && value != "" {
+		*s = value
+		debug("overriding " + key + " =" + *s)
+	}
+}
+
+func setOptionalStringFromEnvVariable(s *string, key string) {
+	value, set := os.LookupEnv(key)
+	if set {
 		*s = value
 		debug("overriding " + key + " =" + *s)
 	}
