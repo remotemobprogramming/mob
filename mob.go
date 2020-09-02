@@ -47,11 +47,23 @@ func main() {
 }
 
 func getDefaultConfiguration() Configuration {
+	voiceCommand := ""
+	notifyCommand := ""
+	switch runtime.GOOS {
+	case "darwin":
+		voiceCommand = "say"
+		notifyCommand = "/usr/bin/osascript -e 'display notification \"%s\"'"
+	case "linux":
+		voiceCommand = "say"
+		notifyCommand = "notify-send \"%s\""
+	case "windows":
+		voiceCommand = "(New-Object -ComObject SAPI.SPVoice).Speak(\\\"%s\\\")\""
+	}
 	return Configuration{
 		RemoteName:                        "origin",
 		WipCommitMessage:                  "mob next [ci-skip]",
-		VoiceCommand:                      "say",
-		NotifyCommand:                     "",
+		VoiceCommand:                      voiceCommand,
+		NotifyCommand:                     notifyCommand,
 		MobNextStay:                       false,
 		MobStartIncludeUncommittedChanges: false,
 		Debug:                             false,
@@ -247,27 +259,17 @@ func injectCommandWithMessage(command string, message string) string {
 }
 
 func getVoiceCommand(message string) string {
-	// provide a default command for windows, while still allow overriding
-	if runtime.GOOS == "windows" && configuration.VoiceCommand == getDefaultConfiguration().VoiceCommand {
-		return injectCommandWithMessage("(New-Object -ComObject SAPI.SPVoice).Speak(\\\"%s\\\")\"", message)
+	if len(configuration.VoiceCommand) == 0 {
+		return ""
 	}
 	return injectCommandWithMessage(configuration.VoiceCommand, message)
 }
 
 func getNotifyCommand(message string) string {
-	// use configured command if available
-	if configuration.NotifyCommand != "" {
-		return injectCommandWithMessage(configuration.NotifyCommand, message)
-	}
-	// otherwise use default for the current platform
-	switch runtime.GOOS {
-	case "darwin":
-		return injectCommandWithMessage("/usr/bin/osascript -e 'display notification \"%s\"'", message)
-	case "linux":
-		return injectCommandWithMessage("/usr/bin/notify-send \"%s\"", message)
-	default:
+	if len(configuration.NotifyCommand) == 0 {
 		return ""
 	}
+	return injectCommandWithMessage(configuration.NotifyCommand, message)
 }
 
 func executeCommandsInBackgroundProcess(commands ...string) (err error) {
