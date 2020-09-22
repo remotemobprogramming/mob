@@ -157,6 +157,11 @@ func parseArgs(args []string) (command string, parameters []string) {
 				configuration.WipBranchQualifierSet = true
 			}
 			i++
+		case "--message", "-m":
+			if i+1 != len(args) {
+				configuration.WipCommitMessage = args[i+1]
+			}
+			i++
 		default:
 			if i == 1 {
 				command = arg
@@ -282,7 +287,7 @@ func getNotifyCommand(message string) string {
 
 func executeCommandsInBackgroundProcess(commands ...string) (err error) {
 	cmds := make([]string, 0)
-	for _,c := range commands {
+	for _, c := range commands {
 		if len(c) > 0 {
 			cmds = append(cmds, c)
 		}
@@ -615,7 +620,7 @@ func showNext() {
 func help() {
 	say("USAGE")
 	say("mob start [<minutes>] [--include-uncommitted-changes|-i] [--branch|-b <branch>]\t# start mob session in wip branch")
-	say("mob next [--stay|-s] [--return-to-base-branch|-r]\t\t# handover to next person and switch back to base branch")
+	say("mob next [--stay|-s] [--return-to-base-branch|-r] [--message|-m <commit-message>]\t\t# handover to next person and switch back to base branch")
 	say("mob done \t\t\t# finish mob session by squashing all changes in wip branch to index in base branch")
 	say("mob reset [--branch|-b <branch>]# removes local and remote wip branch")
 	say("mob status \t\t\t# show status")

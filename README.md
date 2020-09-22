@@ -50,8 +50,8 @@ When you're done, get your changes into the staging area of the `master` branch 
 
 ```
 USAGE
-mob start [<minutes>] [--include-uncommitted-changes|-i] [--branch|-b <branch>]# start mob session in wip branch
-mob next [--stay|-s] [--return-to-base-branch|-r]		# handover to next person and switch back to base branch
+mob start [<minutes>] [--include-uncommitted-changes|-i] [--branch|-b <branch>] # start mob session in wip branch
+mob next [--stay|-s] [--return-to-base-branch|-r] [--message|-m <commit-message>] # handover to next person and switch back to base branch
 mob done 			# finish mob session by squashing all changes in wip branch to index in base branch
 mob reset [--branch|-b <branch>]# removes local and remote wip branch
 mob status 			# show status
@@ -158,7 +158,7 @@ MOB_DEBUG=true mob next
 
 ```bash
 git version # >= 2.17
-go version # >= 1.14.4 
+go version # >= 1.15
 
 go build # builds 'mob'
 

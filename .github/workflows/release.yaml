@@ -20,8 +20,8 @@ jobs:
       - run: go test
         env:
           GOOS: linux # the tests will only run if the os matches the os of the system of run-on
-      - name: Use Go 1.14 to build
-        uses: cedrickring/golang-action/go1.14@1.5.2
+      - name: Use Go 1.15 to build
+        uses: cedrickring/golang-action/go1.15@1.5.2
         with:
           args: go build
       - name: Create release artifacts using .github/build

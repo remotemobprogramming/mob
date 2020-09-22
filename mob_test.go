@@ -23,6 +23,17 @@ func TestParseArgs(t *testing.T) {
 	equals(t, "green", configuration.WipBranchQualifier)
 }
 
+func TestParseArgsMessage(t *testing.T) {
+	configuration = getDefaultConfiguration()
+	args := []string{"mob", "next", "--message", "ci-skip"}
+	equals(t, configuration.WipBranchQualifier, "")
+	command, parameters := parseArgs(args)
+
+	equals(t, "next", command)
+	equals(t, "", strings.Join(parameters, ""))
+	equals(t, "ci-skip", configuration.WipCommitMessage)
+}
+
 func TestDetermineBranches(t *testing.T) {
 	assertDetermineBranches(t, "master", "", "", "master", "mob-session")
 	assertDetermineBranches(t, "mob-session", "", "", "master", "mob-session")
