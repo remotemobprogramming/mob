@@ -1,7 +1,8 @@
 # 0.0.26
-- Adds way to configure the `MOB_VOICE_COMMAND` configuration.
-- Allow disabling voice or notification by setting `MOB_VOICE_COMMAND` or `MOB_NOTIFY_COMMAND` to empty string.
+- Adds way to configure the voice command via the environment variable `MOB_VOICE_COMMAND`.
+- Allow disabling voice or notification by setting the environment variables `MOB_VOICE_COMMAND` or `MOB_NOTIFY_COMMAND` to an empty string.
 - Fixes a bug where a failure in executing the voice command would lead to omitting the notification.
+- `mob config` now shows the currently used `MOB_VOICE_COMMAND` and `MOB_NOTIFY_COMMAND`.
 - Add `mob next --message "custom commit message"` as an option to override the commit message during `mob next`.
 
 # 0.0.25
