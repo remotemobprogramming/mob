@@ -296,8 +296,7 @@ func executeCommandsInBackgroundProcess(commands ...string) (err error) {
 	switch runtime.GOOS {
 	case "windows":
 		_, err = startCommand("powershell", "-command", fmt.Sprintf("start-process powershell -NoNewWindow -ArgumentList '-command \"%s\"'", strings.Join(cmds, ";")))
-	case "darwin":
-	case "linux":
+	case "darwin", "linux":
 		_, err = startCommand("sh", "-c", fmt.Sprintf("(%s) &", strings.Join(cmds, ";")))
 	default:
 		sayError(fmt.Sprintf("Cannot execute background commands on your os: %s", runtime.GOOS))
@@ -685,7 +684,7 @@ func runCommand(name string, args ...string) (string, string, error) {
 		command.Dir = workingDir
 	}
 	commandString := strings.Join(command.Args, " ")
-	debug(commandString)
+	debug("Running command " + commandString)
 	outputBinary, err := command.CombinedOutput()
 	output := string(outputBinary)
 	debug(output)
@@ -698,7 +697,7 @@ func startCommand(name string, args ...string) (string, error) {
 		command.Dir = workingDir
 	}
 	commandString := strings.Join(command.Args, " ")
-	debug(commandString)
+	debug("Starting command " + commandString)
 	err := command.Start()
 	return commandString, err
 }
