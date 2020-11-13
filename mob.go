@@ -11,10 +11,9 @@ import (
 )
 
 const (
-	versionNumber         = "0.0.27-dev"
-	mobStashName          = "mob-stash-name"
-	wipBranchPrefix       = "mob/"
-	branchSuffixSeparator = "/"
+	versionNumber   = "0.0.27-dev"
+	mobStashName    = "mob-stash-name"
+	wipBranchPrefix = "mob/"
 )
 
 var (
@@ -32,6 +31,7 @@ type Configuration struct {
 	Debug                             bool   // override with MOB_DEBUG environment variable
 	WipBranchQualifier                string // override with MOB_WIP_BRANCH_QUALIFIER environment variable
 	WipBranchQualifierSet             bool
+	WipBranchQualifierSeparator       string // override with MOB_WIP_BRANCH_QUALIFIER_SEPARATOR environment variable
 }
 
 func main() {
@@ -70,6 +70,7 @@ func getDefaultConfiguration() Configuration {
 		Debug:                             false,
 		WipBranchQualifier:                "",
 		WipBranchQualifierSet:             false,
+		WipBranchQualifierSeparator:       "/",
 	}
 }
 
@@ -84,6 +85,7 @@ func parseEnvironmentVariables(configuration Configuration) Configuration {
 	setStringFromEnvVariable(&configuration.WipCommitMessage, "MOB_WIP_COMMIT_MESSAGE")
 	setOptionalStringFromEnvVariable(&configuration.VoiceCommand, "MOB_VOICE_COMMAND")
 	setOptionalStringFromEnvVariable(&configuration.NotifyCommand, "MOB_NOTIFY_COMMAND")
+	setStringFromEnvVariable(&configuration.WipBranchQualifierSeparator, "MOB_WIP_BRANCH_QUALIFIER_SEPARATOR")
 
 	setStringFromEnvVariable(&configuration.WipBranchQualifier, "MOB_WIP_BRANCH_QUALIFIER")
 	if configuration.WipBranchQualifier != "" {
@@ -144,6 +146,7 @@ func config() {
 	say("MOB_START_INCLUDE_UNCOMMITTED_CHANGES" + "=" + strconv.FormatBool(configuration.MobStartIncludeUncommittedChanges))
 	say("MOB_DEBUG" + "=" + strconv.FormatBool(configuration.Debug))
 	say("MOB_WIP_BRANCH_QUALIFIER" + "=" + configuration.WipBranchQualifier)
+	say("MOB_BRANCH_SUFFIX_SEPARATOR" + "=" + configuration.WipBranchQualifierSeparator)
 }
 
 func parseArgs(args []string) (command string, parameters []string) {
@@ -229,7 +232,7 @@ func determineBranches(branch string, branchQualifier string, branches string) (
 	suffix := ""
 
 	if branchQualifier != "" {
-		suffix = branchSuffixSeparator + branchQualifier
+		suffix = configuration.WipBranchQualifierSeparator + branchQualifier
 	}
 
 	preparedBranch := strings.ReplaceAll(branch, wipBranchPrefix, "")

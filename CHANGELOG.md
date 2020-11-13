@@ -1,5 +1,6 @@
 # 0.0.27
 - Add way to configure `MOB_WIP_BRANCH_QUALIFIER` via an environment variable instead of `--branch` parameter.
+- Add way to configure `MOB_WIP_BRANCH_QUALIFIER_SEPARATOR` via an environment variable, currently defaults to '/'.
 
 # 0.0.26
 - Adds way to configure the voice command via the environment variable `MOB_VOICE_COMMAND`.
