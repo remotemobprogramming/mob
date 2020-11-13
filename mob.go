@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	versionNumber   = "1.0.0-dev"
+	versionNumber   = "0.0.27-dev"
 	mobStashName    = "mob-stash-name"
 	wipBranchPrefix = "mob/"
 )
@@ -83,10 +83,10 @@ func parseEnvironmentVariables(configuration Configuration) Configuration {
 	setStringFromEnvVariable(&configuration.WipCommitMessage, "MOB_WIP_COMMIT_MESSAGE")
 	setOptionalStringFromEnvVariable(&configuration.VoiceCommand, "MOB_VOICE_COMMAND")
 	setOptionalStringFromEnvVariable(&configuration.NotifyCommand, "MOB_NOTIFY_COMMAND")
-	
+
 	setStringFromEnvVariable(&configuration.WipBranchQualifier, "MOB_WIP_BRANCH_QUALIFIER")
 	if configuration.WipBranchQualifier != "" {
-		configuration.WipBranchQualifierSet = true;
+		configuration.WipBranchQualifierSet = true
 	}
 
 	setBoolFromEnvVariable(&configuration.Debug, "MOB_DEBUG")
