@@ -144,6 +144,15 @@ check_say() {
   esac
 }
 
+check_installation_path() {
+  location="$(command -v mob)"
+  if [ "$location" != "$target/mob" ]; then
+    echo "(!) The installation location doesn't match the location of the mob binary."
+    echo "    This means that the binary that's used is not the binary that has just been installed"
+    echo "    You probably want to delete the binary at $location"
+  fi
+}
+
 main() {
   handle_user_installation
   check_access_rights
@@ -151,6 +160,7 @@ main() {
   add_to_path
   display_success
   check_say
+  check_installation_path
 }
 
 main
