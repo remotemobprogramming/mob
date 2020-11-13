@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	versionNumber   = "0.0.27"
+	versionNumber   = "0.0.26"
 	mobStashName    = "mob-stash-name"
 	wipBranchPrefix = "mob/"
 )
