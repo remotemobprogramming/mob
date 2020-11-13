@@ -11,9 +11,10 @@ import (
 )
 
 const (
-	versionNumber   = "0.0.27-dev"
-	mobStashName    = "mob-stash-name"
-	wipBranchPrefix = "mob/"
+	versionNumber         = "0.0.27-dev"
+	mobStashName          = "mob-stash-name"
+	wipBranchPrefix       = "mob/"
+	branchSuffixSeparator = "/"
 )
 
 var (
@@ -228,7 +229,7 @@ func determineBranches(branch string, branchQualifier string, branches string) (
 	suffix := ""
 
 	if branchQualifier != "" {
-		suffix = "/" + branchQualifier
+		suffix = branchSuffixSeparator + branchQualifier
 	}
 
 	preparedBranch := strings.ReplaceAll(branch, wipBranchPrefix, "")
@@ -569,12 +570,35 @@ func isMobProgramming() bool {
 	return currentWipBranch == currentBranch
 }
 
-func hasLocalBranch(branch string) bool {
-	return strings.Contains(gitBranches(), branch)
+func hasLocalBranch(localBranch string) bool {
+	localBranchesRaw := gitBranches()
+	debug("Local Branches: " + localBranchesRaw)
+	debug("Local Branch: " + localBranch)
+
+	localBranches := strings.Split(localBranchesRaw, "\n")
+	for i := 0; i < len(localBranches); i++ {
+		if localBranches[i] == localBranch {
+			return true
+		}
+	}
+
+	return false
 }
 
 func hasRemoteBranch(branch string) bool {
-	return strings.Contains(gitRemoteBranches(), configuration.RemoteName+"/"+branch)
+	remoteBranchesRaw := gitRemoteBranches()
+	remoteBranch := configuration.RemoteName + "/" + branch
+	debug("Remote Branches: " + remoteBranchesRaw)
+	debug("Remote Branch: " + remoteBranch)
+
+	remoteBranches := strings.Split(remoteBranchesRaw, "\n")
+	for i := 0; i < len(remoteBranches); i++ {
+		if remoteBranches[i] == remoteBranch {
+			return true
+		}
+	}
+
+	return false
 }
 
 func gitBranches() string {
