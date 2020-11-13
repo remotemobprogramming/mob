@@ -30,7 +30,7 @@ type Configuration struct {
 	MobNextStay                       bool   // override with MOB_NEXT_STAY environment variable
 	MobStartIncludeUncommittedChanges bool   // override with MOB_START_INCLUDE_UNCOMMITTED_CHANGES variable
 	Debug                             bool   // override with MOB_DEBUG environment variable
-	WipBranchQualifier                string
+	WipBranchQualifier                string // override with MOB_WIP_BRANCH_QUALIFIER environment variable
 	WipBranchQualifierSet             bool
 }
 
