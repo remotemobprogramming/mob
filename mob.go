@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	versionNumber   = "0.0.26"
+	versionNumber   = "0.0.27"
 	mobStashName    = "mob-stash-name"
 	wipBranchPrefix = "mob/"
 )
@@ -83,6 +83,11 @@ func parseEnvironmentVariables(configuration Configuration) Configuration {
 	setStringFromEnvVariable(&configuration.WipCommitMessage, "MOB_WIP_COMMIT_MESSAGE")
 	setOptionalStringFromEnvVariable(&configuration.VoiceCommand, "MOB_VOICE_COMMAND")
 	setOptionalStringFromEnvVariable(&configuration.NotifyCommand, "MOB_NOTIFY_COMMAND")
+	
+	setStringFromEnvVariable(&configuration.WipBranchQualifier, "MOB_WIP_BRANCH_QUALIFIER")
+	if configuration.WipBranchQualifier != "" {
+		configuration.WipBranchQualifierSet = true;
+	}
 
 	setBoolFromEnvVariable(&configuration.Debug, "MOB_DEBUG")
 	setBoolFromEnvVariable(&configuration.MobNextStay, "MOB_NEXT_STAY")
@@ -137,6 +142,7 @@ func config() {
 	say("MOB_NEXT_STAY" + "=" + strconv.FormatBool(configuration.MobNextStay))
 	say("MOB_START_INCLUDE_UNCOMMITTED_CHANGES" + "=" + strconv.FormatBool(configuration.MobStartIncludeUncommittedChanges))
 	say("MOB_DEBUG" + "=" + strconv.FormatBool(configuration.Debug))
+	say("MOB_WIP_BRANCH_QUALIFIER" + "=" + configuration.WipBranchQualifier)
 }
 
 func parseArgs(args []string) (command string, parameters []string) {
