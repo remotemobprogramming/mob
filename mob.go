@@ -45,10 +45,6 @@ func main() {
 	debugInfo("version " + versionNumber)
 	debugInfo("workingDir " + workingDir)
 
-	if !configuration.MobNextStaySet {
-		say("Attention: MOB_NEXT_STAY will default to 'true' in future versions. Set MOB_NEXT_STAY to 'false' to keep old behavior.")
-	}
-
 	execute(command, parameters)
 }
 
@@ -482,6 +478,10 @@ func findLatestMobStash(stashes string) string {
 }
 
 func next() {
+	if !configuration.MobNextStaySet {
+		say("Attention: MOB_NEXT_STAY will default to 'true' in future versions. Set MOB_NEXT_STAY to 'false' to keep old behavior.")
+	}
+
 	if !isMobProgramming() {
 		sayError("you aren't mob programming")
 		sayEmptyLine()
