@@ -46,7 +46,7 @@ func main() {
 	debugInfo("workingDir " + workingDir)
 
 	if !configuration.MobNextStaySet {
-		say("ATTENTION: MOB_NEXT_STAY will default to 'true' in next version. To keep the old behavior, set the environment variable MOB_NEXT_STAY to 'false'.")
+		say("Attention: MOB_NEXT_STAY will default to 'true' in future versions. Set MOB_NEXT_STAY to 'false' to keep old behavior.")
 	}
 
 	execute(command, parameters)
