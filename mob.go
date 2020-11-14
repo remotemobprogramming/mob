@@ -402,7 +402,7 @@ func start() {
 	}
 
 	if !isMobProgramming() {
-		git("pull", "--ff-only") // to merge FETCH_HEAD
+		git("merge", "FETCH_HEAD", "--ff-only")
 	}
 
 	if hasRemoteBranch(currentWipBranch) {
