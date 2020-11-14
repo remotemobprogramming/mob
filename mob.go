@@ -27,6 +27,7 @@ type Configuration struct {
 	VoiceCommand                      string // override with MOB_VOICE_COMMAND environment variable
 	NotifyCommand                     string // override with MOB_NOTIFY_COMMAND environment variable
 	MobNextStay                       bool   // override with MOB_NEXT_STAY environment variable
+	MobNextStaySet                    bool   // override with MOB_NEXT_STAY environment variable
 	MobStartIncludeUncommittedChanges bool   // override with MOB_START_INCLUDE_UNCOMMITTED_CHANGES variable
 	Debug                             bool   // override with MOB_DEBUG environment variable
 	WipBranchQualifier                string // override with MOB_WIP_BRANCH_QUALIFIER environment variable
@@ -43,6 +44,10 @@ func main() {
 	debugInfo("parameters '" + strings.Join(parameters, " ") + "'")
 	debugInfo("version " + versionNumber)
 	debugInfo("workingDir " + workingDir)
+
+	if !configuration.MobNextStaySet {
+		say("ATTENTION: MOB_NEXT_STAY will default to 'true' in next version. To keep the old behavior, set the environment variable MOB_NEXT_STAY to 'false'.")
+	}
 
 	execute(command, parameters)
 }
@@ -66,6 +71,7 @@ func getDefaultConfiguration() Configuration {
 		VoiceCommand:                      voiceCommand,
 		NotifyCommand:                     notifyCommand,
 		MobNextStay:                       false,
+		MobNextStaySet:                    false,
 		MobStartIncludeUncommittedChanges: false,
 		Debug:                             false,
 		WipBranchQualifier:                "",
@@ -93,7 +99,8 @@ func parseEnvironmentVariables(configuration Configuration) Configuration {
 	}
 
 	setBoolFromEnvVariable(&configuration.Debug, "MOB_DEBUG")
-	setBoolFromEnvVariable(&configuration.MobNextStay, "MOB_NEXT_STAY")
+	setBoolFromEnvVariableSet(&configuration.MobNextStay, &configuration.MobNextStaySet, "MOB_NEXT_STAY")
+
 	setBoolFromEnvVariable(&configuration.MobStartIncludeUncommittedChanges, "MOB_START_INCLUDE_UNCOMMITTED_CHANGES")
 
 	return configuration
@@ -119,6 +126,19 @@ func setBoolFromEnvVariable(s *bool, key string) {
 	value, set := os.LookupEnv(key)
 	if set && value == "true" {
 		*s = true
+		debugInfo("overriding " + key + " =" + strconv.FormatBool(*s))
+	}
+}
+
+func setBoolFromEnvVariableSet(s *bool, changed *bool, key string) {
+	value, set := os.LookupEnv(key)
+	if set && value == "true" {
+		*s = true
+		*changed = true
+		debugInfo("overriding " + key + " =" + strconv.FormatBool(*s))
+	} else if set && value == "false" {
+		*s = false
+		*changed = true
 		debugInfo("overriding " + key + " =" + strconv.FormatBool(*s))
 	}
 }
@@ -159,8 +179,10 @@ func parseArgs(args []string) (command string, parameters []string) {
 			configuration.Debug = true
 		case "--stay", "-s":
 			configuration.MobNextStay = true
+			configuration.MobNextStaySet = true
 		case "--return-to-base-branch", "-r":
 			configuration.MobNextStay = false
+			configuration.MobNextStaySet = true
 		case "--branch", "-b":
 			if i+1 != len(args) {
 				configuration.WipBranchQualifier = args[i+1]
@@ -261,7 +283,7 @@ func determineBranches(branch string, branchQualifier string, branches string) (
 		wipBranch = wipBranchPrefix + baseBranch + suffix
 	}
 
-	sayInfo("on branch " + branch + " => BASE " + baseBranch + " WIP " + wipBranch + " with branches " + strings.Join(localBranches, ","))
+	debugInfo("on branch " + branch + " => BASE " + baseBranch + " WIP " + wipBranch + " with branches " + strings.Join(localBranches, ","))
 	return
 }
 
