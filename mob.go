@@ -36,13 +36,13 @@ type Configuration struct {
 
 func main() {
 	configuration = parseEnvironmentVariables(getDefaultConfiguration())
-	debug("Args '" + strings.Join(os.Args, " ") + "'")
+	debugInfo("Args '" + strings.Join(os.Args, " ") + "'")
 
 	command, parameters := parseArgs(os.Args)
-	debug("command '" + command + "'")
-	debug("parameters '" + strings.Join(parameters, " ") + "'")
-	debug("version " + versionNumber)
-	debug("workingDir " + workingDir)
+	debugInfo("command '" + command + "'")
+	debugInfo("parameters '" + strings.Join(parameters, " ") + "'")
+	debugInfo("version " + versionNumber)
+	debugInfo("workingDir " + workingDir)
 
 	execute(command, parameters)
 }
@@ -70,7 +70,7 @@ func getDefaultConfiguration() Configuration {
 		Debug:                             false,
 		WipBranchQualifier:                "",
 		WipBranchQualifierSet:             false,
-		WipBranchQualifierSeparator:       "/",
+		WipBranchQualifierSeparator:       "-",
 	}
 }
 
@@ -78,7 +78,7 @@ func parseEnvironmentVariables(configuration Configuration) Configuration {
 	removed("MOB_BASE_BRANCH", "Use 'mob start' on your base branch instead.")
 	removed("MOB_WIP_BRANCH", "Use 'mob start --branch <branch>' instead.")
 
-	deprecated("MOB_DEBUG", "Use the parameter --debug instead.")
+	deprecated("MOB_DEBUG", "Use the parameter --debugInfo instead.")
 	deprecated("MOB_START_INCLUDE_UNCOMMITTED_CHANGES", "Use the parameter --include-uncommitted-changes instead.")
 
 	setStringFromEnvVariable(&configuration.RemoteName, "MOB_REMOTE_NAME")
@@ -103,7 +103,7 @@ func setStringFromEnvVariable(s *string, key string) {
 	value, set := os.LookupEnv(key)
 	if set && value != "" {
 		*s = value
-		debug("overriding " + key + " =" + *s)
+		debugInfo("overriding " + key + " =" + *s)
 	}
 }
 
@@ -111,7 +111,7 @@ func setOptionalStringFromEnvVariable(s *string, key string) {
 	value, set := os.LookupEnv(key)
 	if set {
 		*s = value
-		debug("overriding " + key + " =" + *s)
+		debugInfo("overriding " + key + " =" + *s)
 	}
 }
 
@@ -119,7 +119,7 @@ func setBoolFromEnvVariable(s *bool, key string) {
 	value, set := os.LookupEnv(key)
 	if set && value == "true" {
 		*s = true
-		debug("overriding " + key + " =" + strconv.FormatBool(*s))
+		debugInfo("overriding " + key + " =" + strconv.FormatBool(*s))
 	}
 }
 
@@ -155,7 +155,7 @@ func parseArgs(args []string) (command string, parameters []string) {
 		switch arg {
 		case "--include-uncommitted-changes", "-i":
 			configuration.MobStartIncludeUncommittedChanges = true
-		case "--debug":
+		case "--debugInfo":
 			configuration.Debug = true
 		case "--stay", "-s":
 			configuration.MobNextStay = true
@@ -244,7 +244,7 @@ func determineBranches(branch string, branchQualifier string, branches string) (
 		}
 	}
 
-	index := strings.LastIndex(preparedBranch, "/")
+	index := strings.LastIndex(preparedBranch, configuration.WipBranchQualifierSeparator)
 	if index != -1 && !branchExists {
 		suffix = preparedBranch[index:]
 	}
@@ -261,7 +261,7 @@ func determineBranches(branch string, branchQualifier string, branches string) (
 		wipBranch = wipBranchPrefix + baseBranch + suffix
 	}
 
-	debug("on branch " + branch + " => BASE " + baseBranch + " WIP " + wipBranch + " with branches " + strings.Join(localBranches, ","))
+	sayInfo("on branch " + branch + " => BASE " + baseBranch + " WIP " + wipBranch + " with branches " + strings.Join(localBranches, ","))
 	return
 }
 
@@ -302,7 +302,7 @@ func executeCommandsInBackgroundProcess(commands ...string) (err error) {
 			cmds = append(cmds, c)
 		}
 	}
-	debug(fmt.Sprintf("Operating System %s", runtime.GOOS))
+	debugInfo(fmt.Sprintf("Operating System %s", runtime.GOOS))
 	switch runtime.GOOS {
 	case "windows":
 		_, err = startCommand("powershell", "-command", fmt.Sprintf("start-process powershell -NoNewWindow -ArgumentList '-command \"%s\"'", strings.Join(cmds, ";")))
@@ -315,7 +315,7 @@ func executeCommandsInBackgroundProcess(commands ...string) (err error) {
 }
 
 func startTimer(timerInMinutes string) {
-	debug(fmt.Sprintf("Starting timer for %s minutes", timerInMinutes))
+	debugInfo(fmt.Sprintf("Starting timer for %s minutes", timerInMinutes))
 	timeoutInMinutes, _ := strconv.Atoi(timerInMinutes)
 	timeoutInSeconds := timeoutInMinutes * 60
 	timeOfTimeout := time.Now().Add(time.Minute * time.Duration(timeoutInMinutes)).Format("15:04")
@@ -402,7 +402,7 @@ func start() {
 	}
 
 	if !isMobProgramming() {
-		git("pull", "--ff-only")
+		git("pull", "--ff-only") // to merge FETCH_HEAD
 	}
 
 	if hasRemoteBranch(currentWipBranch) {
@@ -419,8 +419,8 @@ func start() {
 }
 
 func hasQualifiedBranches(currentBaseBranch string, remoteBranches string) bool {
-	debug("check on current base branch " + currentBaseBranch + " with remote branches " + strings.Join(strings.Split(remoteBranches, "\n"), ","))
-	hasWipBranchesWithQualifier := strings.Contains(remoteBranches, configuration.RemoteName+"/"+wipBranchPrefix+currentBaseBranch+"/")
+	debugInfo("check on current base branch " + currentBaseBranch + " with remote branches " + strings.Join(strings.Split(remoteBranches, "\n"), ","))
+	hasWipBranchesWithQualifier := strings.Contains(remoteBranches, configuration.RemoteName+"/"+wipBranchPrefix+currentBaseBranch+configuration.WipBranchQualifierSeparator)
 	return hasWipBranchesWithQualifier
 }
 
@@ -569,14 +569,14 @@ func hasUncommittedChanges() bool {
 func isMobProgramming() bool {
 	currentBranch := gitCurrentBranch()
 	_, currentWipBranch := determineBranches(currentBranch, configuration.WipBranchQualifier, gitBranches())
-	debug("current branch " + currentBranch + " and currentWipBranch " + currentWipBranch)
+	debugInfo("current branch " + currentBranch + " and currentWipBranch " + currentWipBranch)
 	return currentWipBranch == currentBranch
 }
 
 func hasLocalBranch(localBranch string) bool {
 	localBranchesRaw := gitBranches()
-	debug("Local Branches: " + localBranchesRaw)
-	debug("Local Branch: " + localBranch)
+	debugInfo("Local Branches: " + localBranchesRaw)
+	debugInfo("Local Branch: " + localBranch)
 
 	localBranches := strings.Split(localBranchesRaw, "\n")
 	for i := 0; i < len(localBranches); i++ {
@@ -591,8 +591,8 @@ func hasLocalBranch(localBranch string) bool {
 func hasRemoteBranch(branch string) bool {
 	remoteBranchesRaw := gitRemoteBranches()
 	remoteBranch := configuration.RemoteName + "/" + branch
-	debug("Remote Branches: " + remoteBranchesRaw)
-	debug("Remote Branch: " + remoteBranch)
+	debugInfo("Remote Branches: " + remoteBranchesRaw)
+	debugInfo("Remote Branch: " + remoteBranch)
 
 	remoteBranches := strings.Split(remoteBranchesRaw, "\n")
 	for i := 0; i < len(remoteBranches); i++ {
@@ -622,16 +622,16 @@ func gitUserName() string {
 }
 
 func showNext() {
-	debug("determining next person based on previous changes")
+	debugInfo("determining next person based on previous changes")
 
 	currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), configuration.WipBranchQualifier, gitBranches())
 
 	changes := strings.TrimSpace(silentgit("--no-pager", "log", currentBaseBranch+".."+currentWipBranch, "--pretty=format:%an", "--abbrev-commit"))
 	lines := strings.Split(strings.Replace(changes, "\r\n", "\n", -1), "\n")
 	numberOfLines := len(lines)
-	debug("there have been " + strconv.Itoa(numberOfLines) + " changes")
+	debugInfo("there have been " + strconv.Itoa(numberOfLines) + " changes")
 	gitUserName := gitUserName()
-	debug("current git user.name is '" + gitUserName + "'")
+	debugInfo("current git user.name is '" + gitUserName + "'")
 	if numberOfLines < 1 {
 		return
 	}
@@ -662,7 +662,7 @@ func help() {
 	say("mob version \t\t\t# print version number")
 	say("mob help \t\t\t# print usage")
 	sayEmptyLine()
-	say("Add --debug to any option to enable verbose logging")
+	say("Add --debugInfo to any option to enable verbose logging")
 	sayEmptyLine()
 	say("EXAMPLES")
 	say("mob start 10 \t\t\t# start 10 min session in wip branch 'mob-session'")
@@ -717,10 +717,10 @@ func runCommand(name string, args ...string) (string, string, error) {
 		command.Dir = workingDir
 	}
 	commandString := strings.Join(command.Args, " ")
-	debug("Running command " + commandString)
+	debugInfo("Running command " + commandString)
 	outputBinary, err := command.CombinedOutput()
 	output := string(outputBinary)
-	debug(output)
+	debugInfo(output)
 	return commandString, output, err
 }
 
@@ -730,7 +730,7 @@ func startCommand(name string, args ...string) (string, error) {
 		command.Dir = workingDir
 	}
 	commandString := strings.Join(command.Args, " ")
-	debug("Starting command " + commandString)
+	debugInfo("Starting command " + commandString)
 	err := command.Start()
 	return commandString, err
 }
@@ -743,7 +743,7 @@ func sayError(s string) {
 	sayWithPrefix(s, " ERROR ")
 }
 
-func debug(s string) {
+func debugInfo(s string) {
 	if configuration.Debug {
 		sayWithPrefix(s, " DEBUG ")
 	}

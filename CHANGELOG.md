@@ -1,6 +1,7 @@
 # 0.0.27
+- BREAKING: named wip branches changed format from 'mob/main/green' to 'mob/main-green' because of conflicts that occurred when 'mob/main' was present as well. For previous behavior, set environment variable `MOB_WIP_BRANCH_QUALIFIER_SEPARATOR` to '/' like this: `export MOB_WIP_BRANCH_QUALIFIER_SEPARATOR=/`. 
 - Add way to configure `MOB_WIP_BRANCH_QUALIFIER` via an environment variable instead of `--branch` parameter.
-- Add way to configure `MOB_WIP_BRANCH_QUALIFIER_SEPARATOR` via an environment variable, currently defaults to '/'.
+- Add way to configure `MOB_WIP_BRANCH_QUALIFIER_SEPARATOR` via an environment variable.
 
 # 0.0.26
 - Adds way to configure the voice command via the environment variable `MOB_VOICE_COMMAND`.

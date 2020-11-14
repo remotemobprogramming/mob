@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"reflect"
 	"runtime"
+	"runtime/debug"
 	"strconv"
 	"strings"
 	"testing"
@@ -38,13 +39,13 @@ func TestDetermineBranches(t *testing.T) {
 	assertDetermineBranches(t, "master", "", "", "master", "mob-session")
 	assertDetermineBranches(t, "mob-session", "", "", "master", "mob-session")
 
-	assertDetermineBranches(t, "master", "green", "", "master", "mob/master/green")
-	assertDetermineBranches(t, "mob/master/green", "", "", "master", "mob/master/green")
+	assertDetermineBranches(t, "master", "green", "", "master", "mob/master-green")
+	assertDetermineBranches(t, "mob/master-green", "", "", "master", "mob/master-green")
 
 	assertDetermineBranches(t, "feature1", "", "", "feature1", "mob/feature1")
 	assertDetermineBranches(t, "mob/feature1", "", "", "feature1", "mob/feature1")
-	assertDetermineBranches(t, "mob/feature1/green", "", "", "feature1", "mob/feature1/green")
-	assertDetermineBranches(t, "feature1", "green", "", "feature1", "mob/feature1/green")
+	assertDetermineBranches(t, "mob/feature1-green", "", "", "feature1", "mob/feature1-green")
+	assertDetermineBranches(t, "feature1", "green", "", "feature1", "mob/feature1-green")
 
 	assertDetermineBranches(t, "feature/test", "", "feature/test", "feature/test", "mob/feature/test")
 	assertDetermineBranches(t, "mob/feature/test", "", "feature/test\nmob/feature/test", "feature/test", "mob/feature/test")
@@ -155,7 +156,9 @@ func TestStartWithMultipleExistingBranches(t *testing.T) {
 
 	configuration.WipBranchQualifier = "green"
 	start()
+	assertOnBranch(t, "mob/master-green")
 	next()
+	assertOnBranch(t, "master")
 
 	configuration.WipBranchQualifier = ""
 	start()
@@ -184,13 +187,13 @@ func TestStartWithMultipleExistingBranchesWithStay(t *testing.T) {
 	configuration.WipBranchQualifier = "green"
 	assertOnBranch(t, "master")
 	start()
-	assertOnBranch(t, "mob/master/green")
+	assertOnBranch(t, "mob/master-green")
 	next()
-	assertOnBranch(t, "mob/master/green")
+	assertOnBranch(t, "mob/master-green")
 
 	configuration.WipBranchQualifier = ""
 	start()
-	assertOnBranch(t, "mob/master/green")
+	assertOnBranch(t, "mob/master-green")
 	assertOutputNotContains(t, output, "qualified mob branches detected")
 }
 
@@ -200,8 +203,8 @@ func TestStartNextWithBranch(t *testing.T) {
 	configuration.WipBranchQualifier = "green"
 
 	start()
-	assertOnBranch(t, "mob/master/green")
-	assertMobSessionBranches(t, "mob/master/green")
+	assertOnBranch(t, "mob/master-green")
+	assertMobSessionBranches(t, "mob/master-green")
 	configuration.WipBranchQualifier = ""
 
 	next()
@@ -209,7 +212,7 @@ func TestStartNextWithBranch(t *testing.T) {
 
 	configuration.WipBranchQualifier = "green"
 	reset()
-	assertNoMobSessionBranches(t, "mob/master/green")
+	assertNoMobSessionBranches(t, "mob/master-green")
 }
 
 func TestStartNextStartWithBranch(t *testing.T) {
@@ -219,13 +222,13 @@ func TestStartNextStartWithBranch(t *testing.T) {
 	assertOnBranch(t, "master")
 
 	start()
-	assertOnBranch(t, "mob/master/green")
+	assertOnBranch(t, "mob/master-green")
 
 	next()
-	assertOnBranch(t, "mob/master/green")
+	assertOnBranch(t, "mob/master-green")
 
 	start()
-	assertOnBranch(t, "mob/master/green")
+	assertOnBranch(t, "mob/master-green")
 }
 
 func TestStartNextOnFeatureWithBranch(t *testing.T) {
@@ -237,7 +240,7 @@ func TestStartNextOnFeatureWithBranch(t *testing.T) {
 	assertOnBranch(t, "feature1")
 
 	start()
-	assertOnBranch(t, "mob/feature1/green")
+	assertOnBranch(t, "mob/feature1-green")
 
 	next()
 	assertOnBranch(t, "feature1")
@@ -692,6 +695,7 @@ func assertNoMobSessionBranches(t *testing.T, branch string) {
 
 func equals(t *testing.T, exp, act interface{}) {
 	if !reflect.DeepEqual(exp, act) {
+		t.Log(string(debug.Stack()))
 		_, file, line, _ := runtime.Caller(1)
 		fmt.Printf("\033[31m%s:%d:\n\n\texp: %#v\n\n\tgot: %#v\033[39m\n\n", filepath.Base(file), line, exp, act)
 		t.FailNow()
