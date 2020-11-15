@@ -36,6 +36,9 @@ func TestParseArgsMessage(t *testing.T) {
 }
 
 func TestDetermineBranches(t *testing.T) {
+	configuration = getDefaultConfiguration()
+	configuration.WipBranchQualifierSeparator = "-"
+
 	assertDetermineBranches(t, "master", "", "", "master", "mob-session")
 	assertDetermineBranches(t, "mob-session", "", "", "master", "mob-session")
 
@@ -570,6 +573,7 @@ func TestDoneMerge(t *testing.T) {
 
 func setup(t *testing.T) *string {
 	configuration = getDefaultConfiguration()
+	configuration.WipBranchQualifierSeparator = "-"
 	output := captureOutput()
 	createTestbed(t)
 	assertOnBranch(t, "master")

@@ -72,7 +72,7 @@ func getDefaultConfiguration() Configuration {
 		Debug:                             false,
 		WipBranchQualifier:                "",
 		WipBranchQualifierSet:             false,
-		WipBranchQualifierSeparator:       "-",
+		WipBranchQualifierSeparator:       "/",
 	}
 }
 
@@ -376,6 +376,10 @@ func reset() {
 }
 
 func start() {
+	if configuration.WipBranchQualifierSet && configuration.WipBranchQualifier != "" {
+		say("Attention: MOB_WIP_BRANCH_QUALIFIER_SEPARATOR will default to '-' in future versions. Set MOB_WIP_BRANCH_QUALIFIER_SEPARATOR to '/' to keep old behavior.")
+	}
+
 	stashed := false
 	if hasUncommittedChanges() {
 		if configuration.MobStartIncludeUncommittedChanges {
