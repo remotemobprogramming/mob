@@ -1,3 +1,7 @@
+# 1.0.0
+- BREAKING: `MOB_WIP_BRANCH_QUALIFIER_SEPARATOR` now defaults to '-'.
+- BREAKING: `MOB_NEXT_STAY` now defaults to 'true'.
+
 # 0.0.27
 - Add way to configure `MOB_WIP_BRANCH_QUALIFIER` via an environment variable instead of `--branch` parameter. Helpful if multiple teams work on the same repository.
 - Add way to configure `MOB_WIP_BRANCH_QUALIFIER_SEPARATOR` via an environment variable. Defaults to '/'. Will change to '-' in future versions to prevent branch naming conflicts (one cannot have a branch named `mob/main` and a branch named `mob/main/green` because `mob/main` cannot be a file and a directory at the same time).

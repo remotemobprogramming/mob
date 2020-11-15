@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	versionNumber   = "0.0.27"
+	versionNumber   = "1.0.0-dev"
 	mobStashName    = "mob-stash-name"
 	wipBranchPrefix = "mob/"
 )
@@ -376,10 +376,6 @@ func reset() {
 }
 
 func start() {
-	if configuration.WipBranchQualifierSet && configuration.WipBranchQualifier != "" {
-		say("Attention: MOB_WIP_BRANCH_QUALIFIER_SEPARATOR will default to '-' in future versions. Set MOB_WIP_BRANCH_QUALIFIER_SEPARATOR to '/' to keep old behavior.")
-	}
-
 	stashed := false
 	if hasUncommittedChanges() {
 		if configuration.MobStartIncludeUncommittedChanges {
@@ -482,10 +478,6 @@ func findLatestMobStash(stashes string) string {
 }
 
 func next() {
-	if !configuration.MobNextStaySet {
-		say("Attention: MOB_NEXT_STAY will default to 'true' in future versions. Set MOB_NEXT_STAY to 'false' to keep old behavior.")
-	}
-
 	if !isMobProgramming() {
 		sayError("you aren't mob programming")
 		sayEmptyLine()
