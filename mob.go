@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	versionNumber   = "0.0.27-dev"
+	versionNumber   = "0.0.27"
 	mobStashName    = "mob-stash-name"
 	wipBranchPrefix = "mob/"
 )
@@ -80,7 +80,7 @@ func parseEnvironmentVariables(configuration Configuration) Configuration {
 	removed("MOB_BASE_BRANCH", "Use 'mob start' on your base branch instead.")
 	removed("MOB_WIP_BRANCH", "Use 'mob start --branch <branch>' instead.")
 
-	deprecated("MOB_DEBUG", "Use the parameter --debugInfo instead.")
+	deprecated("MOB_DEBUG", "Use the parameter --debug instead.")
 	deprecated("MOB_START_INCLUDE_UNCOMMITTED_CHANGES", "Use the parameter --include-uncommitted-changes instead.")
 
 	setStringFromEnvVariable(&configuration.RemoteName, "MOB_REMOTE_NAME")
@@ -162,7 +162,7 @@ func config() {
 	say("MOB_START_INCLUDE_UNCOMMITTED_CHANGES" + "=" + strconv.FormatBool(configuration.MobStartIncludeUncommittedChanges))
 	say("MOB_DEBUG" + "=" + strconv.FormatBool(configuration.Debug))
 	say("MOB_WIP_BRANCH_QUALIFIER" + "=" + configuration.WipBranchQualifier)
-	say("MOB_BRANCH_SUFFIX_SEPARATOR" + "=" + configuration.WipBranchQualifierSeparator)
+	say("MOB_WIP_BRANCH_QUALIFIER_SEPARATOR" + "=" + configuration.WipBranchQualifierSeparator)
 }
 
 func parseArgs(args []string) (command string, parameters []string) {
@@ -171,7 +171,7 @@ func parseArgs(args []string) (command string, parameters []string) {
 		switch arg {
 		case "--include-uncommitted-changes", "-i":
 			configuration.MobStartIncludeUncommittedChanges = true
-		case "--debugInfo":
+		case "--debug":
 			configuration.Debug = true
 		case "--stay", "-s":
 			configuration.MobNextStay = true
@@ -688,7 +688,7 @@ func help() {
 	say("mob version \t\t\t# print version number")
 	say("mob help \t\t\t# print usage")
 	sayEmptyLine()
-	say("Add --debugInfo to any option to enable verbose logging")
+	say("Add --debug to any option to enable verbose logging")
 	sayEmptyLine()
 	say("EXAMPLES")
 	say("mob start 10 \t\t\t# start 10 min session in wip branch 'mob-session'")

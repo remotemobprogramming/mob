@@ -138,6 +138,7 @@ MOB_NEXT_STAY=false
 MOB_START_INCLUDE_UNCOMMITTED_CHANGES=false
 MOB_DEBUG=false
 MOB_WIP_BRANCH_QUALIFIER=
+MOB_WIP_BRANCH_QUALIFIER_SEPARATOR=/
 ```
 
 Override default value permanently via environment variables:
