@@ -23,6 +23,8 @@ Swift [git handover](https://www.remotemobprogramming.org/#git-handover) with 'm
 - **mob** notifies you when it's time to handover
 - **mob** can moo
 
+## What people say about 'mob'
+
 > I love it, it is a quantum leap in our collaboration.
 >
 > &mdash; Vasiliy Sivovolov, Senior Software Engineer
