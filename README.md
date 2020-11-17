@@ -191,6 +191,7 @@ go test -coverprofile=cover.out && go tool cover -html=cover.out
 ## Who is using 'mob'?
 
 - [INNOQ](https://www.innoq.com)
+- And probably many others who shall not be named.
 
 ## Credits
 
