@@ -29,6 +29,10 @@ Swift [git handover](https://www.remotemobprogramming.org/#git-handover) with 'm
 >
 > &mdash; Vasiliy Sivovolov, Senior Software Engineer
 
+"What a great tool to organise remote working." 
+
+-- [Jennifer Gommans, IT Consultant](https://twitter.com/missjennbo)
+
 ## How to install
 
 ```
