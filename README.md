@@ -182,7 +182,7 @@ go test -coverprofile=cover.out && go tool cover -html=cover.out
 - **mob** provides only a few environment variables for configuration. 
 - **mob** only uses the Go standard library and no 3rd party plugins.
 
-## Companies using this tool
+## Who is using 'mob'?
 
 - [INNOQ](https://www.innoq.com)
 
