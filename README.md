@@ -25,6 +25,10 @@ Swift [git handover](https://www.remotemobprogramming.org/#git-handover) with 'm
 
 ## What people say about 'mob'
 
+> "Mob has allowed us to run fast-paced, engaging, and effective sessions by enabling sub-10-second handover times and otherwise getting out of the way. A simple but great tool!" 
+>
+> &mdash; [Jeff Langr, developer](https://twitter.com/jlangr)
+
 > "I love it, it is a quantum leap in our collaboration."
 >
 > &mdash; Vasiliy Sivovolov, Senior Software Engineer
