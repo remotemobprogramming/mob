@@ -25,7 +25,7 @@ Swift [git handover](https://www.remotemobprogramming.org/#git-handover) with 'm
 
 ## What people say about 'mob'
 
-> I love it, it is a quantum leap in our collaboration.
+> "I love it, it is a quantum leap in our collaboration."
 >
 > &mdash; Vasiliy Sivovolov, Senior Software Engineer
 
