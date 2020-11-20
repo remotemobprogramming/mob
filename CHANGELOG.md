@@ -1,6 +1,7 @@
 # 1.0.0
 - BREAKING: `MOB_WIP_BRANCH_QUALIFIER_SEPARATOR` now defaults to '-'.
 - BREAKING: `MOB_NEXT_STAY` now defaults to 'true'.
+- Proposed cli commands like `mob start --include-uncommitted-changes` are now shown on a separate line to allow double clicking to copy in the terminal.
 
 # 0.0.27
 - Add way to configure `MOB_WIP_BRANCH_QUALIFIER` via an environment variable instead of `--branch` parameter. Helpful if multiple teams work on the same repository.

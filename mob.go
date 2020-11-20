@@ -395,8 +395,7 @@ func start() {
 				sayInfo("untracked files present:")
 				sayInfo(untrackedFiles)
 			}
-			sayEmptyLine()
-			sayTodo("fix with 'mob start --include-uncommitted-changes'")
+			sayTodo("To start mob programming including uncommitted changes, use", "mob start --include-uncommitted-changes")
 			return
 		}
 	}
@@ -409,13 +408,14 @@ func start() {
 
 	if !isMobProgramming() && hasWipBranchesWithQualifier && !configuration.WipBranchQualifierSet {
 		sayInfo("qualified mob branches detected")
-		sayTodo("fix with 'mob start --branch <branch>' (use \"\" for the default mob branch)")
+		sayTodo("To start mob programming, use", "mob start --branch <branch>")
+		sayIndented("(use \"\" for the default mob branch)")
 		return
 	}
 
 	if !hasRemoteBranch(currentBaseBranch) {
 		sayError("Remote branch " + configuration.RemoteName + "/" + currentBaseBranch + " is missing")
-		sayTodo("fix with 'git push " + configuration.RemoteName + " " + currentBaseBranch + " --set-upstream'")
+		sayTodo("To set the upstream branch, use", "git push "+configuration.RemoteName+" "+currentBaseBranch+" --set-upstream")
 		return
 	}
 
@@ -480,8 +480,7 @@ func findLatestMobStash(stashes string) string {
 func next() {
 	if !isMobProgramming() {
 		sayError("you aren't mob programming")
-		sayEmptyLine()
-		sayTodo("use 'mob start' to start mob programming")
+		sayTodo("to start mob programming, use", "mob start")
 		return
 	}
 
@@ -518,8 +517,7 @@ func getCachedChanges() string {
 func done() {
 	if !isMobProgramming() {
 		sayError("you aren't mob programming")
-		sayEmptyLine()
-		sayTodo("use 'mob start' to start mob programming")
+		sayTodo("to start mob programming, use", "mob start")
 		return
 	}
 
@@ -545,7 +543,7 @@ func done() {
 		git("push", "--no-verify", configuration.RemoteName, "--delete", currentWipBranch)
 
 		say(getCachedChanges())
-		sayTodo("git commit -m 'describe the changes'")
+		sayTodo("To finish, use", "git commit -m 'describe the changes'")
 	} else {
 		git("checkout", currentBaseBranch)
 		git("branch", "-D", currentWipBranch)
@@ -562,8 +560,7 @@ func status() {
 		say(silentgit("--no-pager", "log", currentBaseBranch+".."+currentWipBranch, "--pretty=format:%h %cr <%an>", "--abbrev-commit"))
 	} else {
 		sayInfo("you aren't mob programming")
-		sayEmptyLine()
-		sayTodo("use 'mob start' to start mob programming")
+		sayTodo("to start mob programming, use", "mob start")
 	}
 }
 
@@ -715,14 +712,14 @@ func git(args ...string) {
 		sayError(err.Error())
 		exit(1)
 	} else {
-		sayOkay(commandString)
+		sayIndented(commandString)
 	}
 }
 
 func gitignorefailure(args ...string) error {
 	commandString, output, err := runCommand("git", args...)
 
-	sayOkay(commandString)
+	sayIndented(commandString)
 	if err != nil {
 		sayError(output)
 		sayError(err.Error())
@@ -767,12 +764,15 @@ func debugInfo(s string) {
 	}
 }
 
-func sayOkay(s string) {
+func sayIndented(s string) {
 	sayWithPrefix(s, "   ")
 }
 
-func sayTodo(s string) {
+func sayTodo(s string, cmd string) {
 	sayWithPrefix(s, " 👉 ")
+	sayEmptyLine()
+	sayIndented(cmd)
+	sayEmptyLine()
 }
 
 func sayInfo(s string) {
