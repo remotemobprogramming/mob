@@ -23,6 +23,20 @@ Swift [git handover](https://www.remotemobprogramming.org/#git-handover) with 'm
 - **mob** notifies you when it's time to handover
 - **mob** can moo
 
+## What people say about 'mob'
+
+> "Mob has allowed us to run fast-paced, engaging, and effective sessions by enabling sub-10-second handover times and otherwise getting out of the way. A simple but great tool!" 
+>
+> &mdash; [Jeff Langr, developer](https://twitter.com/jlangr)
+
+> "I love it, it is a quantum leap in our collaboration."
+>
+> &mdash; Vasiliy Sivovolov, Senior Software Engineer
+
+>"What a great tool to organise remote working." 
+>
+> &mdash; [Jennifer Gommans, IT Consultant](https://twitter.com/missjennbo)
+
 ## How to install
 
 ```
@@ -181,6 +195,11 @@ go test -coverprofile=cover.out && go tool cover -html=cover.out
 - **mob** relies on information accessible via git.
 - **mob** provides only a few environment variables for configuration. 
 - **mob** only uses the Go standard library and no 3rd party plugins.
+
+## Who is using 'mob'?
+
+- [INNOQ](https://www.innoq.com)
+- And probably many others who shall not be named.
 
 ## Credits
 
