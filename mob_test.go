@@ -280,7 +280,7 @@ func TestStartUnstagedChanges(t *testing.T) {
 
 	assertOnBranch(t, "master")
 	assertNoMobSessionBranches(t, "mob-session")
-	assertOutputContains(t, output, "fix with 'mob start --include-uncommitted-changes'")
+	assertOutputContains(t, output, "mob start --include-uncommitted-changes")
 }
 
 func TestStartIncludeUnstagedChanges(t *testing.T) {
@@ -385,7 +385,7 @@ func TestStartDoneLocalFeatureBranch(t *testing.T) {
 	start()
 
 	assertOnBranch(t, "feature1")
-	assertOutputContains(t, output, "fix with 'git push origin feature1 --set-upstream'")
+	assertOutputContains(t, output, "git push origin feature1 --set-upstream")
 }
 
 func TestBothCreateNonemptyCommitWithNext(t *testing.T) {
