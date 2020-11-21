@@ -50,6 +50,12 @@ You can also install it on macOS via homebrew:
 brew install remotemobprogramming/brew/mob
 ```
 
+If you want to update to the latest version using Homebrew
+
+```
+brew upgrade remotemobprogramming/brew/mob
+```
+
 ## How to use
 
 You only need three commands: `mob start`, `mob next`, and `mob done`. 
