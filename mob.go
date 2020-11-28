@@ -267,13 +267,9 @@ func determineBranches(branch string, branchQualifier string, branches string) (
 		suffix = preparedBranch[index:]
 	}
 
-	if branch == "mob-session" || branch == "master" {
+	if branch == "master" && branchQualifier == "" || branch == "mob-session" {
 		baseBranch = "master"
-		if branchQualifier != "" {
-			wipBranch = wipBranchPrefix + baseBranch + suffix
-		} else {
-			wipBranch = "mob-session"
-		}
+		wipBranch = "mob-session"
 	} else {
 		baseBranch = strings.ReplaceAll(strings.ReplaceAll(branch, wipBranchPrefix, ""), suffix, "")
 		wipBranch = wipBranchPrefix + baseBranch + suffix

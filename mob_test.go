@@ -41,6 +41,7 @@ func TestDetermineBranches(t *testing.T) {
 
 	assertDetermineBranches(t, "master", "", "", "master", "mob-session")
 	assertDetermineBranches(t, "mob-session", "", "", "master", "mob-session")
+	assertDetermineBranches(t, "mob-session", "green", "", "master", "mob-session")
 
 	assertDetermineBranches(t, "master", "green", "", "master", "mob/master-green")
 	assertDetermineBranches(t, "mob/master-green", "", "", "master", "mob/master-green")
