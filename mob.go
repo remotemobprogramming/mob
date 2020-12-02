@@ -244,43 +244,56 @@ func execute(command string, parameter []string) {
 	}
 }
 
-func determineBranches(branch string, branchQualifier string, branches string) (baseBranch string, wipBranch string) {
-	localBranches := strings.Split(branches, "\n")
+func determineBranches(currentBranch string, userSpecifiedBranchQualifier string, allLocalBranches string) (baseBranch string, wipBranch string) {
+	localBranches := strings.Split(allLocalBranches, "\n")
 
-	suffix := ""
+	currentBranchIsWipBranch := strings.Index(currentBranch, wipBranchPrefix) == 0
 
-	if branchQualifier != "" {
-		suffix = configuration.WipBranchQualifierSeparator + branchQualifier
-	}
-
-	preparedBranch := strings.ReplaceAll(branch, wipBranchPrefix, "")
-
-	branchExists := false
-	for i := 0; i < len(localBranches); i++ {
-		if localBranches[i] == preparedBranch {
-			branchExists = true
-		}
-	}
-
-	index := strings.LastIndex(preparedBranch, configuration.WipBranchQualifierSeparator)
-	if index != -1 && !branchExists {
-		suffix = preparedBranch[index:]
-	}
-
-	if branch == "mob-session" || branch == "master" {
+	if currentBranch == "mob-session" || (currentBranch == "master" && userSpecifiedBranchQualifier == "") {
 		baseBranch = "master"
-		if branchQualifier != "" {
-			wipBranch = wipBranchPrefix + baseBranch + suffix
+		wipBranch = "mob-session"
+	} else if currentBranchIsWipBranch {
+		wipBranch = currentBranch
+		wipBranchWithPossibleSuffix := wipBranch[len(wipBranchPrefix):]
+		branchExists := stringContains(localBranches, wipBranchWithPossibleSuffix)
+		if branchExists {
+			baseBranch = wipBranchWithPossibleSuffix
 		} else {
-			wipBranch = "mob-session"
+			if index := strings.LastIndex(wipBranchWithPossibleSuffix, configuration.WipBranchQualifierSeparator); index != -1 {
+				baseBranch = wipBranchWithPossibleSuffix[:index]
+			} else {
+				baseBranch = wipBranchWithPossibleSuffix
+			}
 		}
 	} else {
-		baseBranch = strings.ReplaceAll(strings.ReplaceAll(branch, wipBranchPrefix, ""), suffix, "")
-		wipBranch = wipBranchPrefix + baseBranch + suffix
+		baseBranch = currentBranch
+		if userSpecifiedBranchQualifier == "" {
+			wipBranch = wipBranchPrefix + baseBranch
+		} else {
+			wipBranch = wipBranchPrefix + baseBranch + configuration.WipBranchQualifierSeparator + userSpecifiedBranchQualifier
+		}
 	}
 
-	debugInfo("on branch " + branch + " => BASE " + baseBranch + " WIP " + wipBranch + " with branches " + strings.Join(localBranches, ","))
+	debugInfo("on currentBranch " + currentBranch + " => BASE " + baseBranch + " WIP " + wipBranch + " with allLocalBranches " + strings.Join(localBranches, ","))
+	if currentBranch == baseBranch {
+		debugInfo("on base branch")
+	} else if currentBranch == wipBranch {
+		debugInfo("on wip branch")
+	} else {
+		debugInfo("neither on base nor on wip branch")
+		panic("bad")
+	}
 	return
+}
+
+func stringContains(list []string, element string) bool {
+	found := false
+	for i := 0; i < len(list); i++ {
+		if list[i] == element {
+			found = true
+		}
+	}
+	return found
 }
 
 func getSleepCommand(timeoutInSeconds int) string {
