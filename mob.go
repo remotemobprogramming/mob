@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	versionNumber   = "1.0.0-dev"
+	versionNumber   = "1.0.0"
 	mobStashName    = "mob-stash-name"
 	wipBranchPrefix = "mob/"
 )
@@ -66,13 +66,13 @@ func getDefaultConfiguration() Configuration {
 		WipCommitMessage:                  "mob next [ci-skip]",
 		VoiceCommand:                      voiceCommand,
 		NotifyCommand:                     notifyCommand,
-		MobNextStay:                       false,
+		MobNextStay:                       true,
 		MobNextStaySet:                    false,
 		MobStartIncludeUncommittedChanges: false,
 		Debug:                             false,
 		WipBranchQualifier:                "",
 		WipBranchQualifierSet:             false,
-		WipBranchQualifierSeparator:       "/",
+		WipBranchQualifierSeparator:       "-",
 	}
 }
 

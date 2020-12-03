@@ -573,7 +573,7 @@ func TestDoneMerge(t *testing.T) {
 
 func setup(t *testing.T) *string {
 	configuration = getDefaultConfiguration()
-	configuration.WipBranchQualifierSeparator = "-"
+	configuration.MobNextStay = false
 	output := captureOutput()
 	createTestbed(t)
 	assertOnBranch(t, "master")

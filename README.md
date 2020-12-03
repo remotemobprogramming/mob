@@ -61,10 +61,7 @@ brew upgrade remotemobprogramming/brew/mob
 
 You only need three commands: `mob start`, `mob next`, and `mob done`. 
 Switch to a separate branch with `mob start` and handover to the next person with `mob next`.
-Continue with `mob start` and handover to the next person with `mob next`.
-Continue with `mob start` and handover to the next person with `mob next`.
-Continue with `mob start` and handover to the next person with `mob next`.
-...
+Repeat.
 When you're done, get your changes into the staging area of the `master` branch with `mob done` and commit them.  
 
 [![asciicast](https://asciinema.org/a/321885.svg)](https://asciinema.org/a/321885)
@@ -87,7 +84,7 @@ Add --debug to any option to enable verbose logging
 EXAMPLES
 mob start 10 			# start 10 min session in wip branch 'mob-session'
 mob start --branch green 	# start session in wip branch 'mob/<base-branch>/green'
-mob next --stay			# handover code and stay on wip branch
+mob next --return-to-base-branch			# handover code and stay on wip branch
 mob done 			# get changes back to base branch
 mob moo 			# be amazed
 ```
@@ -103,25 +100,16 @@ mob moo 			# be amazed
 - `mob reset` deletes `mob-session` and `origin/mob-session`
 - `mob config` print configuration
 
-### Screen Share Integration
-
-Mob no longer supports starting the screen share on 'mob start'.
-Why? 
-At first, this feature sounds awesome. 
-In practice, however, that feature wasn't much help.
-It only simulated keying in a keyboard shortcut and had several shortcomings:
-1. it needed to be configured correctly,
-1. it only toggled screen share, so one had to keep in mind whether one was already screen sharing or not,
-and
-1. it solely supported Zoom on macOS and Linux.
-
-The feature promised too much, and delivered very little of it.
-
-Still, that keyboard shortcut to toggle screen sharing in Zoom is still very helpful.
-Just press the hotkey yourself. It is, however, essential to make the shortcut globally available
-(Zoom > Preferences > Keyboard Shortcuts). Otherwise, the hotkey won't work. [More tips on setting up Zoom for effective screen sharing.](https://effectivehomeoffice.com/setup-zoom-for-effective-screen-sharing/)
-
 ## More on Installation
+
+
+### Zoom Shortcuts
+
+If you're using Zoom for screen sharing, here's a tip on how to speed up the Git Handover even further: 
+We recommend configuring the global hotkey for toggling screen sharing in zoom in
+(Zoom > Preferences > Keyboard Shortcuts). 
+So you can start and stop screen sharing anytime. 
+[More tips on setting up Zoom for effective screen sharing.](https://effectivehomeoffice.com/setup-zoom-for-effective-screen-sharing/)
 
 ### Scoop
 
@@ -155,11 +143,11 @@ MOB_REMOTE_NAME=origin
 MOB_WIP_COMMIT_MESSAGE=mob next [ci-skip]
 MOB_VOICE_COMMAND=say
 MOB_NOTIFY_COMMAND=/usr/bin/osascript -e 'display notification "%s"'
-MOB_NEXT_STAY=false
+MOB_NEXT_STAY=true
 MOB_START_INCLUDE_UNCOMMITTED_CHANGES=false
 MOB_DEBUG=false
 MOB_WIP_BRANCH_QUALIFIER=
-MOB_WIP_BRANCH_QUALIFIER_SEPARATOR=/
+MOB_WIP_BRANCH_QUALIFIER_SEPARATOR=-
 ```
 
 Override default value permanently via environment variables:
@@ -173,7 +161,6 @@ Override default value just for a single call:
 ```bash
 MOB_DEBUG=true mob next
 ```
-
 
 ## How to contribute
 
