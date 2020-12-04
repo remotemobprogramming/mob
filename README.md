@@ -12,6 +12,8 @@
     <img  alt="Downloads of latest" src="https://img.shields.io/github/downloads/remotemobprogramming/mob/latest/total" /></a>
   <a href="https://github.com/remotemobprogramming/mob/releases/latest">
     <img alt="Version" src="https://img.shields.io/github/v/release/remotemobprogramming/mob?sort=semver" /></a>
+  <a href="https://img.shields.io/github/stars/remotemobprogramming/mob">
+    <img alt="Stars" src="https://img.shields.io/github/stars/remotemobprogramming/mob" /></a>
 </p>
 
 Swift [git handover](https://www.remotemobprogramming.org/#git-handover) with 'mob'.
