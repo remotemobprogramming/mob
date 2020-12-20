@@ -144,7 +144,7 @@ func TestExecuteInvalidCommandKicksOffHelp(t *testing.T) {
 
 	execute("whatever", parameters)
 
-	assertOutputContains(t, output, "USAGE")
+	assertOutputContains(t, output, "Basic Commands:")
 }
 
 func TestStart(t *testing.T) {
