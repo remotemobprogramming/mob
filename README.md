@@ -69,26 +69,58 @@ When you're done, get your changes into the staging area of the `master` branch 
 [![asciicast](https://asciinema.org/a/321885.svg)](https://asciinema.org/a/321885)
 
 ```
-USAGE
-mob start [<minutes>] [--include-uncommitted-changes|-i] [--branch|-b <branch>] # start mob session in wip branch
-mob next [--stay|-s] [--return-to-base-branch|-r] [--message|-m <commit-message>] # handover to next person and switch back to base branch
-mob done 			# finish mob session by squashing all changes in wip branch to index in base branch
-mob reset [--branch|-b <branch>]# removes local and remote wip branch
-mob status 			# show status
-mob timer <minutes>		# start a <minutes> timer
-mob config 			# print configuration
-mob moo 			# moo!
-mob version 			# print version number
-mob help 			# print usage
+mob enables a swift Git handover
+
+Basic Commands:
+  start              start mob session from base branch in wip branch
+  next               handover changes in wip branch to next person
+  done               squashes all changes in wip branch to index in base branch
+  reset              removes local and remote wip branch
+
+Basic Commands(Options):
+  start [<minutes>]                      Start a <minutes> timer
+    [--include-uncommitted-changes|-i]   Move uncommitted changes to wip branch
+    [--branch|-b <branch-postfix>]       Set wip branch to 'mob/<base-branch>/<branch-postfix>'
+  next
+    [--stay|-s]                          Stay on wip branch (default)
+    [--return-to-base-branch|-r]         Return to base banch
+    [--message|-m <commit-message>]      Override commit message
+  done
+  reset
+    [--branch|-b <branch-postfix>]       Set wip branch to 'mob/<base-branch>/<branch-postfix>'
+
+Timer Commands:
+  timer <minutes>    start a <minutes> timer
+  start <minutes>    start mob session in wip branch and a timer
+
+Get more information:
+  status             show the status of the current mob session
+  config             show all configuration options
+  version            show the version of mob
+  help               show help
+
+Other
+  moo                moo!
+
 
 Add --debug to any option to enable verbose logging
 
-EXAMPLES
-mob start 10 			# start 10 min session in wip branch 'mob-session'
-mob start --branch green 	# start session in wip branch 'mob/<base-branch>/green'
-mob next --return-to-base-branch			# handover code and stay on wip branch
-mob done 			# get changes back to base branch
-mob moo 			# be amazed
+
+Examples:
+  # start 10 min session in wip branch 'mob-session'
+  mob start 10
+
+  # start session in wip branch 'mob/<base-branch>/green'
+  mob start --branch green
+
+  # handover code and return to base branch
+  mob next --return-to-base-branch
+
+  # squashes all commits and puts changes in index of base branch
+  mob done
+
+  # make a sound check
+  mob moo
 ```
 
 ## How does it work
