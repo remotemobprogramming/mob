@@ -711,25 +711,7 @@ Get more information:
 Other
   moo                moo!
 
-
 Add --debug to any option to enable verbose logging
-
-
-Examples:
-  # start 10 min session in wip branch 'mob-session'
-  mob start 10   
-
-  # start session in wip branch 'mob/<base-branch>/green'
-  mob start --branch green
-
-  # handover code and return to base branch
-  mob next --return-to-base-branch
-
-  # squashes all commits and puts changes in index of base branch
-  mob done
-
-  # make a sound check
-  mob moo
 `
 	say(output)
 }
