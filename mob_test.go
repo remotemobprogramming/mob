@@ -570,7 +570,7 @@ func TestDoneMerge(t *testing.T) {
 	setWorkingDir("/tmp/mob/local")
 	start()
 	done()
-	assertOutputContains(t, output, "git commit -m 'describe the changes'")
+	assertOutputContains(t, output, "   git commit")
 }
 
 func setup(t *testing.T) *string {

@@ -556,7 +556,7 @@ func done() {
 		git("push", "--no-verify", configuration.RemoteName, "--delete", currentWipBranch)
 
 		say(getCachedChanges())
-		sayTodo("To finish, use", "git commit -m 'describe the changes'")
+		sayTodo("To finish, use", "git commit")
 	} else {
 		git("checkout", currentBaseBranch)
 		git("branch", "-D", currentWipBranch)
