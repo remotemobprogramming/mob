@@ -569,10 +569,14 @@ func status() {
 		sayInfo("you are mob programming")
 
 		currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), configuration.WipBranchQualifier, gitBranches())
+		sayInfo("on wip branch " + currentWipBranch + " (base branch " + currentBaseBranch + ")")
 
 		say(silentgit("--no-pager", "log", currentBaseBranch+".."+currentWipBranch, "--pretty=format:%h %cr <%an>", "--abbrev-commit"))
 	} else {
 		sayInfo("you aren't mob programming")
+		currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), configuration.WipBranchQualifier, gitBranches())
+		sayInfo("on base branch " + currentBaseBranch + " (wip branch " + currentWipBranch + ")")
+
 		sayTodo("to start mob programming, use", "mob start")
 	}
 }
