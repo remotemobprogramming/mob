@@ -17,4 +17,4 @@ localotherdir="${tmpdir}/localother"
 echo "localotherdir=${localotherdir}"
 rm -rf "${localotherdir}"
 mkdir -p "${localotherdir}"
-(cd "${localotherdir}" && git clone "file://${remotedir}" .)
+(cd "${localotherdir}" && git clone --origin origin "file://${remotedir}" .)
