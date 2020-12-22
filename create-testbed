@@ -10,7 +10,7 @@ rm -rf "${localdir}" "${remotedir}"
 mkdir -p "${localdir}" "${remotedir}"
 
 (cd "${remotedir}" && git --bare init)
-(cd "${localdir}" && git clone "file://${remotedir}" . && echo "test" >test.txt && git add . && git commit -m "initial import" && git push)
+(cd "${localdir}" && git clone --origin origin "file://${remotedir}" . && echo "test" >test.txt && git add . && git commit -m "initial import" && git push --set-upstream --all origin)
 
 # optional
 localotherdir="${tmpdir}/localother"
