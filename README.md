@@ -201,10 +201,16 @@ MOB_DEBUG=true mob next
 [Propose your change in an issue](https://github.com/remotemobprogramming/mob/issues) or [directly create a pull request with your improvements](https://github.com/remotemobprogramming/mob/pulls).
 
 ```bash
+# PROJECT_ROOT is the root of the project/repository
+
+cd $PROJECT_ROOT
+
 git version # >= 2.17
 go version # >= 1.15
 
 go build # builds 'mob'
+
+./create-testbed    # creates test assets
 
 go test # runs all tests
 go test -run TestDetermineBranches # runs the single test named 'TestDetermineBranches'
