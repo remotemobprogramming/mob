@@ -15,9 +15,9 @@ import (
 
 func TestParseArgs(t *testing.T) {
 	configuration = getDefaultConfiguration()
-	args := []string{"mob", "start", "--branch", "green"}
 	equals(t, configuration.WipBranchQualifier, "")
-	command, parameters := parseArgs(args)
+
+	command, parameters := parseArgs([]string{"mob", "start", "--branch", "green"})
 
 	equals(t, "start", command)
 	equals(t, "", strings.Join(parameters, ""))
@@ -26,9 +26,9 @@ func TestParseArgs(t *testing.T) {
 
 func TestParseArgsMessage(t *testing.T) {
 	configuration = getDefaultConfiguration()
-	args := []string{"mob", "next", "--message", "ci-skip"}
 	equals(t, configuration.WipBranchQualifier, "")
-	command, parameters := parseArgs(args)
+
+	command, parameters := parseArgs([]string{"mob", "next", "--message", "ci-skip"})
 
 	equals(t, "next", command)
 	equals(t, "", strings.Join(parameters, ""))
@@ -65,8 +65,6 @@ func assertDetermineBranches(t *testing.T, branch string, qualifier string, bran
 }
 
 func TestEnvironmentVariables(t *testing.T) {
-	configuration = getDefaultConfiguration()
-
 	os.Setenv("MOB_REMOTE_NAME", "GITHUB")
 	defer os.Unsetenv("MOB_REMOTE_NAME")
 
@@ -74,17 +72,17 @@ func TestEnvironmentVariables(t *testing.T) {
 	defer os.Unsetenv("MOB_DEBUG")
 
 	configuration = parseEnvironmentVariables(getDefaultConfiguration())
+
 	equals(t, "GITHUB", configuration.RemoteName)
 	equals(t, true, configuration.Debug)
 }
 
 func TestEnvironmentVariablesEmptyString(t *testing.T) {
-	configuration = getDefaultConfiguration()
-
 	os.Setenv("MOB_REMOTE_NAME", "")
 	defer os.Unsetenv("MOB_REMOTE_NAME")
 
 	configuration = parseEnvironmentVariables(getDefaultConfiguration())
+
 	equals(t, "origin", configuration.RemoteName)
 }
 
@@ -131,18 +129,16 @@ func TestStatusMobProgramming(t *testing.T) {
 
 func TestExecuteKicksOffStatus(t *testing.T) {
 	output := setup(t)
-	var parameters []string
 
-	execute("status", parameters)
+	execute("status", []string{})
 
 	assertOutputContains(t, output, "you aren't mob programming")
 }
 
 func TestExecuteInvalidCommandKicksOffHelp(t *testing.T) {
 	output := setup(t)
-	var parameters []string
 
-	execute("whatever", parameters)
+	execute("whatever", []string{})
 
 	assertOutputContains(t, output, "Basic Commands:")
 }
