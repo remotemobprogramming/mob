@@ -247,7 +247,7 @@ func execute(command string, parameter []string) {
 func determineBranches(currentBranch string, allLocalBranches string) (baseBranch string, wipBranch string) {
 	localBranches := strings.Split(allLocalBranches, "\n")
 
-	if currentBranch == "mob-session" || (currentBranch == "master" && configuration.WipBranchQualifier == "") {
+	if currentBranch == "mob-session" || (currentBranch == "master" && !hasCustomWipBranchQualifier()) {
 		baseBranch = "master"
 	} else if !isWipBranch(currentBranch) {
 		baseBranch = currentBranch
@@ -257,14 +257,14 @@ func determineBranches(currentBranch string, allLocalBranches string) (baseBranc
 		baseBranch = removeSuffix(removeWipPrefix(currentBranch))
 	}
 
-	if currentBranch == "mob-session" || (currentBranch == "master" && configuration.WipBranchQualifier == "") {
+	if currentBranch == "mob-session" || (currentBranch == "master" && !hasCustomWipBranchQualifier()) {
 		wipBranch = "mob-session"
 	} else if isWipBranch(currentBranch) {
 		wipBranch = currentBranch
-	} else if configuration.WipBranchQualifier == "" {
-		wipBranch = addWipPrefix(currentBranch)
+	} else if hasCustomWipBranchQualifier() {
+		wipBranch = addSuffix(currentBranch)
 	} else {
-		wipBranch = addSuffix(currentBranch, configuration.WipBranchQualifier)
+		wipBranch = addWipPrefix(currentBranch)
 	}
 
 	debugInfo("on currentBranch " + currentBranch + " => BASE " + baseBranch + " WIP " + wipBranch + " with allLocalBranches " + strings.Join(localBranches, ","))
@@ -279,6 +279,10 @@ func determineBranches(currentBranch string, allLocalBranches string) (baseBranc
 	return
 }
 
+func hasCustomWipBranchQualifier() bool {
+	return configuration.WipBranchQualifier != ""
+}
+
 func isWipBranch(branch string) bool {
 	return strings.Index(branch, wipBranchPrefix) == 0
 }
@@ -291,8 +295,8 @@ func removeWipPrefix(branch string) string {
 	return branch[len(wipBranchPrefix):]
 }
 
-func addSuffix(branch string, suffix string) string {
-	return addWipPrefix(branch) + configuration.WipBranchQualifierSeparator + suffix
+func addSuffix(branch string) string {
+	return addWipPrefix(branch) + configuration.WipBranchQualifierSeparator + configuration.WipBranchQualifier
 }
 
 func hasSuffix(branch string) bool {
