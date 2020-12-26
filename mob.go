@@ -480,9 +480,9 @@ func sayUnstagedChangesInfo() {
 	}
 }
 
-func hasQualifiedBranches(currentBaseBranch string, remoteBranches string) bool {
-	debugInfo("check on current base branch " + currentBaseBranch + " with remote branches " + strings.Join(strings.Split(remoteBranches, "\n"), ","))
-	hasWipBranchesWithQualifier := strings.Contains(remoteBranches, configuration.RemoteName+"/"+wipBranchPrefix+currentBaseBranch+configuration.WipBranchQualifierSeparator)
+func hasQualifiedBranches(currentBaseBranch string, remoteBranches []string) bool {
+	debugInfo("check on current base branch " + currentBaseBranch + " with remote branches " + strings.Join(remoteBranches, ","))
+	hasWipBranchesWithQualifier := strings.Contains(strings.Join(remoteBranches, "\n"), configuration.RemoteName+"/"+wipBranchPrefix+currentBaseBranch+configuration.WipBranchQualifierSeparator)
 	return hasWipBranchesWithQualifier
 }
 
@@ -651,12 +651,11 @@ func hasLocalBranch(localBranch string) bool {
 }
 
 func hasRemoteBranch(branch string) bool {
-	remoteBranchesRaw := gitRemoteBranches()
+	remoteBranches := gitRemoteBranches()
 	remoteBranch := configuration.RemoteName + "/" + branch
-	debugInfo("Remote Branches: " + remoteBranchesRaw)
+	debugInfo("Remote Branches: " + strings.Join(remoteBranches, "\n"))
 	debugInfo("Remote Branch: " + remoteBranch)
 
-	remoteBranches := strings.Split(remoteBranchesRaw, "\n")
 	for i := 0; i < len(remoteBranches); i++ {
 		if remoteBranches[i] == remoteBranch {
 			return true
@@ -670,8 +669,8 @@ func gitBranches() []string {
 	return strings.Split(strings.TrimSpace(silentgit("branch", "--format=%(refname:short)")), "\n")
 }
 
-func gitRemoteBranches() string {
-	return strings.TrimSpace(silentgit("branch", "--remotes", "--format=%(refname:short)"))
+func gitRemoteBranches() []string {
+	return strings.Split(strings.TrimSpace(silentgit("branch", "--remotes", "--format=%(refname:short)")), "\n")
 }
 
 func gitCurrentBranch() string {

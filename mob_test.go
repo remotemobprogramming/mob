@@ -577,7 +577,7 @@ func setup(t *testing.T) *string {
 	createTestbed(t)
 	assertOnBranch(t, "master")
 	equals(t, []string{"master"}, gitBranches())
-	equals(t, "origin/master", gitRemoteBranches())
+	equals(t, []string{"origin/master"}, gitRemoteBranches())
 	assertNoMobSessionBranches(t, "mob-session")
 	return output
 }
