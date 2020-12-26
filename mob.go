@@ -244,10 +244,10 @@ func execute(command string, parameter []string) {
 	}
 }
 
-func determineBranches(currentBranch string, userSpecifiedBranchQualifier string, allLocalBranches string) (baseBranch string, wipBranch string) {
+func determineBranches(currentBranch string, allLocalBranches string) (baseBranch string, wipBranch string) {
 	localBranches := strings.Split(allLocalBranches, "\n")
 
-	if currentBranch == "mob-session" || (currentBranch == "master" && userSpecifiedBranchQualifier == "") {
+	if currentBranch == "mob-session" || (currentBranch == "master" && configuration.WipBranchQualifier == "") {
 		baseBranch = "master"
 	} else if !isWipBranch(currentBranch) {
 		baseBranch = currentBranch
@@ -257,14 +257,14 @@ func determineBranches(currentBranch string, userSpecifiedBranchQualifier string
 		baseBranch = removeSuffix(removeWipPrefix(currentBranch))
 	}
 
-	if currentBranch == "mob-session" || (currentBranch == "master" && userSpecifiedBranchQualifier == "") {
+	if currentBranch == "mob-session" || (currentBranch == "master" && configuration.WipBranchQualifier == "") {
 		wipBranch = "mob-session"
 	} else if isWipBranch(currentBranch) {
 		wipBranch = currentBranch
-	} else if userSpecifiedBranchQualifier == "" {
+	} else if configuration.WipBranchQualifier == "" {
 		wipBranch = addWipPrefix(currentBranch)
 	} else {
-		wipBranch = addSuffix(currentBranch, userSpecifiedBranchQualifier)
+		wipBranch = addSuffix(currentBranch, configuration.WipBranchQualifier)
 	}
 
 	debugInfo("on currentBranch " + currentBranch + " => BASE " + baseBranch + " WIP " + wipBranch + " with allLocalBranches " + strings.Join(localBranches, ","))
@@ -397,7 +397,7 @@ func moo() {
 func reset() {
 	git("fetch", configuration.RemoteName)
 
-	currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), configuration.WipBranchQualifier, gitBranches())
+	currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), gitBranches())
 
 	git("checkout", currentBaseBranch)
 	if hasLocalBranch(currentWipBranch) {
@@ -426,7 +426,7 @@ func start() {
 
 	git("fetch", configuration.RemoteName, "--prune")
 
-	currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), configuration.WipBranchQualifier, gitBranches())
+	currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), gitBranches())
 
 	hasWipBranchesWithQualifier := hasQualifiedBranches(currentBaseBranch, gitRemoteBranches())
 
@@ -485,7 +485,7 @@ func hasQualifiedBranches(currentBaseBranch string, remoteBranches string) bool 
 }
 
 func startJoinMobSession() {
-	_, currentWipBranch := determineBranches(gitCurrentBranch(), configuration.WipBranchQualifier, gitBranches())
+	_, currentWipBranch := determineBranches(gitCurrentBranch(), gitBranches())
 
 	sayInfo("joining existing mob session from " + configuration.RemoteName + "/" + currentWipBranch)
 	git("checkout", "-B", currentWipBranch, configuration.RemoteName+"/"+currentWipBranch)
@@ -493,7 +493,7 @@ func startJoinMobSession() {
 }
 
 func startNewMobSession() {
-	currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), configuration.WipBranchQualifier, gitBranches())
+	currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), gitBranches())
 
 	sayInfo("starting new mob session from " + configuration.RemoteName + "/" + currentBaseBranch)
 	git("checkout", "-B", currentWipBranch, configuration.RemoteName+"/"+currentBaseBranch)
@@ -526,7 +526,7 @@ func next() {
 		return
 	}
 
-	currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), configuration.WipBranchQualifier, gitBranches())
+	currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), gitBranches())
 
 	if isNothingToCommit() {
 		if hasLocalCommits(currentWipBranch) {
@@ -565,7 +565,7 @@ func done() {
 
 	git("fetch", configuration.RemoteName, "--prune")
 
-	currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), configuration.WipBranchQualifier, gitBranches())
+	currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), gitBranches())
 
 	if hasRemoteBranch(currentWipBranch) {
 		if !isNothingToCommit() {
@@ -597,13 +597,13 @@ func status() {
 	if isMobProgramming() {
 		sayInfo("you are mob programming")
 
-		currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), configuration.WipBranchQualifier, gitBranches())
+		currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), gitBranches())
 		sayInfo("on wip branch " + currentWipBranch + " (base branch " + currentBaseBranch + ")")
 
 		say(silentgit("--no-pager", "log", currentBaseBranch+".."+currentWipBranch, "--pretty=format:%h %cr <%an>", "--abbrev-commit"))
 	} else {
 		sayInfo("you aren't mob programming")
-		currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), configuration.WipBranchQualifier, gitBranches())
+		currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), gitBranches())
 		sayInfo("on base branch " + currentBaseBranch + " (wip branch " + currentWipBranch + ")")
 
 		sayTodo("to start mob programming, use", "mob start")
@@ -629,7 +629,7 @@ func hasUncommittedChanges() bool {
 
 func isMobProgramming() bool {
 	currentBranch := gitCurrentBranch()
-	_, currentWipBranch := determineBranches(currentBranch, configuration.WipBranchQualifier, gitBranches())
+	_, currentWipBranch := determineBranches(currentBranch, gitBranches())
 	debugInfo("current branch " + currentBranch + " and currentWipBranch " + currentWipBranch)
 	return currentWipBranch == currentBranch
 }
@@ -685,7 +685,7 @@ func gitUserName() string {
 func showNext() {
 	debugInfo("determining next person based on previous changes")
 
-	currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), configuration.WipBranchQualifier, gitBranches())
+	currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), gitBranches())
 
 	changes := strings.TrimSpace(silentgit("--no-pager", "log", currentBaseBranch+".."+currentWipBranch, "--pretty=format:%an", "--abbrev-commit"))
 	lines := strings.Split(strings.Replace(changes, "\r\n", "\n", -1), "\n")

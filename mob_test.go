@@ -59,7 +59,8 @@ func TestDetermineBranches(t *testing.T) {
 }
 
 func assertDetermineBranches(t *testing.T, branch string, qualifier string, branches string, expectedBase string, expectedWip string) {
-	baseBranch, wipBranch := determineBranches(branch, qualifier, branches)
+	configuration.WipBranchQualifier = qualifier
+	baseBranch, wipBranch := determineBranches(branch, branches)
 	equals(t, expectedBase, baseBranch)
 	equals(t, expectedWip, wipBranch)
 }
