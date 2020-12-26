@@ -253,13 +253,12 @@ func determineBranches(currentBranch string, userSpecifiedBranchQualifier string
 		wipBranchWithPossibleSuffix := currentBranch[len(wipBranchPrefix):]
 		if branchExists(wipBranchWithPossibleSuffix, localBranches) {
 			baseBranch = wipBranchWithPossibleSuffix
+		} else if index := strings.LastIndex(wipBranchWithPossibleSuffix, configuration.WipBranchQualifierSeparator); index != -1 {
+			baseBranch = wipBranchWithPossibleSuffix[:index]
 		} else {
-			if index := strings.LastIndex(wipBranchWithPossibleSuffix, configuration.WipBranchQualifierSeparator); index != -1 {
-				baseBranch = wipBranchWithPossibleSuffix[:index]
-			} else {
-				baseBranch = wipBranchWithPossibleSuffix
-			}
+			baseBranch = wipBranchWithPossibleSuffix
 		}
+
 	} else {
 		baseBranch = currentBranch
 	}
