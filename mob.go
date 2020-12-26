@@ -262,9 +262,9 @@ func determineBranches(currentBranch string, userSpecifiedBranchQualifier string
 	} else if isWipBranch(currentBranch) {
 		wipBranch = currentBranch
 	} else if userSpecifiedBranchQualifier == "" {
-		wipBranch = wipBranchPrefix + currentBranch
+		wipBranch = addWipPrefix(currentBranch)
 	} else {
-		wipBranch = wipBranchPrefix + currentBranch + configuration.WipBranchQualifierSeparator + userSpecifiedBranchQualifier
+		wipBranch = addSuffix(currentBranch, userSpecifiedBranchQualifier)
 	}
 
 	debugInfo("on currentBranch " + currentBranch + " => BASE " + baseBranch + " WIP " + wipBranch + " with allLocalBranches " + strings.Join(localBranches, ","))
@@ -283,8 +283,16 @@ func isWipBranch(branch string) bool {
 	return strings.Index(branch, wipBranchPrefix) == 0
 }
 
+func addWipPrefix(branch string) string {
+	return wipBranchPrefix + branch
+}
+
 func removeWipPrefix(branch string) string {
 	return branch[len(wipBranchPrefix):]
+}
+
+func addSuffix(branch string, suffix string) string {
+	return addWipPrefix(branch) + configuration.WipBranchQualifierSeparator + suffix
 }
 
 func hasSuffix(branch string) bool {
