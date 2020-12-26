@@ -250,15 +250,12 @@ func determineBranches(currentBranch string, userSpecifiedBranchQualifier string
 	if currentBranch == "mob-session" || (currentBranch == "master" && userSpecifiedBranchQualifier == "") {
 		baseBranch = "master"
 	} else if isWipBranch(currentBranch) {
-		wipBranchWithPossibleSuffix := currentBranch[len(wipBranchPrefix):]
-		if branchExists(wipBranchWithPossibleSuffix, localBranches) {
-			baseBranch = wipBranchWithPossibleSuffix
-		} else if index := strings.LastIndex(wipBranchWithPossibleSuffix, configuration.WipBranchQualifierSeparator); index != -1 {
-			baseBranch = wipBranchWithPossibleSuffix[:index]
-		} else {
-			baseBranch = wipBranchWithPossibleSuffix
+		wipBranchWithoutPrefix := removeWipPrefix(currentBranch)
+		if branchExists(wipBranchWithoutPrefix, localBranches) || !hasSuffix(wipBranchWithoutPrefix) {
+			baseBranch = wipBranchWithoutPrefix
+		} else if hasSuffix(wipBranchWithoutPrefix) {
+			baseBranch = removeSuffix(wipBranchWithoutPrefix)
 		}
-
 	} else {
 		baseBranch = currentBranch
 	}
@@ -268,7 +265,7 @@ func determineBranches(currentBranch string, userSpecifiedBranchQualifier string
 		wipBranch = "mob-session"
 	} else if isWipBranch(currentBranch) {
 		wipBranch = currentBranch
-		wipBranchWithPossibleSuffix := wipBranch[len(wipBranchPrefix):]
+		wipBranchWithPossibleSuffix := removeWipPrefix(currentBranch)
 		if branchExists(wipBranchWithPossibleSuffix, localBranches) {
 			baseBranch = wipBranchWithPossibleSuffix
 		} else {
@@ -301,6 +298,18 @@ func determineBranches(currentBranch string, userSpecifiedBranchQualifier string
 
 func isWipBranch(branch string) bool {
 	return strings.Index(branch, wipBranchPrefix) == 0
+}
+
+func removeWipPrefix(branch string) string {
+	return branch[len(wipBranchPrefix):]
+}
+
+func hasSuffix(branch string) bool {
+	return strings.Contains(branch, configuration.WipBranchQualifierSeparator)
+}
+
+func removeSuffix(branch string) string {
+	return branch[:strings.LastIndex(branch, configuration.WipBranchQualifierSeparator)]
 }
 
 func branchExists(branchInQuestion string, existingBranches []string) bool {
