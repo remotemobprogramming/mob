@@ -245,36 +245,43 @@ func execute(command string, parameter []string) {
 }
 
 func determineBranches(currentBranch string, localBranches []string) (baseBranch string, wipBranch string) {
-	if currentBranch == "mob-session" || (currentBranch == "master" && !customWipBranchQualifierConfigured()) {
-		baseBranch = "master"
-	} else if !isWipBranch(currentBranch) {
-		baseBranch = currentBranch
-	} else if branchExists(removeWipPrefix(currentBranch), localBranches) || !hasSuffix(removeWipPrefix(currentBranch)) {
-		baseBranch = removeWipPrefix(currentBranch)
-	} else {
-		baseBranch = removeSuffix(removeWipPrefix(currentBranch))
-	}
-
-	if currentBranch == "mob-session" || (currentBranch == "master" && !customWipBranchQualifierConfigured()) {
-		wipBranch = "mob-session"
-	} else if isWipBranch(currentBranch) {
-		wipBranch = currentBranch
-	} else if customWipBranchQualifierConfigured() {
-		wipBranch = addSuffix(currentBranch)
-	} else {
-		wipBranch = addWipPrefix(currentBranch)
-	}
+	baseBranch = determineBaseBranch(currentBranch, localBranches)
+	wipBranch = determineWipBranch(currentBranch)
 
 	debugInfo("on currentBranch " + currentBranch + " => BASE " + baseBranch + " WIP " + wipBranch + " with allLocalBranches " + strings.Join(localBranches, ","))
 	if currentBranch == baseBranch {
 		debugInfo("on base branch")
 	} else if currentBranch == wipBranch {
 		debugInfo("on wip branch")
-	} else { // this is unreachable code
+	} else { // this is unreachable code, but afraid to delete it
 		debugInfo("neither on base nor on wip branch")
 		panic("bad")
 	}
 	return
+}
+
+func determineBaseBranch(currentBranch string, localBranches []string) string {
+	if currentBranch == "mob-session" || (currentBranch == "master" && !customWipBranchQualifierConfigured()) {
+		return "master"
+	} else if !isWipBranch(currentBranch) {
+		return currentBranch
+	} else if branchExists(removeWipPrefix(currentBranch), localBranches) || !hasSuffix(removeWipPrefix(currentBranch)) {
+		return removeWipPrefix(currentBranch)
+	} else {
+		return removeSuffix(removeWipPrefix(currentBranch))
+	}
+}
+
+func determineWipBranch(currentBranch string) string {
+	if currentBranch == "mob-session" || (currentBranch == "master" && !customWipBranchQualifierConfigured()) {
+		return "mob-session"
+	} else if isWipBranch(currentBranch) {
+		return currentBranch
+	} else if customWipBranchQualifierConfigured() {
+		return addSuffix(currentBranch)
+	} else {
+		return addWipPrefix(currentBranch)
+	}
 }
 
 func customWipBranchQualifierConfigured() bool {
