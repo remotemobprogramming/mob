@@ -249,10 +249,8 @@ func determineBranches(currentBranch string, userSpecifiedBranchQualifier string
 
 	if currentBranch == "mob-session" || (currentBranch == "master" && userSpecifiedBranchQualifier == "") {
 		baseBranch = "master"
-		wipBranch = "mob-session"
 	} else if isWipBranch(currentBranch) {
-		wipBranch = currentBranch
-		wipBranchWithPossibleSuffix := wipBranch[len(wipBranchPrefix):]
+		wipBranchWithPossibleSuffix := currentBranch[len(wipBranchPrefix):]
 		if branchExists(wipBranchWithPossibleSuffix, localBranches) {
 			baseBranch = wipBranchWithPossibleSuffix
 		} else {
@@ -264,11 +262,6 @@ func determineBranches(currentBranch string, userSpecifiedBranchQualifier string
 		}
 	} else {
 		baseBranch = currentBranch
-		if userSpecifiedBranchQualifier == "" {
-			wipBranch = wipBranchPrefix + baseBranch
-		} else {
-			wipBranch = wipBranchPrefix + baseBranch + configuration.WipBranchQualifierSeparator + userSpecifiedBranchQualifier
-		}
 	}
 
 	if currentBranch == "mob-session" || (currentBranch == "master" && userSpecifiedBranchQualifier == "") {
