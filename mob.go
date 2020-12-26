@@ -258,27 +258,13 @@ func determineBranches(currentBranch string, userSpecifiedBranchQualifier string
 	}
 
 	if currentBranch == "mob-session" || (currentBranch == "master" && userSpecifiedBranchQualifier == "") {
-		baseBranch = "master"
 		wipBranch = "mob-session"
 	} else if isWipBranch(currentBranch) {
 		wipBranch = currentBranch
-		wipBranchWithPossibleSuffix := removeWipPrefix(currentBranch)
-		if branchExists(wipBranchWithPossibleSuffix, localBranches) {
-			baseBranch = wipBranchWithPossibleSuffix
-		} else {
-			if index := strings.LastIndex(wipBranchWithPossibleSuffix, configuration.WipBranchQualifierSeparator); index != -1 {
-				baseBranch = wipBranchWithPossibleSuffix[:index]
-			} else {
-				baseBranch = wipBranchWithPossibleSuffix
-			}
-		}
+	} else if userSpecifiedBranchQualifier == "" {
+		wipBranch = wipBranchPrefix + currentBranch
 	} else {
-		baseBranch = currentBranch
-		if userSpecifiedBranchQualifier == "" {
-			wipBranch = wipBranchPrefix + baseBranch
-		} else {
-			wipBranch = wipBranchPrefix + baseBranch + configuration.WipBranchQualifierSeparator + userSpecifiedBranchQualifier
-		}
+		wipBranch = wipBranchPrefix + currentBranch + configuration.WipBranchQualifierSeparator + userSpecifiedBranchQualifier
 	}
 
 	debugInfo("on currentBranch " + currentBranch + " => BASE " + baseBranch + " WIP " + wipBranch + " with allLocalBranches " + strings.Join(localBranches, ","))
