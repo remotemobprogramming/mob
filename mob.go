@@ -244,10 +244,8 @@ func execute(command string, parameter []string) {
 	}
 }
 
-func determineBranches(currentBranch string, allLocalBranches string) (baseBranch string, wipBranch string) {
-	localBranches := strings.Split(allLocalBranches, "\n")
-
-	if currentBranch == "mob-session" || (currentBranch == "master" && !hasCustomWipBranchQualifier()) {
+func determineBranches(currentBranch string, localBranches []string) (baseBranch string, wipBranch string) {
+	if currentBranch == "mob-session" || (currentBranch == "master" && !customWipBranchQualifierConfigured()) {
 		baseBranch = "master"
 	} else if !isWipBranch(currentBranch) {
 		baseBranch = currentBranch
@@ -257,11 +255,11 @@ func determineBranches(currentBranch string, allLocalBranches string) (baseBranc
 		baseBranch = removeSuffix(removeWipPrefix(currentBranch))
 	}
 
-	if currentBranch == "mob-session" || (currentBranch == "master" && !hasCustomWipBranchQualifier()) {
+	if currentBranch == "mob-session" || (currentBranch == "master" && !customWipBranchQualifierConfigured()) {
 		wipBranch = "mob-session"
 	} else if isWipBranch(currentBranch) {
 		wipBranch = currentBranch
-	} else if hasCustomWipBranchQualifier() {
+	} else if customWipBranchQualifierConfigured() {
 		wipBranch = addSuffix(currentBranch)
 	} else {
 		wipBranch = addWipPrefix(currentBranch)
@@ -279,7 +277,7 @@ func determineBranches(currentBranch string, allLocalBranches string) (baseBranc
 	return
 }
 
-func hasCustomWipBranchQualifier() bool {
+func customWipBranchQualifierConfigured() bool {
 	return configuration.WipBranchQualifier != ""
 }
 
@@ -639,11 +637,10 @@ func isMobProgramming() bool {
 }
 
 func hasLocalBranch(localBranch string) bool {
-	localBranchesRaw := gitBranches()
-	debugInfo("Local Branches: " + localBranchesRaw)
+	localBranches := gitBranches()
+	debugInfo("Local Branches: " + strings.Join(localBranches, "\n"))
 	debugInfo("Local Branch: " + localBranch)
 
-	localBranches := strings.Split(localBranchesRaw, "\n")
 	for i := 0; i < len(localBranches); i++ {
 		if localBranches[i] == localBranch {
 			return true
@@ -669,8 +666,8 @@ func hasRemoteBranch(branch string) bool {
 	return false
 }
 
-func gitBranches() string {
-	return strings.TrimSpace(silentgit("branch", "--format=%(refname:short)"))
+func gitBranches() []string {
+	return strings.Split(strings.TrimSpace(silentgit("branch", "--format=%(refname:short)")), "\n")
 }
 
 func gitRemoteBranches() string {

@@ -40,25 +40,25 @@ func TestDetermineBranches(t *testing.T) {
 	configuration.WipBranchQualifierSeparator = "-"
 	configuration.Debug = true
 
-	assertDetermineBranches(t, "master", "", "", "master", "mob-session")
-	assertDetermineBranches(t, "mob-session", "", "", "master", "mob-session")
-	assertDetermineBranches(t, "mob-session", "green", "", "master", "mob-session")
+	assertDetermineBranches(t, "master", "", []string{}, "master", "mob-session")
+	assertDetermineBranches(t, "mob-session", "", []string{}, "master", "mob-session")
+	assertDetermineBranches(t, "mob-session", "green", []string{}, "master", "mob-session")
 
-	assertDetermineBranches(t, "master", "green", "", "master", "mob/master-green")
-	assertDetermineBranches(t, "mob/master-green", "", "", "master", "mob/master-green")
+	assertDetermineBranches(t, "master", "green", []string{}, "master", "mob/master-green")
+	assertDetermineBranches(t, "mob/master-green", "", []string{}, "master", "mob/master-green")
 
-	assertDetermineBranches(t, "feature1", "", "", "feature1", "mob/feature1")
-	assertDetermineBranches(t, "mob/feature1", "", "", "feature1", "mob/feature1")
-	assertDetermineBranches(t, "mob/feature1-green", "", "", "feature1", "mob/feature1-green")
-	assertDetermineBranches(t, "feature1", "green", "", "feature1", "mob/feature1-green")
+	assertDetermineBranches(t, "feature1", "", []string{}, "feature1", "mob/feature1")
+	assertDetermineBranches(t, "mob/feature1", "", []string{}, "feature1", "mob/feature1")
+	assertDetermineBranches(t, "mob/feature1-green", "", []string{}, "feature1", "mob/feature1-green")
+	assertDetermineBranches(t, "feature1", "green", []string{}, "feature1", "mob/feature1-green")
 
-	assertDetermineBranches(t, "feature/test", "", "feature/test", "feature/test", "mob/feature/test")
-	assertDetermineBranches(t, "mob/feature/test", "", "feature/test\nmob/feature/test", "feature/test", "mob/feature/test")
+	assertDetermineBranches(t, "feature/test", "", []string{"feature/test"}, "feature/test", "mob/feature/test")
+	assertDetermineBranches(t, "mob/feature/test", "", []string{"feature/test", "mob/feature/test"}, "feature/test", "mob/feature/test")
 
-	assertDetermineBranches(t, "feature/test-ch", "", "DPL-2638-update-apis\nDPL-2814-create-project\nfeature/test-ch\nfix/smallChanges\nmaster\npipeship/pipelineupdate-pipeship-pipeline.yaml\n", "feature/test-ch", "mob/feature/test-ch")
+	assertDetermineBranches(t, "feature/test-ch", "", []string{"DPL-2638-update-apis", "DPL-2814-create-project", "feature/test-ch", "fix/smallChanges", "master", "pipeship/pipelineupdate-pipeship-pipeline.yaml"}, "feature/test-ch", "mob/feature/test-ch")
 }
 
-func assertDetermineBranches(t *testing.T, branch string, qualifier string, branches string, expectedBase string, expectedWip string) {
+func assertDetermineBranches(t *testing.T, branch string, qualifier string, branches []string, expectedBase string, expectedWip string) {
 	configuration.WipBranchQualifier = qualifier
 	baseBranch, wipBranch := determineBranches(branch, branches)
 	equals(t, expectedBase, baseBranch)
@@ -576,7 +576,7 @@ func setup(t *testing.T) *string {
 	output := captureOutput()
 	createTestbed(t)
 	assertOnBranch(t, "master")
-	equals(t, "master", gitBranches())
+	equals(t, []string{"master"}, gitBranches())
 	equals(t, "origin/master", gitRemoteBranches())
 	assertNoMobSessionBranches(t, "mob-session")
 	return output
