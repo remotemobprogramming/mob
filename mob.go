@@ -396,18 +396,8 @@ func start() {
 			stashed = true
 		} else {
 			sayInfo("cannot start; clean working tree required")
-			unstagedChanges := getUnstagedChanges()
-			untrackedFiles := getUntrackedFiles()
-			hasUnstagedChanges := len(unstagedChanges) > 0
-			hasUntrackedFiles := len(untrackedFiles) > 0
-			if hasUnstagedChanges {
-				sayInfo("unstaged changes present:")
-				sayInfo(unstagedChanges)
-			}
-			if hasUntrackedFiles {
-				sayInfo("untracked files present:")
-				sayInfo(untrackedFiles)
-			}
+			sayUnstagedChangesInfo()
+			sayUntrackedFilesInfo()
 			sayTodo("To start mob programming including uncommitted changes, use", "mob start --include-uncommitted-changes")
 			return
 		}
@@ -446,6 +436,24 @@ func start() {
 		stashes := silentgit("stash", "list")
 		stash := findLatestMobStash(stashes)
 		git("stash", "pop", stash)
+	}
+}
+
+func sayUntrackedFilesInfo() {
+	untrackedFiles := getUntrackedFiles()
+	hasUntrackedFiles := len(untrackedFiles) > 0
+	if hasUntrackedFiles {
+		sayInfo("untracked files present:")
+		sayInfo(untrackedFiles)
+	}
+}
+
+func sayUnstagedChangesInfo() {
+	unstagedChanges := getUnstagedChanges()
+	hasUnstagedChanges := len(unstagedChanges) > 0
+	if hasUnstagedChanges {
+		sayInfo("unstaged changes present:")
+		sayInfo(unstagedChanges)
 	}
 }
 
