@@ -247,16 +247,13 @@ func execute(command string, parameter []string) {
 func determineBranches(currentBranch string, userSpecifiedBranchQualifier string, allLocalBranches string) (baseBranch string, wipBranch string) {
 	localBranches := strings.Split(allLocalBranches, "\n")
 
-	currentBranchIsWipBranch := strings.Index(currentBranch, wipBranchPrefix) == 0
-
 	if currentBranch == "mob-session" || (currentBranch == "master" && userSpecifiedBranchQualifier == "") {
 		baseBranch = "master"
 		wipBranch = "mob-session"
-	} else if currentBranchIsWipBranch {
+	} else if isWipBranch(currentBranch) {
 		wipBranch = currentBranch
 		wipBranchWithPossibleSuffix := wipBranch[len(wipBranchPrefix):]
-		branchExists := stringContains(localBranches, wipBranchWithPossibleSuffix)
-		if branchExists {
+		if branchExists(wipBranchWithPossibleSuffix, localBranches) {
 			baseBranch = wipBranchWithPossibleSuffix
 		} else {
 			if index := strings.LastIndex(wipBranchWithPossibleSuffix, configuration.WipBranchQualifierSeparator); index != -1 {
@@ -284,6 +281,14 @@ func determineBranches(currentBranch string, userSpecifiedBranchQualifier string
 		panic("bad")
 	}
 	return
+}
+
+func isWipBranch(branch string) bool {
+	return strings.Index(branch, wipBranchPrefix) == 0
+}
+
+func branchExists(branchInQuestion string, existingBranches []string) bool {
+	return stringContains(existingBranches, branchInQuestion)
 }
 
 func stringContains(list []string, element string) bool {
