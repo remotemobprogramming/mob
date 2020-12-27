@@ -1,3 +1,3 @@
-module remotemobprogramming.org/mob.sh
+module mob.sh
 
 go 1.15
