@@ -1,3 +1,8 @@
+# 1.1.0
+- Add optional `--no-squash` for `mob done` to keep commits from wip branch.
+- Add environment variable `MOB_DONE_SQUASH` to configure the `mob done` behaviour. `MOB_DONE_SQUASH=false` is equal to passing flag `--no-squash`.
+- Special thanks to @jbrains, @koeberlue, @gregor_riegler for making this release happen, obviously, in a remote mob session.
+
 # 1.0.0
 - BREAKING: `MOB_WIP_BRANCH_QUALIFIER_SEPARATOR` now defaults to '-'.
 - BREAKING: `MOB_NEXT_STAY` now defaults to 'true'.
