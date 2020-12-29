@@ -24,6 +24,17 @@ func TestParseArgs(t *testing.T) {
 	equals(t, "green", configuration.WipBranchQualifier)
 }
 
+func TestParseArgsDoneSquash(t *testing.T) {
+	configuration = getDefaultConfiguration()
+	equals(t, true, configuration.MobDoneSquash)
+
+	command, parameters := parseArgs([]string{"mob", "done", "--no-squash"})
+
+	equals(t, "done", command)
+	equals(t, "", strings.Join(parameters, ""))
+	equals(t, false, configuration.MobDoneSquash)
+}
+
 func TestParseArgsMessage(t *testing.T) {
 	configuration = getDefaultConfiguration()
 	equals(t, configuration.WipBranchQualifier, "")
@@ -86,6 +97,53 @@ func TestEnvironmentVariablesEmptyString(t *testing.T) {
 
 	equals(t, "origin", configuration.RemoteName)
 }
+
+func TestMobDoneSquashEnvironmentVariableDefault(t *testing.T) {
+	configuration = parseEnvironmentVariables(getDefaultConfiguration())
+
+	equals(t, true, configuration.MobDoneSquash)
+}
+
+func TestMobDoneSquashEnvironmentVariableEmpty(t *testing.T) {
+	// ASSUME default setting for mobDoneSquash is true
+	os.Setenv("MOB_DONE_SQUASH", "")
+	defer os.Unsetenv("MOB_DONE_SQUASH")
+
+	configuration = parseEnvironmentVariables(getDefaultConfiguration())
+
+	equals(t, true, configuration.MobDoneSquash)
+}
+
+
+func TestMobDoneSquashEnvironmentVariableTrue(t *testing.T) {
+	os.Setenv("MOB_DONE_SQUASH", "true")
+	defer os.Unsetenv("MOB_DONE_SQUASH")
+
+	configuration = parseEnvironmentVariables(getDefaultConfiguration())
+
+	equals(t, true, configuration.MobDoneSquash)
+}
+
+func TestMobDoneSquashEnvironmentVariableFalse(t *testing.T) {
+	os.Setenv("MOB_DONE_SQUASH", "false")
+	defer os.Unsetenv("MOB_DONE_SQUASH")
+
+	configuration = parseEnvironmentVariables(getDefaultConfiguration())
+
+	equals(t, false, configuration.MobDoneSquash)
+}
+
+func TestMobDoneSquashEnvironmentVariableGarbage(t *testing.T) {
+	// ASSUME default setting for mobDoneSquash is true
+	os.Setenv("MOB_DONE_SQUASH", "garbage")
+	defer os.Unsetenv("MOB_DONE_SQUASH")
+
+	configuration = parseEnvironmentVariables(getDefaultConfiguration())
+
+	equals(t, true, configuration.MobDoneSquash)
+}
+
+
 
 func TestVersion(t *testing.T) {
 	output := setup(t)
@@ -338,8 +396,10 @@ func TestStartNextStay(t *testing.T) {
 	assertOnBranch(t, "mob-session")
 }
 
-func TestStartDone(t *testing.T) {
+func TestStartDoneWithMobDoneSquashTrue(t *testing.T) {
 	setup(t)
+	configuration.MobDoneSquash = true
+
 	start()
 	assertOnBranch(t, "mob-session")
 
@@ -347,6 +407,76 @@ func TestStartDone(t *testing.T) {
 
 	assertOnBranch(t, "master")
 	assertNoMobSessionBranches(t, "mob-session")
+}
+
+func TestStartDoneWithMobDoneSquashFalse(t *testing.T) {
+	setup(t)
+	configuration.MobDoneSquash = false
+
+	start()
+	assertOnBranch(t, "mob-session")
+
+	done()
+
+	assertOnBranch(t, "master")
+	assertNoMobSessionBranches(t, "mob-session")
+}
+
+func TestStartDonePublishingOneManualCommit(t *testing.T) {
+	setup(t)
+	// REFACTOR Replace string with enum value
+	configuration.MobDoneSquash = false // default is probably true
+
+	start()
+	assertOnBranch(t, "mob-session")
+	// should be 1 commit on mob-session so far
+
+	// REFACTOR Make this a single step
+	createFile(t, "example.txt", "content")
+	git("add", "--all")
+	git("commit", "-m", "[manual-commit-1] publish this commit to master")
+	assertCommits(t, 2)
+
+	done() // without squash (configuration)
+
+	assertOnBranch(t, "master")
+	assertCommitsOnBranch(t, 2, "master")
+	assertCommitLogContainsMessage(t, "master", "[manual-commit-1] publish this commit to master")
+	assertCommitsOnBranch(t, 1, "origin/master")
+	assertNoMobSessionBranches(t, "mob-session")
+}
+
+func TestStartDoneSquashTheOneManualCommit(t *testing.T) {
+	setup(t)
+	// REFACTOR Replace string with enum value
+	configuration.MobDoneSquash = true
+
+	start()
+	assertOnBranch(t, "mob-session")
+	// should be 1 commit on mob-session so far
+
+	// REFACTOR Make this a single step
+	createFile(t, "example.txt", "content")
+	git("add", "--all")
+	git("commit", "-m", "[manual-commit-1] publish this commit to master")
+	assertCommits(t, 2)
+
+	done()
+
+	// MAYBE assertUnstagedChanges()
+	assertOnBranch(t, "master")
+	assertCommitsOnBranch(t, 1, "master")
+	assertCommitsOnBranch(t, 1, "origin/master")
+	assertNoMobSessionBranches(t, "mob-session")
+}
+
+func assertCommitLogContainsMessage(t *testing.T, branchName string, commitMessage string) {
+	logMessages := silentgit("log", branchName, "--oneline")
+	if !strings.Contains(logMessages, commitMessage) {
+		_, file, line, _ := runtime.Caller(1)
+		fmt.Printf("\033[31m%s:%d:\n\n\texp: %#v\n\n\tgot: %#v\033[39m\n\n", filepath.Base(file), line, "git log contains '"+commitMessage+"'", logMessages)
+		t.FailNow()
+	}
 }
 
 func TestStartDoneFeatureBranch(t *testing.T) {
@@ -616,7 +746,11 @@ func setWorkingDir(dir string) {
 }
 
 func assertCommits(t *testing.T, commits int) {
-	result := silentgit("rev-list", "--count", "HEAD")
+	assertCommitsOnBranch(t, commits, "HEAD")
+}
+
+func assertCommitsOnBranch(t *testing.T, commits int, branchName string) {
+	result := silentgit("rev-list", "--count", branchName)
 	number, _ := strconv.Atoi(strings.TrimSpace(result))
 	if number != commits {
 		_, file, line, _ := runtime.Caller(1)

@@ -33,6 +33,7 @@ type Configuration struct {
 	WipBranchQualifier                string // override with MOB_WIP_BRANCH_QUALIFIER environment variable
 	WipBranchQualifierSet             bool
 	WipBranchQualifierSeparator       string // override with MOB_WIP_BRANCH_QUALIFIER_SEPARATOR environment variable
+	MobDoneSquash                     bool   // override with MOB_DONE_SQUASH environment variable
 }
 
 func main() {
@@ -73,6 +74,7 @@ func getDefaultConfiguration() Configuration {
 		WipBranchQualifier:                "",
 		WipBranchQualifierSet:             false,
 		WipBranchQualifierSeparator:       "-",
+		MobDoneSquash:                     true,
 	}
 }
 
@@ -99,6 +101,8 @@ func parseEnvironmentVariables(configuration Configuration) Configuration {
 
 	setBoolFromEnvVariable(&configuration.MobStartIncludeUncommittedChanges, "MOB_START_INCLUDE_UNCOMMITTED_CHANGES")
 
+	setBoolFromEnvVariable(&configuration.MobDoneSquash, "MOB_DONE_SQUASH")
+
 	return configuration
 }
 
@@ -120,10 +124,19 @@ func setOptionalStringFromEnvVariable(s *string, key string) {
 
 func setBoolFromEnvVariable(s *bool, key string) {
 	value, set := os.LookupEnv(key)
-	if set && value == "true" {
+	if !set || value == "" {
+		return
+	}
+
+	if value == "true" {
 		*s = true
 		debugInfo("overriding " + key + " =" + strconv.FormatBool(*s))
-	}
+	} else if value == "false" {
+		*s = false
+		debugInfo("overriding " + key + " =" + strconv.FormatBool(*s))
+	} else {
+	    sayError("ignoring " + key + " =" + value + " (not a boolean)")
+    }
 }
 
 func setBoolFromEnvVariableSet(s *bool, changed *bool, key string) {
@@ -163,6 +176,7 @@ func config() {
 	say("MOB_DEBUG" + "=" + strconv.FormatBool(configuration.Debug))
 	say("MOB_WIP_BRANCH_QUALIFIER" + "=" + configuration.WipBranchQualifier)
 	say("MOB_WIP_BRANCH_QUALIFIER_SEPARATOR" + "=" + configuration.WipBranchQualifierSeparator)
+	say("MOB_DONE_SQUASH" + "=" + strconv.FormatBool(configuration.MobDoneSquash))
 }
 
 func parseArgs(args []string) (command string, parameters []string) {
@@ -184,12 +198,14 @@ func parseArgs(args []string) (command string, parameters []string) {
 				configuration.WipBranchQualifier = args[i+1]
 				configuration.WipBranchQualifierSet = true
 			}
-			i++
+			i++ // skip consumed parameter
 		case "--message", "-m":
 			if i+1 != len(args) {
 				configuration.WipCommitMessage = args[i+1]
 			}
-			i++
+			i++ // skip consumed parameter
+		case "--no-squash":
+			configuration.MobDoneSquash = false
 		default:
 			if i == 1 {
 				command = arg
@@ -573,7 +589,7 @@ func done() {
 
 		git("checkout", currentBaseBranch)
 		git("merge", configuration.RemoteName+"/"+currentBaseBranch, "--ff-only")
-		mergeFailed := gitignorefailure("merge", "--squash", "--ff", currentWipBranch)
+		mergeFailed := gitignorefailure("merge", squashOrNoCommit(), "--ff", currentWipBranch)
 		if mergeFailed != nil {
 			return
 		}
@@ -587,6 +603,14 @@ func done() {
 		git("checkout", currentBaseBranch)
 		git("branch", "-D", currentWipBranch)
 		sayInfo("someone else already ended your mob session")
+	}
+}
+
+func squashOrNoCommit() string {
+	if configuration.MobDoneSquash {
+		return "--squash"
+	} else {
+		return "--no-commit"
 	}
 }
 
@@ -720,9 +744,10 @@ Basic Commands(Options):
     [--branch|-b <branch-postfix>]       Set wip branch to 'mob/<base-branch>/<branch-postfix>'
   next 
     [--stay|-s]                          Stay on wip branch (default)
-    [--return-to-base-branch|-r]         Return to base banch
+    [--return-to-base-branch|-r]         Return to base branch
     [--message|-m <commit-message>]      Override commit message
   done
+    [--no-squash]                        Do not squash commits from wip branch
   reset 
     [--branch|-b <branch-postfix>]       Set wip branch to 'mob/<base-branch>/<branch-postfix>'
 

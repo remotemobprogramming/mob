@@ -83,9 +83,10 @@ Basic Commands(Options):
     [--branch|-b <branch-postfix>]       Set wip branch to 'mob/<base-branch>/<branch-postfix>'
   next
     [--stay|-s]                          Stay on wip branch (default)
-    [--return-to-base-branch|-r]         Return to base banch
+    [--return-to-base-branch|-r]         Return to base branch
     [--message|-m <commit-message>]      Override commit message
   done
+    [--no-squash]                        Do not squash commits from wip branch
   reset
     [--branch|-b <branch-postfix>]       Set wip branch to 'mob/<base-branch>/<branch-postfix>'
 
@@ -182,6 +183,7 @@ MOB_START_INCLUDE_UNCOMMITTED_CHANGES=false
 MOB_DEBUG=false
 MOB_WIP_BRANCH_QUALIFIER=
 MOB_WIP_BRANCH_QUALIFIER_SEPARATOR=-
+MOB_DONE_SQUASH=true
 ```
 
 Override default value permanently via environment variables:
