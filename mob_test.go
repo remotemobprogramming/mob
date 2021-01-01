@@ -114,7 +114,6 @@ func TestMobDoneSquashEnvironmentVariableEmpty(t *testing.T) {
 	equals(t, true, configuration.MobDoneSquash)
 }
 
-
 func TestMobDoneSquashEnvironmentVariableTrue(t *testing.T) {
 	os.Setenv("MOB_DONE_SQUASH", "true")
 	defer os.Unsetenv("MOB_DONE_SQUASH")
@@ -142,8 +141,6 @@ func TestMobDoneSquashEnvironmentVariableGarbage(t *testing.T) {
 
 	equals(t, true, configuration.MobDoneSquash)
 }
-
-
 
 func TestVersion(t *testing.T) {
 	output := setup(t)
@@ -330,8 +327,8 @@ func TestResetCommit(t *testing.T) {
 
 func TestStartUnstagedChanges(t *testing.T) {
 	output := setup(t)
-	createFile(t, "test.txt", "content")
 	configuration.MobStartIncludeUncommittedChanges = false
+	createFile(t, "test.txt", "content")
 
 	start()
 
@@ -342,8 +339,8 @@ func TestStartUnstagedChanges(t *testing.T) {
 
 func TestStartIncludeUnstagedChanges(t *testing.T) {
 	setup(t)
-	createFile(t, "test.txt", "content")
 	configuration.MobStartIncludeUncommittedChanges = true
+	createFile(t, "test.txt", "content")
 
 	start()
 
@@ -353,8 +350,8 @@ func TestStartIncludeUnstagedChanges(t *testing.T) {
 
 func TestStartIncludeUntrackedFiles(t *testing.T) {
 	setup(t)
-	createFile(t, "example.txt", "content")
 	configuration.MobStartIncludeUncommittedChanges = true
+	createFile(t, "example.txt", "content")
 
 	start()
 
@@ -363,8 +360,8 @@ func TestStartIncludeUntrackedFiles(t *testing.T) {
 
 func TestStartUntrackedFiles(t *testing.T) {
 	setup(t)
-	createFile(t, "example.txt", "content")
 	configuration.MobStartIncludeUncommittedChanges = false
+	createFile(t, "example.txt", "content")
 
 	start()
 
@@ -431,10 +428,7 @@ func TestStartDonePublishingOneManualCommit(t *testing.T) {
 	assertOnBranch(t, "mob-session")
 	// should be 1 commit on mob-session so far
 
-	// REFACTOR Make this a single step
-	createFile(t, "example.txt", "content")
-	git("add", "--all")
-	git("commit", "-m", "[manual-commit-1] publish this commit to master")
+	createFileAndCommitIt(t, "example.txt", "content", "[manual-commit-1] publish this commit to master")
 	assertCommits(t, 2)
 
 	done() // without squash (configuration)
@@ -455,10 +449,7 @@ func TestStartDoneSquashTheOneManualCommit(t *testing.T) {
 	assertOnBranch(t, "mob-session")
 	// should be 1 commit on mob-session so far
 
-	// REFACTOR Make this a single step
-	createFile(t, "example.txt", "content")
-	git("add", "--all")
-	git("commit", "-m", "[manual-commit-1] publish this commit to master")
+	createFileAndCommitIt(t, "example.txt", "content", "[manual-commit-1] publish this commit to master")
 	assertCommits(t, 2)
 
 	done()
@@ -468,15 +459,6 @@ func TestStartDoneSquashTheOneManualCommit(t *testing.T) {
 	assertCommitsOnBranch(t, 1, "master")
 	assertCommitsOnBranch(t, 1, "origin/master")
 	assertNoMobSessionBranches(t, "mob-session")
-}
-
-func assertCommitLogContainsMessage(t *testing.T, branchName string, commitMessage string) {
-	logMessages := silentgit("log", branchName, "--oneline")
-	if !strings.Contains(logMessages, commitMessage) {
-		_, file, line, _ := runtime.Caller(1)
-		fmt.Printf("\033[31m%s:%d:\n\n\texp: %#v\n\n\tgot: %#v\033[39m\n\n", filepath.Base(file), line, "git log contains '"+commitMessage+"'", logMessages)
-		t.FailNow()
-	}
 }
 
 func TestStartDoneFeatureBranch(t *testing.T) {
@@ -579,9 +561,7 @@ func TestStartNextPushManualCommits(t *testing.T) {
 	setWorkingDir("/tmp/mob/local")
 
 	start()
-	createFile(t, "example.txt", "content")
-	git("add", "--all")
-	git("commit", "-m", "asdf")
+	createFileAndCommitIt(t, "example.txt", "content", "asdf")
 	next()
 
 	setWorkingDir("/tmp/mob/localother")
@@ -600,9 +580,7 @@ func TestStartNextPushManualCommitsFeatureBranch(t *testing.T) {
 	start()
 	assertOnBranch(t, "mob/feature1")
 
-	createFile(t, "example.txt", "content")
-	git("add", "--all")
-	git("commit", "-m", "asdf")
+	createFileAndCommitIt(t, "example.txt", "content", "asdf")
 	next()
 
 	setWorkingDir("/tmp/mob/localother")
@@ -669,9 +647,7 @@ func TestDoneMergeConflict(t *testing.T) {
 	next()
 
 	setWorkingDir("/tmp/mob/localother")
-	createFile(t, "example.txt", "asdf")
-	git("add", "--all")
-	git("commit", "-m", "\"asdf\"")
+	createFileAndCommitIt(t, "example.txt", "asdf", "asdf")
 	git("push")
 
 	setWorkingDir("/tmp/mob/local")
@@ -689,9 +665,7 @@ func TestDoneMerge(t *testing.T) {
 	next()
 
 	setWorkingDir("/tmp/mob/localother")
-	createFile(t, "example2.txt", "asdf")
-	git("add", "--all")
-	git("commit", "-m", "\"asdf\"")
+	createFileAndCommitIt(t, "example2.txt", "asdf", "asdf")
 	git("push")
 
 	setWorkingDir("/tmp/mob/local")
@@ -759,6 +733,15 @@ func assertCommitsOnBranch(t *testing.T, commits int, branchName string) {
 	}
 }
 
+func assertCommitLogContainsMessage(t *testing.T, branchName string, commitMessage string) {
+	logMessages := silentgit("log", branchName, "--oneline")
+	if !strings.Contains(logMessages, commitMessage) {
+		_, file, line, _ := runtime.Caller(1)
+		fmt.Printf("\033[31m%s:%d:\n\n\texp: %#v\n\n\tgot: %#v\033[39m\n\n", filepath.Base(file), line, "git log contains '"+commitMessage+"'", logMessages)
+		t.FailNow()
+	}
+}
+
 func assertFileExist(t *testing.T, filename string) {
 	path := workingDir + "/" + filename
 	if _, err := os.Stat(path); os.IsNotExist(err) {
@@ -766,6 +749,12 @@ func assertFileExist(t *testing.T, filename string) {
 		fmt.Printf("\033[31m%s:%d:\n\n\texp: %#v\n\n\tgot: %#v\033[39m\n\n", filepath.Base(file), line, "existing file "+path, "no file at "+path)
 		t.FailNow()
 	}
+}
+
+func createFileAndCommitIt(t *testing.T, filename string, content string, commitMessage string) {
+	createFile(t, filename, content)
+	git("add", filename)
+	git("commit", "-m", commitMessage)
 }
 
 func createFile(t *testing.T, filename string, content string) {
