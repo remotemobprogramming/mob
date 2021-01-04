@@ -155,12 +155,18 @@ scoop install mob
 
 ### Arch Linux
 
-There is an Arch package in the [AUR](https://aur.archlinux.org/packages/mobsh-bin/).
+There are two Arch packages in the AUR:
+
+- [mobsh-bin](https://aur.archlinux.org/packages/mobsh-bin/): uses the binary from the upstream release.
+- [mobsh](https://aur.archlinux.org/packages/mobsh/): compiles sources from scratch (and runs tests) locally.
 
 Example installation using AUR helper `yay`:
 
 ```bash
 yay -S mobsh-bin
+
+# OR
+yay -S mobsh
 ```
 
 ### Linux Timer
