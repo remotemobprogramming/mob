@@ -153,6 +153,16 @@ On Windows, if you use [Scoop](https://scoop.netlify.app/) then just download th
 scoop install mob
 ```
 
+### Arch Linux
+
+There is an Arch package in the [AUR](https://aur.archlinux.org/packages/mobsh-bin/).
+
+Example installation using AUR helper `yay`:
+
+```bash
+yay -S mobsh-bin
+```
+
 ### Linux Timer
 
 To get the timer to play "mob next" on your speakers when your time is up, you'll need an installed speech engine. 
