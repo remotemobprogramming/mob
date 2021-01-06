@@ -88,22 +88,18 @@ func TestMobRemoteNameEnvironmentVariableEmptyString(t *testing.T) {
 	equals(t, "origin", configuration.RemoteName)
 }
 
-func TestMobDoneSquashEnvironmentVariableDefault(t *testing.T) {
-	configuration = parseEnvironmentVariables(getDefaultConfiguration())
-
-	equals(t, true, configuration.MobDoneSquash)
-}
-
 func TestBooleanEnvironmentVariables(t *testing.T) {
 	expectEnvironmentVariableSetsBooleanConfiguration(t, "MOB_DONE_SQUASH", true, func(configuration Configuration) interface{} { return configuration.MobDoneSquash })
 	expectEnvironmentVariableSetsBooleanConfiguration(t, "MOB_DEBUG", false, func(configuration Configuration) interface{} { return configuration.Debug })
 }
 
 func expectEnvironmentVariableSetsBooleanConfiguration(t *testing.T, envVar string, defaultValue bool, actual func(Configuration) interface{}) {
-	expectEnvironmentVariableSetsConfiguration(t, envVar, "", defaultValue, actual)
-	expectEnvironmentVariableSetsConfiguration(t, envVar, "true", true, actual)
-	expectEnvironmentVariableSetsConfiguration(t, envVar, "false", false, actual)
-	expectEnvironmentVariableSetsConfiguration(t, envVar, "garbage", defaultValue, actual)
+	t.Run(envVar, func(t *testing.T) {
+		expectEnvironmentVariableSetsConfiguration(t, envVar, "", defaultValue, actual)
+		expectEnvironmentVariableSetsConfiguration(t, envVar, "true", true, actual)
+		expectEnvironmentVariableSetsConfiguration(t, envVar, "false", false, actual)
+		expectEnvironmentVariableSetsConfiguration(t, envVar, "garbage", defaultValue, actual)
+	})
 }
 
 func expectEnvironmentVariableSetsConfiguration(
