@@ -76,12 +76,6 @@ func assertDetermineBranches(t *testing.T, branch string, qualifier string, bran
 	equals(t, expectedWip, wipBranch)
 }
 
-func TestDebugEnvironmentVariableTrue(t *testing.T) {
-	configuration = setEnv("MOB_DEBUG", "true")
-
-	equals(t, true, configuration.Debug)
-}
-
 func TestMobRemoteNameEnvironmentVariable(t *testing.T) {
 	configuration = setEnv("MOB_REMOTE_NAME", "GITHUB")
 
@@ -100,8 +94,9 @@ func TestMobDoneSquashEnvironmentVariableDefault(t *testing.T) {
 	equals(t, true, configuration.MobDoneSquash)
 }
 
-func TestMobDoneSquashEnvironmentVariable(t *testing.T) {
+func TestBooleanEnvironmentVariables(t *testing.T) {
 	expectEnvironmentVariableSetsBooleanConfiguration(t, "MOB_DONE_SQUASH", true, func(configuration Configuration) interface{} { return configuration.MobDoneSquash })
+	expectEnvironmentVariableSetsBooleanConfiguration(t, "MOB_DEBUG", false, func(configuration Configuration) interface{} { return configuration.Debug })
 }
 
 func expectEnvironmentVariableSetsBooleanConfiguration(t *testing.T, envVar string, defaultValue bool, actual func(Configuration) interface{}) {
