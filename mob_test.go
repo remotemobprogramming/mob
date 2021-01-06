@@ -76,24 +76,20 @@ func assertDetermineBranches(t *testing.T, branch string, qualifier string, bran
 	equals(t, expectedWip, wipBranch)
 }
 
-func TestEnvironmentVariables(t *testing.T) {
-	os.Setenv("MOB_REMOTE_NAME", "GITHUB")
-	defer os.Unsetenv("MOB_REMOTE_NAME")
+func TestDebugEnvironmentVariableTrue(t *testing.T) {
+	configuration = setEnv("MOB_DEBUG", "true")
 
-	os.Setenv("MOB_DEBUG", "true")
-	defer os.Unsetenv("MOB_DEBUG")
-
-	configuration = parseEnvironmentVariables(getDefaultConfiguration())
-
-	equals(t, "GITHUB", configuration.RemoteName)
 	equals(t, true, configuration.Debug)
 }
 
-func TestEnvironmentVariablesEmptyString(t *testing.T) {
-	os.Setenv("MOB_REMOTE_NAME", "")
-	defer os.Unsetenv("MOB_REMOTE_NAME")
+func TestMobRemoteNameEnvironmentVariable(t *testing.T) {
+	configuration = setEnv("MOB_REMOTE_NAME", "GITHUB")
 
-	configuration = parseEnvironmentVariables(getDefaultConfiguration())
+	equals(t, "GITHUB", configuration.RemoteName)
+}
+
+func TestMobRemoteNameEnvironmentVariableEmptyString(t *testing.T) {
+	configuration = setEnv("MOB_REMOTE_NAME", "")
 
 	equals(t, "origin", configuration.RemoteName)
 }
@@ -106,40 +102,35 @@ func TestMobDoneSquashEnvironmentVariableDefault(t *testing.T) {
 
 func TestMobDoneSquashEnvironmentVariableEmpty(t *testing.T) {
 	// ASSUME default setting for mobDoneSquash is true
-	os.Setenv("MOB_DONE_SQUASH", "")
-	defer os.Unsetenv("MOB_DONE_SQUASH")
-
-	configuration = parseEnvironmentVariables(getDefaultConfiguration())
+	configuration = setEnv("MOB_DONE_SQUASH", "")
 
 	equals(t, true, configuration.MobDoneSquash)
 }
 
 func TestMobDoneSquashEnvironmentVariableTrue(t *testing.T) {
-	os.Setenv("MOB_DONE_SQUASH", "true")
-	defer os.Unsetenv("MOB_DONE_SQUASH")
-
-	configuration = parseEnvironmentVariables(getDefaultConfiguration())
+	configuration = setEnv("MOB_DONE_SQUASH", "true")
 
 	equals(t, true, configuration.MobDoneSquash)
 }
 
 func TestMobDoneSquashEnvironmentVariableFalse(t *testing.T) {
-	os.Setenv("MOB_DONE_SQUASH", "false")
-	defer os.Unsetenv("MOB_DONE_SQUASH")
-
-	configuration = parseEnvironmentVariables(getDefaultConfiguration())
+	configuration = setEnv("MOB_DONE_SQUASH", "false")
 
 	equals(t, false, configuration.MobDoneSquash)
 }
 
 func TestMobDoneSquashEnvironmentVariableGarbage(t *testing.T) {
 	// ASSUME default setting for mobDoneSquash is true
-	os.Setenv("MOB_DONE_SQUASH", "garbage")
-	defer os.Unsetenv("MOB_DONE_SQUASH")
-
-	configuration = parseEnvironmentVariables(getDefaultConfiguration())
+	configuration = setEnv("MOB_DONE_SQUASH", "garbage")
 
 	equals(t, true, configuration.MobDoneSquash)
+}
+
+func setEnv(variable string, value string) Configuration {
+	os.Setenv(variable, value)
+	defer os.Unsetenv(variable)
+
+	return parseEnvironmentVariables(getDefaultConfiguration())
 }
 
 func TestVersion(t *testing.T) {
