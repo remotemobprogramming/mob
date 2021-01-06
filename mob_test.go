@@ -100,33 +100,28 @@ func TestMobDoneSquashEnvironmentVariableDefault(t *testing.T) {
 	equals(t, true, configuration.MobDoneSquash)
 }
 
-func TestMobDoneSquashEnvironmentVariableEmpty(t *testing.T) {
-	// ASSUME default setting for mobDoneSquash is true
-	parameterizedEnvVarTest(t, "MOB_DONE_SQUASH", "", true, func(configuration Configuration) interface{} { return configuration.MobDoneSquash })
+func TestMobDoneSquashEnvironmentVariable(t *testing.T) {
+	expectEnvironmentVariableSetsBooleanConfiguration(t, "MOB_DONE_SQUASH", true, func(configuration Configuration) interface{} { return configuration.MobDoneSquash })
 }
 
-func TestMobDoneSquashEnvironmentVariableTrue(t *testing.T) {
-	parameterizedEnvVarTest(t, "MOB_DONE_SQUASH", "true", true, func(configuration Configuration) interface{} { return configuration.MobDoneSquash })
+func expectEnvironmentVariableSetsBooleanConfiguration(t *testing.T, envVar string, defaultValue bool, actual func(Configuration) interface{}) {
+	expectEnvironmentVariableSetsConfiguration(t, envVar, "", defaultValue, actual)
+	expectEnvironmentVariableSetsConfiguration(t, envVar, "true", true, actual)
+	expectEnvironmentVariableSetsConfiguration(t, envVar, "false", false, actual)
+	expectEnvironmentVariableSetsConfiguration(t, envVar, "garbage", defaultValue, actual)
 }
 
-func TestMobDoneSquashEnvironmentVariableFalse(t *testing.T) {
-	parameterizedEnvVarTest(t, "MOB_DONE_SQUASH", "false", false, func(configuration Configuration) interface{} { return configuration.MobDoneSquash })
-}
-
-func TestMobDoneSquashEnvironmentVariableGarbage(t *testing.T) {
-	// ASSUME default setting for mobDoneSquash is true
-	parameterizedEnvVarTest(t, "MOB_DONE_SQUASH", "garbage", true, func(configuration Configuration) interface{} { return configuration.MobDoneSquash })
-}
-
-func parameterizedEnvVarTest(
+func expectEnvironmentVariableSetsConfiguration(
 	t *testing.T,
 	variable string,
 	value string,
 	expected interface{},
 	actual func(Configuration) interface{},
 ) {
-	configuration = setEnv(variable, value)
-	equals(t, expected, actual(configuration))
+	t.Run(variable+"=\""+value+"\"(="+fmt.Sprintf("%t", expected)+")", func(t *testing.T) {
+		configuration = setEnv(variable, value)
+		equals(t, expected, actual(configuration))
+	})
 }
 
 func setEnv(variable string, value string) Configuration {
