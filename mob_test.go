@@ -102,28 +102,31 @@ func TestMobDoneSquashEnvironmentVariableDefault(t *testing.T) {
 
 func TestMobDoneSquashEnvironmentVariableEmpty(t *testing.T) {
 	// ASSUME default setting for mobDoneSquash is true
-	configuration = setEnv("MOB_DONE_SQUASH", "")
-
-	equals(t, true, configuration.MobDoneSquash)
+	parameterizedEnvVarTest(t, "MOB_DONE_SQUASH", "", true, func(configuration Configuration) interface{} { return configuration.MobDoneSquash })
 }
 
 func TestMobDoneSquashEnvironmentVariableTrue(t *testing.T) {
-	configuration = setEnv("MOB_DONE_SQUASH", "true")
-
-	equals(t, true, configuration.MobDoneSquash)
+	parameterizedEnvVarTest(t, "MOB_DONE_SQUASH", "true", true, func(configuration Configuration) interface{} { return configuration.MobDoneSquash })
 }
 
 func TestMobDoneSquashEnvironmentVariableFalse(t *testing.T) {
-	configuration = setEnv("MOB_DONE_SQUASH", "false")
-
-	equals(t, false, configuration.MobDoneSquash)
+	parameterizedEnvVarTest(t, "MOB_DONE_SQUASH", "false", false, func(configuration Configuration) interface{} { return configuration.MobDoneSquash })
 }
 
 func TestMobDoneSquashEnvironmentVariableGarbage(t *testing.T) {
 	// ASSUME default setting for mobDoneSquash is true
-	configuration = setEnv("MOB_DONE_SQUASH", "garbage")
+	parameterizedEnvVarTest(t, "MOB_DONE_SQUASH", "garbage", true, func(configuration Configuration) interface{} { return configuration.MobDoneSquash })
+}
 
-	equals(t, true, configuration.MobDoneSquash)
+func parameterizedEnvVarTest(
+	t *testing.T,
+	variable string,
+	value string,
+	expected interface{},
+	actual func(Configuration) interface{},
+) {
+	configuration = setEnv(variable, value)
+	equals(t, expected, actual(configuration))
 }
 
 func setEnv(variable string, value string) Configuration {
