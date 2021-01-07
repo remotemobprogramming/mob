@@ -77,13 +77,13 @@ func assertDetermineBranches(t *testing.T, branch string, qualifier string, bran
 }
 
 func TestMobRemoteNameEnvironmentVariable(t *testing.T) {
-	configuration = setEnv("MOB_REMOTE_NAME", "GITHUB")
+	configuration = setEnvironmentVariableAndParseInConfiguration("MOB_REMOTE_NAME", "GITHUB")
 
 	equals(t, "GITHUB", configuration.RemoteName)
 }
 
 func TestMobRemoteNameEnvironmentVariableEmptyString(t *testing.T) {
-	configuration = setEnv("MOB_REMOTE_NAME", "")
+	configuration = setEnvironmentVariableAndParseInConfiguration("MOB_REMOTE_NAME", "")
 
 	equals(t, "origin", configuration.RemoteName)
 }
@@ -110,13 +110,13 @@ func expectEnvironmentVariableSetsConfiguration(
 	expected interface{},
 	actual func() interface{},
 ) {
-	t.Run(variable+"=\""+value+"\"(="+fmt.Sprintf("%t", expected)+")", func(t *testing.T) {
-		configuration = setEnv(variable, value)
+	t.Run(fmt.Sprintf("%s=\"%s\"->(expects:%t)", variable, value, expected), func(t *testing.T) {
+		configuration = setEnvironmentVariableAndParseInConfiguration(variable, value)
 		equals(t, expected, actual())
 	})
 }
 
-func setEnv(variable string, value string) Configuration {
+func setEnvironmentVariableAndParseInConfiguration(variable string, value string) Configuration {
 	os.Setenv(variable, value)
 	defer os.Unsetenv(variable)
 
