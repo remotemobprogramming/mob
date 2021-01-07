@@ -24,6 +24,7 @@ var (
 type Configuration struct {
 	RemoteName                        string // override with MOB_REMOTE_NAME environment variable
 	WipCommitMessage                  string // override with MOB_WIP_COMMIT_MESSAGE environment variable
+	RequireCommitMessage              bool   // override with MOB_REQUIRE_COMMIT_MESSAGE environment variable
 	VoiceCommand                      string // override with MOB_VOICE_COMMAND environment variable
 	NotifyCommand                     string // override with MOB_NOTIFY_COMMAND environment variable
 	MobNextStay                       bool   // override with MOB_NEXT_STAY environment variable
@@ -87,6 +88,7 @@ func parseEnvironmentVariables(configuration Configuration) Configuration {
 
 	setStringFromEnvVariable(&configuration.RemoteName, "MOB_REMOTE_NAME")
 	setStringFromEnvVariable(&configuration.WipCommitMessage, "MOB_WIP_COMMIT_MESSAGE")
+	setBoolFromEnvVariable(&configuration.RequireCommitMessage, "MOB_REQUIRE_COMMIT_MESSAGE")
 	setOptionalStringFromEnvVariable(&configuration.VoiceCommand, "MOB_VOICE_COMMAND")
 	setOptionalStringFromEnvVariable(&configuration.NotifyCommand, "MOB_NOTIFY_COMMAND")
 	setStringFromEnvVariable(&configuration.WipBranchQualifierSeparator, "MOB_WIP_BRANCH_QUALIFIER_SEPARATOR")
@@ -135,8 +137,8 @@ func setBoolFromEnvVariable(s *bool, key string) {
 		*s = false
 		debugInfo("overriding " + key + " =" + strconv.FormatBool(*s))
 	} else {
-	    sayError("ignoring " + key + " =" + value + " (not a boolean)")
-    }
+		sayError("ignoring " + key + " =" + value + " (not a boolean)")
+	}
 }
 
 func setBoolFromEnvVariableSet(s *bool, changed *bool, key string) {
@@ -169,6 +171,7 @@ func deprecated(key string, message string) {
 func config() {
 	say("MOB_REMOTE_NAME" + "=" + configuration.RemoteName)
 	say("MOB_WIP_COMMIT_MESSAGE" + "=" + configuration.WipCommitMessage)
+	say("MOB_REQUIRE_COMMIT_MESSAGE" + "=" + strconv.FormatBool(configuration.RequireCommitMessage))
 	say("MOB_VOICE_COMMAND" + "=" + configuration.VoiceCommand)
 	say("MOB_NOTIFY_COMMAND" + "=" + configuration.NotifyCommand)
 	say("MOB_NEXT_STAY" + "=" + strconv.FormatBool(configuration.MobNextStay))
@@ -180,6 +183,7 @@ func config() {
 }
 
 func parseArgs(args []string) (command string, parameters []string) {
+	gotM := false
 	for i := 1; i < len(args); i++ {
 		arg := args[i]
 		switch arg {
@@ -202,6 +206,7 @@ func parseArgs(args []string) (command string, parameters []string) {
 		case "--message", "-m":
 			if i+1 != len(args) {
 				configuration.WipCommitMessage = args[i+1]
+				gotM = true
 			}
 			i++ // skip consumed parameter
 		case "--no-squash":
@@ -215,6 +220,10 @@ func parseArgs(args []string) (command string, parameters []string) {
 		}
 	}
 
+	if !gotM && configuration.RequireCommitMessage && command == "next" {
+		sayError("-m 'commit message' required")
+		exit(1)
+	}
 	return
 }
 
