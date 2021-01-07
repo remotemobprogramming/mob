@@ -89,16 +89,17 @@ func TestMobRemoteNameEnvironmentVariableEmptyString(t *testing.T) {
 }
 
 func TestBooleanEnvironmentVariables(t *testing.T) {
-	expectEnvironmentVariableSetsBooleanConfiguration(t, "MOB_DONE_SQUASH", true, func(configuration Configuration) interface{} { return configuration.MobDoneSquash })
-	expectEnvironmentVariableSetsBooleanConfiguration(t, "MOB_DEBUG", false, func(configuration Configuration) interface{} { return configuration.Debug })
+	expectEnvironmentVariableSetsBooleanConfiguration(t, "MOB_DONE_SQUASH", true, configuration.GetMobDoneSquash)
+	expectEnvironmentVariableSetsBooleanConfiguration(t, "MOB_DEBUG", false, configuration.GetDebug)
 }
 
-func expectEnvironmentVariableSetsBooleanConfiguration(t *testing.T, envVar string, defaultValue bool, actual func(Configuration) interface{}) {
+func expectEnvironmentVariableSetsBooleanConfiguration(t *testing.T, envVar string, defaultValue bool, actual func() bool) {
+	unpackBoolAsInterface := func() interface{} { return actual() }
 	t.Run(envVar, func(t *testing.T) {
-		expectEnvironmentVariableSetsConfiguration(t, envVar, "", defaultValue, actual)
-		expectEnvironmentVariableSetsConfiguration(t, envVar, "true", true, actual)
-		expectEnvironmentVariableSetsConfiguration(t, envVar, "false", false, actual)
-		expectEnvironmentVariableSetsConfiguration(t, envVar, "garbage", defaultValue, actual)
+		expectEnvironmentVariableSetsConfiguration(t, envVar, "", defaultValue, unpackBoolAsInterface)
+		expectEnvironmentVariableSetsConfiguration(t, envVar, "true", true, unpackBoolAsInterface)
+		expectEnvironmentVariableSetsConfiguration(t, envVar, "false", false, unpackBoolAsInterface)
+		expectEnvironmentVariableSetsConfiguration(t, envVar, "garbage", defaultValue, unpackBoolAsInterface)
 	})
 }
 
@@ -107,11 +108,11 @@ func expectEnvironmentVariableSetsConfiguration(
 	variable string,
 	value string,
 	expected interface{},
-	actual func(Configuration) interface{},
+	actual func() interface{},
 ) {
 	t.Run(variable+"=\""+value+"\"(="+fmt.Sprintf("%t", expected)+")", func(t *testing.T) {
 		configuration = setEnv(variable, value)
-		equals(t, expected, actual(configuration))
+		equals(t, expected, actual())
 	})
 }
 
