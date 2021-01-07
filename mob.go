@@ -36,6 +36,14 @@ type Configuration struct {
 	MobDoneSquash                     bool   // override with MOB_DONE_SQUASH environment variable
 }
 
+func (c Configuration) GetMobDoneSquash() bool {
+	return c.MobDoneSquash
+}
+
+func (c Configuration) GetDebug() bool {
+	return c.Debug
+}
+
 func main() {
 	configuration = parseEnvironmentVariables(getDefaultConfiguration())
 	debugInfo("Args '" + strings.Join(os.Args, " ") + "'")
@@ -135,8 +143,8 @@ func setBoolFromEnvVariable(s *bool, key string) {
 		*s = false
 		debugInfo("overriding " + key + " =" + strconv.FormatBool(*s))
 	} else {
-	    sayError("ignoring " + key + " =" + value + " (not a boolean)")
-    }
+		sayError("ignoring " + key + " =" + value + " (not a boolean)")
+	}
 }
 
 func setBoolFromEnvVariableSet(s *bool, changed *bool, key string) {
