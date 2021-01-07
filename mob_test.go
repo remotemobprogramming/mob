@@ -77,50 +77,49 @@ func assertDetermineBranches(t *testing.T, branch string, qualifier string, bran
 }
 
 func TestMobRemoteNameEnvironmentVariable(t *testing.T) {
-	configuration = setEnvironmentVariableAndParseInConfiguration("MOB_REMOTE_NAME", "GITHUB")
+	configuration = setEnvVarAndParse("MOB_REMOTE_NAME", "GITHUB")
 
 	equals(t, "GITHUB", configuration.RemoteName)
 }
 
 func TestMobRemoteNameEnvironmentVariableEmptyString(t *testing.T) {
-	configuration = setEnvironmentVariableAndParseInConfiguration("MOB_REMOTE_NAME", "")
+	configuration = setEnvVarAndParse("MOB_REMOTE_NAME", "")
 
 	equals(t, "origin", configuration.RemoteName)
 }
 
 func TestBooleanEnvironmentVariables(t *testing.T) {
-	expectEnvironmentVariableSetsBooleanConfiguration(t, "MOB_DONE_SQUASH", true, configuration.GetMobDoneSquash)
-	expectEnvironmentVariableSetsBooleanConfiguration(t, "MOB_DEBUG", false, configuration.GetDebug)
+	assertBoolEnvVarParsed(t, "MOB_DONE_SQUASH", true, Configuration.GetMobDoneSquash)
+	assertBoolEnvVarParsed(t, "MOB_DEBUG", false, Configuration.GetDebug)
 }
 
-func expectEnvironmentVariableSetsBooleanConfiguration(t *testing.T, envVar string, defaultValue bool, actual func() bool) {
-	unpackBoolAsInterface := func() interface{} { return actual() }
+func assertBoolEnvVarParsed(t *testing.T, envVar string, defaultValue bool, actual func(Configuration) bool) {
 	t.Run(envVar, func(t *testing.T) {
-		expectEnvironmentVariableSetsConfiguration(t, envVar, "", defaultValue, unpackBoolAsInterface)
-		expectEnvironmentVariableSetsConfiguration(t, envVar, "true", true, unpackBoolAsInterface)
-		expectEnvironmentVariableSetsConfiguration(t, envVar, "false", false, unpackBoolAsInterface)
-		expectEnvironmentVariableSetsConfiguration(t, envVar, "garbage", defaultValue, unpackBoolAsInterface)
+		assertEnvVarParsed(t, envVar, "", defaultValue, boolToInterface(actual))
+		assertEnvVarParsed(t, envVar, "true", true, boolToInterface(actual))
+		assertEnvVarParsed(t, envVar, "false", false, boolToInterface(actual))
+		assertEnvVarParsed(t, envVar, "garbage", defaultValue, boolToInterface(actual))
 	})
 }
 
-func expectEnvironmentVariableSetsConfiguration(
-	t *testing.T,
-	variable string,
-	value string,
-	expected interface{},
-	actual func() interface{},
-) {
+func assertEnvVarParsed(t *testing.T, variable string, value string, expected interface{}, actual func(Configuration) interface{}) {
 	t.Run(fmt.Sprintf("%s=\"%s\"->(expects:%t)", variable, value, expected), func(t *testing.T) {
-		configuration = setEnvironmentVariableAndParseInConfiguration(variable, value)
-		equals(t, expected, actual())
+		configuration = setEnvVarAndParse(variable, value)
+		equals(t, expected, actual(configuration))
 	})
 }
 
-func setEnvironmentVariableAndParseInConfiguration(variable string, value string) Configuration {
+func setEnvVarAndParse(variable string, value string) Configuration {
 	os.Setenv(variable, value)
 	defer os.Unsetenv(variable)
 
 	return parseEnvironmentVariables(getDefaultConfiguration())
+}
+
+func boolToInterface(actual func(Configuration) bool) func(c Configuration) interface{} {
+	return func(c Configuration) interface{} {
+		return actual(c)
+	}
 }
 
 func TestVersion(t *testing.T) {
