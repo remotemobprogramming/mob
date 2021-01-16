@@ -70,6 +70,7 @@ func getDefaultConfiguration() Configuration {
 		NotifyCommand:                     notifyCommand,
 		MobNextStay:                       true,
 		MobNextStaySet:                    false,
+		RequireCommitMessage:              false,
 		MobStartIncludeUncommittedChanges: false,
 		Debug:                             false,
 		WipBranchQualifier:                "",
@@ -183,7 +184,6 @@ func config() {
 }
 
 func parseArgs(args []string) (command string, parameters []string) {
-	gotM := false
 	for i := 1; i < len(args); i++ {
 		arg := args[i]
 		switch arg {
@@ -206,7 +206,6 @@ func parseArgs(args []string) (command string, parameters []string) {
 		case "--message", "-m":
 			if i+1 != len(args) {
 				configuration.WipCommitMessage = args[i+1]
-				gotM = true
 			}
 			i++ // skip consumed parameter
 		case "--no-squash":
@@ -220,10 +219,6 @@ func parseArgs(args []string) (command string, parameters []string) {
 		}
 	}
 
-	if !gotM && configuration.RequireCommitMessage && command == "next" {
-		sayError("-m 'commit message' required")
-		exit(1)
-	}
 	return
 }
 
@@ -545,6 +540,13 @@ func next() {
 	if !isMobProgramming() {
 		sayError("you aren't mob programming")
 		sayTodo("to start mob programming, use", "mob start")
+		return
+	}
+
+	defConfig := getDefaultConfiguration()
+	gotM := defConfig.WipCommitMessage != configuration.WipCommitMessage
+	if !gotM && configuration.RequireCommitMessage {
+		sayError("-m 'commit message' required")
 		return
 	}
 

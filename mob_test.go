@@ -166,6 +166,31 @@ func TestNextNotMobProgramming(t *testing.T) {
 	assertOutputContains(t, output, "you aren't mob programming")
 }
 
+func TestRequireCommitMessage(t *testing.T) {
+	output := setup(t)
+
+	os.Unsetenv("MOB_REQUIRE_COMMIT_MESSAGE")
+	defer os.Unsetenv("MOB_REQUIRE_COMMIT_MESSAGE")
+
+	configuration = parseEnvironmentVariables(getDefaultConfiguration())
+	equals(t, false, configuration.RequireCommitMessage)
+
+	os.Setenv("MOB_REQUIRE_COMMIT_MESSAGE", "false")
+	configuration = parseEnvironmentVariables(getDefaultConfiguration())
+	equals(t, false, configuration.RequireCommitMessage)
+
+	os.Setenv("MOB_REQUIRE_COMMIT_MESSAGE", "true")
+	configuration = parseEnvironmentVariables(getDefaultConfiguration())
+	equals(t, true, configuration.RequireCommitMessage)
+
+	start()
+	createFile(t, "example.txt", "content")
+	next()
+
+	t.Logf("x%vx", output)
+	assertOutputContains(t, output, "-m 'commit message' required")
+}
+
 func TestDoneNotMobProgramming(t *testing.T) {
 	output := setup(t)
 
