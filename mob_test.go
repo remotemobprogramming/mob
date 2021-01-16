@@ -184,9 +184,16 @@ func TestRequireCommitMessage(t *testing.T) {
 	equals(t, true, configuration.RequireCommitMessage)
 
 	start()
+
+	next()
+	// ensure we don't complain if there's nothing to commit
+	// https://github.com/remotemobprogramming/mob/pull/107#issuecomment-761298861
+	assertOutputContains(t, output, "nothing to commit")
+
 	createFile(t, "example.txt", "content")
 	next()
-
+	// failure message should make sense regardless of whether we
+	// provided commit message via `-m` or MOB_WIP_COMMIT_MESSAGE
 	// https://github.com/remotemobprogramming/mob/pull/107#issuecomment-761591039
 	assertOutputContains(t, output, "commit message required")
 }
