@@ -187,8 +187,8 @@ func TestRequireCommitMessage(t *testing.T) {
 	createFile(t, "example.txt", "content")
 	next()
 
-	t.Logf("x%vx", output)
-	assertOutputContains(t, output, "-m 'commit message' required")
+	// https://github.com/remotemobprogramming/mob/pull/107#issuecomment-761591039
+	assertOutputContains(t, output, "commit message required")
 }
 
 func TestDoneNotMobProgramming(t *testing.T) {
