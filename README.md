@@ -1,4 +1,4 @@
-# Swift git handover with mob
+# Smooth git handover with mob
 
 ![mob Logo](logo.svg)
 <p align="center">
@@ -16,7 +16,7 @@
     <img alt="Stars" src="https://img.shields.io/github/stars/remotemobprogramming/mob" /></a>
 </p>
 
-Swift [git handover](https://www.remotemobprogramming.org/#git-handover) with 'mob'.
+Smooth [git handover](https://www.remotemobprogramming.org/#git-handover) with 'mob'.
 
 - **mob** is [an open source command line tool written in go](https://github.com/remotemobprogramming/mob)
 - **mob** is the fastest way to [hand over code via git](https://www.remotemobprogramming.org/#git-handover) and feels [ubersmooth](https://twitter.com/holgerGP/status/1277653842444902400?s=20)
@@ -69,7 +69,7 @@ When you're done, get your changes into the staging area of the `master` branch 
 [![asciicast](https://asciinema.org/a/321885.svg)](https://asciinema.org/a/321885)
 
 ```
-mob enables a swift Git handover
+mob enables a smooth Git handover
 
 Basic Commands:
   start              start mob session from base branch in wip branch
