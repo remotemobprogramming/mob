@@ -545,8 +545,8 @@ func next() {
 
 	defConfig := getDefaultConfiguration()
 	gotM := defConfig.WipCommitMessage != configuration.WipCommitMessage
-	if !gotM && configuration.RequireCommitMessage {
-		sayError("-m 'commit message' required")
+	if !gotM && configuration.RequireCommitMessage && !isNothingToCommit() {
+		sayError("commit message required")
 		return
 	}
 
