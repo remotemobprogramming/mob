@@ -45,7 +45,11 @@ Smooth [git handover](https://www.remotemobprogramming.org/#git-handover) with '
 ```
 curl -sL install.mob.sh | sh
 ```
-If you are under Windows, you can use `git bash` to install `mob`. 
+On windows you can use `git bash` to install `mob` or when you're using [Scoop](https://scoop.sh/):
+
+```
+scoop install mob
+``` 
 
 You can also install it on macOS via homebrew: 
 
@@ -145,13 +149,6 @@ We recommend configuring the global hotkey for toggling screen sharing in zoom i
 (Zoom > Preferences > Keyboard Shortcuts). 
 So you can start and stop screen sharing anytime. 
 [More tips on setting up Zoom for effective screen sharing.](https://effectivehomeoffice.com/setup-zoom-for-effective-screen-sharing/)
-
-### Scoop
-
-On Windows, if you use [Scoop](https://scoop.netlify.app/) then just download the mob.json file, open a PowerShell terminal in that directory and:
-```
-scoop install mob
-```
 
 ### Arch Linux
 
