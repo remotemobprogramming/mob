@@ -122,6 +122,14 @@ func boolToInterface(actual func(Configuration) bool) func(c Configuration) inte
 	}
 }
 
+func (c Configuration) GetMobDoneSquash() bool {
+	return c.MobDoneSquash
+}
+
+func (c Configuration) GetDebug() bool {
+	return c.Debug
+}
+
 func TestVersion(t *testing.T) {
 	output := setup(t)
 

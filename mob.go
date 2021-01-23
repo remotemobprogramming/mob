@@ -36,14 +36,6 @@ type Configuration struct {
 	MobDoneSquash                     bool   // override with MOB_DONE_SQUASH environment variable
 }
 
-func (c Configuration) GetMobDoneSquash() bool {
-	return c.MobDoneSquash
-}
-
-func (c Configuration) GetDebug() bool {
-	return c.Debug
-}
-
 func main() {
 	configuration = parseEnvironmentVariables(getDefaultConfiguration())
 	debugInfo("Args '" + strings.Join(os.Args, " ") + "'")
