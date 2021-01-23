@@ -137,36 +137,17 @@ func setOptionalStringFromEnvVariable(s *string, key string) {
 func setBoolFromEnvWithSetter(setter func(value bool), key string) {
 	env := parseBoolEnv(key)
 	if env != nil {
+		debugInfo("overriding " + key + " =" + strconv.FormatBool(*env))
 		setter(*env)
 	}
 }
 
 func setBoolFromEnvVariable(s *bool, key string) {
 	optionalBool := parseBoolEnv(key)
-
 	if optionalBool != nil {
+		debugInfo("overriding " + key + " =" + strconv.FormatBool(*optionalBool))
 		*s = *optionalBool
 	}
-}
-
-func parseBoolEnv(key string) *bool {
-	var envValue bool
-	var optionalEnvValue *bool
-	value, set := os.LookupEnv(key)
-	if !set || value == "" {
-		debugInfo(key + " not set")
-	} else if value == "true" {
-		envValue = true
-		optionalEnvValue = &envValue
-		debugInfo("overriding " + key + " =" + strconv.FormatBool(envValue))
-	} else if value == "false" {
-		envValue = false
-		optionalEnvValue = &envValue
-		debugInfo("overriding " + key + " =" + strconv.FormatBool(envValue))
-	} else {
-		sayError("ignoring " + key + " =" + value + " (not a boolean)")
-	}
-	return optionalEnvValue
 }
 
 func setBoolFromEnvVariableSet(s *bool, changed *bool, key string) {
@@ -180,6 +161,22 @@ func setBoolFromEnvVariableSet(s *bool, changed *bool, key string) {
 		*changed = true
 		debugInfo("overriding " + key + " =" + strconv.FormatBool(*s))
 	}
+}
+
+func parseBoolEnv(key string) *bool {
+	var envValue bool
+	var optionalEnvValue *bool
+	value, set := os.LookupEnv(key)
+	if set && value != "true" && value != "false" {
+		sayError("ignoring " + key + " =" + value + " (not a boolean)")
+	} else if set && value == "true" {
+		envValue = true
+		optionalEnvValue = &envValue
+	} else if set && value == "false" {
+		envValue = false
+		optionalEnvValue = &envValue
+	}
+	return optionalEnvValue
 }
 
 func removed(key string, message string) {
