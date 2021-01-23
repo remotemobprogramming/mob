@@ -26,13 +26,13 @@ func TestParseArgs(t *testing.T) {
 
 func TestParseArgsDoneSquash(t *testing.T) {
 	configuration = getDefaultConfiguration()
-	equals(t, true, configuration.MobDoneSquash)
+	equals(t, true, configuration.GetMobDoneSquash())
 
 	command, parameters := parseArgs([]string{"mob", "done", "--no-squash"})
 
 	equals(t, "done", command)
 	equals(t, "", strings.Join(parameters, ""))
-	equals(t, false, configuration.MobDoneSquash)
+	equals(t, false, configuration.GetMobDoneSquash())
 }
 
 func TestParseArgsMessage(t *testing.T) {

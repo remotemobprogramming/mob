@@ -184,7 +184,7 @@ func config() {
 	say("MOB_DEBUG" + "=" + strconv.FormatBool(configuration.Debug))
 	say("MOB_WIP_BRANCH_QUALIFIER" + "=" + configuration.WipBranchQualifier)
 	say("MOB_WIP_BRANCH_QUALIFIER_SEPARATOR" + "=" + configuration.WipBranchQualifierSeparator)
-	say("MOB_DONE_SQUASH" + "=" + strconv.FormatBool(configuration.MobDoneSquash))
+	say("MOB_DONE_SQUASH" + "=" + strconv.FormatBool(configuration.GetMobDoneSquash()))
 }
 
 func parseArgs(args []string) (command string, parameters []string) {
@@ -615,7 +615,7 @@ func done() {
 }
 
 func squashOrNoCommit() string {
-	if configuration.MobDoneSquash {
+	if configuration.GetMobDoneSquash() {
 		return "--squash"
 	} else {
 		return "--no-commit"
