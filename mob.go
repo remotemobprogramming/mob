@@ -36,6 +36,10 @@ type Configuration struct {
 	MobDoneSquash                     bool   // override with MOB_DONE_SQUASH environment variable
 }
 
+func (c *Configuration) SetMobDoneSquash(value bool) {
+	c.MobDoneSquash = value
+}
+
 func (c Configuration) GetMobDoneSquash() bool {
 	return c.MobDoneSquash
 }
@@ -109,7 +113,7 @@ func parseEnvironmentVariables(configuration Configuration) Configuration {
 
 	setBoolFromEnvVariable(&configuration.MobStartIncludeUncommittedChanges, "MOB_START_INCLUDE_UNCOMMITTED_CHANGES")
 
-	setBoolFromEnvVariable(&configuration.MobDoneSquash, "MOB_DONE_SQUASH")
+	setBoolFromEnvWithSetter(configuration.SetMobDoneSquash, "MOB_DONE_SQUASH")
 
 	return configuration
 }
@@ -130,21 +134,39 @@ func setOptionalStringFromEnvVariable(s *string, key string) {
 	}
 }
 
+func setBoolFromEnvWithSetter(setter func(value bool), key string) {
+	env := parseBoolEnv(key)
+	if env != nil {
+		setter(*env)
+	}
+}
+
 func setBoolFromEnvVariable(s *bool, key string) {
+	optionalBool := parseBoolEnv(key)
+
+	if optionalBool != nil {
+		*s = *optionalBool
+	}
+}
+
+func parseBoolEnv(key string) *bool {
+	var envValue bool
+	var optionalEnvValue *bool
 	value, set := os.LookupEnv(key)
 	if !set || value == "" {
-		return
-	}
-
-	if value == "true" {
-		*s = true
-		debugInfo("overriding " + key + " =" + strconv.FormatBool(*s))
+		debugInfo(key + " not set")
+	} else if value == "true" {
+		envValue = true
+		optionalEnvValue = &envValue
+		debugInfo("overriding " + key + " =" + strconv.FormatBool(envValue))
 	} else if value == "false" {
-		*s = false
-		debugInfo("overriding " + key + " =" + strconv.FormatBool(*s))
+		envValue = false
+		optionalEnvValue = &envValue
+		debugInfo("overriding " + key + " =" + strconv.FormatBool(envValue))
 	} else {
 		sayError("ignoring " + key + " =" + value + " (not a boolean)")
 	}
+	return optionalEnvValue
 }
 
 func setBoolFromEnvVariableSet(s *bool, changed *bool, key string) {
