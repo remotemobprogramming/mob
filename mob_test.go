@@ -91,6 +91,8 @@ func TestMobRemoteNameEnvironmentVariableEmptyString(t *testing.T) {
 func TestBooleanEnvironmentVariables(t *testing.T) {
 	assertBoolEnvVarParsed(t, "MOB_DONE_SQUASH", true, Configuration.GetMobDoneSquash)
 	assertBoolEnvVarParsed(t, "MOB_DEBUG", false, Configuration.GetDebug)
+	assertBoolEnvVarParsed(t, "MOB_START_INCLUDE_UNCOMMITTED_CHANGES", false, Configuration.GetMobStartIncludeUncommittedChanges)
+	assertBoolEnvVarParsed(t, "MOB_NEXT_STAY", true, Configuration.GetMobNextStay)
 }
 
 func assertBoolEnvVarParsed(t *testing.T, envVar string, defaultValue bool, actual func(Configuration) bool) {
@@ -120,6 +122,22 @@ func boolToInterface(actual func(Configuration) bool) func(c Configuration) inte
 	return func(c Configuration) interface{} {
 		return actual(c)
 	}
+}
+
+func (c Configuration) GetMobDoneSquash() bool {
+	return c.MobDoneSquash
+}
+
+func (c Configuration) GetDebug() bool {
+	return c.Debug
+}
+
+func (c Configuration) GetMobStartIncludeUncommittedChanges() bool {
+	return c.MobStartIncludeUncommittedChanges
+}
+
+func (c Configuration) GetMobNextStay() bool {
+	return c.MobNextStay
 }
 
 func TestVersion(t *testing.T) {
