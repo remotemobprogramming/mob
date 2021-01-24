@@ -41,7 +41,7 @@ Smooth [git handover](https://www.remotemobprogramming.org/#git-handover) with '
 >
 > &mdash; [Jennifer Gommans, IT Consultant](https://twitter.com/missjennbo)
 
-> "I was recently introduced to https://mob.sh for remote pairing/mobbing collaboration and I absolutely love it. The timer feature is really a selling point for me. Kudos" 
+> "I was recently introduced to [mob.sh](https://mob.sh) for remote pairing/mobbing collaboration and I absolutely love it. The timer feature is really a selling point for me. Kudos" 
 >
 > &mdash; [Fabien Illert, IT Consultant](https://twitter.com/fabienillert)
 
