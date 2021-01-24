@@ -20,6 +20,7 @@ Smooth [git handover](https://www.remotemobprogramming.org/#git-handover) with '
 
 - **mob** is [an open source command line tool written in go](https://github.com/remotemobprogramming/mob)
 - **mob** is the fastest way to [hand over code via git](https://www.remotemobprogramming.org/#git-handover) and feels [ubersmooth](https://twitter.com/holgerGP/status/1277653842444902400?s=20)
+- **mob** supports remote mob or pair programming using screen sharing
 - **mob** works on every platform, even [ Apple Silicon](https://twitter.com/simonharrer/status/1332236430429581312?s=20)
 - **mob** keeps your branches clean and only creates WIP commits on temporary wip branches
 - **mob** supports multiple wip branches per base branch
