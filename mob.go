@@ -183,7 +183,7 @@ func parseArgs(args []string) (command string, parameters []string) {
 	for i := 1; i < len(args); i++ {
 		arg := args[i]
 		switch arg {
-		case "--include-uncommitted-changes", "-i":
+		case "--include-uncommitted-changes", "--iuc", "-i":
 			configuration.MobStartIncludeUncommittedChanges = true
 		case "--debug":
 			configuration.Debug = true
@@ -433,6 +433,7 @@ func start() {
 			sayUnstagedChangesInfo()
 			sayUntrackedFilesInfo()
 			sayTodo("To start mob programming including uncommitted changes, use", "mob start --include-uncommitted-changes")
+			sayTodo("Or", "mob start --iuc")
 			return
 		}
 	}
@@ -739,17 +740,17 @@ Basic Commands:
   reset              removes local and remote wip branch
 
 Basic Commands(Options):
-  start [<minutes>]                      Start a <minutes> timer
-    [--include-uncommitted-changes|-i]   Move uncommitted changes to wip branch
-    [--branch|-b <branch-postfix>]       Set wip branch to 'mob/<base-branch>/<branch-postfix>'
-  next 
-    [--stay|-s]                          Stay on wip branch (default)
-    [--return-to-base-branch|-r]         Return to base branch
-    [--message|-m <commit-message>]      Override commit message
+  start [<minutes>]                            Start a <minutes> timer
+    [--include-uncommitted-changes|--iuc|-i]   Move uncommitted changes to wip branch
+    [--branch|-b <branch-postfix>]             Set wip branch to 'mob/<base-branch>/<branch-postfix>'
+  next
+    [--stay|-s]                                Stay on wip branch (default)
+    [--return-to-base-branch|-r]               Return to base branch
+    [--message|-m <commit-message>]            Override commit message
   done
-    [--no-squash]                        Do not squash commits from wip branch
-  reset 
-    [--branch|-b <branch-postfix>]       Set wip branch to 'mob/<base-branch>/<branch-postfix>'
+    [--no-squash]                              Do not squash commits from wip branch
+  reset
+    [--branch|-b <branch-postfix>]             Set wip branch to 'mob/<base-branch>/<branch-postfix>'
 
 Timer Commands:
   timer <minutes>    start a <minutes> timer
