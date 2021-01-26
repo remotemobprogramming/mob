@@ -333,6 +333,7 @@ func TestStartUnstagedChanges(t *testing.T) {
 	assertOnBranch(t, "master")
 	assertNoMobSessionBranches(t, "mob-session")
 	assertOutputContains(t, output, "mob start --include-uncommitted-changes")
+	assertOutputContains(t, output, "mob start --iuc")
 }
 
 func TestStartIncludeUnstagedChanges(t *testing.T) {
