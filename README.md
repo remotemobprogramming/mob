@@ -1,4 +1,4 @@
-# Swift git handover with mob
+# Smooth git handover with mob
 
 ![mob Logo](logo.svg)
 <p align="center">
@@ -16,15 +16,16 @@
     <img alt="Stars" src="https://img.shields.io/github/stars/remotemobprogramming/mob" /></a>
 </p>
 
-Swift [git handover](https://www.remotemobprogramming.org/#git-handover) with 'mob'.
+Smooth [git handover](https://www.remotemobprogramming.org/#git-handover) with 'mob'.
 
 - **mob** is [an open source command line tool written in go](https://github.com/remotemobprogramming/mob)
 - **mob** is the fastest way to [hand over code via git](https://www.remotemobprogramming.org/#git-handover) and feels [ubersmooth](https://twitter.com/holgerGP/status/1277653842444902400?s=20)
-- **mob** works on every platform, even [Apple Silicon](https://twitter.com/simonharrer/status/1332236430429581312?s=20)
+- **mob** supports remote mob or pair programming using screen sharing
+- **mob** works on every platform, even [ Apple Silicon](https://twitter.com/simonharrer/status/1332236430429581312?s=20)
 - **mob** keeps your branches clean and only creates WIP commits on temporary wip branches
 - **mob** supports multiple wip branches per base branch
-- **mob** notifies you when it's time to handover
-- **mob** can moo
+- **mob** notifies you when it's time ⏱️ to handover
+- **mob** can moo 🐄
 
 ## What people say about 'mob'
 
@@ -40,12 +41,20 @@ Swift [git handover](https://www.remotemobprogramming.org/#git-handover) with 'm
 >
 > &mdash; [Jennifer Gommans, IT Consultant](https://twitter.com/missjennbo)
 
+> "I was recently introduced to [mob.sh](https://mob.sh) for remote pairing/mobbing collaboration and I absolutely love it. The timer feature is really a selling point for me. Kudos" 
+>
+> &mdash; [Fabien Illert, IT Consultant](https://twitter.com/fabienillert)
+
 ## How to install
 
 ```
 curl -sL install.mob.sh | sh
 ```
-If you are under Windows, you can use `git bash` to install `mob`. 
+On windows you can use `git bash` to install `mob` or when you're using [Scoop](https://scoop.sh/):
+
+```
+scoop install mob
+``` 
 
 You can also install it on macOS via homebrew: 
 
@@ -69,7 +78,7 @@ When you're done, get your changes into the staging area of the `master` branch 
 [![asciicast](https://asciinema.org/a/321885.svg)](https://asciinema.org/a/321885)
 
 ```
-mob enables a swift Git handover
+mob enables a smooth Git handover
 
 Basic Commands:
   start              start mob session from base branch in wip branch
@@ -145,13 +154,6 @@ We recommend configuring the global hotkey for toggling screen sharing in zoom i
 (Zoom > Preferences > Keyboard Shortcuts). 
 So you can start and stop screen sharing anytime. 
 [More tips on setting up Zoom for effective screen sharing.](https://effectivehomeoffice.com/setup-zoom-for-effective-screen-sharing/)
-
-### Scoop
-
-On Windows, if you use [Scoop](https://scoop.netlify.app/) then just download the mob.json file, open a PowerShell terminal in that directory and:
-```
-scoop install mob
-```
 
 ### Arch Linux
 

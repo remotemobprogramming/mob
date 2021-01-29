@@ -741,7 +741,7 @@ func showNext() {
 }
 
 func help() {
-	output := `mob enables a swift Git handover
+	output := `mob enables a smooth Git handover
 
 Basic Commands:
   start              start mob session from base branch in wip branch
