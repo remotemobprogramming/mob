@@ -301,6 +301,21 @@ func TestStartNextOnFeatureWithBranch(t *testing.T) {
 	assertOnBranch(t, "feature1")
 }
 
+// reproduces #117
+func TestStartNextWithBranchContainingHyphen(t *testing.T) {
+	// comment the following line to run the test
+	t.Skip()
+
+	setup(t)
+	configuration.WipBranchQualifier = "test-branch"
+
+	start()
+	assertOnBranch(t, "mob/master-test-branch")
+	assertMobSessionBranches(t, "mob/master-test-branch")
+
+	next()
+}
+
 func TestReset(t *testing.T) {
 	setup(t)
 
