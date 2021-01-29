@@ -312,8 +312,13 @@ func hasSuffix(branch string) bool { //TODO improve (dont use strings.Contains, 
 	return strings.Contains(branch, configuration.WipBranchQualifierSeparator)
 }
 
-func removeSuffix(branch string) string { //TODO improve, add tests
-	return branch[:strings.LastIndex(branch, configuration.WipBranchQualifierSeparator)]
+func removeSuffix(branch string) string {
+	suffix := configuration.WipBranchQualifierSeparator + configuration.WipBranchQualifier
+	if configuration.WipBranchQualifierSet && strings.HasSuffix(branch, suffix) {
+		return branch[:strings.LastIndex(branch, suffix)]
+	} else {
+		return branch
+	}
 }
 
 func branchExists(branchInQuestion string, existingBranches []string) bool {
