@@ -24,6 +24,7 @@ var (
 type Configuration struct {
 	RemoteName                        string // override with MOB_REMOTE_NAME environment variable
 	WipCommitMessage                  string // override with MOB_WIP_COMMIT_MESSAGE environment variable
+	RequireCommitMessage              bool   // override with MOB_REQUIRE_COMMIT_MESSAGE environment variable
 	VoiceCommand                      string // override with MOB_VOICE_COMMAND environment variable
 	NotifyCommand                     string // override with MOB_NOTIFY_COMMAND environment variable
 	MobNextStay                       bool   // override with MOB_NEXT_STAY environment variable
@@ -69,6 +70,7 @@ func getDefaultConfiguration() Configuration {
 		NotifyCommand:                     notifyCommand,
 		MobNextStay:                       true,
 		MobNextStaySet:                    false,
+		RequireCommitMessage:              false,
 		MobStartIncludeUncommittedChanges: false,
 		Debug:                             false,
 		WipBranchQualifier:                "",
@@ -87,6 +89,7 @@ func parseEnvironmentVariables(configuration Configuration) Configuration {
 
 	setStringFromEnvVariable(&configuration.RemoteName, "MOB_REMOTE_NAME")
 	setStringFromEnvVariable(&configuration.WipCommitMessage, "MOB_WIP_COMMIT_MESSAGE")
+	setBoolFromEnvVariable(&configuration.RequireCommitMessage, "MOB_REQUIRE_COMMIT_MESSAGE")
 	setOptionalStringFromEnvVariable(&configuration.VoiceCommand, "MOB_VOICE_COMMAND")
 	setOptionalStringFromEnvVariable(&configuration.NotifyCommand, "MOB_NOTIFY_COMMAND")
 	setStringFromEnvVariable(&configuration.WipBranchQualifierSeparator, "MOB_WIP_BRANCH_QUALIFIER_SEPARATOR")
@@ -169,6 +172,7 @@ func deprecated(key string, message string) {
 func config() {
 	say("MOB_REMOTE_NAME" + "=" + configuration.RemoteName)
 	say("MOB_WIP_COMMIT_MESSAGE" + "=" + configuration.WipCommitMessage)
+	say("MOB_REQUIRE_COMMIT_MESSAGE" + "=" + strconv.FormatBool(configuration.RequireCommitMessage))
 	say("MOB_VOICE_COMMAND" + "=" + configuration.VoiceCommand)
 	say("MOB_NOTIFY_COMMAND" + "=" + configuration.NotifyCommand)
 	say("MOB_NEXT_STAY" + "=" + strconv.FormatBool(configuration.MobNextStay))
@@ -541,6 +545,13 @@ func next() {
 	if !isMobProgramming() {
 		sayError("you aren't mob programming")
 		sayTodo("to start mob programming, use", "mob start")
+		return
+	}
+
+	defConfig := getDefaultConfiguration()
+	gotM := defConfig.WipCommitMessage != configuration.WipCommitMessage
+	if !gotM && configuration.RequireCommitMessage && !isNothingToCommit() {
+		sayError("commit message required")
 		return
 	}
 

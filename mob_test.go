@@ -141,6 +141,7 @@ func TestBooleanEnvironmentVariables(t *testing.T) {
 	assertBoolEnvVarParsed(t, "MOB_DEBUG", false, Configuration.GetDebug)
 	assertBoolEnvVarParsed(t, "MOB_START_INCLUDE_UNCOMMITTED_CHANGES", false, Configuration.GetMobStartIncludeUncommittedChanges)
 	assertBoolEnvVarParsed(t, "MOB_NEXT_STAY", true, Configuration.GetMobNextStay)
+	assertBoolEnvVarParsed(t, "MOB_REQUIRE_COMMIT_MESSAGE", false, Configuration.GetRequireCommitMessage)
 }
 
 func assertBoolEnvVarParsed(t *testing.T, envVar string, defaultValue bool, actual func(Configuration) bool) {
@@ -188,6 +189,10 @@ func (c Configuration) GetMobNextStay() bool {
 	return c.MobNextStay
 }
 
+func (c Configuration) GetRequireCommitMessage() bool {
+	return c.RequireCommitMessage
+}
+
 func TestVersion(t *testing.T) {
 	output := setup(t)
 
@@ -210,6 +215,38 @@ func TestNextNotMobProgramming(t *testing.T) {
 	next()
 
 	assertOutputContains(t, output, "you aren't mob programming")
+}
+
+func TestRequireCommitMessage(t *testing.T) {
+	output := setup(t)
+
+	os.Unsetenv("MOB_REQUIRE_COMMIT_MESSAGE")
+	defer os.Unsetenv("MOB_REQUIRE_COMMIT_MESSAGE")
+
+	configuration = parseEnvironmentVariables(getDefaultConfiguration())
+	equals(t, false, configuration.RequireCommitMessage)
+
+	os.Setenv("MOB_REQUIRE_COMMIT_MESSAGE", "false")
+	configuration = parseEnvironmentVariables(getDefaultConfiguration())
+	equals(t, false, configuration.RequireCommitMessage)
+
+	os.Setenv("MOB_REQUIRE_COMMIT_MESSAGE", "true")
+	configuration = parseEnvironmentVariables(getDefaultConfiguration())
+	equals(t, true, configuration.RequireCommitMessage)
+
+	start()
+
+	next()
+	// ensure we don't complain if there's nothing to commit
+	// https://github.com/remotemobprogramming/mob/pull/107#issuecomment-761298861
+	assertOutputContains(t, output, "nothing to commit")
+
+	createFile(t, "example.txt", "content")
+	next()
+	// failure message should make sense regardless of whether we
+	// provided commit message via `-m` or MOB_WIP_COMMIT_MESSAGE
+	// https://github.com/remotemobprogramming/mob/pull/107#issuecomment-761591039
+	assertOutputContains(t, output, "commit message required")
 }
 
 func TestDoneNotMobProgramming(t *testing.T) {
