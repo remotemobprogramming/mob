@@ -58,9 +58,6 @@ func TestDetermineBranches(t *testing.T) {
 	assertDetermineBranches(t, "master", "green", []string{}, "master", "mob/master-green")
 	assertDetermineBranches(t, "mob/master-green", "", []string{}, "master", "mob/master-green")
 
-	assertDetermineBranches(t, "master", "test-branch", []string{}, "master", "mob/master-test-branch")
-	assertDetermineBranches(t, "mob/master-test-branch", "test-branch", []string{}, "master", "mob/master-test-branch")
-
 	assertDetermineBranches(t, "feature1", "", []string{}, "feature1", "mob/feature1")
 	assertDetermineBranches(t, "mob/feature1", "", []string{}, "feature1", "mob/feature1")
 	assertDetermineBranches(t, "mob/feature1-green", "", []string{}, "feature1", "mob/feature1-green")
@@ -77,51 +74,6 @@ func assertDetermineBranches(t *testing.T, branch string, qualifier string, bran
 	baseBranch, wipBranch := determineBranches(branch, branches)
 	equals(t, expectedBase, baseBranch)
 	equals(t, expectedWip, wipBranch)
-}
-
-func TestRemoveWipPrefix(t *testing.T) {
-	equals(t, "master-green", removeWipPrefix("mob/master-green"))
-	equals(t, "master-green-blue", removeWipPrefix("mob/master-green-blue"))
-	equals(t, "main-branch", removeWipPrefix("mob/main-branch"))
-}
-
-// todo it should not be possible to set configuration.WipBranchQualifier without setting configuration.WipBranchQualifierSet to true. could encapsulate this behaviour in setter and prevent access
-// todo maybe extract function for each, but feels awkward with so many parameters (hard to read imo)
-func TestRemoveSuffix(t *testing.T) {
-	configuration.WipBranchQualifierSeparator = "-"
-	configuration.WipBranchQualifier = "green"
-	configuration.WipBranchQualifierSet = true
-	equals(t, "master", removeSuffix("master-green"))
-
-	configuration.WipBranchQualifierSeparator = "-"
-	configuration.WipBranchQualifier = "test-branch"
-	configuration.WipBranchQualifierSet = true
-	equals(t, "master", removeSuffix("master-test-branch"))
-
-	configuration.WipBranchQualifierSeparator = "-"
-	configuration.WipBranchQualifier = "branch"
-	configuration.WipBranchQualifierSet = true
-	equals(t, "master-test", removeSuffix("master-test-branch"))
-
-	configuration.WipBranchQualifierSeparator = "/-/"
-	configuration.WipBranchQualifier = "branch-qualifier"
-	configuration.WipBranchQualifierSet = true
-	equals(t, "main", removeSuffix("main/-/branch-qualifier"))
-
-	configuration.WipBranchQualifierSeparator = "-"
-	configuration.WipBranchQualifier = "branchqualifier"
-	configuration.WipBranchQualifierSet = true
-	equals(t, "main/branchqualifier", removeSuffix("main/branchqualifier"))
-
-	configuration.WipBranchQualifierSeparator = ""
-	configuration.WipBranchQualifier = "branchqualifier"
-	configuration.WipBranchQualifierSet = true
-	equals(t, "main", removeSuffix("mainbranchqualifier"))
-
-	configuration.WipBranchQualifierSeparator = "-"
-	configuration.WipBranchQualifier = ""
-	configuration.WipBranchQualifierSet = false
-	equals(t, "main", removeSuffix("main"))
 }
 
 func TestMobRemoteNameEnvironmentVariable(t *testing.T) {
@@ -384,18 +336,6 @@ func TestStartNextOnFeatureWithBranch(t *testing.T) {
 
 	next()
 	assertOnBranch(t, "feature1")
-}
-
-// reproduces #117
-func TestStartNextWithBranchContainingHyphen(t *testing.T) {
-	setup(t)
-	configuration.WipBranchQualifier = "test-branch"
-
-	start()
-	assertOnBranch(t, "mob/master-test-branch")
-	assertMobSessionBranches(t, "mob/master-test-branch")
-
-	next()
 }
 
 func TestReset(t *testing.T) {
