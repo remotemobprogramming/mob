@@ -1,3 +1,6 @@
+# 1.2.0
+- Add environment variable `MOB_REQUIRE_COMMIT_MESSAGE` which you could set to true to require a commit message other than the default one.
+
 # 1.1.0
 - Add optional `--no-squash` for `mob done` to keep commits from wip branch.
 - Add environment variable `MOB_DONE_SQUASH` to configure the `mob done` behaviour. `MOB_DONE_SQUASH=false` is equal to passing flag `--no-squash`.
