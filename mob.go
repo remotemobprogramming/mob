@@ -272,7 +272,8 @@ func determineBranches(currentBranch string, localBranches []string) (baseBranch
 		baseBranch = removeWipPrefix(currentBranch)
 		wipBranch = currentBranch
 
-		if !branchExists(baseBranch, localBranches) && hasSuffix(baseBranch) {
+		// todo refactor extract to removeWipQualifier(branch, localBranches)
+		for !branchExists(baseBranch, localBranches) && hasSuffix(baseBranch) {
 			baseBranch = removeSuffix(baseBranch)
 		}
 	} else {
@@ -292,6 +293,7 @@ func determineBranches(currentBranch string, localBranches []string) (baseBranch
 	return
 }
 
+// todo should check configuration.WipBranchQualifierSet instead
 func customWipBranchQualifierConfigured() bool {
 	return configuration.WipBranchQualifier != ""
 }
@@ -308,7 +310,7 @@ func removeWipPrefix(branch string) string { //TODO improve, add tests
 	return branch[len(wipBranchPrefix):]
 }
 
-func addSuffix(branch string) string {
+func addSuffix(branch string) string { // TODO rename to addWipQualifier
 	return branch + configuration.WipBranchQualifierSeparator + configuration.WipBranchQualifier
 }
 
@@ -316,8 +318,19 @@ func hasSuffix(branch string) bool { //TODO improve (dont use strings.Contains, 
 	return strings.Contains(branch, configuration.WipBranchQualifierSeparator)
 }
 
-func removeSuffix(branch string) string { //TODO improve, add tests
-	return branch[:strings.LastIndex(branch, configuration.WipBranchQualifierSeparator)]
+func removeSuffix(branch string) string {
+	if configuration.WipBranchQualifierSet { // WipBranchQualifier configured
+		suffix := configuration.WipBranchQualifierSeparator + configuration.WipBranchQualifier
+		if strings.HasSuffix(branch, suffix) {
+			return branch[:strings.LastIndex(branch, suffix)]
+		} else {
+			return branch
+		}
+	} else if hasSuffix(branch) { // WipBranchQualifier not configured, but WipBranchQualifierSeparator found
+		return branch[:strings.LastIndex(branch, configuration.WipBranchQualifierSeparator)]
+	} else {
+		return branch
+	}
 }
 
 func branchExists(branchInQuestion string, existingBranches []string) bool {
