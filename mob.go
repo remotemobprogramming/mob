@@ -61,7 +61,7 @@ func getDefaultConfiguration() Configuration {
 		voiceCommand = "say"
 		notifyCommand = "notify-send \"%s\""
 	case "windows":
-		voiceCommand = "(New-Object -ComObject SAPI.SPVoice).Speak(\\\"%s\\\")\""
+		voiceCommand = "(New-Object -ComObject SAPI.SPVoice).Speak(\\\"%s\\\")"
 	}
 	return Configuration{
 		RemoteName:                        "origin",
