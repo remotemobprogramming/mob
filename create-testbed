@@ -17,8 +17,7 @@ createrepo() {
 tmpdir="/tmp/mob" # XXX this should be more unique
 echo ""
 echo "Creating temporary test assets in ${tmpdir}"
-rm -rf "${tmpdir}" # XXX this is dangerous unless tmpdir is unique
-mkdir ${tmpdir}
+mkdir -p ${tmpdir}
 
 # create remote repo
 remotedir="${tmpdir}/remote"
@@ -31,6 +30,7 @@ mkdir -p "${remotedir}"
 # create first local repo
 localdir="${tmpdir}/local"
 createrepo "${localdir}"
+
 # populate an initial import
 echo "Populating and pushing"
 (cd "${localdir}" && echo "test" >test.txt && git add . && git commit -m "initial import" && git push --set-upstream --all origin)
