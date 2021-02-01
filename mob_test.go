@@ -510,6 +510,46 @@ func TestStartDoneWithMobDoneSquashTrue(t *testing.T) {
 	assertNoMobSessionBranches(t, "mob-session")
 }
 
+func TestStartDoneCoAuthors(t *testing.T) {
+	setup(t)
+
+	setWorkingDir("/tmp/mob/local")
+	start()
+	createFile(t, "file1.txt", "asdf")
+	next()
+
+	setWorkingDir("/tmp/mob/localother")
+	start()
+	createFile(t, "file2.txt", "asdf")
+	next()
+
+	setWorkingDir("/tmp/mob/alice")
+	start()
+	createFile(t, "file3.txt", "owqe")
+	next()
+
+	setWorkingDir("/tmp/mob/alice")
+	start()
+	createFile(t, "file4.txt", "zcvx")
+	next()
+
+	setWorkingDir("/tmp/mob/bob")
+	start()
+	createFile(t, "file5.txt", "oiuo")
+	next()
+
+	setWorkingDir("/tmp/mob/local")
+	start()
+	done()
+
+	output := run(t, "cat", "/tmp/mob/local/.git/SQUASH_MSG")
+	// don't include the person running `mob done`
+	assertOutputNotContains(t, output, "Co-authored-by: local <local@example.com>")
+	// include everyone else in commit order after removing duplicates
+	assertOutputContains(t, output, "\n\nCo-authored-by: localother <localother@example.com>\nCo-authored-by: alice <alice@example.com>\nCo-authored-by: bob <bob@example.com>\n")
+
+}
+
 func TestStartDoneWithMobDoneSquashFalse(t *testing.T) {
 	setup(t)
 	configuration.MobDoneSquash = false
@@ -799,7 +839,7 @@ func captureOutput() *string {
 	return &messages
 }
 
-func run(t *testing.T, name string, args ...string) {
+func run(t *testing.T, name string, args ...string) *string {
 	commandString, output, err := runCommand(name, args...)
 	if err != nil {
 		fmt.Println(commandString)
@@ -807,6 +847,7 @@ func run(t *testing.T, name string, args ...string) {
 		fmt.Println(err.Error())
 		t.Error("command " + commandString + " failed")
 	}
+	return &output
 }
 
 func createTestbed(t *testing.T) {

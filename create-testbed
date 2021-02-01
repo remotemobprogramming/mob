@@ -1,31 +1,45 @@
 #!/bin/bash
 set -e
 
-echo "Creating test assets..."
-tmpdir="/tmp/mob"
-localdir="${tmpdir}/local"
+createrepo() {
+    dir=$1
+    name=$(basename $dir)
+    echo ""
+    echo "Cloning remote to ${dir}"
+    rm -rf "${dir}"
+    mkdir -p "${dir}"
+    (cd "${dir}" && git clone --origin origin "file://${remotedir}" .)
+    (cd "${dir}" && git config --local user.name ${name})
+    (cd "${dir}" && git config --local user.email ${name}@example.com)
+}
+
+# create base dir
+tmpdir="/tmp/mob" # XXX this should be more unique
+echo ""
+echo "Creating temporary test assets in ${tmpdir}"
+rm -rf "${tmpdir}" # XXX this is dangerous unless tmpdir is unique
+mkdir ${tmpdir}
+
+# create remote repo
 remotedir="${tmpdir}/remote"
 echo ""
-echo "Root of temporary test assets: ${tmpdir}"
-echo "Path to central repository ('remote'): ${remotedir}"
-echo "Path to clone of central repository ('local'): ${localdir}"
-
-mkdir -p "${localdir}" "${remotedir}"
-rm -rf "${localdir}" "${remotedir}"
-mkdir -p "${localdir}" "${remotedir}"
-
-echo ""
-echo "Creating test repositories..."
+echo "Creating remote repository ${remotedir}"
+rm -rf "${remotedir}"
+mkdir -p "${remotedir}"
 (cd "${remotedir}" && git --bare init)
-(cd "${localdir}" && git clone --origin origin "file://${remotedir}" . && echo "test" >test.txt && git add . && git commit -m "initial import" && git push --set-upstream --all origin)
 
-# optional
-echo ""
-echo "Creating a second mob participant's repository..."
-localotherdir="${tmpdir}/localother"
-echo "Path to second clone of central repository ('localotherdir'): ${localotherdir}"
-rm -rf "${localotherdir}"
-mkdir -p "${localotherdir}"
-(cd "${localotherdir}" && git clone --origin origin "file://${remotedir}" .)
+# create first local repo
+localdir="${tmpdir}/local"
+createrepo "${localdir}"
+# populate an initial import
+echo "Populating and pushing"
+(cd "${localdir}" && echo "test" >test.txt && git add . && git commit -m "initial import" && git push --set-upstream --all origin)
+
+# create more local repos
+for name in localother alice bob
+do
+    createrepo "${tmpdir}/${name}"
+done
+
 
 echo "Done."
