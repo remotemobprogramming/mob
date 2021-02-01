@@ -1,6 +1,7 @@
 # 1.2.0
 - Add environment variable `MOB_REQUIRE_COMMIT_MESSAGE` which you could set to true to require a commit message other than the default one.
 - Fixes a bug where you could not run `mob start --branch feature-1` because feature-1 contained a dash.
+- Fixes a bug which prevented the sound output of 'mob next' and 'moo' on windows
 
 # 1.1.0
 - Add optional `--no-squash` for `mob done` to keep commits from wip branch.
