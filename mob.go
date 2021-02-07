@@ -74,7 +74,6 @@ func getDefaultConfiguration() Configuration {
 		MobStartIncludeUncommittedChanges: false,
 		Debug:                             false,
 		WipBranchQualifier:                "",
-		WipBranchQualifierSet:             false,
 		WipBranchQualifierSeparator:       "-",
 		MobDoneSquash:                     true,
 	}
@@ -93,11 +92,7 @@ func parseEnvironmentVariables(configuration Configuration) Configuration {
 	setOptionalStringFromEnvVariable(&configuration.VoiceCommand, "MOB_VOICE_COMMAND")
 	setOptionalStringFromEnvVariable(&configuration.NotifyCommand, "MOB_NOTIFY_COMMAND")
 	setStringFromEnvVariable(&configuration.WipBranchQualifierSeparator, "MOB_WIP_BRANCH_QUALIFIER_SEPARATOR")
-
 	setStringFromEnvVariable(&configuration.WipBranchQualifier, "MOB_WIP_BRANCH_QUALIFIER")
-	if configuration.WipBranchQualifier != "" {
-		configuration.WipBranchQualifierSet = true
-	}
 
 	setBoolFromEnvVariable(&configuration.Debug, "MOB_DEBUG")
 	setBoolFromEnvVariableSet(&configuration.MobNextStay, &configuration.MobNextStaySet, "MOB_NEXT_STAY")
@@ -200,7 +195,6 @@ func parseArgs(args []string) (command string, parameters []string) {
 		case "--branch", "-b":
 			if i+1 != len(args) {
 				configuration.WipBranchQualifier = args[i+1]
-				configuration.WipBranchQualifierSet = true
 			}
 			i++ // skip consumed parameter
 		case "--message", "-m":
@@ -319,7 +313,7 @@ func hasSuffix(branch string) bool { //TODO improve (dont use strings.Contains, 
 }
 
 func removeSuffix(branch string) string {
-	if configuration.WipBranchQualifierSet { // WipBranchQualifier configured
+	if configuration.WipBranchQualifier != "" { // WipBranchQualifier configured
 		suffix := configuration.WipBranchQualifierSeparator + configuration.WipBranchQualifier
 		if strings.HasSuffix(branch, suffix) {
 			return branch[:strings.LastIndex(branch, suffix)]
@@ -460,10 +454,9 @@ func start() {
 
 	hasWipBranchesWithQualifier := hasQualifiedBranches(currentBaseBranch, gitRemoteBranches())
 
-	if !isMobProgramming() && hasWipBranchesWithQualifier && !configuration.WipBranchQualifierSet {
+	if !isMobProgramming() && hasWipBranchesWithQualifier && configuration.WipBranchQualifier == "" {
 		sayInfo("qualified mob branches detected")
 		sayTodo("To start mob programming, use", "mob start --branch <branch>")
-		sayIndented("(use \"\" for the default mob branch)")
 		return
 	}
 
@@ -510,7 +503,10 @@ func sayUnstagedChangesInfo() {
 
 func hasQualifiedBranches(currentBaseBranch string, remoteBranches []string) bool {
 	debugInfo("check on current base branch " + currentBaseBranch + " with remote branches " + strings.Join(remoteBranches, ","))
-	hasWipBranchesWithQualifier := strings.Contains(strings.Join(remoteBranches, "\n"), configuration.RemoteName+"/"+wipBranchPrefix+currentBaseBranch+configuration.WipBranchQualifierSeparator)
+	hasWipBranchesWithQualifier := strings.Contains(
+		strings.Join(remoteBranches, "\n"),
+		configuration.RemoteName+"/"+wipBranchPrefix+currentBaseBranch+configuration.WipBranchQualifierSeparator,
+	)
 	return hasWipBranchesWithQualifier
 }
 

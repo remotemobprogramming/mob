@@ -90,44 +90,36 @@ func TestRemoveWipPrefix(t *testing.T) {
 func TestRemoveSuffixWithBranchQualifierSet(t *testing.T) {
 	configuration.WipBranchQualifierSeparator = "-"
 	configuration.WipBranchQualifier = "green"
-	configuration.WipBranchQualifierSet = true
 	equals(t, "master", removeSuffix("master-green"))
 
 	configuration.WipBranchQualifierSeparator = "-"
 	configuration.WipBranchQualifier = "test-branch"
-	configuration.WipBranchQualifierSet = true
 	equals(t, "master", removeSuffix("master-test-branch"))
 
 	configuration.WipBranchQualifierSeparator = "-"
 	configuration.WipBranchQualifier = "branch"
-	configuration.WipBranchQualifierSet = true
 	equals(t, "master-test", removeSuffix("master-test-branch"))
 
 	configuration.WipBranchQualifierSeparator = "/-/"
 	configuration.WipBranchQualifier = "branch-qualifier"
-	configuration.WipBranchQualifierSet = true
 	equals(t, "main", removeSuffix("main/-/branch-qualifier"))
 
 	configuration.WipBranchQualifierSeparator = "-"
 	configuration.WipBranchQualifier = "branchqualifier"
-	configuration.WipBranchQualifierSet = true
 	equals(t, "main/branchqualifier", removeSuffix("main/branchqualifier"))
 
 	configuration.WipBranchQualifierSeparator = ""
 	configuration.WipBranchQualifier = "branchqualifier"
-	configuration.WipBranchQualifierSet = true
 	equals(t, "main", removeSuffix("mainbranchqualifier"))
 }
 
 func TestRemoveSuffixWithoutBranchQualifierSet(t *testing.T) {
 	configuration.WipBranchQualifierSeparator = "-"
 	configuration.WipBranchQualifier = ""
-	configuration.WipBranchQualifierSet = false
 	equals(t, "main", removeSuffix("main"))
 
 	configuration.WipBranchQualifierSeparator = "-"
 	configuration.WipBranchQualifier = ""
-	configuration.WipBranchQualifierSet = false
 	equals(t, "master-test", removeSuffix("master-test-branch"))
 }
 
@@ -313,20 +305,6 @@ func TestStartWithMultipleExistingBranches(t *testing.T) {
 	assertOutputContains(t, output, "qualified mob branches detected")
 }
 
-func TestStartWithMultipleExistingBranchesAndEmptyWipBranchQualifier(t *testing.T) {
-	output := setup(t)
-
-	configuration.WipBranchQualifier = "green"
-	start()
-	next()
-
-	configuration.WipBranchQualifier = ""
-	configuration.WipBranchQualifierSet = true
-	start()
-	assertOnBranch(t, "mob-session")
-	assertOutputNotContains(t, output, "qualified mob branches detected")
-}
-
 func TestStartWithMultipleExistingBranchesWithStay(t *testing.T) {
 	output := setup(t)
 	configuration.MobNextStay = true
@@ -397,13 +375,11 @@ func TestStartNextOnFeatureWithBranch(t *testing.T) {
 func TestStartNextWithBranchContainingHyphen(t *testing.T) {
 	setup(t)
 	configuration.WipBranchQualifier = "test-branch"
-	configuration.WipBranchQualifierSet = true
 	start()
 	assertOnBranch(t, "mob/master-test-branch")
 	assertMobSessionBranches(t, "mob/master-test-branch")
 
 	configuration.WipBranchQualifier = ""
-	configuration.WipBranchQualifierSet = false
 	next()
 }
 
