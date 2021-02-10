@@ -269,6 +269,7 @@ The tests should work now.
 
 - [INNOQ](https://www.innoq.com)
 - [BLUME2000](https://twitter.com/slashBene/status/1337329356637687811?s=20)
+- [REWE Digital](https://www.rewe-digital.com/)
 - And probably many others who shall not be named.
 
 ## Credits
