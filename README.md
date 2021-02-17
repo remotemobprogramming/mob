@@ -1,4 +1,4 @@
-# Smooth git handover with mob
+# Fast git handover with mob
 
 ![mob Logo](logo.svg)
 <p align="center">
