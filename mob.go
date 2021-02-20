@@ -226,7 +226,7 @@ func execute(command string, parameter []string) {
 
 	switch command {
 	case "s", "start":
-		start()
+		start(configuration)
 		if !isMobProgramming() {
 			return
 		}
@@ -439,7 +439,7 @@ func reset() {
 	sayInfo("Branches " + currentWipBranch + " and " + configuration.RemoteName + "/" + currentWipBranch + " deleted")
 }
 
-func start() {
+func start(configuration Configuration) {
 	stashed := false
 	if hasUncommittedChanges() {
 		if configuration.MobStartIncludeUncommittedChanges {
