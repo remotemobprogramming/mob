@@ -122,49 +122,16 @@ func TestRemoveWipBranchQualifier(t *testing.T) {
 	equals(t, "main", removeWipQualifier("mainbranchqualifier", []string{}, configuration))
 }
 
-// TODO maybe extract function for each, but feels awkward with so many parameters (hard to read imo)
-func TestRemoveSuffixWithBranchQualifierSet(t *testing.T) {
-	configuration.WipBranchQualifierSeparator = "-"
-	configuration.WipBranchQualifier = "green"
-	configuration.WipBranchQualifierSet = true
-	equals(t, "master", removeSuffix("master-green", configuration))
-
-	configuration.WipBranchQualifierSeparator = "-"
-	configuration.WipBranchQualifier = "test-branch"
-	configuration.WipBranchQualifierSet = true
-	equals(t, "master", removeSuffix("master-test-branch", configuration))
-
-	configuration.WipBranchQualifierSeparator = "-"
-	configuration.WipBranchQualifier = "branch"
-	configuration.WipBranchQualifierSet = true
-	equals(t, "master-test", removeSuffix("master-test-branch", configuration))
-
-	configuration.WipBranchQualifierSeparator = "/-/"
-	configuration.WipBranchQualifier = "branch-qualifier"
-	configuration.WipBranchQualifierSet = true
-	equals(t, "main", removeSuffix("main/-/branch-qualifier", configuration))
-
-	configuration.WipBranchQualifierSeparator = "-"
-	configuration.WipBranchQualifier = "branchqualifier"
-	configuration.WipBranchQualifierSet = true
-	equals(t, "main/branchqualifier", removeSuffix("main/branchqualifier", configuration))
-
-	configuration.WipBranchQualifierSeparator = ""
-	configuration.WipBranchQualifier = "branchqualifier"
-	configuration.WipBranchQualifierSet = true
-	equals(t, "main", removeSuffix("mainbranchqualifier", configuration))
-}
-
-func TestRemoveSuffixWithoutBranchQualifierSet(t *testing.T) {
+func TestRemoveWipBranchQualifierWithoutBranchQualifierSet(t *testing.T) {
 	configuration.WipBranchQualifierSeparator = "-"
 	configuration.WipBranchQualifier = ""
 	configuration.WipBranchQualifierSet = false
-	equals(t, "main", removeSuffix("main", configuration))
+	equals(t, "main", removeWipQualifier("main", []string{}, configuration))
 
 	configuration.WipBranchQualifierSeparator = "-"
 	configuration.WipBranchQualifier = ""
 	configuration.WipBranchQualifierSet = false
-	equals(t, "master-test", removeSuffix("master-test-branch", configuration))
+	equals(t, "master", removeWipQualifier("master-test-branch", []string{}, configuration))
 }
 
 func TestMobRemoteNameEnvironmentVariable(t *testing.T) {

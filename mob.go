@@ -286,20 +286,38 @@ func determineBranches(currentBranch string, localBranches []string, configurati
 
 func addWipQualifier(branch string, configuration Configuration) string {
 	if customWipBranchQualifierConfigured(configuration) {
-		branch = addSuffix(branch, wipBranchQualifierSuffix(configuration))
+		return addSuffix(branch, wipBranchQualifierSuffix(configuration))
 	}
 	return branch
 }
 
 func removeWipQualifier(branch string, localBranches []string, configuration Configuration) string {
 	for !branchExists(branch, localBranches) && hasWipBranchQualifierSeparator(branch, configuration) {
-		suffixRemovedBranch := removeSuffix(branch, configuration)
-		if branch == suffixRemovedBranch {
+		var afterRemoval string
+		if configuration.WipBranchQualifier == "" { // WipBranchQualifier not configured
+			afterRemoval = removeFromSeparator(branch, configuration.WipBranchQualifierSeparator)
+		} else { // WipBranchQualifier not configured
+			afterRemoval = removeSuffix(branch, wipBranchQualifierSuffix(configuration))
+		}
+
+		if branch == afterRemoval { // avoids infinite loop
 			break
 		}
-		branch = suffixRemovedBranch
+
+		branch = afterRemoval
 	}
 	return branch
+}
+
+func removeSuffix(branch string, suffix string) string {
+	if strings.HasSuffix(branch, suffix) {
+		return branch[:strings.LastIndex(branch, suffix)]
+	}
+	return branch
+}
+
+func removeFromSeparator(branch string, separator string) string {
+	return branch[:strings.LastIndex(branch, separator)]
 }
 
 func customWipBranchQualifierConfigured(configuration Configuration) bool {
@@ -320,21 +338,6 @@ func removeWipPrefix(branch string) string { //TODO improve, add tests
 
 func addSuffix(branch string, suffix string) string {
 	return branch + suffix
-}
-
-func removeSuffix(branch string, configuration Configuration) string {
-	if configuration.WipBranchQualifierSet { // WipBranchQualifier configured
-		suffix := wipBranchQualifierSuffix(configuration)
-		if strings.HasSuffix(branch, suffix) {
-			return branch[:strings.LastIndex(branch, suffix)]
-		} else {
-			return branch
-		}
-	} else if hasWipBranchQualifierSeparator(branch, configuration) { // WipBranchQualifier not configured, but WipBranchQualifierSeparator found
-		return branch[:strings.LastIndex(branch, configuration.WipBranchQualifierSeparator)]
-	} else {
-		return branch
-	}
 }
 
 func hasWipBranchQualifierSeparator(branch string, configuration Configuration) bool { //TODO improve (dont use strings.Contains, add tests)
