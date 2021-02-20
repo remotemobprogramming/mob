@@ -293,7 +293,11 @@ func addWipQualifier(branch string, configuration Configuration) string {
 
 func removeWipQualifier(branch string, localBranches []string, configuration Configuration) string {
 	for !branchExists(branch, localBranches) && hasWipBranchQualifierSeparator(branch, configuration) {
-		branch = removeSuffix(branch, configuration)
+		suffixRemovedBranch := removeSuffix(branch, configuration)
+		if branch == suffixRemovedBranch {
+			break
+		}
+		branch = suffixRemovedBranch
 	}
 	return branch
 }

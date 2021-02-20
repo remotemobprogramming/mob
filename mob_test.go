@@ -85,6 +85,43 @@ func TestRemoveWipPrefix(t *testing.T) {
 	equals(t, "main-branch", removeWipPrefix("mob/main-branch"))
 }
 
+func TestRemoveWipBranchQualifier(t *testing.T) {
+	configuration.WipBranchQualifierSeparator = "-"
+	configuration.WipBranchQualifier = "green"
+	configuration.WipBranchQualifierSet = true
+	equals(t, "master", removeWipQualifier("master-green", []string{}, configuration))
+
+	configuration.WipBranchQualifierSeparator = "-"
+	configuration.WipBranchQualifier = "test-branch"
+	configuration.WipBranchQualifierSet = true
+	equals(t, "master", removeWipQualifier("master-test-branch", []string{}, configuration))
+
+	configuration.WipBranchQualifierSeparator = "-"
+	configuration.WipBranchQualifier = "branch"
+	configuration.WipBranchQualifierSet = true
+	equals(t, "master-test", removeWipQualifier("master-test-branch", []string{}, configuration))
+
+	configuration.WipBranchQualifierSeparator = "-"
+	configuration.WipBranchQualifier = "branch"
+	configuration.WipBranchQualifierSet = true
+	equals(t, "master-test", removeWipQualifier("master-test-branch", []string{"master-test"}, configuration))
+
+	configuration.WipBranchQualifierSeparator = "/-/"
+	configuration.WipBranchQualifier = "branch-qualifier"
+	configuration.WipBranchQualifierSet = true
+	equals(t, "main", removeWipQualifier("main/-/branch-qualifier", []string{}, configuration))
+
+	configuration.WipBranchQualifierSeparator = "-"
+	configuration.WipBranchQualifier = "branchqualifier"
+	configuration.WipBranchQualifierSet = true
+	equals(t, "main/branchqualifier", removeWipQualifier("main/branchqualifier", []string{}, configuration))
+
+	configuration.WipBranchQualifierSeparator = ""
+	configuration.WipBranchQualifier = "branchqualifier"
+	configuration.WipBranchQualifierSet = true
+	equals(t, "main", removeWipQualifier("mainbranchqualifier", []string{}, configuration))
+}
+
 // TODO maybe extract function for each, but feels awkward with so many parameters (hard to read imo)
 func TestRemoveSuffixWithBranchQualifierSet(t *testing.T) {
 	configuration.WipBranchQualifierSeparator = "-"
