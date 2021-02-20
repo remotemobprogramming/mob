@@ -32,7 +32,7 @@ type Configuration struct {
 	MobStartIncludeUncommittedChanges bool   // override with MOB_START_INCLUDE_UNCOMMITTED_CHANGES variable
 	Debug                             bool   // override with MOB_DEBUG environment variable
 	WipBranchQualifier                string // override with MOB_WIP_BRANCH_QUALIFIER environment variable
-	WipBranchQualifierSet             bool
+	WipBranchQualifierSet             bool   // used to enforce a start on the default wip branch with `mob start --branch ""` when other open wip branches had been detected
 	WipBranchQualifierSeparator       string // override with MOB_WIP_BRANCH_QUALIFIER_SEPARATOR environment variable
 	MobDoneSquash                     bool   // override with MOB_DONE_SQUASH environment variable
 }
