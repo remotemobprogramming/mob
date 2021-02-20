@@ -74,9 +74,12 @@ func getDefaultConfiguration() Configuration {
 		MobStartIncludeUncommittedChanges: false,
 		Debug:                             false,
 		WipBranchQualifier:                "",
-		WipBranchQualifierSet:             false,
-		WipBranchQualifierSeparator:       "-",
-		MobDoneSquash:                     true,
+
+		// used in a case where a user can enforce a start on the default wip branch with `mob start --branch ""`
+		// when other open wip branches had been detected
+		WipBranchQualifierSet:       false,
+		WipBranchQualifierSeparator: "-",
+		MobDoneSquash:               true,
 	}
 }
 
