@@ -74,7 +74,7 @@ func TestDetermineBranches(t *testing.T) {
 
 func assertDetermineBranches(t *testing.T, branch string, qualifier string, branches []string, expectedBase string, expectedWip string) {
 	configuration.WipBranchQualifier = qualifier
-	baseBranch, wipBranch := determineBranches(branch, branches)
+	baseBranch, wipBranch := determineBranches(branch, branches, configuration)
 	equals(t, expectedBase, baseBranch)
 	equals(t, expectedWip, wipBranch)
 }
@@ -85,50 +85,49 @@ func TestRemoveWipPrefix(t *testing.T) {
 	equals(t, "main-branch", removeWipPrefix("mob/main-branch"))
 }
 
-// TODO it should not be possible to set configuration.WipBranchQualifier without setting configuration.WipBranchQualifierSet to true. could encapsulate this behaviour in setter and prevent access
 // TODO maybe extract function for each, but feels awkward with so many parameters (hard to read imo)
 func TestRemoveSuffixWithBranchQualifierSet(t *testing.T) {
 	configuration.WipBranchQualifierSeparator = "-"
 	configuration.WipBranchQualifier = "green"
 	configuration.WipBranchQualifierSet = true
-	equals(t, "master", removeSuffix("master-green"))
+	equals(t, "master", removeSuffix("master-green", configuration))
 
 	configuration.WipBranchQualifierSeparator = "-"
 	configuration.WipBranchQualifier = "test-branch"
 	configuration.WipBranchQualifierSet = true
-	equals(t, "master", removeSuffix("master-test-branch"))
+	equals(t, "master", removeSuffix("master-test-branch", configuration))
 
 	configuration.WipBranchQualifierSeparator = "-"
 	configuration.WipBranchQualifier = "branch"
 	configuration.WipBranchQualifierSet = true
-	equals(t, "master-test", removeSuffix("master-test-branch"))
+	equals(t, "master-test", removeSuffix("master-test-branch", configuration))
 
 	configuration.WipBranchQualifierSeparator = "/-/"
 	configuration.WipBranchQualifier = "branch-qualifier"
 	configuration.WipBranchQualifierSet = true
-	equals(t, "main", removeSuffix("main/-/branch-qualifier"))
+	equals(t, "main", removeSuffix("main/-/branch-qualifier", configuration))
 
 	configuration.WipBranchQualifierSeparator = "-"
 	configuration.WipBranchQualifier = "branchqualifier"
 	configuration.WipBranchQualifierSet = true
-	equals(t, "main/branchqualifier", removeSuffix("main/branchqualifier"))
+	equals(t, "main/branchqualifier", removeSuffix("main/branchqualifier", configuration))
 
 	configuration.WipBranchQualifierSeparator = ""
 	configuration.WipBranchQualifier = "branchqualifier"
 	configuration.WipBranchQualifierSet = true
-	equals(t, "main", removeSuffix("mainbranchqualifier"))
+	equals(t, "main", removeSuffix("mainbranchqualifier", configuration))
 }
 
 func TestRemoveSuffixWithoutBranchQualifierSet(t *testing.T) {
 	configuration.WipBranchQualifierSeparator = "-"
 	configuration.WipBranchQualifier = ""
 	configuration.WipBranchQualifierSet = false
-	equals(t, "main", removeSuffix("main"))
+	equals(t, "main", removeSuffix("main", configuration))
 
 	configuration.WipBranchQualifierSeparator = "-"
 	configuration.WipBranchQualifier = ""
 	configuration.WipBranchQualifierSet = false
-	equals(t, "master-test", removeSuffix("master-test-branch"))
+	equals(t, "master-test", removeSuffix("master-test-branch", configuration))
 }
 
 func TestMobRemoteNameEnvironmentVariable(t *testing.T) {

@@ -264,25 +264,16 @@ func execute(command string, parameter []string) {
 	}
 }
 
-func determineBranches(currentBranch string, localBranches []string) (baseBranch string, wipBranch string) {
-	if currentBranch == "mob-session" || (currentBranch == "master" && !customWipBranchQualifierConfigured()) {
+func determineBranches(currentBranch string, localBranches []string, configuration Configuration) (baseBranch string, wipBranch string) {
+	if currentBranch == "mob-session" || (currentBranch == "master" && !customWipBranchQualifierConfigured(configuration)) {
 		baseBranch = "master"
 		wipBranch = "mob-session"
 	} else if isWipBranch(currentBranch) {
-		baseBranch = removeWipPrefix(currentBranch)
+		baseBranch = removeWipQualifier(removeWipPrefix(currentBranch), localBranches, configuration)
 		wipBranch = currentBranch
-
-		// todo refactor extract to removeWipQualifier(branch, localBranches)
-		for !branchExists(baseBranch, localBranches) && hasSuffix(baseBranch) {
-			baseBranch = removeSuffix(baseBranch)
-		}
 	} else {
 		baseBranch = currentBranch
-		wipBranch = addWipPrefix(currentBranch)
-
-		if customWipBranchQualifierConfigured() {
-			wipBranch = addSuffix(wipBranch)
-		}
+		wipBranch = addWipQualifier(addWipPrefix(currentBranch), configuration)
 	}
 
 	debugInfo("on currentBranch " + currentBranch + " => BASE " + baseBranch + " WIP " + wipBranch + " with allLocalBranches " + strings.Join(localBranches, ","))
@@ -293,8 +284,21 @@ func determineBranches(currentBranch string, localBranches []string) (baseBranch
 	return
 }
 
-// todo should check configuration.WipBranchQualifierSet instead
-func customWipBranchQualifierConfigured() bool {
+func addWipQualifier(branch string, configuration Configuration) string {
+	if customWipBranchQualifierConfigured(configuration) {
+		branch = addSuffix(branch, configuration)
+	}
+	return branch
+}
+
+func removeWipQualifier(branch string, localBranches []string, configuration Configuration) string {
+	for !branchExists(branch, localBranches) && hasSuffix(branch, configuration) {
+		branch = removeSuffix(branch, configuration)
+	}
+	return branch
+}
+
+func customWipBranchQualifierConfigured(configuration Configuration) bool {
 	return configuration.WipBranchQualifier != ""
 }
 
@@ -310,15 +314,15 @@ func removeWipPrefix(branch string) string { //TODO improve, add tests
 	return branch[len(wipBranchPrefix):]
 }
 
-func addSuffix(branch string) string { // TODO rename to addWipQualifier
+func addSuffix(branch string, configuration Configuration) string { // TODO rename to addWipQualifier
 	return branch + configuration.WipBranchQualifierSeparator + configuration.WipBranchQualifier
 }
 
-func hasSuffix(branch string) bool { //TODO improve (dont use strings.Contains, add tests)
+func hasSuffix(branch string, configuration Configuration) bool { //TODO improve (dont use strings.Contains, add tests)
 	return strings.Contains(branch, configuration.WipBranchQualifierSeparator)
 }
 
-func removeSuffix(branch string) string {
+func removeSuffix(branch string, configuration Configuration) string {
 	if configuration.WipBranchQualifierSet { // WipBranchQualifier configured
 		suffix := configuration.WipBranchQualifierSeparator + configuration.WipBranchQualifier
 		if strings.HasSuffix(branch, suffix) {
@@ -326,7 +330,7 @@ func removeSuffix(branch string) string {
 		} else {
 			return branch
 		}
-	} else if hasSuffix(branch) { // WipBranchQualifier not configured, but WipBranchQualifierSeparator found
+	} else if hasSuffix(branch, configuration) { // WipBranchQualifier not configured, but WipBranchQualifierSeparator found
 		return branch[:strings.LastIndex(branch, configuration.WipBranchQualifierSeparator)]
 	} else {
 		return branch
@@ -427,7 +431,7 @@ func moo() {
 func reset() {
 	git("fetch", configuration.RemoteName)
 
-	currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), gitBranches())
+	currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), gitBranches(), configuration)
 
 	git("checkout", currentBaseBranch)
 	if hasLocalBranch(currentWipBranch) {
@@ -456,7 +460,7 @@ func start(configuration Configuration) {
 
 	git("fetch", configuration.RemoteName, "--prune")
 
-	currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), gitBranches())
+	currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), gitBranches(), configuration)
 
 	hasWipBranchesWithQualifier := hasQualifiedBranches(currentBaseBranch, gitRemoteBranches())
 
@@ -515,7 +519,7 @@ func hasQualifiedBranches(currentBaseBranch string, remoteBranches []string) boo
 }
 
 func startJoinMobSession() {
-	_, currentWipBranch := determineBranches(gitCurrentBranch(), gitBranches())
+	_, currentWipBranch := determineBranches(gitCurrentBranch(), gitBranches(), configuration)
 
 	sayInfo("joining existing mob session from " + configuration.RemoteName + "/" + currentWipBranch)
 	git("checkout", "-B", currentWipBranch, configuration.RemoteName+"/"+currentWipBranch)
@@ -523,7 +527,7 @@ func startJoinMobSession() {
 }
 
 func startNewMobSession() {
-	currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), gitBranches())
+	currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), gitBranches(), configuration)
 
 	sayInfo("starting new mob session from " + configuration.RemoteName + "/" + currentBaseBranch)
 	git("checkout", "-B", currentWipBranch, configuration.RemoteName+"/"+currentBaseBranch)
@@ -563,7 +567,7 @@ func next() {
 		return
 	}
 
-	currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), gitBranches())
+	currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), gitBranches(), configuration)
 
 	if isNothingToCommit() {
 		if hasLocalCommits(currentWipBranch) {
@@ -602,7 +606,7 @@ func done() {
 
 	git("fetch", configuration.RemoteName, "--prune")
 
-	currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), gitBranches())
+	currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), gitBranches(), configuration)
 
 	if hasRemoteBranch(currentWipBranch) {
 		if !isNothingToCommit() {
@@ -642,13 +646,13 @@ func status() {
 	if isMobProgramming() {
 		sayInfo("you are mob programming")
 
-		currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), gitBranches())
+		currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), gitBranches(), configuration)
 		sayInfo("on wip branch " + currentWipBranch + " (base branch " + currentBaseBranch + ")")
 
 		say(silentgit("--no-pager", "log", currentBaseBranch+".."+currentWipBranch, "--pretty=format:%h %cr <%an>", "--abbrev-commit"))
 	} else {
 		sayInfo("you aren't mob programming")
-		currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), gitBranches())
+		currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), gitBranches(), configuration)
 		sayInfo("on base branch " + currentBaseBranch + " (wip branch " + currentWipBranch + ")")
 
 		sayTodo("to start mob programming, use", "mob start")
@@ -674,7 +678,7 @@ func hasUncommittedChanges() bool {
 
 func isMobProgramming() bool {
 	currentBranch := gitCurrentBranch()
-	_, currentWipBranch := determineBranches(currentBranch, gitBranches())
+	_, currentWipBranch := determineBranches(currentBranch, gitBranches(), configuration)
 	debugInfo("current branch " + currentBranch + " and currentWipBranch " + currentWipBranch)
 	return currentWipBranch == currentBranch
 }
@@ -728,7 +732,7 @@ func gitUserName() string {
 func showNext() {
 	debugInfo("determining next person based on previous changes")
 
-	currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), gitBranches())
+	currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), gitBranches(), configuration)
 
 	changes := strings.TrimSpace(silentgit("--no-pager", "log", currentBaseBranch+".."+currentWipBranch, "--pretty=format:%an", "--abbrev-commit"))
 	lines := strings.Split(strings.Replace(changes, "\r\n", "\n", -1), "\n")
