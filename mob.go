@@ -37,6 +37,10 @@ type Configuration struct {
 	MobDoneSquash                     bool   // override with MOB_DONE_SQUASH environment variable
 }
 
+func (c Configuration) wipBranchQualifierSuffix() string {
+	return c.WipBranchQualifierSeparator + c.WipBranchQualifier
+}
+
 func main() {
 	configuration = parseEnvironmentVariables(getDefaultConfiguration())
 	debugInfo("Args '" + strings.Join(os.Args, " ") + "'")
@@ -286,7 +290,7 @@ func determineBranches(currentBranch string, localBranches []string, configurati
 
 func addWipQualifier(branch string, configuration Configuration) string {
 	if customWipBranchQualifierConfigured(configuration) {
-		return addSuffix(branch, wipBranchQualifierSuffix(configuration))
+		return addSuffix(branch, configuration.wipBranchQualifierSuffix())
 	}
 	return branch
 }
@@ -297,7 +301,7 @@ func removeWipQualifier(branch string, localBranches []string, configuration Con
 		if configuration.WipBranchQualifier == "" { // WipBranchQualifier not configured
 			afterRemoval = removeFromSeparator(branch, configuration.WipBranchQualifierSeparator)
 		} else { // WipBranchQualifier not configured
-			afterRemoval = removeSuffix(branch, wipBranchQualifierSuffix(configuration))
+			afterRemoval = removeSuffix(branch, configuration.wipBranchQualifierSuffix())
 		}
 
 		if branch == afterRemoval { // avoids infinite loop
@@ -342,10 +346,6 @@ func addSuffix(branch string, suffix string) string {
 
 func hasWipBranchQualifierSeparator(branch string, configuration Configuration) bool { //TODO improve (dont use strings.Contains, add tests)
 	return strings.Contains(branch, configuration.WipBranchQualifierSeparator)
-}
-
-func wipBranchQualifierSuffix(configuration Configuration) string {
-	return configuration.WipBranchQualifierSeparator + configuration.WipBranchQualifier
 }
 
 func branchExists(branchInQuestion string, existingBranches []string) bool {
