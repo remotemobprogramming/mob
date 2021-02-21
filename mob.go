@@ -41,6 +41,10 @@ func (c Configuration) wipBranchQualifierSuffix() string {
 	return c.WipBranchQualifierSeparator + c.WipBranchQualifier
 }
 
+func (c Configuration) customWipBranchQualifierConfigured() bool {
+	return c.WipBranchQualifier != ""
+}
+
 func main() {
 	configuration = parseEnvironmentVariables(getDefaultConfiguration())
 	debugInfo("Args '" + strings.Join(os.Args, " ") + "'")
@@ -269,7 +273,7 @@ func execute(command string, parameter []string) {
 }
 
 func determineBranches(currentBranch string, localBranches []string, configuration Configuration) (baseBranch string, wipBranch string) {
-	if currentBranch == "mob-session" || (currentBranch == "master" && !customWipBranchQualifierConfigured(configuration)) {
+	if currentBranch == "mob-session" || (currentBranch == "master" && !configuration.customWipBranchQualifierConfigured()) {
 		baseBranch = "master"
 		wipBranch = "mob-session"
 	} else if isWipBranch(currentBranch) {
@@ -289,7 +293,7 @@ func determineBranches(currentBranch string, localBranches []string, configurati
 }
 
 func addWipQualifier(branch string, configuration Configuration) string {
-	if customWipBranchQualifierConfigured(configuration) {
+	if configuration.customWipBranchQualifierConfigured() {
 		return addSuffix(branch, configuration.wipBranchQualifierSuffix())
 	}
 	return branch
@@ -322,10 +326,6 @@ func removeSuffix(branch string, suffix string) string {
 
 func removeFromSeparator(branch string, separator string) string {
 	return branch[:strings.LastIndex(branch, separator)]
-}
-
-func customWipBranchQualifierConfigured(configuration Configuration) bool {
-	return configuration.WipBranchQualifier != ""
 }
 
 func isWipBranch(branch string) bool {
