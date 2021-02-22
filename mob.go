@@ -245,7 +245,7 @@ func execute(command string, parameter []string) {
 
 		status()
 	case "n", "next":
-		next()
+		next(configuration)
 	case "d", "done":
 		done()
 	case "reset":
@@ -564,7 +564,7 @@ func findLatestMobStash(stashes string) string {
 	return "unknown"
 }
 
-func next() {
+func next(configuration Configuration) {
 	if !isMobProgramming() {
 		sayError("you aren't mob programming")
 		sayTodo("to start mob programming, use", "mob start")
