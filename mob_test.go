@@ -834,27 +834,21 @@ func assertCommitsOnBranch(t *testing.T, commits int, branchName string) {
 	result := silentgit("rev-list", "--count", branchName)
 	number, _ := strconv.Atoi(strings.TrimSpace(result))
 	if number != commits {
-		_, file, line, _ := runtime.Caller(1)
-		fmt.Printf("\033[31m%s:%d:\n\n\texp: %#v\n\n\tgot: %#v\033[39m\n\n", filepath.Base(file), line, strconv.Itoa(commits)+" commits in "+workingDir, strconv.Itoa(number)+" commits in "+workingDir)
-		t.FailNow()
+		failWithFailure(t, strconv.Itoa(commits)+" commits in "+workingDir, strconv.Itoa(number)+" commits in "+workingDir)
 	}
 }
 
 func assertCommitLogContainsMessage(t *testing.T, branchName string, commitMessage string) {
 	logMessages := silentgit("log", branchName, "--oneline")
 	if !strings.Contains(logMessages, commitMessage) {
-		_, file, line, _ := runtime.Caller(1)
-		fmt.Printf("\033[31m%s:%d:\n\n\texp: %#v\n\n\tgot: %#v\033[39m\n\n", filepath.Base(file), line, "git log contains '"+commitMessage+"'", logMessages)
-		t.FailNow()
+		failWithFailure(t, "git log contains '"+commitMessage+"'", logMessages)
 	}
 }
 
 func assertFileExist(t *testing.T, filename string) {
 	path := workingDir + "/" + filename
 	if _, err := os.Stat(path); os.IsNotExist(err) {
-		_, file, line, _ := runtime.Caller(1)
-		fmt.Printf("\033[31m%s:%d:\n\n\texp: %#v\n\n\tgot: %#v\033[39m\n\n", filepath.Base(file), line, "existing file "+path, "no file at "+path)
-		t.FailNow()
+		failWithFailure(t, "existing file "+path, "no file at "+path)
 	}
 }
 
@@ -868,69 +862,57 @@ func createFile(t *testing.T, filename string, content string) {
 	d1 := []byte(content)
 	err := ioutil.WriteFile(workingDir+"/"+filename, d1, 0644)
 	if err != nil {
-		_, file, line, _ := runtime.Caller(1)
-		fmt.Printf("\033[31m%s:%d:\n\n\texp: %#v\n\n\tgot: %#v\033[39m\n\n", filepath.Base(file), line, "creating file "+filename+" with content "+content, "error")
-		t.FailNow()
+		failWithFailure(t, "creating file "+filename+" with content "+content, "error")
 	}
 }
 
 func assertOnBranch(t *testing.T, branch string) {
 	currentBranch := gitCurrentBranch()
 	if currentBranch != branch {
-		_, file, line, _ := runtime.Caller(1)
-		fmt.Printf("\033[31m%s:%d:\n\n\texp: %#v\n\n\tgot: %#v\033[39m\n\n", filepath.Base(file), line, "on branch "+branch, "on branch "+currentBranch)
-		t.FailNow()
+		failWithFailure(t, "on branch "+branch, "on branch "+currentBranch)
 	}
 }
 
 func assertOutputContains(t *testing.T, output *string, contains string) {
 	currentOutput := *output
 	if !strings.Contains(currentOutput, contains) {
-		_, file, line, _ := runtime.Caller(1)
-		fmt.Printf("\033[31m%s:%d:\n\n\texp: %#v\n\n\tgot: %#v\033[39m\n\n", filepath.Base(file), line, "output contains '"+contains+"'", currentOutput)
-		t.FailNow()
+		failWithFailure(t, "output contains '"+contains+"'", currentOutput)
 	}
 }
 
 func assertOutputNotContains(t *testing.T, output *string, notContains string) {
 	if strings.Contains(*output, notContains) {
-		_, file, line, _ := runtime.Caller(1)
-		fmt.Printf("\033[31m%s:%d:\n\n\texp: %#v\n\n\tgot: %#v\033[39m\n\n", filepath.Base(file), line, "output not contains "+notContains, output)
-		t.FailNow()
+		failWithFailure(t, "output not contains "+notContains, output)
 	}
 }
 
 func assertMobSessionBranches(t *testing.T, branch string) {
 	if !hasRemoteBranch(branch) {
-		_, file, line, _ := runtime.Caller(1)
-		fmt.Printf("\033[31m%s:%d:\n\n\texp: %#v\n\n\tgot: %#v\033[39m\n\n", filepath.Base(file), line, configuration.RemoteName+"/"+branch, "none")
-		t.FailNow()
+		failWithFailure(t, configuration.RemoteName+"/"+branch, "none")
 	}
 	if !hasLocalBranch(branch) {
-		_, file, line, _ := runtime.Caller(1)
-		fmt.Printf("\033[31m%s:%d:\n\n\texp: %#v\n\n\tgot: %#v\033[39m\n\n", filepath.Base(file), line, branch, "none")
-		t.FailNow()
+		failWithFailure(t, branch, "none")
 	}
 }
 
 func assertNoMobSessionBranches(t *testing.T, branch string) {
 	if hasRemoteBranch(branch) {
-		_, file, line, _ := runtime.Caller(1)
-		fmt.Printf("\033[31m%s:%d:\n\n\texp: %#v\n\n\tgot: %#v\033[39m\n\n", filepath.Base(file), line, "none", configuration.RemoteName+"/"+branch)
-		t.FailNow()
+		failWithFailure(t, "none", configuration.RemoteName+"/"+branch)
 	}
 	if hasLocalBranch(branch) {
-		_, file, line, _ := runtime.Caller(1)
-		fmt.Printf("\033[31m%s:%d:\n\n\texp: %#v\n\n\tgot: %#v\033[39m\n\n", filepath.Base(file), line, "none", branch)
-		t.FailNow()
+		failWithFailure(t, "none", branch)
 	}
 }
 
 func equals(t *testing.T, exp, act interface{}) {
 	if !reflect.DeepEqual(exp, act) {
 		t.Log(string(debug.Stack()))
-		_, file, line, _ := runtime.Caller(1)
-		fmt.Printf("\033[31m%s:%d:\n\n\texp: %#v\n\n\tgot: %#v\033[39m\n\n", filepath.Base(file), line, exp, act)
-		t.FailNow()
+		failWithFailure(t, exp, act)
 	}
+}
+
+func failWithFailure(t *testing.T, exp interface{}, act interface{}) {
+	_, file, line, _ := runtime.Caller(1)
+	fmt.Printf("\033[31m%s:%d:\n\n\texp: %#v\n\n\tgot: %#v\033[39m\n\n", filepath.Base(file), line, exp, act)
+	t.FailNow()
 }
