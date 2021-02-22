@@ -1,6 +1,7 @@
 # 1.3.0
 - The default `MOB_COMMIT_MESSAGE` now includes `[ci skip]` and `[skip ci]` so that all the typical CI systems (including Azure DevOps) will skip this commit.
 - Add `--squash` option to `mob done` that corresponds to `--no-squash`.
+- Fixes the default text to speech command on linux and osx.
 
 # 1.2.0
 - Add environment variable `MOB_REQUIRE_COMMIT_MESSAGE` which you could set to true to require a commit message other than the default one.
