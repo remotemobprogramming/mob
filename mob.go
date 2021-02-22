@@ -63,10 +63,10 @@ func getDefaultConfiguration() Configuration {
 	notifyCommand := ""
 	switch runtime.GOOS {
 	case "darwin":
-		voiceCommand = "say"
+		voiceCommand = "say \"%s\""
 		notifyCommand = "/usr/bin/osascript -e 'display notification \"%s\"'"
 	case "linux":
-		voiceCommand = "say"
+		voiceCommand = "say \"%s\""
 		notifyCommand = "notify-send \"%s\""
 	case "windows":
 		voiceCommand = "(New-Object -ComObject SAPI.SPVoice).Speak(\\\"%s\\\")"
