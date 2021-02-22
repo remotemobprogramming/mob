@@ -583,7 +583,7 @@ func next(configuration Configuration) {
 	currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), gitBranches(), configuration)
 
 	if isNothingToCommit() {
-		if hasLocalCommits(currentWipBranch) {
+		if hasLocalCommits(currentWipBranch, configuration) {
 			git("push", "--no-verify", configuration.RemoteName, currentWipBranch)
 		} else {
 			sayInfo("nothing was done, so nothing to commit")
@@ -595,7 +595,7 @@ func next(configuration Configuration) {
 		git("push", "--no-verify", configuration.RemoteName, currentWipBranch)
 		say(changes)
 	}
-	showNext()
+	showNext(configuration)
 
 	if !configuration.MobNextStay {
 		git("checkout", currentBaseBranch)
@@ -677,7 +677,7 @@ func isNothingToCommit() bool {
 	return len(strings.TrimSpace(output)) == 0
 }
 
-func hasLocalCommits(branch string) bool {
+func hasLocalCommits(branch string, configuration Configuration) bool {
 	local := silentgit("for-each-ref", "--format=%(objectname)",
 		"refs/heads/"+branch)
 	remote := silentgit("for-each-ref", "--format=%(objectname)",
@@ -742,7 +742,7 @@ func gitUserName() string {
 	return strings.TrimSpace(silentgit("config", "--get", "user.name"))
 }
 
-func showNext() {
+func showNext(configuration Configuration) {
 	debugInfo("determining next person based on previous changes")
 
 	currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), gitBranches(), configuration)
