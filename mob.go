@@ -73,7 +73,7 @@ func getDefaultConfiguration() Configuration {
 	}
 	return Configuration{
 		RemoteName:                        "origin",
-		WipCommitMessage:                  "mob next [ci-skip]",
+		WipCommitMessage:                  "mob next [ci-skip] [ci skip] [skip ci]",
 		VoiceCommand:                      voiceCommand,
 		NotifyCommand:                     notifyCommand,
 		MobNextStay:                       true,
