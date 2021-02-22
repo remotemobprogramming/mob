@@ -235,7 +235,7 @@ func execute(command string, parameter []string) {
 	switch command {
 	case "s", "start":
 		start(configuration)
-		if !isMobProgramming() {
+		if !isMobProgramming(configuration) {
 			return
 		}
 		if len(parameter) > 0 {
@@ -475,7 +475,7 @@ func start(configuration Configuration) {
 
 	hasWipBranchesWithQualifier := hasQualifiedBranches(currentBaseBranch, gitRemoteBranches())
 
-	if !isMobProgramming() && hasWipBranchesWithQualifier && !configuration.WipBranchQualifierSet {
+	if !isMobProgramming(configuration) && hasWipBranchesWithQualifier && !configuration.WipBranchQualifierSet {
 		sayInfo("qualified mob branches detected")
 		sayTodo("To start mob programming, use", "mob start --branch <branch>")
 		sayIndented("(use \"\" for the default mob branch)")
@@ -488,7 +488,7 @@ func start(configuration Configuration) {
 		return
 	}
 
-	if !isMobProgramming() {
+	if !isMobProgramming(configuration) {
 		git("merge", "FETCH_HEAD", "--ff-only")
 	}
 
@@ -565,7 +565,7 @@ func findLatestMobStash(stashes string) string {
 }
 
 func next(configuration Configuration) {
-	if !isMobProgramming() {
+	if !isMobProgramming(configuration) {
 		sayError("you aren't mob programming")
 		sayTodo("to start mob programming, use", "mob start")
 		return
@@ -609,7 +609,7 @@ func getCachedChanges() string {
 }
 
 func done() {
-	if !isMobProgramming() {
+	if !isMobProgramming(configuration) {
 		sayError("you aren't mob programming")
 		sayTodo("to start mob programming, use", "mob start")
 		return
@@ -654,7 +654,7 @@ func squashOrNoCommit() string {
 }
 
 func status() {
-	if isMobProgramming() {
+	if isMobProgramming(configuration) {
 		sayInfo("you are mob programming")
 
 		currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), gitBranches(), configuration)
@@ -687,7 +687,7 @@ func hasUncommittedChanges() bool {
 	return !isNothingToCommit()
 }
 
-func isMobProgramming() bool {
+func isMobProgramming(configuration Configuration) bool {
 	currentBranch := gitCurrentBranch()
 	_, currentWipBranch := determineBranches(currentBranch, gitBranches(), configuration)
 	debugInfo("current branch " + currentBranch + " and currentWipBranch " + currentWipBranch)
