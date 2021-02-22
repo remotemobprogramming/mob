@@ -96,6 +96,7 @@ Basic Commands(Options):
     [--message|-m <commit-message>]      Override commit message
   done
     [--no-squash]                        Do not squash commits from wip branch
+    [--squash]                           Squash commits from wip branch
   reset
     [--branch|-b <branch-postfix>]       Set wip branch to 'mob/<base-branch>/<branch-postfix>'
 

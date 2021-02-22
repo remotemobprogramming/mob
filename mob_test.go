@@ -24,7 +24,7 @@ func TestParseArgs(t *testing.T) {
 	equals(t, "green", configuration.WipBranchQualifier)
 }
 
-func TestParseArgsDoneSquash(t *testing.T) {
+func TestParseArgsDoneNoSquash(t *testing.T) {
 	configuration = getDefaultConfiguration()
 	equals(t, true, configuration.MobDoneSquash)
 
@@ -33,6 +33,17 @@ func TestParseArgsDoneSquash(t *testing.T) {
 	equals(t, "done", command)
 	equals(t, "", strings.Join(parameters, ""))
 	equals(t, false, configuration.MobDoneSquash)
+}
+
+func TestParseArgsDoneSquash(t *testing.T) {
+	configuration = getDefaultConfiguration()
+	configuration.MobDoneSquash = false
+
+	command, parameters := parseArgs([]string{"mob", "done", "--squash"})
+
+	equals(t, "done", command)
+	equals(t, "", strings.Join(parameters, ""))
+	equals(t, true, configuration.MobDoneSquash)
 }
 
 func TestParseArgsMessage(t *testing.T) {

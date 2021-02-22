@@ -216,6 +216,8 @@ func parseArgs(args []string) (command string, parameters []string) {
 				configuration.WipCommitMessage = args[i+1]
 			}
 			i++ // skip consumed parameter
+		case "--squash":
+			configuration.MobDoneSquash = true
 		case "--no-squash":
 			configuration.MobDoneSquash = false
 		default:
@@ -787,6 +789,7 @@ Basic Commands(Options):
     [--message|-m <commit-message>]      Override commit message
   done
     [--no-squash]                        Do not squash commits from wip branch
+    [--squash]                           Squash commits from wip branch
   reset 
     [--branch|-b <branch-postfix>]       Set wip branch to 'mob/<base-branch>/<branch-postfix>'
 
