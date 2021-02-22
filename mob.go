@@ -150,15 +150,15 @@ func setBoolFromEnvVariable(s *bool, key string) {
 	}
 }
 
-func setBoolFromEnvVariableSet(s *bool, changed *bool, key string) {
+func setBoolFromEnvVariableSet(s *bool, overridden *bool, key string) {
 	value, set := os.LookupEnv(key)
 	if set && value == "true" {
 		*s = true
-		*changed = true
+		*overridden = true
 		debugInfo("overriding " + key + " =" + strconv.FormatBool(*s))
 	} else if set && value == "false" {
 		*s = false
-		*changed = true
+		*overridden = true
 		debugInfo("overriding " + key + " =" + strconv.FormatBool(*s))
 	}
 }
