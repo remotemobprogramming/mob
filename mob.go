@@ -45,6 +45,10 @@ func (c Configuration) customWipBranchQualifierConfigured() bool {
 	return c.WipBranchQualifier != ""
 }
 
+func (c Configuration) hasCustomCommitMessage() bool {
+	return getDefaultConfiguration().WipCommitMessage != c.WipCommitMessage
+}
+
 func main() {
 	configuration = parseEnvironmentVariables(getDefaultConfiguration())
 	debugInfo("Args '" + strings.Join(os.Args, " ") + "'")
@@ -571,9 +575,7 @@ func next(configuration Configuration) {
 		return
 	}
 
-	defConfig := getDefaultConfiguration()
-	gotM := defConfig.WipCommitMessage != configuration.WipCommitMessage
-	if !gotM && configuration.RequireCommitMessage && !isNothingToCommit() {
+	if !configuration.hasCustomCommitMessage() && configuration.RequireCommitMessage && !isNothingToCommit() {
 		sayError("commit message required")
 		return
 	}
