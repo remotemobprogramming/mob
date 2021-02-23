@@ -45,6 +45,10 @@ func (c Configuration) customWipBranchQualifierConfigured() bool {
 	return c.WipBranchQualifier != ""
 }
 
+func (c Configuration) hasCustomCommitMessage() bool {
+	return getDefaultConfiguration().WipCommitMessage != c.WipCommitMessage
+}
+
 func main() {
 	configuration = parseEnvironmentVariables(getDefaultConfiguration())
 	debugInfo("Args '" + strings.Join(os.Args, " ") + "'")
@@ -237,7 +241,7 @@ func execute(command string, parameter []string) {
 	switch command {
 	case "s", "start":
 		start(configuration)
-		if !isMobProgramming() {
+		if !isMobProgramming(configuration) {
 			return
 		}
 		if len(parameter) > 0 {
@@ -247,7 +251,7 @@ func execute(command string, parameter []string) {
 
 		status()
 	case "n", "next":
-		next()
+		next(configuration)
 	case "d", "done":
 		done()
 	case "reset":
@@ -477,7 +481,7 @@ func start(configuration Configuration) {
 
 	hasWipBranchesWithQualifier := hasQualifiedBranches(currentBaseBranch, gitRemoteBranches())
 
-	if !isMobProgramming() && hasWipBranchesWithQualifier && !configuration.WipBranchQualifierSet {
+	if !isMobProgramming(configuration) && hasWipBranchesWithQualifier && !configuration.WipBranchQualifierSet {
 		sayInfo("qualified mob branches detected")
 		sayTodo("To start mob programming, use", "mob start --branch <branch>")
 		sayIndented("(use \"\" for the default mob branch)")
@@ -490,7 +494,7 @@ func start(configuration Configuration) {
 		return
 	}
 
-	if !isMobProgramming() {
+	if !isMobProgramming(configuration) {
 		git("merge", "FETCH_HEAD", "--ff-only")
 	}
 
@@ -566,16 +570,14 @@ func findLatestMobStash(stashes string) string {
 	return "unknown"
 }
 
-func next() {
-	if !isMobProgramming() {
+func next(configuration Configuration) {
+	if !isMobProgramming(configuration) {
 		sayError("you aren't mob programming")
 		sayTodo("to start mob programming, use", "mob start")
 		return
 	}
 
-	defConfig := getDefaultConfiguration()
-	gotM := defConfig.WipCommitMessage != configuration.WipCommitMessage
-	if !gotM && configuration.RequireCommitMessage && !isNothingToCommit() {
+	if !configuration.hasCustomCommitMessage() && configuration.RequireCommitMessage && !isNothingToCommit() {
 		sayError("commit message required")
 		return
 	}
@@ -583,7 +585,7 @@ func next() {
 	currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), gitBranches(), configuration)
 
 	if isNothingToCommit() {
-		if hasLocalCommits(currentWipBranch) {
+		if hasLocalCommits(currentWipBranch, configuration) {
 			git("push", "--no-verify", configuration.RemoteName, currentWipBranch)
 		} else {
 			sayInfo("nothing was done, so nothing to commit")
@@ -595,7 +597,7 @@ func next() {
 		git("push", "--no-verify", configuration.RemoteName, currentWipBranch)
 		say(changes)
 	}
-	showNext()
+	showNext(configuration)
 
 	if !configuration.MobNextStay {
 		git("checkout", currentBaseBranch)
@@ -611,7 +613,7 @@ func getCachedChanges() string {
 }
 
 func done() {
-	if !isMobProgramming() {
+	if !isMobProgramming(configuration) {
 		sayError("you aren't mob programming")
 		sayTodo("to start mob programming, use", "mob start")
 		return
@@ -656,7 +658,7 @@ func squashOrNoCommit() string {
 }
 
 func status() {
-	if isMobProgramming() {
+	if isMobProgramming(configuration) {
 		sayInfo("you are mob programming")
 
 		currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), gitBranches(), configuration)
@@ -677,7 +679,7 @@ func isNothingToCommit() bool {
 	return len(strings.TrimSpace(output)) == 0
 }
 
-func hasLocalCommits(branch string) bool {
+func hasLocalCommits(branch string, configuration Configuration) bool {
 	local := silentgit("for-each-ref", "--format=%(objectname)",
 		"refs/heads/"+branch)
 	remote := silentgit("for-each-ref", "--format=%(objectname)",
@@ -689,7 +691,7 @@ func hasUncommittedChanges() bool {
 	return !isNothingToCommit()
 }
 
-func isMobProgramming() bool {
+func isMobProgramming(configuration Configuration) bool {
 	currentBranch := gitCurrentBranch()
 	_, currentWipBranch := determineBranches(currentBranch, gitBranches(), configuration)
 	debugInfo("current branch " + currentBranch + " and currentWipBranch " + currentWipBranch)
@@ -742,7 +744,7 @@ func gitUserName() string {
 	return strings.TrimSpace(silentgit("config", "--get", "user.name"))
 }
 
-func showNext() {
+func showNext(configuration Configuration) {
 	debugInfo("determining next person based on previous changes")
 
 	currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), gitBranches(), configuration)

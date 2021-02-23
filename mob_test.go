@@ -233,7 +233,7 @@ func TestStatusNotMobProgramming(t *testing.T) {
 func TestNextNotMobProgramming(t *testing.T) {
 	output := setup(t)
 
-	next()
+	next(configuration)
 
 	assertOutputContains(t, output, "you aren't mob programming")
 }
@@ -257,13 +257,13 @@ func TestRequireCommitMessage(t *testing.T) {
 
 	start(configuration)
 
-	next()
+	next(configuration)
 	// ensure we don't complain if there's nothing to commit
 	// https://github.com/remotemobprogramming/mob/pull/107#issuecomment-761298861
 	assertOutputContains(t, output, "nothing to commit")
 
 	createFile(t, "example.txt", "content")
-	next()
+	next(configuration)
 	// failure message should make sense regardless of whether we
 	// provided commit message via `-m` or MOB_WIP_COMMIT_MESSAGE
 	// https://github.com/remotemobprogramming/mob/pull/107#issuecomment-761591039
@@ -318,7 +318,7 @@ func TestStartWithMultipleExistingBranches(t *testing.T) {
 	configuration.WipBranchQualifier = "green"
 	start(configuration)
 	assertOnBranch(t, "mob/master-green")
-	next()
+	next(configuration)
 	assertOnBranch(t, "master")
 
 	configuration.WipBranchQualifier = ""
@@ -332,7 +332,7 @@ func TestStartWithMultipleExistingBranchesAndEmptyWipBranchQualifier(t *testing.
 
 	configuration.WipBranchQualifier = "green"
 	start(configuration)
-	next()
+	next(configuration)
 
 	configuration.WipBranchQualifier = ""
 	configuration.WipBranchQualifierSet = true
@@ -349,7 +349,7 @@ func TestStartWithMultipleExistingBranchesWithStay(t *testing.T) {
 	assertOnBranch(t, "master")
 	start(configuration)
 	assertOnBranch(t, "mob/master-green")
-	next()
+	next(configuration)
 	assertOnBranch(t, "mob/master-green")
 
 	configuration.WipBranchQualifier = ""
@@ -368,7 +368,7 @@ func TestStartNextWithBranch(t *testing.T) {
 	assertMobSessionBranches(t, "mob/master-green")
 	configuration.WipBranchQualifier = ""
 
-	next()
+	next(configuration)
 	assertOnBranch(t, "master")
 
 	configuration.WipBranchQualifier = "green"
@@ -385,7 +385,7 @@ func TestStartNextStartWithBranch(t *testing.T) {
 	start(configuration)
 	assertOnBranch(t, "mob/master-green")
 
-	next()
+	next(configuration)
 	assertOnBranch(t, "mob/master-green")
 
 	start(configuration)
@@ -403,7 +403,7 @@ func TestStartNextOnFeatureWithBranch(t *testing.T) {
 	start(configuration)
 	assertOnBranch(t, "mob/feature1-green")
 
-	next()
+	next(configuration)
 	assertOnBranch(t, "feature1")
 }
 
@@ -418,7 +418,7 @@ func TestStartNextWithBranchContainingHyphen(t *testing.T) {
 
 	configuration.WipBranchQualifier = ""
 	configuration.WipBranchQualifierSet = false
-	next()
+	next(configuration)
 }
 
 func TestReset(t *testing.T) {
@@ -434,7 +434,7 @@ func TestResetCommit(t *testing.T) {
 	setup(t)
 	start(configuration)
 	createFile(t, "example.txt", "content")
-	next()
+	next(configuration)
 	assertMobSessionBranches(t, "mob-session")
 
 	reset()
@@ -492,7 +492,7 @@ func TestStartNextBackToMaster(t *testing.T) {
 	createFile(t, "example.txt", "content")
 	assertOnBranch(t, "mob-session")
 
-	next()
+	next(configuration)
 
 	assertOnBranch(t, "master")
 	assertMobSessionBranches(t, "mob-session")
@@ -505,7 +505,7 @@ func TestStartNextStay(t *testing.T) {
 	createFile(t, "file1.txt", "asdf")
 	assertOnBranch(t, "mob-session")
 
-	next()
+	next(configuration)
 
 	equals(t, strings.TrimSpace(silentgit("log", "--format=%B", "-n", "1", "HEAD")), configuration.WipCommitMessage)
 	assertOnBranch(t, "mob-session")
@@ -601,7 +601,7 @@ func TestStartNextFeatureBranch(t *testing.T) {
 	start(configuration)
 	assertOnBranch(t, "mob/feature1")
 
-	next()
+	next(configuration)
 
 	assertOnBranch(t, "feature1")
 	assertNoMobSessionBranches(t, "mob-session")
@@ -629,12 +629,12 @@ func TestBothCreateNonemptyCommitWithNext(t *testing.T) {
 	createFile(t, "file2.txt", "asdf")
 
 	setWorkingDir("/tmp/mob/local")
-	next()
+	next(configuration)
 
 	setWorkingDir("/tmp/mob/localother")
-	// next() not possible, would fail
+	// next(configuration) not possible, would fail
 	git("pull")
-	next()
+	next(configuration)
 
 	setWorkingDir("/tmp/mob/local")
 	start(configuration)
@@ -659,10 +659,10 @@ func TestNothingToCommitCreatesNoCommits(t *testing.T) {
 	assertCommits(t, 1)
 
 	setWorkingDir("/tmp/mob/local")
-	next()
+	next(configuration)
 
 	setWorkingDir("/tmp/mob/localother")
-	next()
+	next(configuration)
 
 	setWorkingDir("/tmp/mob/local")
 	start(configuration)
@@ -680,7 +680,7 @@ func TestStartNextPushManualCommits(t *testing.T) {
 
 	start(configuration)
 	createFileAndCommitIt(t, "example.txt", "content", "asdf")
-	next()
+	next(configuration)
 
 	setWorkingDir("/tmp/mob/localother")
 	start(configuration)
@@ -699,7 +699,7 @@ func TestStartNextPushManualCommitsFeatureBranch(t *testing.T) {
 	assertOnBranch(t, "mob/feature1")
 
 	createFileAndCommitIt(t, "example.txt", "content", "asdf")
-	next()
+	next(configuration)
 
 	setWorkingDir("/tmp/mob/localother")
 	git("fetch")
@@ -714,11 +714,11 @@ func TestConflictingMobSessions(t *testing.T) {
 	setWorkingDir("/tmp/mob/local")
 	start(configuration)
 	createFile(t, "example.txt", "content")
-	next()
+	next(configuration)
 
 	setWorkingDir("/tmp/mob/localother")
 	start(configuration)
-	next()
+	next(configuration)
 
 	setWorkingDir("/tmp/mob/local")
 	start(configuration)
@@ -728,7 +728,7 @@ func TestConflictingMobSessions(t *testing.T) {
 	setWorkingDir("/tmp/mob/local")
 	start(configuration)
 	createFile(t, "example2.txt", "content")
-	next()
+	next(configuration)
 
 	setWorkingDir("/tmp/mob/localother")
 	start(configuration)
@@ -741,11 +741,11 @@ func TestConflictingMobSessionsNextStay(t *testing.T) {
 	setWorkingDir("/tmp/mob/local")
 	start(configuration)
 	createFile(t, "example.txt", "content")
-	next()
+	next(configuration)
 
 	setWorkingDir("/tmp/mob/localother")
 	start(configuration)
-	next()
+	next(configuration)
 
 	setWorkingDir("/tmp/mob/local")
 	start(configuration)
@@ -762,7 +762,7 @@ func TestDoneMergeConflict(t *testing.T) {
 	setWorkingDir("/tmp/mob/local")
 	start(configuration)
 	createFile(t, "example.txt", "content")
-	next()
+	next(configuration)
 
 	setWorkingDir("/tmp/mob/localother")
 	createFileAndCommitIt(t, "example.txt", "asdf", "asdf")
@@ -780,7 +780,7 @@ func TestDoneMerge(t *testing.T) {
 	setWorkingDir("/tmp/mob/local")
 	start(configuration)
 	createFile(t, "example.txt", "content")
-	next()
+	next(configuration)
 
 	setWorkingDir("/tmp/mob/localother")
 	createFileAndCommitIt(t, "example2.txt", "asdf", "asdf")
