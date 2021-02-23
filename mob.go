@@ -181,18 +181,18 @@ func deprecated(key string, message string) {
 	}
 }
 
-func config() {
-	say("MOB_REMOTE_NAME" + "=" + configuration.RemoteName)
-	say("MOB_WIP_COMMIT_MESSAGE" + "=" + configuration.WipCommitMessage)
-	say("MOB_REQUIRE_COMMIT_MESSAGE" + "=" + strconv.FormatBool(configuration.RequireCommitMessage))
-	say("MOB_VOICE_COMMAND" + "=" + configuration.VoiceCommand)
-	say("MOB_NOTIFY_COMMAND" + "=" + configuration.NotifyCommand)
-	say("MOB_NEXT_STAY" + "=" + strconv.FormatBool(configuration.MobNextStay))
-	say("MOB_START_INCLUDE_UNCOMMITTED_CHANGES" + "=" + strconv.FormatBool(configuration.MobStartIncludeUncommittedChanges))
-	say("MOB_DEBUG" + "=" + strconv.FormatBool(configuration.Debug))
-	say("MOB_WIP_BRANCH_QUALIFIER" + "=" + configuration.WipBranchQualifier)
-	say("MOB_WIP_BRANCH_QUALIFIER_SEPARATOR" + "=" + configuration.WipBranchQualifierSeparator)
-	say("MOB_DONE_SQUASH" + "=" + strconv.FormatBool(configuration.MobDoneSquash))
+func config(c Configuration) {
+	say("MOB_REMOTE_NAME" + "=" + c.RemoteName)
+	say("MOB_WIP_COMMIT_MESSAGE" + "=" + c.WipCommitMessage)
+	say("MOB_REQUIRE_COMMIT_MESSAGE" + "=" + strconv.FormatBool(c.RequireCommitMessage))
+	say("MOB_VOICE_COMMAND" + "=" + c.VoiceCommand)
+	say("MOB_NOTIFY_COMMAND" + "=" + c.NotifyCommand)
+	say("MOB_NEXT_STAY" + "=" + strconv.FormatBool(c.MobNextStay))
+	say("MOB_START_INCLUDE_UNCOMMITTED_CHANGES" + "=" + strconv.FormatBool(c.MobStartIncludeUncommittedChanges))
+	say("MOB_DEBUG" + "=" + strconv.FormatBool(c.Debug))
+	say("MOB_WIP_BRANCH_QUALIFIER" + "=" + c.WipBranchQualifier)
+	say("MOB_WIP_BRANCH_QUALIFIER_SEPARATOR" + "=" + c.WipBranchQualifierSeparator)
+	say("MOB_DONE_SQUASH" + "=" + strconv.FormatBool(c.MobDoneSquash))
 }
 
 func parseArgs(args []string) (command string, parameters []string) {
@@ -257,7 +257,7 @@ func execute(command string, parameter []string) {
 	case "reset":
 		reset()
 	case "config":
-		config()
+		config(configuration)
 	case "status":
 		status()
 	case "t", "timer":
