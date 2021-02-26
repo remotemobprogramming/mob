@@ -200,7 +200,6 @@ MOB_VOICE_COMMAND=say
 MOB_NOTIFY_COMMAND=/usr/bin/osascript -e 'display notification "%s"'
 MOB_NEXT_STAY=true
 MOB_START_INCLUDE_UNCOMMITTED_CHANGES=false
-MOB_DEBUG=false
 MOB_WIP_BRANCH_QUALIFIER=
 MOB_WIP_BRANCH_QUALIFIER_SEPARATOR=-
 MOB_DONE_SQUASH=true
@@ -209,13 +208,13 @@ MOB_DONE_SQUASH=true
 Override default value permanently via environment variables:
 
 ```bash
-export MOB_DEBUG=true
+export MOB_NEXT_STAY=true
 ```
 
 Override default value just for a single call:
 
 ```bash
-MOB_DEBUG=true mob next
+MOB_NEXT_STAY=true mob next
 ```
 
 ## How to contribute

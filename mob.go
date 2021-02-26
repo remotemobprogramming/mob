@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	versionNumber   = "1.2.0"
+	versionNumber   = "1.3.0"
 	mobStashName    = "mob-stash-name"
 	wipBranchPrefix = "mob/"
 )
@@ -30,7 +30,7 @@ type Configuration struct {
 	MobNextStay                       bool   // override with MOB_NEXT_STAY environment variable
 	MobNextStaySet                    bool   // override with MOB_NEXT_STAY environment variable
 	MobStartIncludeUncommittedChanges bool   // override with MOB_START_INCLUDE_UNCOMMITTED_CHANGES variable
-	Debug                             bool   // override with MOB_DEBUG environment variable
+	Debug                             bool   // override with --debug parameter
 	WipBranchQualifier                string // override with MOB_WIP_BRANCH_QUALIFIER environment variable
 	WipBranchQualifierSet             bool   // used to enforce a start on the default wip branch with `mob start --branch ""` when other open wip branches had been detected
 	WipBranchQualifierSeparator       string // override with MOB_WIP_BRANCH_QUALIFIER_SEPARATOR environment variable
@@ -50,7 +50,10 @@ func (c Configuration) hasCustomCommitMessage() bool {
 }
 
 func main() {
-	configuration = parseEnvironmentVariables(getDefaultConfiguration())
+	configuration = getDefaultConfiguration()
+	configuration = parseDebug(configuration, os.Args)
+
+	configuration = parseEnvironmentVariables(configuration)
 	debugInfo("Args '" + strings.Join(os.Args, " ") + "'")
 
 	command, parameters := parseArgs(os.Args)
@@ -92,11 +95,21 @@ func getDefaultConfiguration() Configuration {
 	}
 }
 
+func parseDebug(configuration Configuration, args []string) Configuration {
+	// debug needs to be parsed at the beginning to have DEBUG enabled as quickly as possible
+	// otherwise, parsing other environment variables or other parameters don't have debug enabled
+	for i := 0; i < len(args); i++ {
+		if args[i] == "--debug" {
+			configuration.Debug = true
+		}
+	}
+
+	return configuration
+}
+
 func parseEnvironmentVariables(configuration Configuration) Configuration {
 	removed("MOB_BASE_BRANCH", "Use 'mob start' on your base branch instead.")
 	removed("MOB_WIP_BRANCH", "Use 'mob start --branch <branch>' instead.")
-
-	deprecated("MOB_DEBUG", "Use the parameter --debug instead.")
 	deprecated("MOB_START_INCLUDE_UNCOMMITTED_CHANGES", "Use the parameter --include-uncommitted-changes instead.")
 
 	setStringFromEnvVariable(&configuration.RemoteName, "MOB_REMOTE_NAME")
@@ -111,7 +124,6 @@ func parseEnvironmentVariables(configuration Configuration) Configuration {
 		configuration.WipBranchQualifierSet = true
 	}
 
-	setBoolFromEnvVariable(&configuration.Debug, "MOB_DEBUG")
 	setBoolFromEnvVariableSet(&configuration.MobNextStay, &configuration.MobNextStaySet, "MOB_NEXT_STAY")
 
 	setBoolFromEnvVariable(&configuration.MobStartIncludeUncommittedChanges, "MOB_START_INCLUDE_UNCOMMITTED_CHANGES")
@@ -125,7 +137,7 @@ func setStringFromEnvVariable(s *string, key string) {
 	value, set := os.LookupEnv(key)
 	if set && value != "" {
 		*s = value
-		debugInfo("overriding " + key + " =" + *s)
+		debugInfo("overriding " + key + "=" + *s)
 	}
 }
 
@@ -133,37 +145,50 @@ func setOptionalStringFromEnvVariable(s *string, key string) {
 	value, set := os.LookupEnv(key)
 	if set {
 		*s = value
-		debugInfo("overriding " + key + " =" + *s)
+		debugInfo("overriding " + key + "=" + *s)
 	}
 }
 
 func setBoolFromEnvVariable(s *bool, key string) {
 	value, set := os.LookupEnv(key)
-	if !set || value == "" {
+	if !set {
 		return
+	}
+	if value == "" {
+		debugInfo("ignoring " + key + "=" + value + " (empty string)")
 	}
 
 	if value == "true" {
 		*s = true
-		debugInfo("overriding " + key + " =" + strconv.FormatBool(*s))
+		debugInfo("overriding " + key + "=" + strconv.FormatBool(*s))
 	} else if value == "false" {
 		*s = false
-		debugInfo("overriding " + key + " =" + strconv.FormatBool(*s))
+		debugInfo("overriding " + key + "=" + strconv.FormatBool(*s))
 	} else {
-		sayError("ignoring " + key + " =" + value + " (not a boolean)")
+		sayError("ignoring " + key + "=" + value + " (not a boolean)")
 	}
 }
 
 func setBoolFromEnvVariableSet(s *bool, overridden *bool, key string) {
 	value, set := os.LookupEnv(key)
-	if set && value == "true" {
+
+	if !set {
+		debugInfo("key " + key + " is not set")
+		return
+	}
+
+	debugInfo("found " + key + "=" + value)
+
+	if value == "true" {
 		*s = true
 		*overridden = true
 		debugInfo("overriding " + key + " =" + strconv.FormatBool(*s))
-	} else if set && value == "false" {
+	} else if value == "false" {
 		*s = false
 		*overridden = true
 		debugInfo("overriding " + key + " =" + strconv.FormatBool(*s))
+	} else {
+		sayError("ignoring " + key + " =" + value + " (not a boolean)")
 	}
 }
 
@@ -189,7 +214,6 @@ func config(c Configuration) {
 	say("MOB_NOTIFY_COMMAND" + "=" + c.NotifyCommand)
 	say("MOB_NEXT_STAY" + "=" + strconv.FormatBool(c.MobNextStay))
 	say("MOB_START_INCLUDE_UNCOMMITTED_CHANGES" + "=" + strconv.FormatBool(c.MobStartIncludeUncommittedChanges))
-	say("MOB_DEBUG" + "=" + strconv.FormatBool(c.Debug))
 	say("MOB_WIP_BRANCH_QUALIFIER" + "=" + c.WipBranchQualifier)
 	say("MOB_WIP_BRANCH_QUALIFIER_SEPARATOR" + "=" + c.WipBranchQualifierSeparator)
 	say("MOB_DONE_SQUASH" + "=" + strconv.FormatBool(c.MobDoneSquash))
@@ -202,7 +226,7 @@ func parseArgs(args []string) (command string, parameters []string) {
 		case "--include-uncommitted-changes", "-i":
 			configuration.MobStartIncludeUncommittedChanges = true
 		case "--debug":
-			configuration.Debug = true
+			// ignore this, already parsed
 		case "--stay", "-s":
 			configuration.MobNextStay = true
 			configuration.MobNextStaySet = true
