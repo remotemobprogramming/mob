@@ -8,7 +8,6 @@ jobs:
       matrix:
         os: [linux, darwin, windows]
     env:
-      GOPATH: ${{ github.workspace }}
       GOARCH: amd64
       GOOS: ${{ matrix.os }}
     name: release
@@ -17,11 +16,14 @@ jobs:
       - uses: actions/checkout@main
       - run: git config --global user.email "test@test.test"
       - run: git config --global user.name "${{github.actor}}"
-      - run: go test
+      - name: Use Go 1.16 to test
+        uses: cedrickring/golang-action/go1.16@1.7.0
+        with:
+          args: go test
         env:
           GOOS: linux # the tests will only run if the os matches the os of the system of run-on
-      - name: Use Go 1.15 to build
-        uses: cedrickring/golang-action/go1.15@1.6.0
+      - name: Use Go 1.16 to build
+        uses: cedrickring/golang-action/go1.16@1.7.0
         with:
           args: go build
       - name: Create release artifacts using .github/build

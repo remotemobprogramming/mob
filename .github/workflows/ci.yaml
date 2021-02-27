@@ -7,7 +7,7 @@ jobs:
     - uses: actions/checkout@v2
     - uses: actions/setup-go@v2
       with:
-        go-version: '1.15'
+        go-version: '1.16'
     - run: git config --global user.email "test@test.test"
     - run: git config --global user.name "mob test git user"
     - run: go test
