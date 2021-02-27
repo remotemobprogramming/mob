@@ -5,8 +5,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
-    - run: git config --global user.email "test@test.test"
-    - run: git config --global user.name "mob test git user"
     - name: Use Go 1.16 to test
       uses: cedrickring/golang-action/go1.16@1.7.0
       with:

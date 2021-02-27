@@ -14,8 +14,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@main
-      - run: git config --global user.email "test@test.test"
-      - run: git config --global user.name "${{github.actor}}"
       - name: Use Go 1.16 to test
         uses: cedrickring/golang-action/go1.16@1.7.0
         with:
@@ -25,7 +23,9 @@ jobs:
       - name: Use Go 1.16 to build
         uses: cedrickring/golang-action/go1.16@1.7.0
         with:
-          args: go build
+          args: go build -o mob${{ matrix.os == 'windows' && '.exe' || '' }}
+        env:
+          GOOS: ${{ matrix.os }}
       - name: Create release artifacts using .github/build
         run: .github/build
         env:

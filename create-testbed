@@ -17,7 +17,7 @@ mkdir -p "${localdir}" "${remotedir}"
 echo ""
 echo "Creating test repositories..."
 (cd "${remotedir}" && git --bare init)
-(cd "${localdir}" && git clone --origin origin "file://${remotedir}" . && echo "test" >test.txt && git add . && git commit -m "initial import" && git push --set-upstream --all origin)
+(cd "${localdir}" && git clone --origin origin "file://${remotedir}" . && git config --local user.name "Test User 1" && git config --local user.email "test@test.test" && echo "test" >test.txt && git add . && git commit -m "initial import" && git push --set-upstream --all origin)
 
 # optional
 echo ""
@@ -26,6 +26,6 @@ localotherdir="${tmpdir}/localother"
 echo "Path to second clone of central repository ('localotherdir'): ${localotherdir}"
 rm -rf "${localotherdir}"
 mkdir -p "${localotherdir}"
-(cd "${localotherdir}" && git clone --origin origin "file://${remotedir}" .)
+(cd "${localotherdir}" && git clone --origin origin "file://${remotedir}" . && git config --local user.name "Test User 2" && git config --local user.email "test2@test.test")
 
 echo "Done."
