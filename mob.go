@@ -688,7 +688,7 @@ func status() {
 		currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), gitBranches(), configuration)
 		sayInfo("on wip branch " + currentWipBranch + " (base branch " + currentBaseBranch + ")")
 
-		say(silentgit("--no-pager", "log", currentBaseBranch+".."+currentWipBranch, "--pretty=format:%h %cr <%an>", "--abbrev-commit"))
+		sayLastCommitsList(currentBaseBranch, currentWipBranch)
 	} else {
 		sayInfo("you aren't mob programming")
 		currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), gitBranches(), configuration)
@@ -696,6 +696,17 @@ func status() {
 
 		sayTodo("to start mob programming, use", "mob start")
 	}
+}
+
+func sayLastCommitsList(currentBaseBranch string, currentWipBranch string) {
+	log := silentgit("--no-pager", "log", currentBaseBranch+".."+currentWipBranch, "--pretty=format:%h %cr <%an>", "--abbrev-commit")
+	lines := strings.Split(strings.TrimSpace(log), "\n")
+	if len(lines) > 5 {
+		sayInfo("This mob branch contains " + strconv.Itoa(len(lines)) + " commits. The last 5 were:")
+		lines = lines[:5]
+	}
+	output := strings.Join(lines, "\n")
+	say(output)
 }
 
 func isNothingToCommit() bool {

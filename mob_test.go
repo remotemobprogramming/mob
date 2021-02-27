@@ -282,6 +282,21 @@ func TestStatusMobProgramming(t *testing.T) {
 	assertOutputContains(t, output, "you are mob programming")
 }
 
+func TestStatusWithMoreThan5LinesOfLog(t *testing.T) {
+	setup(t)
+	configuration.MobNextStay = true
+	start(configuration)
+
+	for i := 0; i < 6; i++ {
+		createFile(t, "test"+strconv.Itoa(i)+".txt", "test")
+		next(configuration)
+	}
+
+	output := captureOutput()
+	status()
+	assertOutputContains(t, output, "This mob branch contains 6 commits.")
+}
+
 func TestExecuteKicksOffStatus(t *testing.T) {
 	output := setup(t)
 
