@@ -297,6 +297,16 @@ func TestStatusWithMoreThan5LinesOfLog(t *testing.T) {
 	assertOutputContains(t, output, "This mob branch contains 6 commits.")
 }
 
+func TestStatusDoesNotAddEmptyLineFor0Commits(t *testing.T) {
+	setup(t)
+	start(configuration)
+	currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), gitBranches(), configuration)
+
+	output := captureOutput()
+	sayLastCommitsList(currentBaseBranch, currentWipBranch)
+	assertOutputNotContains(t, output, "\n")
+}
+
 func TestExecuteKicksOffStatus(t *testing.T) {
 	output := setup(t)
 
