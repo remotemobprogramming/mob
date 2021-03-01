@@ -1,3 +1,6 @@
+# 1.4.0
+- The list of commits included in a mob branch is now truncated to a maximum of 5 entries to prevent the need for scrolling up in order to see the latest included changes.
+
 # 1.3.0
 - The default `MOB_COMMIT_MESSAGE` now includes `[ci skip]` and `[skip ci]` so that all the typical CI systems (including Azure DevOps) will skip this commit.
 - Add `--squash` option to `mob done` that corresponds to `--no-squash`.
