@@ -875,9 +875,15 @@ func git(args ...string) {
 
 func sayGitError(commandString string, output string, err error) {
 	if !isGit() {
-		sayWithPrefix("It doesn't appear that you're running `mob` inside of a git repo ...", "🤦🏿 ")
-		sayIndented("Check that you're in the right place.")
-		say(" ")
+		path, err := os.Getwd();
+		if err == nil {
+			cwdMsg := fmt.Sprintf("The current working directory, %s, is not a git repository.", path)
+		
+			sayWithPrefix("mob expects the current working directory to be a git repository.", "🤦🏿 ")
+			sayIndented(cwdMsg);
+			say(" ")
+		}
+		
 	}
 	sayError(commandString)
 	sayError(output)

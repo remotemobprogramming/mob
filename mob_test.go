@@ -11,6 +11,7 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+	"errors"
 )
 
 func TestParseArgs(t *testing.T) {
@@ -826,7 +827,7 @@ func TestNotAGitRepoMessage(t *testing.T) {
 	setWorkingDir("/tmp/git/notgit")
 	output := captureOutput()
 	sayGitError("TEST", "TEST", errors.New("TEST"))
-	assertOutputContains(t, output, "It doesn't appear that you're running `mob` inside of a git repo")
+	assertOutputContains(t, output, "mob expects the current working directory to be a git repository.")
 }
 
 func setup(t *testing.T) *string {
