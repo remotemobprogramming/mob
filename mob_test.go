@@ -812,6 +812,23 @@ func TestDoneMerge(t *testing.T) {
 	assertOutputContains(t, output, "   git commit")
 }
 
+func TestIsGitIdentifiesGitRepo(t *testing.T) {
+	setup(t)
+	equals(t, true, isGit())
+}
+
+func TestIsGitIdentifiesOutsideOfGitRepo(t *testing.T) {
+	setWorkingDir("/tmp/git/notgit")
+	equals(t, false, isGit())
+}
+
+func TestNotAGitRepoMessage(t *testing.T) {
+	setWorkingDir("/tmp/git/notgit")
+	output := captureOutput()
+	sayGitError("TEST", "TEST", errors.New("TEST"))
+	assertOutputContains(t, output, "It doesn't appear that you're running `mob` inside of a git repo")
+}
+
 func setup(t *testing.T) *string {
 	configuration = getDefaultConfiguration()
 	configuration.MobNextStay = false
