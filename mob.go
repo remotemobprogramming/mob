@@ -856,9 +856,7 @@ func silentgit(args ...string) string {
 	commandString, output, err := runCommand("git", args...)
 
 	if err != nil {
-		sayError(commandString)
-		sayError(output)
-		sayError(err.Error())
+		sayGitError(commandString, output, err)
 		exit(1)
 	}
 	return output
@@ -868,13 +866,33 @@ func git(args ...string) {
 	commandString, output, err := runCommand("git", args...)
 
 	if err != nil {
-		sayError(commandString)
-		sayError(output)
-		sayError(err.Error())
+		sayGitError(commandString, output, err)
 		exit(1)
 	} else {
 		sayIndented(commandString)
 	}
+}
+
+func sayGitError(commandString string, output string, err error) {
+	if !isGit() {
+		path, err := os.Getwd();
+		if err == nil {
+			cwdMsg := fmt.Sprintf("The current working directory, %s, is not a git repository.", path)
+		
+			sayWithPrefix("mob expects the current working directory to be a git repository.", "🤦🏿 ")
+			sayIndented(cwdMsg);
+			say(" ")
+		}
+		
+	}
+	sayError(commandString)
+	sayError(output)
+	sayError(err.Error())
+}
+
+func isGit() bool {
+	_, _, err := runCommand("git", "rev-parse")
+	return err == nil
 }
 
 func gitignorefailure(args ...string) error {

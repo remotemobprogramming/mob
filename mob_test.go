@@ -11,6 +11,7 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+	"errors"
 )
 
 func TestParseArgs(t *testing.T) {
@@ -810,6 +811,23 @@ func TestDoneMerge(t *testing.T) {
 	start(configuration)
 	done()
 	assertOutputContains(t, output, "   git commit")
+}
+
+func TestIsGitIdentifiesGitRepo(t *testing.T) {
+	setup(t)
+	equals(t, true, isGit())
+}
+
+func TestIsGitIdentifiesOutsideOfGitRepo(t *testing.T) {
+	setWorkingDir("/tmp/git/notgit")
+	equals(t, false, isGit())
+}
+
+func TestNotAGitRepoMessage(t *testing.T) {
+	setWorkingDir("/tmp/git/notgit")
+	output := captureOutput()
+	sayGitError("TEST", "TEST", errors.New("TEST"))
+	assertOutputContains(t, output, "mob expects the current working directory to be a git repository.")
 }
 
 func setup(t *testing.T) *string {
