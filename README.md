@@ -68,6 +68,8 @@ If you want to update to the latest version using Homebrew
 brew upgrade remotemobprogramming/brew/mob
 ```
 
+If you use [Nix](http://nixos.org), you can also use a [Nix expression](./mob.nix) to build `mob`
+
 ## How to use
 
 You only need three commands: `mob start`, `mob next`, and `mob done`. 
