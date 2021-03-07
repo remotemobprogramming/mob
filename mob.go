@@ -35,6 +35,7 @@ type Configuration struct {
 	WipBranchQualifierSet             bool   // used to enforce a start on the default wip branch with `mob start --branch ""` when other open wip branches had been detected
 	WipBranchQualifierSeparator       string // override with MOB_WIP_BRANCH_QUALIFIER_SEPARATOR environment variable
 	MobDoneSquash                     bool   // override with MOB_DONE_SQUASH environment variable
+	MobTimer                          string // override with MOB_TIMER environment variable
 }
 
 func (c Configuration) wipBranchQualifierSuffix() string {
@@ -92,6 +93,7 @@ func getDefaultConfiguration() Configuration {
 		WipBranchQualifierSet:             false,
 		WipBranchQualifierSeparator:       "-",
 		MobDoneSquash:                     true,
+		MobTimer:                          "",
 	}
 }
 
@@ -129,6 +131,8 @@ func parseEnvironmentVariables(configuration Configuration) Configuration {
 	setBoolFromEnvVariable(&configuration.MobStartIncludeUncommittedChanges, "MOB_START_INCLUDE_UNCOMMITTED_CHANGES")
 
 	setBoolFromEnvVariable(&configuration.MobDoneSquash, "MOB_DONE_SQUASH")
+
+	setStringFromEnvVariable(&configuration.MobTimer, "MOB_TIMER")
 
 	return configuration
 }
@@ -217,6 +221,7 @@ func config(c Configuration) {
 	say("MOB_WIP_BRANCH_QUALIFIER" + "=" + c.WipBranchQualifier)
 	say("MOB_WIP_BRANCH_QUALIFIER_SEPARATOR" + "=" + c.WipBranchQualifierSeparator)
 	say("MOB_DONE_SQUASH" + "=" + strconv.FormatBool(c.MobDoneSquash))
+	say("MOB_TIMER" + "=" + c.MobTimer)
 }
 
 func parseArgs(args []string) (command string, parameters []string) {
@@ -271,6 +276,8 @@ func execute(command string, parameter []string) {
 		if len(parameter) > 0 {
 			timer := parameter[0]
 			startTimer(timer)
+		} else if configuration.MobTimer != "" {
+			startTimer(configuration.MobTimer)
 		}
 
 		status()
@@ -288,6 +295,8 @@ func execute(command string, parameter []string) {
 		if len(parameter) > 0 {
 			timer := parameter[0]
 			startTimer(timer)
+		} else if configuration.MobTimer != "" {
+			startTimer(configuration.MobTimer)
 		} else {
 			help()
 		}
@@ -875,15 +884,15 @@ func git(args ...string) {
 
 func sayGitError(commandString string, output string, err error) {
 	if !isGit() {
-		path, err := os.Getwd();
+		path, err := os.Getwd()
 		if err == nil {
 			cwdMsg := fmt.Sprintf("The current working directory, %s, is not a git repository.", path)
-		
+
 			sayWithPrefix("mob expects the current working directory to be a git repository.", "🤦🏿 ")
-			sayIndented(cwdMsg);
+			sayIndented(cwdMsg)
 			say(" ")
 		}
-		
+
 	}
 	sayError(commandString)
 	sayError(output)

@@ -194,15 +194,16 @@ Show your current configuration with `mob config`:
 
 ```
 MOB_REMOTE_NAME=origin
-MOB_WIP_COMMIT_MESSAGE=mob next [ci-skip]
+MOB_WIP_COMMIT_MESSAGE=mob next [ci-skip] [ci skip] [skip ci]
 MOB_REQUIRE_COMMIT_MESSAGE=false
-MOB_VOICE_COMMAND=say
+MOB_VOICE_COMMAND=say "%s"
 MOB_NOTIFY_COMMAND=/usr/bin/osascript -e 'display notification "%s"'
 MOB_NEXT_STAY=true
 MOB_START_INCLUDE_UNCOMMITTED_CHANGES=false
 MOB_WIP_BRANCH_QUALIFIER=
 MOB_WIP_BRANCH_QUALIFIER_SEPARATOR=-
 MOB_DONE_SQUASH=true
+MOB_TIMER=
 ```
 
 Override default value permanently via environment variables:
