@@ -69,6 +69,11 @@ brew upgrade remotemobprogramming/brew/mob
 ```
 
 If you use [Nix](http://nixos.org), you can also use a [Nix expression](./mob.nix) to build `mob`
+via 
+
+```
+mob = callPackage ./mob.nix {};
+```
 
 ## How to use
 
