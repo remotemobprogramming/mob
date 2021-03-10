@@ -696,6 +696,10 @@ func done() {
 		git("push", "--no-verify", configuration.RemoteName, "--delete", currentWipBranch)
 
 		say(getCachedChanges())
+		err := coauthors.AppendCoauthorsToSquashMsg(workingDir)
+		if err != nil {
+			sayError(err.Error())
+		}
 		sayTodo("To finish, use", "git commit")
 	} else {
 		git("checkout", currentBaseBranch)
