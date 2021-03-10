@@ -312,8 +312,9 @@ func execute(command string, parameter []string) {
 }
 
 func determineBranches(currentBranch string, localBranches []string, configuration Configuration) (baseBranch string, wipBranch string) {
-	if currentBranch == "mob-session" || (currentBranch == "master" && !configuration.customWipBranchQualifierConfigured()) {
-		baseBranch = "master"
+	defaultBranch := gitDefaultBranch()
+	if currentBranch == "mob-session" || (currentBranch == defaultBranch && !configuration.customWipBranchQualifierConfigured()) {
+		baseBranch = defaultBranch
 		wipBranch = "mob-session"
 	} else if isWipBranch(currentBranch) {
 		baseBranch = removeWipQualifier(removeWipPrefix(currentBranch), localBranches, configuration)
@@ -914,6 +915,16 @@ func gitignorefailure(args ...string) error {
 	}
 	return err
 }
+
+func gitDefaultBranch() string {
+	_, defaultBranch, _ := runCommand("git", "config", "init.defaultBranch")
+	if defaultBranch == "" {
+		return "master"
+	}
+
+	return strings.TrimSpace(defaultBranch)
+}
+
 func runCommand(name string, args ...string) (string, string, error) {
 	command := exec.Command(name, args...)
 	if len(workingDir) > 0 {
