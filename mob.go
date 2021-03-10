@@ -8,6 +8,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"mob.sh/coauthors"
 )
 
 const (
@@ -253,6 +255,26 @@ func parseArgs(args []string) (command string, parameters []string) {
 			configuration.MobDoneSquash = true
 		case "--no-squash":
 			configuration.MobDoneSquash = false
+		case "--with":
+			if len(args) < i+1 {
+				help()
+				exit(1)
+			}
+			coauthors, err := coauthors.ParseCoauthors(args[i+1])
+
+			if err != nil {
+				sayError(err.Error())
+				exit(1)
+			}
+
+			coauthors, err = loadCoauthorsFromAliases(coauthors)
+
+			if err != nil {
+				sayError(err.Error())
+				exit(1)
+			}
+
+			writeCoauthorsToGitConfig(coauthors)
 		default:
 			if i == 1 {
 				command = arg
@@ -829,6 +851,12 @@ Basic Commands(Options):
   start [<minutes>]                      Start a <minutes> timer
     [--include-uncommitted-changes|-i]   Move uncommitted changes to wip branch
     [--branch|-b <branch-postfix>]       Set wip branch to 'mob/<base-branch>/<branch-postfix>'
+    [--with "<coauthors>"]               A comma separated list of coauthors and/or aliases.
+                                         "Harriet Tubman <20bill@protonmail.cc> as ht, fd"
+                                         will save Harriet Tubman as 'ht' for future use and load
+                                         a coauthor already associated with 'fd'. Coauthors are stored
+                                         in ~/.gitconfig
+
   next 
     [--stay|-s]                          Stay on wip branch (default)
     [--return-to-base-branch|-r]         Return to base branch
@@ -914,6 +942,19 @@ func gitignorefailure(args ...string) error {
 	}
 	return err
 }
+
+func gitconfig(global bool, option string, args ...string) string {
+	globalFlag := ""
+	if global {
+		globalFlag = "--global"
+	}
+
+	args = append([]string{"config", globalFlag, option}, args...)
+	_, output, _ := runCommand("git", args...)
+
+	return strings.TrimSpace(output)
+}
+
 func runCommand(name string, args ...string) (string, string, error) {
 	command := exec.Command(name, args...)
 	if len(workingDir) > 0 {
@@ -989,4 +1030,35 @@ func sayEmptyLine() {
 
 var printToConsole = func(message string) {
 	fmt.Print(message)
+}
+
+func loadCoauthorsFromAliases(coauthors coauthors.CoauthorsMap) (coauthors.CoauthorsMap, error) {
+	missingAliases := []string{}
+
+	for alias, coauthor := range coauthors {
+		if coauthor == "" {
+			coauthor = gitconfig(true, fmt.Sprintf("mob.%s", alias))
+			if coauthor == "" {
+				missingAliases = append(missingAliases, alias)
+			} else {
+				coauthors[alias] = coauthor
+			}
+		}
+	}
+
+	var err error
+	if len(missingAliases) == 0 {
+		err = nil
+	} else {
+		err = fmt.Errorf("%s were not listed in ~/.gitconfig. Try using fully qualified coauthors", strings.Join(missingAliases, ", "))
+	}
+
+	return coauthors, err
+}
+
+func writeCoauthorsToGitConfig(coauthors map[string]string) {
+	for alias, coauthor := range coauthors {
+		gitconfig(true, fmt.Sprintf("mob.%s", alias), coauthor)
+		gitconfig(true, fmt.Sprintf("mob.staged.%s", alias), coauthor)
+	}
 }
