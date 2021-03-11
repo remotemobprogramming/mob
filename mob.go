@@ -646,8 +646,8 @@ func next(configuration Configuration) {
 			sayInfo("nothing was done, so nothing to commit")
 		}
 	} else {
-		git("add", "--all")
-		git("commit", "--message", configuration.WipCommitMessage, "--no-verify")
+		makeWipCommit()
+
 		changes := getChangesOfLastCommit()
 		git("push", "--no-verify", configuration.RemoteName, currentWipBranch)
 		say(changes)
@@ -667,6 +667,47 @@ func getCachedChanges() string {
 	return strings.TrimSpace(silentgit("diff", "--cached", "--stat"))
 }
 
+func makeWipCommit() {
+	git("add", "--all")
+	wipCommitMsg := configuration.WipCommitMessage
+	stagedCoauthors := gitStagedCoauthors()
+	for i, coauthor := range stagedCoauthors {
+		if i == 0 {
+			wipCommitMsg += "\n\n"
+		}
+
+		wipCommitMsg += fmt.Sprintf("Co-authored-by: %s\n", coauthor)
+	}
+
+	gitClearStagedCoauthors()
+
+	git("commit", "--message", wipCommitMsg, "--no-verify")
+}
+
+func gitStagedCoauthors() []string {
+	coauthors := []string{}
+	_, output, _ := runCommand("git", "config", "--global", "--get-regexp", "mob.staged")
+
+	// This by all rights should be an empty array when there are no staged coauthors,
+	// but it's an array containing the empty string?
+	staged := strings.Split(strings.TrimSpace(output), "\n")
+
+	for _, stagedCoauthorWithKey := range staged {
+		if stagedCoauthorWithKey == "" {
+			continue
+		}
+
+		coauthors = append(coauthors, strings.Join(strings.Split(stagedCoauthorWithKey, " ")[1:], " "))
+	}
+
+	return coauthors
+}
+
+func gitClearStagedCoauthors() error {
+	_, _, err := runCommand("git", "config", "--global", "--remove-section", "mob.staged")
+	return err
+}
+
 func done() {
 	if !isMobProgramming(configuration) {
 		sayError("you aren't mob programming")
@@ -680,8 +721,7 @@ func done() {
 
 	if hasRemoteBranch(currentWipBranch) {
 		if !isNothingToCommit() {
-			git("add", "--all")
-			git("commit", "--message", configuration.WipCommitMessage, "--no-verify")
+			makeWipCommit()
 		}
 		git("push", "--no-verify", configuration.RemoteName, currentWipBranch)
 
