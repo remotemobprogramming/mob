@@ -1,10 +1,14 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
 	"os"
 	"os/exec"
+	"path"
+	"regexp"
 	"runtime"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -38,6 +42,7 @@ type Configuration struct {
 	WipBranchQualifierSeparator       string // override with MOB_WIP_BRANCH_QUALIFIER_SEPARATOR environment variable
 	MobDoneSquash                     bool   // override with MOB_DONE_SQUASH environment variable
 	MobTimer                          string // override with MOB_TIMER environment variable
+	Coauthors                         coauthors.CoauthorsMap
 }
 
 func (c Configuration) wipBranchQualifierSuffix() string {
@@ -96,6 +101,7 @@ func getDefaultConfiguration() Configuration {
 		WipBranchQualifierSeparator:       "-",
 		MobDoneSquash:                     true,
 		MobTimer:                          "",
+		Coauthors:                         make(coauthors.CoauthorsMap),
 	}
 }
 
@@ -261,20 +267,18 @@ func parseArgs(args []string) (command string, parameters []string) {
 				exit(1)
 			}
 			coauthors, err := coauthors.ParseCoauthors(args[i+1])
-
 			if err != nil {
 				sayError(err.Error())
 				exit(1)
 			}
 
 			coauthors, err = loadCoauthorsFromAliases(coauthors)
-
 			if err != nil {
 				sayError(err.Error())
 				exit(1)
 			}
 
-			writeCoauthorsToGitConfig(coauthors)
+			configuration.Coauthors = coauthors
 		default:
 			if i == 1 {
 				command = arg
@@ -502,6 +506,7 @@ func moo() {
 
 func reset() {
 	git("fetch", configuration.RemoteName)
+	gitClearStagedCoauthors()
 
 	currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), gitBranches(), configuration)
 
@@ -548,6 +553,8 @@ func start(configuration Configuration) {
 		sayTodo("To set the upstream branch, use", "git push "+configuration.RemoteName+" "+currentBaseBranch+" --set-upstream")
 		return
 	}
+
+	writeCoauthorsToGitConfig(configuration.Coauthors)
 
 	if !isMobProgramming(configuration) {
 		git("merge", "FETCH_HEAD", "--ff-only")
@@ -656,6 +663,7 @@ func next(configuration Configuration) {
 		git("push", "--no-verify", configuration.RemoteName, currentWipBranch)
 		say(changes)
 	}
+	gitClearStagedCoauthors()
 	showNext(configuration)
 
 	if !configuration.MobNextStay {
@@ -683,33 +691,7 @@ func makeWipCommit() {
 		wipCommitMsg += fmt.Sprintf("Co-authored-by: %s\n", coauthor)
 	}
 
-	gitClearStagedCoauthors()
-
 	git("commit", "--allow-empty", "--message", wipCommitMsg, "--no-verify")
-}
-
-func gitStagedCoauthors() []string {
-	coauthors := []string{}
-	_, output, _ := runCommand("git", "config", "--global", "--get-regexp", "mob.staged")
-
-	// This by all rights should be an empty array when there are no staged coauthors,
-	// but it's an array containing the empty string?
-	staged := strings.Split(strings.TrimSpace(output), "\n")
-
-	for _, stagedCoauthorWithKey := range staged {
-		if stagedCoauthorWithKey == "" {
-			continue
-		}
-
-		coauthors = append(coauthors, strings.Join(strings.Split(stagedCoauthorWithKey, " ")[1:], " "))
-	}
-
-	return coauthors
-}
-
-func gitClearStagedCoauthors() error {
-	_, _, err := runCommand("git", "config", "--global", "--remove-section", "mob.staged")
-	return err
 }
 
 func done() {
@@ -726,6 +708,7 @@ func done() {
 	if hasRemoteBranch(currentWipBranch) {
 		if !isNothingToCommit() {
 			makeWipCommit()
+			gitClearStagedCoauthors()
 		}
 		git("push", "--no-verify", configuration.RemoteName, currentWipBranch)
 
@@ -740,7 +723,7 @@ func done() {
 		git("push", "--no-verify", configuration.RemoteName, "--delete", currentWipBranch)
 
 		say(getCachedChanges())
-		err := coauthors.AppendCoauthorsToSquashMsg(workingDir)
+		err := appendCoauthorsToSquashMsg(workingDir)
 		if err != nil {
 			sayError(err.Error())
 		}
@@ -1080,6 +1063,30 @@ var printToConsole = func(message string) {
 	fmt.Print(message)
 }
 
+func gitStagedCoauthors() []string {
+	coauthors := []string{}
+	_, output, _ := runCommand("git", "config", "--global", "--get-regexp", "mob.staged")
+
+	// This by all rights should be an empty array when there are no staged coauthors,
+	// but it's an array containing the empty string?
+	staged := strings.Split(strings.TrimSpace(output), "\n")
+
+	for _, stagedCoauthorWithKey := range staged {
+		if stagedCoauthorWithKey == "" {
+			continue
+		}
+
+		coauthors = append(coauthors, strings.Join(strings.Split(stagedCoauthorWithKey, " ")[1:], " "))
+	}
+
+	return coauthors
+}
+
+func gitClearStagedCoauthors() error {
+	_, _, err := runCommand("git", "config", "--global", "--remove-section", "mob.staged")
+	return err
+}
+
 func loadCoauthorsFromAliases(coauthors coauthors.CoauthorsMap) (coauthors.CoauthorsMap, error) {
 	missingAliases := []string{}
 
@@ -1105,8 +1112,77 @@ func loadCoauthorsFromAliases(coauthors coauthors.CoauthorsMap) (coauthors.Coaut
 }
 
 func writeCoauthorsToGitConfig(coauthors map[string]string) {
+	gitClearStagedCoauthors()
 	for alias, coauthor := range coauthors {
 		gitconfig(true, fmt.Sprintf("mob.%s", alias), coauthor)
 		gitconfig(true, fmt.Sprintf("mob.staged.%s", alias), coauthor)
 	}
+}
+
+func appendCoauthorsToSquashMsg(workingDir string) error {
+	squashMsgPath := path.Join(workingDir, ".git", "SQUASH_MSG")
+	file, err := os.OpenFile(squashMsgPath, os.O_APPEND|os.O_RDWR, 0644)
+	if err != nil {
+		return err
+	}
+
+	defer file.Close()
+
+	topLevelAuthor := ""
+	coauthorsHashSet := make(map[string]bool)
+
+	authorOrCoauthorMatcher := regexp.MustCompile("(?i).*(author)+.+<+.*>+")
+	scanner := bufio.NewScanner(file)
+
+	for scanner.Scan() {
+		line := scanner.Text()
+		if authorOrCoauthorMatcher.MatchString(line) {
+			author := stripToAuthor(line)
+
+			// committer of this commit should
+			// not be included as a co-author
+			if topLevelAuthor == "" || author == topLevelAuthor {
+				topLevelAuthor = author
+				continue
+			}
+			coauthorsHashSet[author] = true
+		}
+	}
+
+	if len(coauthorsHashSet) > 0 {
+		coauthors := make([]string, 0, len(coauthorsHashSet))
+		for k := range coauthorsHashSet {
+			coauthors = append(coauthors, k)
+		}
+		sort.Sort(byLength(coauthors))
+
+		coauthorSuffix := "\n\n"
+		coauthorSuffix += "# mob automatically added all co-authors from WIP commits\n"
+		coauthorSuffix += "# add missing co-authors manually\n"
+
+		for _, coauthor := range coauthors {
+			coauthorSuffix += fmt.Sprintf("Co-authored-by: %s\n", coauthor)
+		}
+
+		writer := bufio.NewWriter(file)
+		_, err = writer.WriteString(coauthorSuffix)
+		err = writer.Flush()
+	}
+	return err
+}
+
+type byLength []string
+
+func (s byLength) Len() int {
+	return len(s)
+}
+func (s byLength) Swap(i, j int) {
+	s[i], s[j] = s[j], s[i]
+}
+func (s byLength) Less(i, j int) bool {
+	return len(s[i]) < len(s[j])
+}
+
+func stripToAuthor(line string) string {
+	return strings.TrimSpace(strings.Join(strings.Split(line, ":")[1:], ""))
 }

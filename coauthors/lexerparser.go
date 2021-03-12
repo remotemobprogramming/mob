@@ -1,74 +1,10 @@
 package coauthors
 
 import (
-	"bufio"
 	"fmt"
-	"os"
-	"path"
 	"regexp"
-	"sort"
 	"strings"
 )
-
-type byLength []string
-
-func (s byLength) Len() int {
-	return len(s)
-}
-func (s byLength) Swap(i, j int) {
-	s[i], s[j] = s[j], s[i]
-}
-func (s byLength) Less(i, j int) bool {
-	return len(s[i]) < len(s[j])
-}
-
-func AppendCoauthorsToSquashMsg(workingDir string) error {
-	squashMsgPath := path.Join(workingDir, ".git", "SQUASH_MSG")
-	file, err := os.OpenFile(squashMsgPath, os.O_APPEND|os.O_RDWR, 0644)
-	if err != nil {
-		return err
-	}
-
-	defer file.Close()
-
-	topLevelAuthor := ""
-	coauthors := []string{}
-
-	authorOrCoauthorMatcher := regexp.MustCompile("(?i).*(author)+.+<+.*>+")
-	scanner := bufio.NewScanner(file)
-
-	for scanner.Scan() {
-		line := scanner.Text()
-		if authorOrCoauthorMatcher.MatchString(line) {
-			author := stripToAuthor(line)
-
-			// committer of this commit should
-			// not be included as a co-author
-			if topLevelAuthor == "" || author == topLevelAuthor {
-				topLevelAuthor = author
-				continue
-			}
-			coauthors = append(coauthors, author)
-		}
-	}
-
-	sort.Sort(byLength(coauthors))
-
-	coauthorSuffix := "\n\n"
-	for _, coauthor := range coauthors {
-		coauthorSuffix += fmt.Sprintf("Co-authored-by: %s\n", coauthor)
-	}
-
-	writer := bufio.NewWriter(file)
-	_, err = writer.WriteString(coauthorSuffix)
-	err = writer.Flush()
-
-	return err
-}
-
-func stripToAuthor(line string) string {
-	return strings.TrimSpace(strings.Join(strings.Split(line, ":")[1:], ""))
-}
 
 // ParseCoauthors receives string input directly from --with
 // parses it and returns a map of alias => coauthor?
