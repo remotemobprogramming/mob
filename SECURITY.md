@@ -9,6 +9,3 @@
 ## Reporting a Vulnerability
 
 For a vulnerability, open an issue.
-
-```
-```
