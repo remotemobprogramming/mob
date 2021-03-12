@@ -640,6 +640,10 @@ func next(configuration Configuration) {
 	currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), gitBranches(), configuration)
 
 	if isNothingToCommit() {
+		if len(gitStagedCoauthors()) > 0 {
+			makeWipCommit()
+		}
+
 		if hasLocalCommits(currentWipBranch, configuration) {
 			git("push", "--no-verify", configuration.RemoteName, currentWipBranch)
 		} else {
@@ -681,7 +685,7 @@ func makeWipCommit() {
 
 	gitClearStagedCoauthors()
 
-	git("commit", "--message", wipCommitMsg, "--no-verify")
+	git("commit", "--allow-empty", "--message", wipCommitMsg, "--no-verify")
 }
 
 func gitStagedCoauthors() []string {
