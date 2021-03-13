@@ -1083,11 +1083,17 @@ func gitStagedCoauthors() []string {
 	return coauthors
 }
 
-func clearAndAnnounceClearStagedCoauthors() {
+func clearAndAnnounceClearStagedCoauthors() error {
+	var err error
+
 	if len(gitStagedCoauthors()) > 0 {
-		gitClearStagedCoauthors()
-		sayInfo("Cleared any previously staged co-authors from ~/.gitconfig")
+		err = gitClearStagedCoauthors()
+		if err == nil {
+			sayInfo("Cleared any previously staged co-authors from ~/.gitconfig")
+		}
 	}
+
+	return err
 }
 
 func gitClearStagedCoauthors() error {
