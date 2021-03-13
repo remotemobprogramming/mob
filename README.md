@@ -55,7 +55,6 @@ curl -sL install.mob.sh | sh
 On macOS via homebrew: 
 
 ```
-# install
 brew install remotemobprogramming/brew/mob
 
 # upgrade to latest version
@@ -80,7 +79,7 @@ When you're done, get your changes into the staging area of the `master` branch 
 [![asciicast](https://asciinema.org/a/321885.svg)](https://asciinema.org/a/321885)
 
 ```
-mob enables a smooth Git handover
+mob enables a fast Git handover
 
 Basic Commands:
   start              start mob session from base branch in wip branch
@@ -136,17 +135,6 @@ Examples:
   mob moo
 ```
 
-## How does it work
-
-- `mob start` creates branch `mob-session` and pulls from `origin/mob-session`
-- `mob next` pushes all changes to `origin/mob-session`in a `mob next [ci-skip]` commit
-- `mob done` squashes all changes in `mob-session` into staging of `master` and removes `mob-session` and `origin/mob-session`
-- `mob timer 10` start a ten minute timer
-- `mob start 10` combines mob start and mob timer 10
-- `mob status` display the mob session status and all the created WIP commits
-- `mob reset` deletes `mob-session` and `origin/mob-session`
-- `mob config` print configuration
-
 ## Best Practices
 
 - **Say out loud**
@@ -157,7 +145,10 @@ Examples:
   - *Why?* This provides more calm (and less diversion) for the rest of the mob as the video conference layout doesn't change, allowing the rest of the mob to keep discussing the problem and finding the best solution, even during a Git handover.
 - **Share audio**
   - Share your audio when you share your screen.
-  - *Why?* Sharing audio means everybody will hear when the timer is up. So everybody will help you to rotate, even if you have missed it coincidental or deliberately.
+  - *Why?* Sharing audio means everybody will hear when the timer is up. So everybody will help you to rotate, even if you have missed it coincidentally or deliberately.
+- **Use a timer**
+  - Always specify a timer when using `mob start` (for a 5 minute timer use `mob start 5`)
+  - *Why?* Rotation is key to good pair and mob programming. Just build the habit right from the start. Try to set a timer so everybody can have a turn at least once every 30 minutes.
 
 ## More on Installation
 
