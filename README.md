@@ -30,21 +30,13 @@ Smooth [git handover](https://www.remotemobprogramming.org/#git-handover) with '
 
 ## What people say about 'mob'
 
-> "Mob has allowed us to run fast-paced, engaging, and effective sessions by enabling sub-10-second handover times and otherwise getting out of the way. A simple but great tool!" 
->
-> &mdash; [Jeff Langr, developer](https://twitter.com/jlangr)
+> "Mob has allowed us to run fast-paced, engaging, and effective sessions by enabling sub-10-second handover times and otherwise getting out of the way. A simple but great tool!" &mdash; [Jeff Langr, developer](https://twitter.com/jlangr)
 
-> "I love it, it is a quantum leap in our collaboration."
->
-> &mdash; Vasiliy Sivovolov, Senior Software Engineer
+> "I love it, it is a quantum leap in our collaboration." &mdash; Vasiliy Sivovolov, Senior Software Engineer
 
->"What a great tool to organise remote working." 
->
-> &mdash; [Jennifer Gommans, IT Consultant](https://twitter.com/missjennbo)
+>"What a great tool to organise remote working." &mdash; [Jennifer Gommans, IT Consultant](https://twitter.com/missjennbo)
 
-> "I was recently introduced to [mob.sh](https://mob.sh) for remote pairing/mobbing collaboration and I absolutely love it. The timer feature is really a selling point for me. Kudos" 
->
-> &mdash; [Fabien Illert, IT Consultant](https://twitter.com/fabienillert)
+> "I was recently introduced to [mob.sh](https://mob.sh) for remote pairing/mobbing collaboration and I absolutely love it. The timer feature is really a selling point for me. Kudos" &mdash; [Fabien Illert, IT Consultant](https://twitter.com/fabienillert)
 
 ## How to install
 
