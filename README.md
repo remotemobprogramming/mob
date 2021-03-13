@@ -149,17 +149,11 @@ Examples:
 - **Use a timer**
   - Always specify a timer when using `mob start` (for a 5 minute timer use `mob start 5`)
   - *Why?* Rotation is key to good pair and mob programming. Just build the habit right from the start. Try to set a timer so everybody can have a turn at least once every 30 minutes.
+- **Set up a global shortcut for screensharing**
+  - Set up a global keyboard shortcut to start sharing your screen. In Zoom, you can do this via Zoom > Preferences > Keyboard Shortcuts. [More tips on setting up Zoom for effective screen sharing.](https://effectivehomeoffice.com/setup-zoom-for-effective-screen-sharing/)
+  - *Why?* This is just much faster than using the mouse.
 
 ## More on Installation
-
-
-### Zoom Shortcuts
-
-If you're using Zoom for screen sharing, here's a tip on how to speed up the Git Handover even further: 
-We recommend configuring the global hotkey for toggling screen sharing in zoom in
-(Zoom > Preferences > Keyboard Shortcuts). 
-So you can start and stop screen sharing anytime. 
-[More tips on setting up Zoom for effective screen sharing.](https://effectivehomeoffice.com/setup-zoom-for-effective-screen-sharing/)
 
 ### Arch Linux
 
@@ -233,7 +227,7 @@ MOB_NEXT_STAY=true mob next
 cd $PROJECT_ROOT
 
 git version # >= 2.17
-go version # >= 1.15
+go version # >= 1.16
 
 go build # builds 'mob'
 
