@@ -1066,7 +1066,7 @@ var printToConsole = func(message string) {
 
 func gitStagedCoauthors() []string {
 	coauthors := []string{}
-	_, output, _ := runCommand("git", "config", "--global", "--get-regexp", "mob.staged")
+	_, output, _ := runCommand("git", "config", "--global", "--get-regexp", "mob.staged.")
 
 	// This by all rights should be an empty array when there are no staged coauthors,
 	// but it's an array containing the empty string?
@@ -1089,7 +1089,7 @@ func clearAndAnnounceClearStagedCoauthors() error {
 	if len(gitStagedCoauthors()) > 0 {
 		err = gitClearStagedCoauthors()
 		if err == nil {
-			sayInfo("Cleared any previously staged co-authors from ~/.gitconfig")
+			sayInfo("Cleared previously staged co-authors from ~/.gitconfig")
 		}
 	}
 
@@ -1168,7 +1168,14 @@ func writeCoauthorsToGitConfig(coauthors coauthors.CoauthorsMap) {
 		sayIndented(fmt.Sprintf("Next time you can use `mob start --with \"%s\"`", strings.Join(newCoauthorAliases, ", ")))
 	}
 
-	sayInfo(fmt.Sprintf("%s have been staged as coauthors in ~/.gitconfig", strings.Join(allCoauthors, ", ")))
+	var presentPassiveVerb string
+	if len(allCoauthors) == 1 {
+		presentPassiveVerb = "has"
+	} else {
+		presentPassiveVerb = "have"
+	}
+
+	sayInfo(fmt.Sprintf("%s %s been staged as coauthors in ~/.gitconfig", strings.Join(allCoauthors, ", "), presentPassiveVerb))
 	sayIndented("They will appear as co-authors on your next WIP commit,")
 	sayIndented("and they will appear as co-authors after `mob done`.")
 }
