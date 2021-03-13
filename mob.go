@@ -1084,8 +1084,10 @@ func gitStagedCoauthors() []string {
 }
 
 func clearAndAnnounceClearStagedCoauthors() {
-	gitClearStagedCoauthors()
-	sayInfo("Cleared any previously staged co-authors from ~/.gitconfig")
+	if len(gitStagedCoauthors()) > 0 {
+		gitClearStagedCoauthors()
+		sayInfo("Cleared any previously staged co-authors from ~/.gitconfig")
+	}
 }
 
 func gitClearStagedCoauthors() error {
@@ -1122,7 +1124,7 @@ func loadCoauthorFromAlias(alias string) string {
 }
 
 func writeCoauthorsToGitConfig(coauthors coauthors.CoauthorsMap) {
-	gitClearStagedCoauthors()
+	clearAndAnnounceClearStagedCoauthors()
 
 	if len(coauthors) == 0 {
 		return

@@ -212,7 +212,7 @@ func (l *lexer) readIdentifier() Token {
 		}
 
 		// Consume delimiter unless EOL
-		if l.ch != 0 {
+		if !isEOL(l.ch) {
 			l.readChar()
 		}
 
