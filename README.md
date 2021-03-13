@@ -26,6 +26,7 @@ Smooth [git handover](https://www.remotemobprogramming.org/#git-handover) with '
 - **mob** supports multiple wip branches per base branch
 - **mob** notifies you when it's time ⏱️ to handover
 - **mob** can moo 🐄
+- **mob** is even better when you follow its [best practices](#best-practices)
 
 ## What people say about 'mob'
 
