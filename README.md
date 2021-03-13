@@ -149,8 +149,15 @@ Examples:
 
 ## Best Practices
 
-- Say out loud: whenever you key in `mob next` at the end of your turn or `mob start` at the beginning of your turn say the command out loud so everybody knows the handover started or is over now.
-- Screenshare stealing: after your turn, don't disable the screenshare. Let the next person steal the screenshare.
+- **Say out loud**
+  - Whenever you key in `mob next` at the end of your turn or `mob start` at the beginning of your turn say the command out loud. 
+  - *Why?* Everybody sees and also hears who's turn is ending and who's turn has started.But even more important, the person who's turn is about to start needs to know when the previous person entered `mob next` so they get the latest commit via their `mob start`.
+- **Steal the screenshare**
+  - After your turn, don't disable the screenshare. Let the next person steal the screenshare. (Requires a setting in Zoom)
+  - *Why?* This provides more calm (and less diversion) for the rest of the mob as the video conference layout doesn't change, allowing the rest of the mob to keep discussing the problem and finding the best solution, even during a Git handover.
+- **Share audio**
+  - Share your audio when you share your screen.
+  - *Why?* Sharing audio means everybody will hear when the timer is up. So everybody will help you to rotate, even if you have missed it coincidental or deliberately.
 
 ## More on Installation
 
