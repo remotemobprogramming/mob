@@ -279,6 +279,7 @@ func parseArgs(args []string) (command string, parameters []string) {
 			}
 
 			configuration.Coauthors = coauthors
+			i++
 		default:
 			if i == 1 {
 				command = arg
@@ -506,7 +507,7 @@ func moo() {
 
 func reset() {
 	git("fetch", configuration.RemoteName)
-	gitClearStagedCoauthors()
+	clearAndAnnounceClearStagedCoauthors()
 
 	currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), gitBranches(), configuration)
 
@@ -876,7 +877,7 @@ Basic Commands:
   start              start mob session from base branch in wip branch
   next               handover changes in wip branch to next person
   done               squashes all changes in wip branch to index in base branch
-  reset              removes local and remote wip branch
+  reset              removes local and remote wip branch and clears staged coauthors
 
 Basic Commands(Options):
   start [<minutes>]                      Start a <minutes> timer
@@ -1082,6 +1083,11 @@ func gitStagedCoauthors() []string {
 	return coauthors
 }
 
+func clearAndAnnounceClearStagedCoauthors() {
+	gitClearStagedCoauthors()
+	sayInfo("Cleared any previously staged co-authors from ~/.gitconfig")
+}
+
 func gitClearStagedCoauthors() error {
 	_, _, err := runCommand("git", "config", "--global", "--remove-section", "mob.staged")
 	return err
@@ -1092,7 +1098,7 @@ func loadCoauthorsFromAliases(coauthors coauthors.CoauthorsMap) (coauthors.Coaut
 
 	for alias, coauthor := range coauthors {
 		if coauthor == "" {
-			coauthor = gitconfig(true, fmt.Sprintf("mob.%s", alias))
+			coauthor = loadCoauthorFromAlias(alias)
 			if coauthor == "" {
 				missingAliases = append(missingAliases, alias)
 			} else {
@@ -1111,12 +1117,52 @@ func loadCoauthorsFromAliases(coauthors coauthors.CoauthorsMap) (coauthors.Coaut
 	return coauthors, err
 }
 
-func writeCoauthorsToGitConfig(coauthors map[string]string) {
+func loadCoauthorFromAlias(alias string) string {
+	return gitconfig(true, fmt.Sprintf("mob.%s", alias))
+}
+
+func writeCoauthorsToGitConfig(coauthors coauthors.CoauthorsMap) {
 	gitClearStagedCoauthors()
-	for alias, coauthor := range coauthors {
-		gitconfig(true, fmt.Sprintf("mob.%s", alias), coauthor)
-		gitconfig(true, fmt.Sprintf("mob.staged.%s", alias), coauthor)
+
+	if len(coauthors) == 0 {
+		return
 	}
+
+	allCoauthors := make([]string, 0, len(coauthors))
+	newCoauthorEmails := make([]string, 0, len(coauthors))
+	newCoauthorAliases := make([]string, 0, len(coauthors))
+
+	for alias, coauthor := range coauthors {
+		previous := loadCoauthorFromAlias(alias)
+		allCoauthors = append(allCoauthors, coauthor)
+		gitconfig(true, fmt.Sprintf("mob.staged.%s", alias), coauthor)
+
+		if previous != coauthor {
+			gitconfig(true, fmt.Sprintf("mob.%s", alias), coauthor)
+			if previous != "" {
+				sayInfo(fmt.Sprintf("mob alias `%s` was updated to refer to `%s`", alias, coauthor))
+			} else {
+				newCoauthorEmails = append(newCoauthorEmails, coauthor)
+				newCoauthorAliases = append(newCoauthorAliases, alias)
+			}
+		}
+	}
+
+	if len(newCoauthorAliases) > 0 {
+		var beingVerb string
+		if len(newCoauthorAliases) == 1 {
+			beingVerb = "was"
+		} else {
+			beingVerb = "were"
+		}
+
+		sayInfo(fmt.Sprintf("%s %s saved to ~/.gitconfig", strings.Join(newCoauthorEmails, ", "), beingVerb))
+		sayIndented(fmt.Sprintf("Next time you can use `mob start --with \"%s\"`", strings.Join(newCoauthorAliases, ", ")))
+	}
+
+	sayInfo(fmt.Sprintf("%s have been staged as coauthors in ~/.gitconfig", strings.Join(allCoauthors, ", ")))
+	sayIndented("They will appear as co-authors on your next WIP commit,")
+	sayIndented("and they will appear as co-authors after `mob done`.")
 }
 
 func appendCoauthorsToSquashMsg(workingDir string) error {
