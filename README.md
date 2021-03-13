@@ -48,32 +48,27 @@ Smooth [git handover](https://www.remotemobprogramming.org/#git-handover) with '
 ## How to install
 
 ```
+# works for macOS, linux, and even on windows in git bash
 curl -sL install.mob.sh | sh
 ```
-On windows you can use `git bash` to install `mob` or when you're using [Scoop](https://scoop.sh/):
+
+On macOS via homebrew: 
+
+```
+# install
+brew install remotemobprogramming/brew/mob
+
+# upgrade to latest version
+brew upgrade remotemobprogramming/brew/mob
+```
+
+On windows via [Scoop](https://scoop.sh/):
 
 ```
 scoop install mob
 ``` 
 
-You can also install it on macOS via homebrew: 
-
-```
-brew install remotemobprogramming/brew/mob
-```
-
-If you want to update to the latest version using Homebrew
-
-```
-brew upgrade remotemobprogramming/brew/mob
-```
-
-If you use [Nix](http://nixos.org), you can also use a [Nix expression](./mob.nix) to build `mob`
-via 
-
-```
-mob = callPackage ./mob.nix {};
-```
+On [Nix](http://nixos.org) through the [mob.nix](./mob.nix) expression like this `mob = callPackage ./mob.nix {};`.
 
 ## How to use
 
@@ -151,6 +146,11 @@ Examples:
 - `mob status` display the mob session status and all the created WIP commits
 - `mob reset` deletes `mob-session` and `origin/mob-session`
 - `mob config` print configuration
+
+## Best Practices
+
+- Say out loud: whenever you key in `mob next` at the end of your turn or `mob start` at the beginning of your turn say the command out loud so everybody knows the handover started or is over now.
+- Screenshare stealing: after your turn, don't disable the screenshare. Let the next person steal the screenshare.
 
 ## More on Installation
 
