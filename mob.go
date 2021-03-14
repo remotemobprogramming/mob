@@ -709,7 +709,6 @@ func done() {
 	if hasRemoteBranch(currentWipBranch) {
 		if !isNothingToCommit() {
 			makeWipCommit()
-			gitClearStagedCoauthors()
 		}
 		git("push", "--no-verify", configuration.RemoteName, currentWipBranch)
 
@@ -734,6 +733,7 @@ func done() {
 		git("branch", "-D", currentWipBranch)
 		sayInfo("someone else already ended your mob session")
 	}
+	clearAndAnnounceClearStagedCoauthors()
 }
 
 func squashOrNoCommit() string {
@@ -1184,6 +1184,10 @@ func appendCoauthorsToSquashMsg(workingDir string) error {
 	squashMsgPath := path.Join(workingDir, ".git", "SQUASH_MSG")
 	file, err := os.OpenFile(squashMsgPath, os.O_APPEND|os.O_RDWR, 0644)
 	if err != nil {
+		if err == os.ErrNotExist {
+			// No wip commits, nothing to squash, this isn't really an error
+			return nil
+		}
 		return err
 	}
 
