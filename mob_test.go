@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	fmt "fmt"
 	"io/ioutil"
 	"os"
@@ -11,7 +12,6 @@ import (
 	"strconv"
 	"strings"
 	"testing"
-	"errors"
 )
 
 func TestParseArgs(t *testing.T) {
@@ -545,6 +545,49 @@ func TestStartDoneWithMobDoneSquashTrue(t *testing.T) {
 	assertNoMobSessionBranches(t, "mob-session")
 }
 
+func TestRunOutput(t *testing.T) {
+	setup(t)
+
+	setWorkingDir("/tmp/mob/local")
+	start(configuration)
+	createFile(t, "file1.txt", "asdf")
+	output := run(t, "cat", "/tmp/mob/local/file1.txt")
+	assertOutputContains(t, output, "asdf")
+}
+
+func TestTestbed(t *testing.T) {
+	setup(t)
+
+	setWorkingDir("/tmp/mob/local")
+	start(configuration)
+	createFile(t, "file1.txt", "asdf")
+	next(configuration)
+
+	setWorkingDir("/tmp/mob/localother")
+	start(configuration)
+	createFile(t, "file2.txt", "asdf")
+	next(configuration)
+
+	setWorkingDir("/tmp/mob/alice")
+	start(configuration)
+	createFile(t, "file3.txt", "owqe")
+	next(configuration)
+
+	setWorkingDir("/tmp/mob/bob")
+	start(configuration)
+	createFile(t, "file4.txt", "zcvx")
+	next(configuration)
+
+	setWorkingDir("/tmp/mob/local")
+	start(configuration)
+
+	output := silentgit("log", "--pretty=format:'%ae'")
+	assertOutputContains(t, &output, "local")
+	assertOutputContains(t, &output, "localother")
+	assertOutputContains(t, &output, "alice")
+	assertOutputContains(t, &output, "bob")
+}
+
 func TestStartDoneWithMobDoneSquashFalse(t *testing.T) {
 	setup(t)
 	configuration.MobDoneSquash = false
@@ -851,7 +894,7 @@ func captureOutput() *string {
 	return &messages
 }
 
-func run(t *testing.T, name string, args ...string) {
+func run(t *testing.T, name string, args ...string) *string {
 	commandString, output, err := runCommand(name, args...)
 	if err != nil {
 		fmt.Println(commandString)
@@ -859,6 +902,7 @@ func run(t *testing.T, name string, args ...string) {
 		fmt.Println(err.Error())
 		t.Error("command " + commandString + " failed")
 	}
+	return &output
 }
 
 func createTestbed(t *testing.T) {
