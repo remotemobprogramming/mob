@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	versionNumber   = "1.1.0"
+	versionNumber   = "1.3.0"
 	mobStashName    = "mob-stash-name"
 	wipBranchPrefix = "mob/"
 )
@@ -30,15 +30,31 @@ type Configuration struct {
 	MobNextStay                       bool   // override with MOB_NEXT_STAY environment variable
 	MobNextStaySet                    bool   // override with MOB_NEXT_STAY environment variable
 	MobStartIncludeUncommittedChanges bool   // override with MOB_START_INCLUDE_UNCOMMITTED_CHANGES variable
-	Debug                             bool   // override with MOB_DEBUG environment variable
+	Debug                             bool   // override with --debug parameter
 	WipBranchQualifier                string // override with MOB_WIP_BRANCH_QUALIFIER environment variable
-	WipBranchQualifierSet             bool
+	WipBranchQualifierSet             bool   // used to enforce a start on the default wip branch with `mob start --branch ""` when other open wip branches had been detected
 	WipBranchQualifierSeparator       string // override with MOB_WIP_BRANCH_QUALIFIER_SEPARATOR environment variable
 	MobDoneSquash                     bool   // override with MOB_DONE_SQUASH environment variable
+	MobTimer                          string // override with MOB_TIMER environment variable
+}
+
+func (c Configuration) wipBranchQualifierSuffix() string {
+	return c.WipBranchQualifierSeparator + c.WipBranchQualifier
+}
+
+func (c Configuration) customWipBranchQualifierConfigured() bool {
+	return c.WipBranchQualifier != ""
+}
+
+func (c Configuration) hasCustomCommitMessage() bool {
+	return getDefaultConfiguration().WipCommitMessage != c.WipCommitMessage
 }
 
 func main() {
-	configuration = parseEnvironmentVariables(getDefaultConfiguration())
+	configuration = getDefaultConfiguration()
+	configuration = parseDebug(configuration, os.Args)
+
+	configuration = parseEnvironmentVariables(configuration)
 	debugInfo("Args '" + strings.Join(os.Args, " ") + "'")
 
 	command, parameters := parseArgs(os.Args)
@@ -55,17 +71,17 @@ func getDefaultConfiguration() Configuration {
 	notifyCommand := ""
 	switch runtime.GOOS {
 	case "darwin":
-		voiceCommand = "say"
+		voiceCommand = "say \"%s\""
 		notifyCommand = "/usr/bin/osascript -e 'display notification \"%s\"'"
 	case "linux":
-		voiceCommand = "say"
+		voiceCommand = "say \"%s\""
 		notifyCommand = "notify-send \"%s\""
 	case "windows":
-		voiceCommand = "(New-Object -ComObject SAPI.SPVoice).Speak(\\\"%s\\\")\""
+		voiceCommand = "(New-Object -ComObject SAPI.SPVoice).Speak(\\\"%s\\\")"
 	}
 	return Configuration{
 		RemoteName:                        "origin",
-		WipCommitMessage:                  "mob next [ci-skip]",
+		WipCommitMessage:                  "mob next [ci-skip] [ci skip] [skip ci]",
 		VoiceCommand:                      voiceCommand,
 		NotifyCommand:                     notifyCommand,
 		MobNextStay:                       true,
@@ -77,14 +93,25 @@ func getDefaultConfiguration() Configuration {
 		WipBranchQualifierSet:             false,
 		WipBranchQualifierSeparator:       "-",
 		MobDoneSquash:                     true,
+		MobTimer:                          "",
 	}
+}
+
+func parseDebug(configuration Configuration, args []string) Configuration {
+	// debug needs to be parsed at the beginning to have DEBUG enabled as quickly as possible
+	// otherwise, parsing other environment variables or other parameters don't have debug enabled
+	for i := 0; i < len(args); i++ {
+		if args[i] == "--debug" {
+			configuration.Debug = true
+		}
+	}
+
+	return configuration
 }
 
 func parseEnvironmentVariables(configuration Configuration) Configuration {
 	removed("MOB_BASE_BRANCH", "Use 'mob start' on your base branch instead.")
 	removed("MOB_WIP_BRANCH", "Use 'mob start --branch <branch>' instead.")
-
-	deprecated("MOB_DEBUG", "Use the parameter --debug instead.")
 	deprecated("MOB_START_INCLUDE_UNCOMMITTED_CHANGES", "Use the parameter --include-uncommitted-changes instead.")
 
 	setStringFromEnvVariable(&configuration.RemoteName, "MOB_REMOTE_NAME")
@@ -99,12 +126,13 @@ func parseEnvironmentVariables(configuration Configuration) Configuration {
 		configuration.WipBranchQualifierSet = true
 	}
 
-	setBoolFromEnvVariable(&configuration.Debug, "MOB_DEBUG")
 	setBoolFromEnvVariableSet(&configuration.MobNextStay, &configuration.MobNextStaySet, "MOB_NEXT_STAY")
 
 	setBoolFromEnvVariable(&configuration.MobStartIncludeUncommittedChanges, "MOB_START_INCLUDE_UNCOMMITTED_CHANGES")
 
 	setBoolFromEnvVariable(&configuration.MobDoneSquash, "MOB_DONE_SQUASH")
+
+	setStringFromEnvVariable(&configuration.MobTimer, "MOB_TIMER")
 
 	return configuration
 }
@@ -113,7 +141,7 @@ func setStringFromEnvVariable(s *string, key string) {
 	value, set := os.LookupEnv(key)
 	if set && value != "" {
 		*s = value
-		debugInfo("overriding " + key + " =" + *s)
+		debugInfo("overriding " + key + "=" + *s)
 	}
 }
 
@@ -121,37 +149,50 @@ func setOptionalStringFromEnvVariable(s *string, key string) {
 	value, set := os.LookupEnv(key)
 	if set {
 		*s = value
-		debugInfo("overriding " + key + " =" + *s)
+		debugInfo("overriding " + key + "=" + *s)
 	}
 }
 
 func setBoolFromEnvVariable(s *bool, key string) {
 	value, set := os.LookupEnv(key)
-	if !set || value == "" {
+	if !set {
 		return
+	}
+	if value == "" {
+		debugInfo("ignoring " + key + "=" + value + " (empty string)")
 	}
 
 	if value == "true" {
 		*s = true
-		debugInfo("overriding " + key + " =" + strconv.FormatBool(*s))
+		debugInfo("overriding " + key + "=" + strconv.FormatBool(*s))
 	} else if value == "false" {
 		*s = false
-		debugInfo("overriding " + key + " =" + strconv.FormatBool(*s))
+		debugInfo("overriding " + key + "=" + strconv.FormatBool(*s))
 	} else {
-		sayError("ignoring " + key + " =" + value + " (not a boolean)")
+		sayError("ignoring " + key + "=" + value + " (not a boolean)")
 	}
 }
 
-func setBoolFromEnvVariableSet(s *bool, changed *bool, key string) {
+func setBoolFromEnvVariableSet(s *bool, overridden *bool, key string) {
 	value, set := os.LookupEnv(key)
-	if set && value == "true" {
+
+	if !set {
+		debugInfo("key " + key + " is not set")
+		return
+	}
+
+	debugInfo("found " + key + "=" + value)
+
+	if value == "true" {
 		*s = true
-		*changed = true
+		*overridden = true
 		debugInfo("overriding " + key + " =" + strconv.FormatBool(*s))
-	} else if set && value == "false" {
+	} else if value == "false" {
 		*s = false
-		*changed = true
+		*overridden = true
 		debugInfo("overriding " + key + " =" + strconv.FormatBool(*s))
+	} else {
+		sayError("ignoring " + key + " =" + value + " (not a boolean)")
 	}
 }
 
@@ -169,18 +210,18 @@ func deprecated(key string, message string) {
 	}
 }
 
-func config() {
-	say("MOB_REMOTE_NAME" + "=" + configuration.RemoteName)
-	say("MOB_WIP_COMMIT_MESSAGE" + "=" + configuration.WipCommitMessage)
-	say("MOB_REQUIRE_COMMIT_MESSAGE" + "=" + strconv.FormatBool(configuration.RequireCommitMessage))
-	say("MOB_VOICE_COMMAND" + "=" + configuration.VoiceCommand)
-	say("MOB_NOTIFY_COMMAND" + "=" + configuration.NotifyCommand)
-	say("MOB_NEXT_STAY" + "=" + strconv.FormatBool(configuration.MobNextStay))
-	say("MOB_START_INCLUDE_UNCOMMITTED_CHANGES" + "=" + strconv.FormatBool(configuration.MobStartIncludeUncommittedChanges))
-	say("MOB_DEBUG" + "=" + strconv.FormatBool(configuration.Debug))
-	say("MOB_WIP_BRANCH_QUALIFIER" + "=" + configuration.WipBranchQualifier)
-	say("MOB_WIP_BRANCH_QUALIFIER_SEPARATOR" + "=" + configuration.WipBranchQualifierSeparator)
-	say("MOB_DONE_SQUASH" + "=" + strconv.FormatBool(configuration.MobDoneSquash))
+func config(c Configuration) {
+	say("MOB_REMOTE_NAME" + "=" + c.RemoteName)
+	say("MOB_WIP_COMMIT_MESSAGE" + "=" + c.WipCommitMessage)
+	say("MOB_REQUIRE_COMMIT_MESSAGE" + "=" + strconv.FormatBool(c.RequireCommitMessage))
+	say("MOB_VOICE_COMMAND" + "=" + c.VoiceCommand)
+	say("MOB_NOTIFY_COMMAND" + "=" + c.NotifyCommand)
+	say("MOB_NEXT_STAY" + "=" + strconv.FormatBool(c.MobNextStay))
+	say("MOB_START_INCLUDE_UNCOMMITTED_CHANGES" + "=" + strconv.FormatBool(c.MobStartIncludeUncommittedChanges))
+	say("MOB_WIP_BRANCH_QUALIFIER" + "=" + c.WipBranchQualifier)
+	say("MOB_WIP_BRANCH_QUALIFIER_SEPARATOR" + "=" + c.WipBranchQualifierSeparator)
+	say("MOB_DONE_SQUASH" + "=" + strconv.FormatBool(c.MobDoneSquash))
+	say("MOB_TIMER" + "=" + c.MobTimer)
 }
 
 func parseArgs(args []string) (command string, parameters []string) {
@@ -190,7 +231,7 @@ func parseArgs(args []string) (command string, parameters []string) {
 		case "--include-uncommitted-changes", "-i":
 			configuration.MobStartIncludeUncommittedChanges = true
 		case "--debug":
-			configuration.Debug = true
+			// ignore this, already parsed
 		case "--stay", "-s":
 			configuration.MobNextStay = true
 			configuration.MobNextStaySet = true
@@ -208,6 +249,8 @@ func parseArgs(args []string) (command string, parameters []string) {
 				configuration.WipCommitMessage = args[i+1]
 			}
 			i++ // skip consumed parameter
+		case "--squash":
+			configuration.MobDoneSquash = true
 		case "--no-squash":
 			configuration.MobDoneSquash = false
 		default:
@@ -226,30 +269,34 @@ func execute(command string, parameter []string) {
 
 	switch command {
 	case "s", "start":
-		start()
-		if !isMobProgramming() {
+		start(configuration)
+		if !isMobProgramming(configuration) {
 			return
 		}
 		if len(parameter) > 0 {
 			timer := parameter[0]
 			startTimer(timer)
+		} else if configuration.MobTimer != "" {
+			startTimer(configuration.MobTimer)
 		}
 
 		status()
 	case "n", "next":
-		next()
+		next(configuration)
 	case "d", "done":
 		done()
 	case "reset":
 		reset()
 	case "config":
-		config()
+		config(configuration)
 	case "status":
 		status()
 	case "t", "timer":
 		if len(parameter) > 0 {
 			timer := parameter[0]
 			startTimer(timer)
+		} else if configuration.MobTimer != "" {
+			startTimer(configuration.MobTimer)
 		} else {
 			help()
 		}
@@ -264,25 +311,16 @@ func execute(command string, parameter []string) {
 	}
 }
 
-func determineBranches(currentBranch string, localBranches []string) (baseBranch string, wipBranch string) {
-	if currentBranch == "mob-session" || (currentBranch == "master" && !customWipBranchQualifierConfigured()) {
+func determineBranches(currentBranch string, localBranches []string, configuration Configuration) (baseBranch string, wipBranch string) {
+	if currentBranch == "mob-session" || (currentBranch == "master" && !configuration.customWipBranchQualifierConfigured()) {
 		baseBranch = "master"
 		wipBranch = "mob-session"
 	} else if isWipBranch(currentBranch) {
-		baseBranch = removeWipPrefix(currentBranch)
+		baseBranch = removeWipQualifier(removeWipPrefix(currentBranch), localBranches, configuration)
 		wipBranch = currentBranch
-
-		// todo refactor extract to removeWipQualifier(branch, localBranches)
-		for !branchExists(baseBranch, localBranches) && hasSuffix(baseBranch) {
-			baseBranch = removeSuffix(baseBranch)
-		}
 	} else {
 		baseBranch = currentBranch
-		wipBranch = addWipPrefix(currentBranch)
-
-		if customWipBranchQualifierConfigured() {
-			wipBranch = addSuffix(wipBranch)
-		}
+		wipBranch = addWipQualifier(addWipPrefix(currentBranch), configuration)
 	}
 
 	debugInfo("on currentBranch " + currentBranch + " => BASE " + baseBranch + " WIP " + wipBranch + " with allLocalBranches " + strings.Join(localBranches, ","))
@@ -293,9 +331,40 @@ func determineBranches(currentBranch string, localBranches []string) (baseBranch
 	return
 }
 
-// todo should check configuration.WipBranchQualifierSet instead
-func customWipBranchQualifierConfigured() bool {
-	return configuration.WipBranchQualifier != ""
+func addWipQualifier(branch string, configuration Configuration) string {
+	if configuration.customWipBranchQualifierConfigured() {
+		return addSuffix(branch, configuration.wipBranchQualifierSuffix())
+	}
+	return branch
+}
+
+func removeWipQualifier(branch string, localBranches []string, configuration Configuration) string {
+	for !branchExists(branch, localBranches) && hasWipBranchQualifierSeparator(branch, configuration) {
+		var afterRemoval string
+		if configuration.WipBranchQualifier == "" { // WipBranchQualifier not configured
+			afterRemoval = removeFromSeparator(branch, configuration.WipBranchQualifierSeparator)
+		} else { // WipBranchQualifier not configured
+			afterRemoval = removeSuffix(branch, configuration.wipBranchQualifierSuffix())
+		}
+
+		if branch == afterRemoval { // avoids infinite loop
+			break
+		}
+
+		branch = afterRemoval
+	}
+	return branch
+}
+
+func removeSuffix(branch string, suffix string) string {
+	if strings.HasSuffix(branch, suffix) {
+		return branch[:strings.LastIndex(branch, suffix)]
+	}
+	return branch
+}
+
+func removeFromSeparator(branch string, separator string) string {
+	return branch[:strings.LastIndex(branch, separator)]
 }
 
 func isWipBranch(branch string) bool {
@@ -310,27 +379,12 @@ func removeWipPrefix(branch string) string { //TODO improve, add tests
 	return branch[len(wipBranchPrefix):]
 }
 
-func addSuffix(branch string) string { // TODO rename to addWipQualifier
-	return branch + configuration.WipBranchQualifierSeparator + configuration.WipBranchQualifier
+func addSuffix(branch string, suffix string) string {
+	return branch + suffix
 }
 
-func hasSuffix(branch string) bool { //TODO improve (dont use strings.Contains, add tests)
+func hasWipBranchQualifierSeparator(branch string, configuration Configuration) bool { //TODO improve (dont use strings.Contains, add tests)
 	return strings.Contains(branch, configuration.WipBranchQualifierSeparator)
-}
-
-func removeSuffix(branch string) string {
-	if configuration.WipBranchQualifierSet { // WipBranchQualifier configured
-		suffix := configuration.WipBranchQualifierSeparator + configuration.WipBranchQualifier
-		if strings.HasSuffix(branch, suffix) {
-			return branch[:strings.LastIndex(branch, suffix)]
-		} else {
-			return branch
-		}
-	} else if hasSuffix(branch) { // WipBranchQualifier not configured, but WipBranchQualifierSeparator found
-		return branch[:strings.LastIndex(branch, configuration.WipBranchQualifierSeparator)]
-	} else {
-		return branch
-	}
 }
 
 func branchExists(branchInQuestion string, existingBranches []string) bool {
@@ -427,7 +481,7 @@ func moo() {
 func reset() {
 	git("fetch", configuration.RemoteName)
 
-	currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), gitBranches())
+	currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), gitBranches(), configuration)
 
 	git("checkout", currentBaseBranch)
 	if hasLocalBranch(currentWipBranch) {
@@ -439,7 +493,7 @@ func reset() {
 	sayInfo("Branches " + currentWipBranch + " and " + configuration.RemoteName + "/" + currentWipBranch + " deleted")
 }
 
-func start() {
+func start(configuration Configuration) {
 	stashed := false
 	if hasUncommittedChanges() {
 		if configuration.MobStartIncludeUncommittedChanges {
@@ -456,11 +510,11 @@ func start() {
 
 	git("fetch", configuration.RemoteName, "--prune")
 
-	currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), gitBranches())
+	currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), gitBranches(), configuration)
 
 	hasWipBranchesWithQualifier := hasQualifiedBranches(currentBaseBranch, gitRemoteBranches())
 
-	if !isMobProgramming() && hasWipBranchesWithQualifier && !configuration.WipBranchQualifierSet {
+	if !isMobProgramming(configuration) && hasWipBranchesWithQualifier && !configuration.WipBranchQualifierSet {
 		sayInfo("qualified mob branches detected")
 		sayTodo("To start mob programming, use", "mob start --branch <branch>")
 		sayIndented("(use \"\" for the default mob branch)")
@@ -473,7 +527,7 @@ func start() {
 		return
 	}
 
-	if !isMobProgramming() {
+	if !isMobProgramming(configuration) {
 		git("merge", "FETCH_HEAD", "--ff-only")
 	}
 
@@ -515,7 +569,7 @@ func hasQualifiedBranches(currentBaseBranch string, remoteBranches []string) boo
 }
 
 func startJoinMobSession() {
-	_, currentWipBranch := determineBranches(gitCurrentBranch(), gitBranches())
+	_, currentWipBranch := determineBranches(gitCurrentBranch(), gitBranches(), configuration)
 
 	sayInfo("joining existing mob session from " + configuration.RemoteName + "/" + currentWipBranch)
 	git("checkout", "-B", currentWipBranch, configuration.RemoteName+"/"+currentWipBranch)
@@ -523,7 +577,7 @@ func startJoinMobSession() {
 }
 
 func startNewMobSession() {
-	currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), gitBranches())
+	currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), gitBranches(), configuration)
 
 	sayInfo("starting new mob session from " + configuration.RemoteName + "/" + currentBaseBranch)
 	git("checkout", "-B", currentWipBranch, configuration.RemoteName+"/"+currentBaseBranch)
@@ -549,24 +603,22 @@ func findLatestMobStash(stashes string) string {
 	return "unknown"
 }
 
-func next() {
-	if !isMobProgramming() {
+func next(configuration Configuration) {
+	if !isMobProgramming(configuration) {
 		sayError("you aren't mob programming")
 		sayTodo("to start mob programming, use", "mob start")
 		return
 	}
 
-	defConfig := getDefaultConfiguration()
-	gotM := defConfig.WipCommitMessage != configuration.WipCommitMessage
-	if !gotM && configuration.RequireCommitMessage && !isNothingToCommit() {
+	if !configuration.hasCustomCommitMessage() && configuration.RequireCommitMessage && !isNothingToCommit() {
 		sayError("commit message required")
 		return
 	}
 
-	currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), gitBranches())
+	currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), gitBranches(), configuration)
 
 	if isNothingToCommit() {
-		if hasLocalCommits(currentWipBranch) {
+		if hasLocalCommits(currentWipBranch, configuration) {
 			git("push", "--no-verify", configuration.RemoteName, currentWipBranch)
 		} else {
 			sayInfo("nothing was done, so nothing to commit")
@@ -578,7 +630,7 @@ func next() {
 		git("push", "--no-verify", configuration.RemoteName, currentWipBranch)
 		say(changes)
 	}
-	showNext()
+	showNext(configuration)
 
 	if !configuration.MobNextStay {
 		git("checkout", currentBaseBranch)
@@ -594,7 +646,7 @@ func getCachedChanges() string {
 }
 
 func done() {
-	if !isMobProgramming() {
+	if !isMobProgramming(configuration) {
 		sayError("you aren't mob programming")
 		sayTodo("to start mob programming, use", "mob start")
 		return
@@ -602,7 +654,7 @@ func done() {
 
 	git("fetch", configuration.RemoteName, "--prune")
 
-	currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), gitBranches())
+	currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), gitBranches(), configuration)
 
 	if hasRemoteBranch(currentWipBranch) {
 		if !isNothingToCommit() {
@@ -639,20 +691,31 @@ func squashOrNoCommit() string {
 }
 
 func status() {
-	if isMobProgramming() {
+	if isMobProgramming(configuration) {
 		sayInfo("you are mob programming")
 
-		currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), gitBranches())
+		currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), gitBranches(), configuration)
 		sayInfo("on wip branch " + currentWipBranch + " (base branch " + currentBaseBranch + ")")
 
-		say(silentgit("--no-pager", "log", currentBaseBranch+".."+currentWipBranch, "--pretty=format:%h %cr <%an>", "--abbrev-commit"))
+		sayLastCommitsList(currentBaseBranch, currentWipBranch)
 	} else {
 		sayInfo("you aren't mob programming")
-		currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), gitBranches())
+		currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), gitBranches(), configuration)
 		sayInfo("on base branch " + currentBaseBranch + " (wip branch " + currentWipBranch + ")")
 
 		sayTodo("to start mob programming, use", "mob start")
 	}
+}
+
+func sayLastCommitsList(currentBaseBranch string, currentWipBranch string) {
+	log := silentgit("--no-pager", "log", currentBaseBranch+".."+currentWipBranch, "--pretty=format:%h %cr <%an>", "--abbrev-commit")
+	lines := strings.Split(strings.TrimSpace(log), "\n")
+	if len(lines) > 5 {
+		sayInfo("This mob branch contains " + strconv.Itoa(len(lines)) + " commits. The last 5 were:")
+		lines = lines[:5]
+	}
+	output := strings.Join(lines, "\n")
+	say(output)
 }
 
 func isNothingToCommit() bool {
@@ -660,7 +723,7 @@ func isNothingToCommit() bool {
 	return len(strings.TrimSpace(output)) == 0
 }
 
-func hasLocalCommits(branch string) bool {
+func hasLocalCommits(branch string, configuration Configuration) bool {
 	local := silentgit("for-each-ref", "--format=%(objectname)",
 		"refs/heads/"+branch)
 	remote := silentgit("for-each-ref", "--format=%(objectname)",
@@ -672,9 +735,9 @@ func hasUncommittedChanges() bool {
 	return !isNothingToCommit()
 }
 
-func isMobProgramming() bool {
+func isMobProgramming(configuration Configuration) bool {
 	currentBranch := gitCurrentBranch()
-	_, currentWipBranch := determineBranches(currentBranch, gitBranches())
+	_, currentWipBranch := determineBranches(currentBranch, gitBranches(), configuration)
 	debugInfo("current branch " + currentBranch + " and currentWipBranch " + currentWipBranch)
 	return currentWipBranch == currentBranch
 }
@@ -725,10 +788,10 @@ func gitUserName() string {
 	return strings.TrimSpace(silentgit("config", "--get", "user.name"))
 }
 
-func showNext() {
+func showNext(configuration Configuration) {
 	debugInfo("determining next person based on previous changes")
 
-	currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), gitBranches())
+	currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), gitBranches(), configuration)
 
 	changes := strings.TrimSpace(silentgit("--no-pager", "log", currentBaseBranch+".."+currentWipBranch, "--pretty=format:%an", "--abbrev-commit"))
 	lines := strings.Split(strings.Replace(changes, "\r\n", "\n", -1), "\n")
@@ -772,6 +835,7 @@ Basic Commands(Options):
     [--message|-m <commit-message>]      Override commit message
   done
     [--no-squash]                        Do not squash commits from wip branch
+    [--squash]                           Squash commits from wip branch
   reset 
     [--branch|-b <branch-postfix>]       Set wip branch to 'mob/<base-branch>/<branch-postfix>'
 
@@ -801,9 +865,7 @@ func silentgit(args ...string) string {
 	commandString, output, err := runCommand("git", args...)
 
 	if err != nil {
-		sayError(commandString)
-		sayError(output)
-		sayError(err.Error())
+		sayGitError(commandString, output, err)
 		exit(1)
 	}
 	return output
@@ -813,13 +875,33 @@ func git(args ...string) {
 	commandString, output, err := runCommand("git", args...)
 
 	if err != nil {
-		sayError(commandString)
-		sayError(output)
-		sayError(err.Error())
+		sayGitError(commandString, output, err)
 		exit(1)
 	} else {
 		sayIndented(commandString)
 	}
+}
+
+func sayGitError(commandString string, output string, err error) {
+	if !isGit() {
+		path, err := os.Getwd()
+		if err == nil {
+			cwdMsg := fmt.Sprintf("The current working directory, %s, is not a git repository.", path)
+
+			sayWithPrefix("mob expects the current working directory to be a git repository.", "🤦🏿 ")
+			sayIndented(cwdMsg)
+			say(" ")
+		}
+
+	}
+	sayError(commandString)
+	sayError(output)
+	sayError(err.Error())
+}
+
+func isGit() bool {
+	_, _, err := runCommand("git", "rev-parse")
+	return err == nil
 }
 
 func gitignorefailure(args ...string) error {
