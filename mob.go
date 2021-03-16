@@ -665,7 +665,7 @@ func done(configuration Configuration) {
 
 		git("checkout", currentBaseBranch)
 		git("merge", configuration.RemoteName+"/"+currentBaseBranch, "--ff-only")
-		mergeFailed := gitignorefailure("merge", squashOrNoCommit(), "--ff", currentWipBranch)
+		mergeFailed := gitignorefailure("merge", squashOrNoCommit(configuration), "--ff", currentWipBranch)
 		if mergeFailed != nil {
 			return
 		}
@@ -682,7 +682,7 @@ func done(configuration Configuration) {
 	}
 }
 
-func squashOrNoCommit() string {
+func squashOrNoCommit(configuration Configuration) string {
 	if configuration.MobDoneSquash {
 		return "--squash"
 	} else {
