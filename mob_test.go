@@ -393,7 +393,7 @@ func TestStartNextWithBranch(t *testing.T) {
 	assertOnBranch(t, "master")
 
 	configuration.WipBranchQualifier = "green"
-	reset()
+	reset(configuration)
 	assertNoMobSessionBranches(t, "mob/master-green")
 }
 
@@ -445,7 +445,7 @@ func TestStartNextWithBranchContainingHyphen(t *testing.T) {
 func TestReset(t *testing.T) {
 	setup(t)
 
-	reset()
+	reset(configuration)
 
 	assertOnBranch(t, "master")
 	assertNoMobSessionBranches(t, "mob-session")
@@ -458,7 +458,7 @@ func TestResetCommit(t *testing.T) {
 	next(configuration)
 	assertMobSessionBranches(t, "mob-session")
 
-	reset()
+	reset(configuration)
 
 	assertOnBranch(t, "master")
 	assertNoMobSessionBranches(t, "mob-session")

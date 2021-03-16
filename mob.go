@@ -286,7 +286,7 @@ func execute(command string, parameter []string) {
 	case "d", "done":
 		done(configuration)
 	case "reset":
-		reset()
+		reset(configuration)
 	case "config":
 		config(configuration)
 	case "status":
@@ -478,7 +478,7 @@ func moo() {
 	}
 }
 
-func reset() {
+func reset(configuration Configuration) {
 	git("fetch", configuration.RemoteName)
 
 	currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), gitBranches(), configuration)
