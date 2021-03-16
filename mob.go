@@ -280,7 +280,7 @@ func execute(command string, parameter []string) {
 			startTimer(configuration.MobTimer)
 		}
 
-		status()
+		status(configuration)
 	case "n", "next":
 		next(configuration)
 	case "d", "done":
@@ -290,7 +290,7 @@ func execute(command string, parameter []string) {
 	case "config":
 		config(configuration)
 	case "status":
-		status()
+		status(configuration)
 	case "t", "timer":
 		if len(parameter) > 0 {
 			timer := parameter[0]
@@ -690,7 +690,7 @@ func squashOrNoCommit(configuration Configuration) string {
 	}
 }
 
-func status() {
+func status(configuration Configuration) {
 	if isMobProgramming(configuration) {
 		sayInfo("you are mob programming")
 

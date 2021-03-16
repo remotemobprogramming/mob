@@ -221,7 +221,7 @@ func TestVersion(t *testing.T) {
 func TestStatusNotMobProgramming(t *testing.T) {
 	output := setup(t)
 
-	status()
+	status(configuration)
 
 	assertOutputContains(t, output, "you aren't mob programming")
 }
@@ -278,7 +278,7 @@ func TestStatusMobProgramming(t *testing.T) {
 	output := setup(t)
 	start(configuration)
 
-	status()
+	status(configuration)
 
 	assertOutputContains(t, output, "you are mob programming")
 }
@@ -294,7 +294,7 @@ func TestStatusWithMoreThan5LinesOfLog(t *testing.T) {
 	}
 
 	output := captureOutput()
-	status()
+	status(configuration)
 	assertOutputContains(t, output, "This mob branch contains 6 commits.")
 }
 
