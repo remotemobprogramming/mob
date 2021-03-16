@@ -1119,7 +1119,7 @@ func loadCoauthorsFromAliases(coauthors coauthors.CoauthorsMap) (coauthors.Coaut
 	if len(missingAliases) == 0 {
 		err = nil
 	} else {
-		err = fmt.Errorf("%s were not listed in ~/.gitconfig. Try using fully qualified coauthors", strings.Join(missingAliases, ", "))
+		err = fmt.Errorf("%s were not listed in ~/.gitconfig. Try using fully qualified co-authors", strings.Join(missingAliases, ", "))
 	}
 
 	return coauthors, err
@@ -1168,16 +1168,19 @@ func writeCoauthorsToGitConfig(coauthors coauthors.CoauthorsMap) {
 		sayIndented(fmt.Sprintf("Next time you can use `mob start --with \"%s\"`", strings.Join(newCoauthorAliases, ", ")))
 	}
 
+	var pluralizedCoauthors string
 	var presentPassiveVerb string
 	if len(allCoauthors) == 1 {
+		pluralizedCoauthors = "a co-author"
 		presentPassiveVerb = "has"
 	} else {
+		pluralizedCoauthors = "co-authors"
 		presentPassiveVerb = "have"
 	}
 
-	sayInfo(fmt.Sprintf("%s %s been staged as coauthors in ~/.gitconfig", strings.Join(allCoauthors, ", "), presentPassiveVerb))
-	sayIndented("They will appear as co-authors on your next WIP commit,")
-	sayIndented("and they will appear as co-authors after `mob done`.")
+	sayInfo(fmt.Sprintf("%s %s been staged as %s in ~/.gitconfig", strings.Join(allCoauthors, ", "), presentPassiveVerb, pluralizedCoauthors))
+	sayIndented(fmt.Sprintf("They will appear as %s on your next WIP commit,", pluralizedCoauthors))
+	sayIndented(fmt.Sprintf("and they will appear as %s after `mob done`.", pluralizedCoauthors))
 }
 
 func appendCoauthorsToSquashMsg(workingDir string) error {
