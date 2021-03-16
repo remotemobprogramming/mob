@@ -969,16 +969,16 @@ func gitignorefailure(args ...string) error {
 	return err
 }
 
-func gitconfig(global bool, option string, args ...string) string {
+func gitconfig(global bool, option string, args ...string) (string, error) {
 	globalFlag := ""
 	if global {
 		globalFlag = "--global"
 	}
 
 	args = append([]string{"config", globalFlag, option}, args...)
-	_, output, _ := runCommand("git", args...)
+	_, output, err := runCommand("git", args...)
 
-	return strings.TrimSpace(output)
+	return strings.TrimSpace(output), err
 }
 
 func runCommand(name string, args ...string) (string, string, error) {
@@ -1100,8 +1100,8 @@ func loadCoauthorsFromAliases(coauthors CoauthorsMap) (CoauthorsMap, error) {
 
 	for alias, coauthor := range coauthors {
 		if coauthor == "" {
-			coauthor = loadCoauthorFromAlias(alias)
-			if coauthor == "" {
+			coauthor, err := loadCoauthorFromAlias(alias)
+			if err != nil {
 				missingAliases = append(missingAliases, alias)
 			} else {
 				coauthors[alias] = coauthor
@@ -1119,7 +1119,7 @@ func loadCoauthorsFromAliases(coauthors CoauthorsMap) (CoauthorsMap, error) {
 	return coauthors, err
 }
 
-func loadCoauthorFromAlias(alias string) string {
+func loadCoauthorFromAlias(alias string) (string, error) {
 	return gitconfig(true, fmt.Sprintf("mob.%s", alias))
 }
 
@@ -1135,7 +1135,7 @@ func writeCoauthorsToGitConfig(coauthors CoauthorsMap) {
 	newCoauthorAliases := make([]Alias, 0, len(coauthors))
 
 	for alias, coauthor := range coauthors {
-		previous := loadCoauthorFromAlias(alias)
+		previous, _ := loadCoauthorFromAlias(alias)
 		allCoauthors = append(allCoauthors, coauthor)
 		gitconfig(true, fmt.Sprintf("mob.staged.%s", alias), coauthor)
 

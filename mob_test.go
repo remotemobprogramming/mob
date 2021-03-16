@@ -961,6 +961,17 @@ func TestLoadsKnownAlias(t *testing.T) {
 	assertOutputNotContains(t, output, "not listed in ~/.gitconfig. Try using fully qualified co-authors")
 }
 
+func TestReturnsErrorForUnknownAlias(t *testing.T) {
+	testAliasMap := map[string]string{
+		"mob_t1": "",
+		"mob_t2": "",
+	}
+
+	_, err := loadCoauthorsFromAliases(testAliasMap)
+
+	Equals(t, "mob_t1, mob_t2 were not listed in ~/.gitconfig. Try using fully qualified co-authors", err.Error())
+}
+
 func setup(t *testing.T) *string {
 	configuration = getDefaultConfiguration()
 	configuration.MobNextStay = false
