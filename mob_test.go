@@ -891,6 +891,21 @@ func TestGitStagedCoauthors(t *testing.T) {
 	runCommand("git", "config", "--global", "--remove-section", "mob.staged")
 }
 
+func TestGitClearRemovesStagedSection(t *testing.T) {
+	testCoauthors := map[string]string{
+		"t1": "t1@mob.sh",
+		"t2": "t2@mob.sh",
+	}
+
+	for alias, coauthor := range testCoauthors {
+		runCommand("git", "config", "--global", fmt.Sprintf("mob.staged.%s", alias), coauthor)
+	}
+
+	gitClearStagedCoauthors()
+	_, output, _ := runCommand("git", "config", "--global", "--get-regexp", "mob.staged.")
+	Equals(t, "", output)
+}
+
 func TestDoesNotAnnounceClearWhenNoCoauthors(t *testing.T) {
 	runCommand("git", "config", "--global", "--remove-section", "mob.staged")
 
@@ -901,8 +916,8 @@ func TestDoesNotAnnounceClearWhenNoCoauthors(t *testing.T) {
 
 func TestDoesAnnouncesClearWhenCoauthors(t *testing.T) {
 	testCoauthors := map[string]string{
-		"t1": "t1@mob.sh",
-		"t2": "t2@mob.sh",
+		"mob_t1": "t1@mob.sh",
+		"mob_t2": "t2@mob.sh",
 	}
 
 	for alias, coauthor := range testCoauthors {
@@ -918,6 +933,32 @@ func TestGitStagedEmptyCoauthors(t *testing.T) {
 	Equals(t, []string{}, gitStagedCoauthors())
 
 	runCommand("git", "config", "--global", "--remove-section", "mob.staged")
+}
+
+func TestLoadsKnownAlias(t *testing.T) {
+	expectedCoauthors := map[string]string{
+		"mob_t1": "t1@mob.sh",
+		"mob_t2": "t2@mob.sh",
+	}
+
+	for alias, coauthor := range expectedCoauthors {
+		runCommand("git", "config", "--global", fmt.Sprintf("mob.%s", alias), coauthor)
+	}
+
+	testAliasMap := map[string]string{
+		"mob_t1": "",
+		"mob_t2": "",
+	}
+
+	output := captureOutput()
+	coauthors, _ := loadCoauthorsFromAliases(testAliasMap)
+
+	for alias, _ := range expectedCoauthors {
+		runCommand("git", "config", "--global", "--unset", fmt.Sprintf("mob.%s", alias))
+	}
+
+	Equals(t, expectedCoauthors, coauthors)
+	assertOutputNotContains(t, output, "not listed in ~/.gitconfig. Try using fully qualified co-authors")
 }
 
 func setup(t *testing.T) *string {
