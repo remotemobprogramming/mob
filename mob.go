@@ -284,7 +284,7 @@ func execute(command string, parameter []string) {
 	case "n", "next":
 		next(configuration)
 	case "d", "done":
-		done()
+		done(configuration)
 	case "reset":
 		reset()
 	case "config":
@@ -487,7 +487,7 @@ func reset() {
 	if hasLocalBranch(currentWipBranch) {
 		git("branch", "--delete", "--force", currentWipBranch)
 	}
-	if hasRemoteBranch(currentWipBranch) {
+	if hasRemoteBranch(currentWipBranch, configuration) {
 		git("push", "--no-verify", configuration.RemoteName, "--delete", currentWipBranch)
 	}
 	sayInfo("Branches " + currentWipBranch + " and " + configuration.RemoteName + "/" + currentWipBranch + " deleted")
@@ -521,7 +521,7 @@ func start(configuration Configuration) {
 		return
 	}
 
-	if !hasRemoteBranch(currentBaseBranch) {
+	if !hasRemoteBranch(currentBaseBranch, configuration) {
 		sayError("Remote branch " + configuration.RemoteName + "/" + currentBaseBranch + " is missing")
 		sayTodo("To set the upstream branch, use", "git push "+configuration.RemoteName+" "+currentBaseBranch+" --set-upstream")
 		return
@@ -531,7 +531,7 @@ func start(configuration Configuration) {
 		git("merge", "FETCH_HEAD", "--ff-only")
 	}
 
-	if hasRemoteBranch(currentWipBranch) {
+	if hasRemoteBranch(currentWipBranch, configuration) {
 		startJoinMobSession()
 	} else {
 		startNewMobSession()
@@ -645,7 +645,7 @@ func getCachedChanges() string {
 	return strings.TrimSpace(silentgit("diff", "--cached", "--stat"))
 }
 
-func done() {
+func done(configuration Configuration) {
 	if !isMobProgramming(configuration) {
 		sayError("you aren't mob programming")
 		sayTodo("to start mob programming, use", "mob start")
@@ -656,7 +656,7 @@ func done() {
 
 	currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), gitBranches(), configuration)
 
-	if hasRemoteBranch(currentWipBranch) {
+	if hasRemoteBranch(currentWipBranch, configuration) {
 		if !isNothingToCommit() {
 			git("add", "--all")
 			git("commit", "--message", configuration.WipCommitMessage, "--no-verify")
@@ -756,7 +756,7 @@ func hasLocalBranch(localBranch string) bool {
 	return false
 }
 
-func hasRemoteBranch(branch string) bool {
+func hasRemoteBranch(branch string, configuration Configuration) bool {
 	remoteBranches := gitRemoteBranches()
 	remoteBranch := configuration.RemoteName + "/" + branch
 	debugInfo("Remote Branches: " + strings.Join(remoteBranches, "\n"))
