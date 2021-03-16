@@ -2,6 +2,11 @@
 - The list of commits included in a mob branch is now truncated to a maximum of 5 entries to prevent the need for scrolling up in order to see the latest included changes.
 - Show more informative error message when `mob <cmd>` is run outside of a git repository.
 - Add environment variable MOB_TIMER which allows setting a default timer duration for `mob start` and `mob timer` commands.
+- Add automatic and manual co-author attribution. Mob will collect all
+  committers from a WIP branch and add them as co-authors in the final
+  WIP commit. Co-authors can be manually specified using `mob start --with
+  "Tom Hanks <wilson@vb.sport> as tom, ...". Using `as` saves tom so next
+  time you can `mob start --with "tom".
 
 # 1.3.0
 - The default `MOB_COMMIT_MESSAGE` now includes `[ci skip]` and `[skip ci]` so that all the typical CI systems (including Azure DevOps) will skip this commit.
