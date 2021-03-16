@@ -891,6 +891,29 @@ func TestGitStagedCoauthors(t *testing.T) {
 	runCommand("git", "config", "--global", "--remove-section", "mob.staged")
 }
 
+func TestDoesNotAnnounceClearWhenNoCoauthors(t *testing.T) {
+	runCommand("git", "config", "--global", "--remove-section", "mob.staged")
+
+	output := captureOutput()
+	clearAndAnnounceClearStagedCoauthors()
+	Equals(t, "", *output)
+}
+
+func TestDoesAnnouncesClearWhenCoauthors(t *testing.T) {
+	testCoauthors := map[string]string{
+		"t1": "t1@mob.sh",
+		"t2": "t2@mob.sh",
+	}
+
+	for alias, coauthor := range testCoauthors {
+		runCommand("git", "config", "--global", fmt.Sprintf("mob.staged.%s", alias), coauthor)
+	}
+
+	output := captureOutput()
+	clearAndAnnounceClearStagedCoauthors()
+	assertOutputContains(t, output, "Cleared previously staged co-authors from ~/.gitconfig")
+}
+
 func TestGitStagedEmptyCoauthors(t *testing.T) {
 	Equals(t, []string{}, gitStagedCoauthors())
 
