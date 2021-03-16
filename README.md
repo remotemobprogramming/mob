@@ -26,54 +26,41 @@ Smooth [git handover](https://www.remotemobprogramming.org/#git-handover) with '
 - **mob** supports multiple wip branches per base branch
 - **mob** notifies you when it's time ⏱️ to handover
 - **mob** can moo 🐄
+- **mob** is even better when you follow its [best practices](#best-practices)
 
 ## What people say about 'mob'
 
-> "Mob has allowed us to run fast-paced, engaging, and effective sessions by enabling sub-10-second handover times and otherwise getting out of the way. A simple but great tool!" 
->
-> &mdash; [Jeff Langr, developer](https://twitter.com/jlangr)
+> "Mob has allowed us to run fast-paced, engaging, and effective sessions by enabling sub-10-second handover times and otherwise getting out of the way. A simple but great tool!" &mdash; [Jeff Langr, developer](https://twitter.com/jlangr)
 
-> "I love it, it is a quantum leap in our collaboration."
->
-> &mdash; Vasiliy Sivovolov, Senior Software Engineer
+> "I love it, it is a quantum leap in our collaboration." &mdash; Vasiliy Sivovolov, Senior Software Engineer
 
->"What a great tool to organise remote working." 
->
-> &mdash; [Jennifer Gommans, IT Consultant](https://twitter.com/missjennbo)
+>"What a great tool to organise remote working." &mdash; [Jennifer Gommans, IT Consultant](https://twitter.com/missjennbo)
 
-> "I was recently introduced to [mob.sh](https://mob.sh) for remote pairing/mobbing collaboration and I absolutely love it. The timer feature is really a selling point for me. Kudos" 
->
-> &mdash; [Fabien Illert, IT Consultant](https://twitter.com/fabienillert)
+> "I was recently introduced to [mob.sh](https://mob.sh) for remote pairing/mobbing collaboration and I absolutely love it. The timer feature is really a selling point for me. Kudos" &mdash; [Fabien Illert, IT Consultant](https://twitter.com/fabienillert)
 
 ## How to install
 
 ```
+# works for macOS, linux, and even on windows in git bash
 curl -sL install.mob.sh | sh
 ```
-On windows you can use `git bash` to install `mob` or when you're using [Scoop](https://scoop.sh/):
+
+On macOS via homebrew: 
+
+```
+brew install remotemobprogramming/brew/mob
+
+# upgrade to latest version
+brew upgrade remotemobprogramming/brew/mob
+```
+
+On windows via [Scoop](https://scoop.sh/):
 
 ```
 scoop install mob
 ``` 
 
-You can also install it on macOS via homebrew: 
-
-```
-brew install remotemobprogramming/brew/mob
-```
-
-If you want to update to the latest version using Homebrew
-
-```
-brew upgrade remotemobprogramming/brew/mob
-```
-
-If you use [Nix](http://nixos.org), you can also use a [Nix expression](./mob.nix) to build `mob`
-via 
-
-```
-mob = callPackage ./mob.nix {};
-```
+On [Nix](http://nixos.org) through the [mob.nix](./mob.nix) expression like this `mob = callPackage ./mob.nix {};`. To install and configure espeak-ng for text-to-spech support, pass `withSpeech = true;`.
 
 ## How to use
 
@@ -85,7 +72,7 @@ When you're done, get your changes into the staging area of the `master` branch 
 [![asciicast](https://asciinema.org/a/321885.svg)](https://asciinema.org/a/321885)
 
 ```
-mob enables a smooth Git handover
+mob enables a fast Git handover
 
 Basic Commands:
   start              start mob session from base branch in wip branch
@@ -141,27 +128,25 @@ Examples:
   mob moo
 ```
 
-## How does it work
+## Best Practices
 
-- `mob start` creates branch `mob-session` and pulls from `origin/mob-session`
-- `mob next` pushes all changes to `origin/mob-session`in a `mob next [ci-skip]` commit
-- `mob done` squashes all changes in `mob-session` into staging of `master` and removes `mob-session` and `origin/mob-session`
-- `mob timer 10` start a ten minute timer
-- `mob start 10` combines mob start and mob timer 10
-- `mob status` display the mob session status and all the created WIP commits
-- `mob reset` deletes `mob-session` and `origin/mob-session`
-- `mob config` print configuration
+- **Say out loud**
+  - Whenever you key in `mob next` at the end of your turn or `mob start` at the beginning of your turn say the command out loud. 
+  - *Why?* Everybody sees and also hears who's turn is ending and who's turn has started.But even more important, the person who's turn is about to start needs to know when the previous person entered `mob next` so they get the latest commit via their `mob start`.
+- **Steal the screenshare**
+  - After your turn, don't disable the screenshare. Let the next person steal the screenshare. (Requires a setting in Zoom)
+  - *Why?* This provides more calm (and less diversion) for the rest of the mob as the video conference layout doesn't change, allowing the rest of the mob to keep discussing the problem and finding the best solution, even during a Git handover.
+- **Share audio**
+  - Share your audio when you share your screen.
+  - *Why?* Sharing audio means everybody will hear when the timer is up. So everybody will help you to rotate, even if you have missed it coincidentally or deliberately.
+- **Use a timer**
+  - Always specify a timer when using `mob start` (for a 5 minute timer use `mob start 5`)
+  - *Why?* Rotation is key to good pair and mob programming. Just build the habit right from the start. Try to set a timer so everybody can have a turn at least once every 30 minutes.
+- **Set up a global shortcut for screensharing**
+  - Set up a global keyboard shortcut to start sharing your screen. In Zoom, you can do this via Zoom > Preferences > Keyboard Shortcuts. [More tips on setting up Zoom for effective screen sharing.](https://effectivehomeoffice.com/setup-zoom-for-effective-screen-sharing/)
+  - *Why?* This is just much faster than using the mouse.
 
 ## More on Installation
-
-
-### Zoom Shortcuts
-
-If you're using Zoom for screen sharing, here's a tip on how to speed up the Git Handover even further: 
-We recommend configuring the global hotkey for toggling screen sharing in zoom in
-(Zoom > Preferences > Keyboard Shortcuts). 
-So you can start and stop screen sharing anytime. 
-[More tips on setting up Zoom for effective screen sharing.](https://effectivehomeoffice.com/setup-zoom-for-effective-screen-sharing/)
 
 ### Arch Linux
 
@@ -235,7 +220,7 @@ MOB_NEXT_STAY=true mob next
 cd $PROJECT_ROOT
 
 git version # >= 2.17
-go version # >= 1.15
+go version # >= 1.16
 
 go build # builds 'mob'
 

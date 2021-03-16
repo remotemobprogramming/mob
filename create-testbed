@@ -1,33 +1,49 @@
 #!/bin/bash
 set -e
 
-echo "Creating test assets..."
-tmpdir="/tmp/mob"
+createrepo() {
+    dir=$1
+    name=$(basename $dir)
+    echo ""
+    echo "Cloning remote to ${dir}"
+    rm -rf "${dir}"
+    mkdir -p "${dir}"
+    (cd "${dir}" && git clone --origin origin "file://${remotedir}" .)
+    (cd "${dir}" && git config --local user.name ${name})
+    (cd "${dir}" && git config --local user.email ${name}@example.com)
+}
+
+tmpdir="/tmp/mob" # XXX this should be more unique
 localdir="${tmpdir}/local"
 remotedir="${tmpdir}/remote"
 notgit="${tmpdir}/notgit"
-echo ""
-echo "Root of temporary test assets: ${tmpdir}"
-echo "Path to central repository ('remote'): ${remotedir}"
-echo "Path to clone of central repository ('local'): ${localdir}"
 
-mkdir -p "${localdir}" "${remotedir}"
-rm -rf "${localdir}" "${remotedir}"
-mkdir -p "${localdir}" "${remotedir}"
-mkdir -p "${localdir}" "${notgit}"
-
+# create base dir
 echo ""
-echo "Creating test repositories..."
+echo "Creating temporary test assets in ${tmpdir}"
+mkdir -p ${tmpdir}
+
+# create remote repo
+echo ""
+echo "Creating remote repository ${remotedir}"
+rm -rf "${remotedir}"
+mkdir -p "${remotedir}"
 (cd "${remotedir}" && git --bare init)
-(cd "${localdir}" && git clone --origin origin "file://${remotedir}" . && git config --local user.name "Test User 1" && git config --local user.email "test@test.test" && echo "test" >test.txt && git add . && git commit -m "initial import" && git push --set-upstream --all origin)
 
-# optional
-echo ""
-echo "Creating a second mob participant's repository..."
-localotherdir="${tmpdir}/localother"
-echo "Path to second clone of central repository ('localotherdir'): ${localotherdir}"
-rm -rf "${localotherdir}"
-mkdir -p "${localotherdir}"
-(cd "${localotherdir}" && git clone --origin origin "file://${remotedir}" . && git config --local user.name "Test User 2" && git config --local user.email "test2@test.test")
+# create first local repo
+createrepo "${localdir}"
+
+# populate an initial import
+echo "Populating and pushing"
+(cd "${localdir}" && echo "test" >test.txt && git add . && git commit -m "initial import" && git push --set-upstream --all origin)
+
+# create more local repos
+for name in localother alice bob
+do
+    createrepo "${tmpdir}/${name}"
+done
+
+# create a non-git area
+mkdir -p "${localdir}" "${notgit}"
 
 echo "Done."

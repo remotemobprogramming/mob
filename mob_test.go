@@ -9,29 +9,29 @@ import (
 	"strings"
 	"testing"
 
-	"mob.sh/testutils"
+	. "mob.sh/testutils"
 )
 
 func TestParseArgs(t *testing.T) {
 	configuration = getDefaultConfiguration()
-	testutils.Equals(t, configuration.WipBranchQualifier, "")
+	Equals(t, configuration.WipBranchQualifier, "")
 
 	command, parameters := parseArgs([]string{"mob", "start", "--branch", "green"})
 
-	testutils.Equals(t, "start", command)
-	testutils.Equals(t, "", strings.Join(parameters, ""))
-	testutils.Equals(t, "green", configuration.WipBranchQualifier)
+	Equals(t, "start", command)
+	Equals(t, "", strings.Join(parameters, ""))
+	Equals(t, "green", configuration.WipBranchQualifier)
 }
 
 func TestParseArgsDoneNoSquash(t *testing.T) {
 	configuration = getDefaultConfiguration()
-	testutils.Equals(t, true, configuration.MobDoneSquash)
+	Equals(t, true, configuration.MobDoneSquash)
 
 	command, parameters := parseArgs([]string{"mob", "done", "--no-squash"})
 
-	testutils.Equals(t, "done", command)
-	testutils.Equals(t, "", strings.Join(parameters, ""))
-	testutils.Equals(t, false, configuration.MobDoneSquash)
+	Equals(t, "done", command)
+	Equals(t, "", strings.Join(parameters, ""))
+	Equals(t, false, configuration.MobDoneSquash)
 }
 
 func TestParseArgsDoneSquash(t *testing.T) {
@@ -40,20 +40,20 @@ func TestParseArgsDoneSquash(t *testing.T) {
 
 	command, parameters := parseArgs([]string{"mob", "done", "--squash"})
 
-	testutils.Equals(t, "done", command)
-	testutils.Equals(t, "", strings.Join(parameters, ""))
-	testutils.Equals(t, true, configuration.MobDoneSquash)
+	Equals(t, "done", command)
+	Equals(t, "", strings.Join(parameters, ""))
+	Equals(t, true, configuration.MobDoneSquash)
 }
 
 func TestParseArgsMessage(t *testing.T) {
 	configuration = getDefaultConfiguration()
-	testutils.Equals(t, configuration.WipBranchQualifier, "")
+	Equals(t, configuration.WipBranchQualifier, "")
 
 	command, parameters := parseArgs([]string{"mob", "next", "--message", "ci-skip"})
 
-	testutils.Equals(t, "next", command)
-	testutils.Equals(t, "", strings.Join(parameters, ""))
-	testutils.Equals(t, "ci-skip", configuration.WipCommitMessage)
+	Equals(t, "next", command)
+	Equals(t, "", strings.Join(parameters, ""))
+	Equals(t, "ci-skip", configuration.WipCommitMessage)
 }
 
 func TestDetermineBranches(t *testing.T) {
@@ -85,75 +85,75 @@ func TestDetermineBranches(t *testing.T) {
 func assertDetermineBranches(t *testing.T, branch string, qualifier string, branches []string, expectedBase string, expectedWip string) {
 	configuration.WipBranchQualifier = qualifier
 	baseBranch, wipBranch := determineBranches(branch, branches, configuration)
-	testutils.Equals(t, expectedBase, baseBranch)
-	testutils.Equals(t, expectedWip, wipBranch)
+	Equals(t, expectedBase, baseBranch)
+	Equals(t, expectedWip, wipBranch)
 }
 
 func TestRemoveWipPrefix(t *testing.T) {
-	testutils.Equals(t, "master-green", removeWipPrefix("mob/master-green"))
-	testutils.Equals(t, "master-green-blue", removeWipPrefix("mob/master-green-blue"))
-	testutils.Equals(t, "main-branch", removeWipPrefix("mob/main-branch"))
+	Equals(t, "master-green", removeWipPrefix("mob/master-green"))
+	Equals(t, "master-green-blue", removeWipPrefix("mob/master-green-blue"))
+	Equals(t, "main-branch", removeWipPrefix("mob/main-branch"))
 }
 
 func TestRemoveWipBranchQualifier(t *testing.T) {
 	configuration.WipBranchQualifierSeparator = "-"
 	configuration.WipBranchQualifier = "green"
 	configuration.WipBranchQualifierSet = true
-	testutils.Equals(t, "master", removeWipQualifier("master-green", []string{}, configuration))
+	Equals(t, "master", removeWipQualifier("master-green", []string{}, configuration))
 
 	configuration.WipBranchQualifierSeparator = "-"
 	configuration.WipBranchQualifier = "test-branch"
 	configuration.WipBranchQualifierSet = true
-	testutils.Equals(t, "master", removeWipQualifier("master-test-branch", []string{}, configuration))
+	Equals(t, "master", removeWipQualifier("master-test-branch", []string{}, configuration))
 
 	configuration.WipBranchQualifierSeparator = "-"
 	configuration.WipBranchQualifier = "branch"
 	configuration.WipBranchQualifierSet = true
-	testutils.Equals(t, "master-test", removeWipQualifier("master-test-branch", []string{}, configuration))
+	Equals(t, "master-test", removeWipQualifier("master-test-branch", []string{}, configuration))
 
 	configuration.WipBranchQualifierSeparator = "-"
 	configuration.WipBranchQualifier = "branch"
 	configuration.WipBranchQualifierSet = true
-	testutils.Equals(t, "master-test", removeWipQualifier("master-test-branch", []string{"master-test"}, configuration))
+	Equals(t, "master-test", removeWipQualifier("master-test-branch", []string{"master-test"}, configuration))
 
 	configuration.WipBranchQualifierSeparator = "/-/"
 	configuration.WipBranchQualifier = "branch-qualifier"
 	configuration.WipBranchQualifierSet = true
-	testutils.Equals(t, "main", removeWipQualifier("main/-/branch-qualifier", []string{}, configuration))
+	Equals(t, "main", removeWipQualifier("main/-/branch-qualifier", []string{}, configuration))
 
 	configuration.WipBranchQualifierSeparator = "-"
 	configuration.WipBranchQualifier = "branchqualifier"
 	configuration.WipBranchQualifierSet = true
-	testutils.Equals(t, "main/branchqualifier", removeWipQualifier("main/branchqualifier", []string{}, configuration))
+	Equals(t, "main/branchqualifier", removeWipQualifier("main/branchqualifier", []string{}, configuration))
 
 	configuration.WipBranchQualifierSeparator = ""
 	configuration.WipBranchQualifier = "branchqualifier"
 	configuration.WipBranchQualifierSet = true
-	testutils.Equals(t, "main", removeWipQualifier("mainbranchqualifier", []string{}, configuration))
+	Equals(t, "main", removeWipQualifier("mainbranchqualifier", []string{}, configuration))
 }
 
 func TestRemoveWipBranchQualifierWithoutBranchQualifierSet(t *testing.T) {
 	configuration.WipBranchQualifierSeparator = "-"
 	configuration.WipBranchQualifier = ""
 	configuration.WipBranchQualifierSet = false
-	testutils.Equals(t, "main", removeWipQualifier("main", []string{}, configuration))
+	Equals(t, "main", removeWipQualifier("main", []string{}, configuration))
 
 	configuration.WipBranchQualifierSeparator = "-"
 	configuration.WipBranchQualifier = ""
 	configuration.WipBranchQualifierSet = false
-	testutils.Equals(t, "master", removeWipQualifier("master-test-branch", []string{}, configuration))
+	Equals(t, "master", removeWipQualifier("master-test-branch", []string{}, configuration))
 }
 
 func TestMobRemoteNameEnvironmentVariable(t *testing.T) {
 	configuration = setEnvVarAndParse("MOB_REMOTE_NAME", "GITHUB")
 
-	testutils.Equals(t, "GITHUB", configuration.RemoteName)
+	Equals(t, "GITHUB", configuration.RemoteName)
 }
 
 func TestMobRemoteNameEnvironmentVariableEmptyString(t *testing.T) {
 	configuration = setEnvVarAndParse("MOB_REMOTE_NAME", "")
 
-	testutils.Equals(t, "origin", configuration.RemoteName)
+	Equals(t, "origin", configuration.RemoteName)
 }
 
 func TestBooleanEnvironmentVariables(t *testing.T) {
@@ -175,7 +175,7 @@ func assertBoolEnvVarParsed(t *testing.T, envVar string, defaultValue bool, actu
 func assertEnvVarParsed(t *testing.T, variable string, value string, expected interface{}, actual func(Configuration) interface{}) {
 	t.Run(fmt.Sprintf("%s=\"%s\"->(expects:%t)", variable, value, expected), func(t *testing.T) {
 		configuration = setEnvVarAndParse(variable, value)
-		testutils.Equals(t, expected, actual(configuration))
+		Equals(t, expected, actual(configuration))
 	})
 }
 
@@ -239,15 +239,15 @@ func TestRequireCommitMessage(t *testing.T) {
 	defer os.Unsetenv("MOB_REQUIRE_COMMIT_MESSAGE")
 
 	configuration = parseEnvironmentVariables(getDefaultConfiguration())
-	testutils.Equals(t, false, configuration.RequireCommitMessage)
+	Equals(t, false, configuration.RequireCommitMessage)
 
 	os.Setenv("MOB_REQUIRE_COMMIT_MESSAGE", "false")
 	configuration = parseEnvironmentVariables(getDefaultConfiguration())
-	testutils.Equals(t, false, configuration.RequireCommitMessage)
+	Equals(t, false, configuration.RequireCommitMessage)
 
 	os.Setenv("MOB_REQUIRE_COMMIT_MESSAGE", "true")
 	configuration = parseEnvironmentVariables(getDefaultConfiguration())
-	testutils.Equals(t, true, configuration.RequireCommitMessage)
+	Equals(t, true, configuration.RequireCommitMessage)
 
 	start(configuration)
 
@@ -526,7 +526,7 @@ func TestStartNextStay(t *testing.T) {
 
 	next(configuration)
 
-	testutils.Equals(t, strings.TrimSpace(silentgit("log", "--format=%B", "-n", "1", "HEAD")), configuration.WipCommitMessage)
+	Equals(t, strings.TrimSpace(silentgit("log", "--format=%B", "-n", "1", "HEAD")), configuration.WipCommitMessage)
 	assertOnBranch(t, "mob-session")
 }
 
@@ -541,6 +541,49 @@ func TestStartDoneWithMobDoneSquashTrue(t *testing.T) {
 
 	assertOnBranch(t, "master")
 	assertNoMobSessionBranches(t, "mob-session")
+}
+
+func TestRunOutput(t *testing.T) {
+	setup(t)
+
+	setWorkingDir("/tmp/mob/local")
+	start(configuration)
+	createFile(t, "file1.txt", "asdf")
+	output := run(t, "cat", "/tmp/mob/local/file1.txt")
+	assertOutputContains(t, output, "asdf")
+}
+
+func TestTestbed(t *testing.T) {
+	setup(t)
+
+	setWorkingDir("/tmp/mob/local")
+	start(configuration)
+	createFile(t, "file1.txt", "asdf")
+	next(configuration)
+
+	setWorkingDir("/tmp/mob/localother")
+	start(configuration)
+	createFile(t, "file2.txt", "asdf")
+	next(configuration)
+
+	setWorkingDir("/tmp/mob/alice")
+	start(configuration)
+	createFile(t, "file3.txt", "owqe")
+	next(configuration)
+
+	setWorkingDir("/tmp/mob/bob")
+	start(configuration)
+	createFile(t, "file4.txt", "zcvx")
+	next(configuration)
+
+	setWorkingDir("/tmp/mob/local")
+	start(configuration)
+
+	output := silentgit("log", "--pretty=format:'%ae'")
+	assertOutputContains(t, &output, "local")
+	assertOutputContains(t, &output, "localother")
+	assertOutputContains(t, &output, "alice")
+	assertOutputContains(t, &output, "bob")
 }
 
 func TestStartDoneWithMobDoneSquashFalse(t *testing.T) {
@@ -813,12 +856,12 @@ func TestDoneMerge(t *testing.T) {
 
 func TestIsGitIdentifiesGitRepo(t *testing.T) {
 	setup(t)
-	testutils.Equals(t, true, isGit())
+	Equals(t, true, isGit())
 }
 
 func TestIsGitIdentifiesOutsideOfGitRepo(t *testing.T) {
 	setWorkingDir("/tmp/git/notgit")
-	testutils.Equals(t, false, isGit())
+	Equals(t, false, isGit())
 }
 
 func TestNotAGitRepoMessage(t *testing.T) {
@@ -834,8 +877,8 @@ func setup(t *testing.T) *string {
 	output := captureOutput()
 	createTestbed(t)
 	assertOnBranch(t, "master")
-	testutils.Equals(t, []string{"master"}, gitBranches())
-	testutils.Equals(t, []string{"origin/master"}, gitRemoteBranches())
+	Equals(t, []string{"master"}, gitBranches())
+	Equals(t, []string{"origin/master"}, gitRemoteBranches())
 	assertNoMobSessionBranches(t, "mob-session")
 	return output
 }
@@ -849,7 +892,7 @@ func captureOutput() *string {
 	return &messages
 }
 
-func run(t *testing.T, name string, args ...string) {
+func run(t *testing.T, name string, args ...string) *string {
 	commandString, output, err := runCommand(name, args...)
 	if err != nil {
 		fmt.Println(commandString)
@@ -857,6 +900,7 @@ func run(t *testing.T, name string, args ...string) {
 		fmt.Println(err.Error())
 		t.Error("command " + commandString + " failed")
 	}
+	return &output
 }
 
 func createTestbed(t *testing.T) {
@@ -881,21 +925,21 @@ func assertCommitsOnBranch(t *testing.T, commits int, branchName string) {
 	result := silentgit("rev-list", "--count", branchName)
 	number, _ := strconv.Atoi(strings.TrimSpace(result))
 	if number != commits {
-		testutils.FailWithFailure(t, strconv.Itoa(commits)+" commits in "+workingDir, strconv.Itoa(number)+" commits in "+workingDir)
+		FailWithFailure(t, strconv.Itoa(commits)+" commits in "+workingDir, strconv.Itoa(number)+" commits in "+workingDir)
 	}
 }
 
 func assertCommitLogContainsMessage(t *testing.T, branchName string, commitMessage string) {
 	logMessages := silentgit("log", branchName, "--oneline")
 	if !strings.Contains(logMessages, commitMessage) {
-		testutils.FailWithFailure(t, "git log contains '"+commitMessage+"'", logMessages)
+		FailWithFailure(t, "git log contains '"+commitMessage+"'", logMessages)
 	}
 }
 
 func assertFileExist(t *testing.T, filename string) {
 	path := workingDir + "/" + filename
 	if _, err := os.Stat(path); os.IsNotExist(err) {
-		testutils.FailWithFailure(t, "existing file "+path, "no file at "+path)
+		FailWithFailure(t, "existing file "+path, "no file at "+path)
 	}
 }
 
@@ -909,44 +953,44 @@ func createFile(t *testing.T, filename string, content string) {
 	d1 := []byte(content)
 	err := ioutil.WriteFile(workingDir+"/"+filename, d1, 0644)
 	if err != nil {
-		testutils.FailWithFailure(t, "creating file "+filename+" with content "+content, "error")
+		FailWithFailure(t, "creating file "+filename+" with content "+content, "error")
 	}
 }
 
 func assertOnBranch(t *testing.T, branch string) {
 	currentBranch := gitCurrentBranch()
 	if currentBranch != branch {
-		testutils.FailWithFailure(t, "on branch "+branch, "on branch "+currentBranch)
+		FailWithFailure(t, "on branch "+branch, "on branch "+currentBranch)
 	}
 }
 
 func assertOutputContains(t *testing.T, output *string, contains string) {
 	currentOutput := *output
 	if !strings.Contains(currentOutput, contains) {
-		testutils.FailWithFailure(t, "output contains '"+contains+"'", currentOutput)
+		FailWithFailure(t, "output contains '"+contains+"'", currentOutput)
 	}
 }
 
 func assertOutputNotContains(t *testing.T, output *string, notContains string) {
 	if strings.Contains(*output, notContains) {
-		testutils.FailWithFailure(t, "output not contains "+notContains, output)
+		FailWithFailure(t, "output not contains "+notContains, output)
 	}
 }
 
 func assertMobSessionBranches(t *testing.T, branch string) {
 	if !hasRemoteBranch(branch) {
-		testutils.FailWithFailure(t, configuration.RemoteName+"/"+branch, "none")
+		FailWithFailure(t, configuration.RemoteName+"/"+branch, "none")
 	}
 	if !hasLocalBranch(branch) {
-		testutils.FailWithFailure(t, branch, "none")
+		FailWithFailure(t, branch, "none")
 	}
 }
 
 func assertNoMobSessionBranches(t *testing.T, branch string) {
 	if hasRemoteBranch(branch) {
-		testutils.FailWithFailure(t, "none", configuration.RemoteName+"/"+branch)
+		FailWithFailure(t, "none", configuration.RemoteName+"/"+branch)
 	}
 	if hasLocalBranch(branch) {
-		testutils.FailWithFailure(t, "none", branch)
+		FailWithFailure(t, "none", branch)
 	}
 }
