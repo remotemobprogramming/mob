@@ -2,7 +2,7 @@ package main
 
 import (
 	"errors"
-	fmt "fmt"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"strconv"
@@ -869,6 +869,32 @@ func TestNotAGitRepoMessage(t *testing.T) {
 	output := captureOutput()
 	sayGitError("TEST", "TEST", errors.New("TEST"))
 	assertOutputContains(t, output, "mob expects the current working directory to be a git repository.")
+}
+
+func TestGitStagedCoauthors(t *testing.T) {
+	testCoauthors := map[string]string{
+		"t1": "t1@mob.sh",
+		"t2": "t2@mob.sh",
+	}
+
+	for alias, coauthor := range testCoauthors {
+		runCommand("git", "config", "--global", fmt.Sprintf("mob.staged.%s", alias), coauthor)
+	}
+
+	var testCoauthorsList []string
+	for _, coauthor := range testCoauthors {
+		testCoauthorsList = append(testCoauthorsList, coauthor)
+	}
+
+	Equals(t, testCoauthorsList, gitStagedCoauthors())
+
+	runCommand("git", "config", "--global", "--remove-section", "mob.staged")
+}
+
+func TestGitStagedEmptyCoauthors(t *testing.T) {
+	Equals(t, []string{}, gitStagedCoauthors())
+
+	runCommand("git", "config", "--global", "--remove-section", "mob.staged")
 }
 
 func setup(t *testing.T) *string {
