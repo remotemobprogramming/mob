@@ -13,7 +13,7 @@ import (
 	"strings"
 	"time"
 
-	"mob.sh/coauthors"
+	. "mob.sh/coauthors"
 )
 
 const (
@@ -42,7 +42,7 @@ type Configuration struct {
 	WipBranchQualifierSeparator       string // override with MOB_WIP_BRANCH_QUALIFIER_SEPARATOR environment variable
 	MobDoneSquash                     bool   // override with MOB_DONE_SQUASH environment variable
 	MobTimer                          string // override with MOB_TIMER environment variable
-	Coauthors                         coauthors.CoauthorsMap
+	Coauthors                         CoauthorsMap
 }
 
 func (c Configuration) wipBranchQualifierSuffix() string {
@@ -101,7 +101,7 @@ func getDefaultConfiguration() Configuration {
 		WipBranchQualifierSeparator:       "-",
 		MobDoneSquash:                     true,
 		MobTimer:                          "",
-		Coauthors:                         make(coauthors.CoauthorsMap),
+		Coauthors:                         make(CoauthorsMap),
 	}
 }
 
@@ -266,7 +266,7 @@ func parseArgs(args []string) (command string, parameters []string) {
 				help()
 				exit(1)
 			}
-			coauthors, err := coauthors.ParseCoauthors(args[i+1])
+			coauthors, err := ParseCoauthors(args[i+1])
 			if err != nil {
 				sayError(err.Error())
 				exit(1)
@@ -1101,7 +1101,7 @@ func gitClearStagedCoauthors() error {
 	return err
 }
 
-func loadCoauthorsFromAliases(coauthors coauthors.CoauthorsMap) (coauthors.CoauthorsMap, error) {
+func loadCoauthorsFromAliases(coauthors CoauthorsMap) (CoauthorsMap, error) {
 	missingAliases := []string{}
 
 	for alias, coauthor := range coauthors {
@@ -1129,16 +1129,16 @@ func loadCoauthorFromAlias(alias string) string {
 	return gitconfig(true, fmt.Sprintf("mob.%s", alias))
 }
 
-func writeCoauthorsToGitConfig(coauthors coauthors.CoauthorsMap) {
+func writeCoauthorsToGitConfig(coauthors CoauthorsMap) {
 	clearAndAnnounceClearStagedCoauthors()
 
 	if len(coauthors) == 0 {
 		return
 	}
 
-	allCoauthors := make([]string, 0, len(coauthors))
-	newCoauthorEmails := make([]string, 0, len(coauthors))
-	newCoauthorAliases := make([]string, 0, len(coauthors))
+	allCoauthors := make([]Author, 0, len(coauthors))
+	newCoauthors := make([]Author, 0, len(coauthors))
+	newCoauthorAliases := make([]Alias, 0, len(coauthors))
 
 	for alias, coauthor := range coauthors {
 		previous := loadCoauthorFromAlias(alias)
@@ -1150,7 +1150,7 @@ func writeCoauthorsToGitConfig(coauthors coauthors.CoauthorsMap) {
 			if previous != "" {
 				sayInfo(fmt.Sprintf("mob alias `%s` was updated to refer to `%s`", alias, coauthor))
 			} else {
-				newCoauthorEmails = append(newCoauthorEmails, coauthor)
+				newCoauthors = append(newCoauthors, coauthor)
 				newCoauthorAliases = append(newCoauthorAliases, alias)
 			}
 		}
@@ -1164,7 +1164,7 @@ func writeCoauthorsToGitConfig(coauthors coauthors.CoauthorsMap) {
 			beingVerb = "were"
 		}
 
-		sayInfo(fmt.Sprintf("%s %s saved to ~/.gitconfig", strings.Join(newCoauthorEmails, ", "), beingVerb))
+		sayInfo(fmt.Sprintf("%s %s saved to ~/.gitconfig", strings.Join(newCoauthors, ", "), beingVerb))
 		sayIndented(fmt.Sprintf("Next time you can use `mob start --with \"%s\"`", strings.Join(newCoauthorAliases, ", ")))
 	}
 
@@ -1197,7 +1197,7 @@ func appendCoauthorsToSquashMsg(workingDir string) error {
 	defer file.Close()
 
 	topLevelAuthor := ""
-	coauthorsHashSet := make(map[string]bool)
+	coauthorsHashSet := make(map[Author]bool)
 
 	authorOrCoauthorMatcher := regexp.MustCompile("(?i).*(author)+.+<+.*>+")
 	scanner := bufio.NewScanner(file)
