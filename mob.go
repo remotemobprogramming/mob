@@ -681,21 +681,12 @@ func getCachedChanges() string {
 }
 
 func makeWipCommit() {
+	commitMsg := configuration.WipCommitMessage
+	commitMsg += "\n\n"
+	commitMsg += coauthorsForCommitMsg(gitStagedCoauthors())
+
 	git("add", "--all")
-	commitMsg := addCoauthorsToCommitMsg(configuration.WipCommitMessage, gitStagedCoauthors())
 	git("commit", "--allow-empty", "--message", commitMsg, "--no-verify")
-}
-
-func addCoauthorsToCommitMsg(commitMsg string, coauthors []Author) string {
-	for i, coauthor := range coauthors {
-		if i == 0 {
-			commitMsg += "\n\n"
-		}
-
-		commitMsg += fmt.Sprintf("Co-authored-by: %s\n", coauthor)
-	}
-
-	return commitMsg
 }
 
 func done() {
@@ -1186,6 +1177,38 @@ func writeCoauthorsToGitConfig(coauthors CoauthorsMap) {
 	sayIndented(fmt.Sprintf("and they will appear as %s after `mob done`.", pluralizedCoauthors))
 }
 
+func collectCoauthorsFromWipCommits(file *os.File) []Author {
+	var committer string
+	coauthorsHashSet := make(map[Author]bool)
+
+	authorOrCoauthorMatcher := regexp.MustCompile("(?i).*(author)+.+<+.*>+")
+	scanner := bufio.NewScanner(file)
+
+	for scanner.Scan() {
+		line := scanner.Text()
+		if authorOrCoauthorMatcher.MatchString(line) {
+			author := stripToAuthor(line)
+
+			// committer of this commit should
+			// not be included as a co-author
+			if committer == "" || author == committer {
+				committer = author
+				continue
+			}
+			coauthorsHashSet[author] = true
+		}
+	}
+
+	coauthors := make([]string, 0, len(coauthorsHashSet))
+
+	for k := range coauthorsHashSet {
+		coauthors = append(coauthors, k)
+	}
+	sort.Sort(byLength(coauthors))
+
+	return coauthors
+}
+
 func appendCoauthorsToSquashMsg(workingDir string) error {
 	squashMsgPath := path.Join(workingDir, ".git", "SQUASH_MSG")
 	file, err := os.OpenFile(squashMsgPath, os.O_APPEND|os.O_RDWR, 0644)
@@ -1199,47 +1222,31 @@ func appendCoauthorsToSquashMsg(workingDir string) error {
 
 	defer file.Close()
 
-	topLevelAuthor := ""
-	coauthorsHashSet := make(map[Author]bool)
+	coauthors := collectCoauthorsFromWipCommits(file)
 
-	authorOrCoauthorMatcher := regexp.MustCompile("(?i).*(author)+.+<+.*>+")
-	scanner := bufio.NewScanner(file)
-
-	for scanner.Scan() {
-		line := scanner.Text()
-		if authorOrCoauthorMatcher.MatchString(line) {
-			author := stripToAuthor(line)
-
-			// committer of this commit should
-			// not be included as a co-author
-			if topLevelAuthor == "" || author == topLevelAuthor {
-				topLevelAuthor = author
-				continue
-			}
-			coauthorsHashSet[author] = true
-		}
-	}
-
-	if len(coauthorsHashSet) > 0 {
-		coauthors := make([]string, 0, len(coauthorsHashSet))
-		for k := range coauthorsHashSet {
-			coauthors = append(coauthors, k)
-		}
-		sort.Sort(byLength(coauthors))
-
+	if len(coauthors) > 0 {
 		coauthorSuffix := "\n\n"
 		coauthorSuffix += "# mob automatically added all co-authors from WIP commits\n"
 		coauthorSuffix += "# add missing co-authors manually\n"
 
-		for _, coauthor := range coauthors {
-			coauthorSuffix += fmt.Sprintf("Co-authored-by: %s\n", coauthor)
-		}
+		coauthorSuffix += coauthorsForCommitMsg(coauthors)
 
 		writer := bufio.NewWriter(file)
 		_, err = writer.WriteString(coauthorSuffix)
 		err = writer.Flush()
 	}
+
 	return err
+}
+
+func coauthorsForCommitMsg(coauthors []Author) string {
+	var commitMsg string
+
+	for _, coauthor := range coauthors {
+		commitMsg += fmt.Sprintf("Co-authored-by: %s\n", coauthor)
+	}
+
+	return commitMsg
 }
 
 type byLength []string
