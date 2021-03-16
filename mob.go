@@ -682,17 +682,20 @@ func getCachedChanges() string {
 
 func makeWipCommit() {
 	git("add", "--all")
-	wipCommitMsg := configuration.WipCommitMessage
-	stagedCoauthors := gitStagedCoauthors()
-	for i, coauthor := range stagedCoauthors {
+	commitMsg := addCoauthorsToCommitMsg(configuration.WipCommitMessage, gitStagedCoauthors())
+	git("commit", "--allow-empty", "--message", commitMsg, "--no-verify")
+}
+
+func addCoauthorsToCommitMsg(commitMsg string, coauthors []Author) string {
+	for i, coauthor := range coauthors {
 		if i == 0 {
-			wipCommitMsg += "\n\n"
+			commitMsg += "\n\n"
 		}
 
-		wipCommitMsg += fmt.Sprintf("Co-authored-by: %s\n", coauthor)
+		commitMsg += fmt.Sprintf("Co-authored-by: %s\n", coauthor)
 	}
 
-	git("commit", "--allow-empty", "--message", wipCommitMsg, "--no-verify")
+	return commitMsg
 }
 
 func done() {
