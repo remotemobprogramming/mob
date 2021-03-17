@@ -301,17 +301,17 @@ func execute(command string, parameter []string) {
 			startTimer(configuration.MobTimer)
 		}
 
-		status()
+		status(configuration)
 	case "n", "next":
 		next(configuration)
 	case "d", "done":
-		done()
+		done(configuration)
 	case "reset":
-		reset()
+		reset(configuration)
 	case "config":
 		config(configuration)
 	case "status":
-		status()
+		status(configuration)
 	case "t", "timer":
 		if len(parameter) > 0 {
 			timer := parameter[0]
@@ -499,7 +499,7 @@ func moo() {
 	}
 }
 
-func reset() {
+func reset(configuration Configuration) {
 	git("fetch", configuration.RemoteName)
 	clearAndAnnounceClearStagedCoauthors()
 
@@ -509,7 +509,7 @@ func reset() {
 	if hasLocalBranch(currentWipBranch) {
 		git("branch", "--delete", "--force", currentWipBranch)
 	}
-	if hasRemoteBranch(currentWipBranch) {
+	if hasRemoteBranch(currentWipBranch, configuration) {
 		git("push", "--no-verify", configuration.RemoteName, "--delete", currentWipBranch)
 	}
 	sayInfo("Branches " + currentWipBranch + " and " + configuration.RemoteName + "/" + currentWipBranch + " deleted")
@@ -543,7 +543,7 @@ func start(configuration Configuration) {
 		return
 	}
 
-	if !hasRemoteBranch(currentBaseBranch) {
+	if !hasRemoteBranch(currentBaseBranch, configuration) {
 		sayError("Remote branch " + configuration.RemoteName + "/" + currentBaseBranch + " is missing")
 		sayTodo("To set the upstream branch, use", "git push "+configuration.RemoteName+" "+currentBaseBranch+" --set-upstream")
 		return
@@ -555,7 +555,7 @@ func start(configuration Configuration) {
 		git("merge", "FETCH_HEAD", "--ff-only")
 	}
 
-	if hasRemoteBranch(currentWipBranch) {
+	if hasRemoteBranch(currentWipBranch, configuration) {
 		startJoinMobSession()
 	} else {
 		startNewMobSession()
@@ -683,7 +683,7 @@ func makeWipCommit() {
 	git("commit", "--allow-empty", "--message", commitMsg, "--no-verify")
 }
 
-func done() {
+func done(configuration Configuration) {
 	if !isMobProgramming(configuration) {
 		sayError("you aren't mob programming")
 		sayTodo("to start mob programming, use", "mob start")
@@ -694,7 +694,7 @@ func done() {
 
 	currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), gitBranches(), configuration)
 
-	if hasRemoteBranch(currentWipBranch) {
+	if hasRemoteBranch(currentWipBranch, configuration) {
 		if !isNothingToCommit() {
 			makeWipCommit()
 		}
@@ -702,7 +702,7 @@ func done() {
 
 		git("checkout", currentBaseBranch)
 		git("merge", configuration.RemoteName+"/"+currentBaseBranch, "--ff-only")
-		mergeFailed := gitignorefailure("merge", squashOrNoCommit(), "--ff", currentWipBranch)
+		mergeFailed := gitignorefailure("merge", squashOrNoCommit(configuration), "--ff", currentWipBranch)
 		if mergeFailed != nil {
 			return
 		}
@@ -724,7 +724,7 @@ func done() {
 	clearAndAnnounceClearStagedCoauthors()
 }
 
-func squashOrNoCommit() string {
+func squashOrNoCommit(configuration Configuration) string {
 	if configuration.MobDoneSquash {
 		return "--squash"
 	} else {
@@ -732,7 +732,7 @@ func squashOrNoCommit() string {
 	}
 }
 
-func status() {
+func status(configuration Configuration) {
 	if isMobProgramming(configuration) {
 		sayInfo("you are mob programming")
 
@@ -798,7 +798,7 @@ func hasLocalBranch(localBranch string) bool {
 	return false
 }
 
-func hasRemoteBranch(branch string) bool {
+func hasRemoteBranch(branch string, configuration Configuration) bool {
 	remoteBranches := gitRemoteBranches()
 	remoteBranch := configuration.RemoteName + "/" + branch
 	debugInfo("Remote Branches: " + strings.Join(remoteBranches, "\n"))

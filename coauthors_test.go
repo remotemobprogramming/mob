@@ -148,7 +148,7 @@ func TestStartDoneCoAuthors(t *testing.T) {
 	setWorkingDir("/tmp/mob/local")
 	start(configuration)
 	createFile(t, "file6.txt", "oiuo")
-	done()
+	done(configuration)
 
 	output := run(t, "cat", "/tmp/mob/local/.git/SQUASH_MSG")
 	// don't include the person running `mob done`
@@ -172,7 +172,7 @@ func TestAppendWithCoauthors(t *testing.T) {
 	setWorkingDir("/tmp/mob/localother")
 	start(configuration)
 	createFile(t, "file2.txt", "asdf")
-	done()
+	done(configuration)
 
 	output := run(t, "cat", "/tmp/mob/localother/.git/SQUASH_MSG")
 	// don't include the person running `mob done`
