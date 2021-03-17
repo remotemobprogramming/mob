@@ -130,7 +130,10 @@ func writeCoauthorsToGitConfig(coauthors CoauthorsMap) {
 }
 
 func collectCoauthorsFromWipCommits(file *os.File) []Author {
-	var committer string
+	username, _ := gitconfig(false, "user.name")
+	useremail, _ := gitconfig(false, "user.email")
+	committer := fmt.Sprintf("%s <%s>", username, useremail)
+
 	coauthorsHashSet := make(map[Author]bool)
 
 	authorOrCoauthorMatcher := regexp.MustCompile("(?i).*([aA]+uthor)+.+<+.*>+")
