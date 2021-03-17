@@ -12,8 +12,6 @@ import (
 	"strconv"
 	"strings"
 	"time"
-
-	. "mob.sh/coauthors"
 )
 
 const (

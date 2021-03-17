@@ -1,9 +1,7 @@
-package coauthors
+package main
 
 import (
 	"testing"
-
-	"mob.sh/testutils"
 )
 
 func TestLexJustOneAuthorWithoutExplicitAlias(t *testing.T) {
@@ -155,7 +153,7 @@ func TestParseSingleCoauthorFullyQualified(t *testing.T) {
 
 	coauthors, _ := p.parseCoauthors()
 
-	testutils.Equals(t, expected, coauthors)
+	equals(t, expected, coauthors)
 }
 
 func TestParseSingleCoauthorFullyQualifiedTrailingComma(t *testing.T) {
@@ -168,7 +166,7 @@ func TestParseSingleCoauthorFullyQualifiedTrailingComma(t *testing.T) {
 
 	coauthors, _ := p.parseCoauthors()
 
-	testutils.Equals(t, expected, coauthors)
+	equals(t, expected, coauthors)
 }
 func TestParseManyCoauthorsFullyQualified(t *testing.T) {
 	input := `Daria Morgendorfer <daria@example.com> as dm,
@@ -187,7 +185,7 @@ func TestParseManyCoauthorsFullyQualified(t *testing.T) {
 
 	coauthors, _ := p.parseCoauthors()
 
-	testutils.Equals(t, expected, coauthors)
+	equals(t, expected, coauthors)
 }
 
 func TestParseSingleCoauthorsNoAlias(t *testing.T) {
@@ -202,7 +200,7 @@ func TestParseSingleCoauthorsNoAlias(t *testing.T) {
 
 	coauthors, _ := p.parseCoauthors()
 
-	testutils.Equals(t, expected, coauthors)
+	equals(t, expected, coauthors)
 }
 
 func TestParseManyCoauthorsMixed(t *testing.T) {
@@ -225,5 +223,5 @@ func TestParseManyCoauthorsMixed(t *testing.T) {
 
 	coauthors, _ := p.parseCoauthors()
 
-	testutils.Equals(t, expected, coauthors)
+	equals(t, expected, coauthors)
 }

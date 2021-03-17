@@ -1,4 +1,4 @@
-package coauthors
+package main
 
 import (
 	"fmt"
