@@ -873,8 +873,8 @@ func TestNotAGitRepoMessage(t *testing.T) {
 
 func TestGitStagedCoauthors(t *testing.T) {
 	testCoauthors := map[string]string{
-		"t1": "t1@mob.sh",
-		"t2": "t2@mob.sh",
+		"t1": "t1@example.com",
+		"t2": "t2@example.com",
 	}
 
 	for alias, coauthor := range testCoauthors {
@@ -893,8 +893,8 @@ func TestGitStagedCoauthors(t *testing.T) {
 
 func TestGitClearRemovesStagedSection(t *testing.T) {
 	testCoauthors := map[string]string{
-		"t1": "t1@mob.sh",
-		"t2": "t2@mob.sh",
+		"t1": "t1@example.com",
+		"t2": "t2@example.com",
 	}
 
 	for alias, coauthor := range testCoauthors {
@@ -916,8 +916,8 @@ func TestDoesNotAnnounceClearWhenNoCoauthors(t *testing.T) {
 
 func TestDoesAnnouncesClearWhenCoauthors(t *testing.T) {
 	testCoauthors := map[string]string{
-		"mob_t1": "t1@mob.sh",
-		"mob_t2": "t2@mob.sh",
+		"mob_t1": "t1@example.com",
+		"mob_t2": "t2@example.com",
 	}
 
 	for alias, coauthor := range testCoauthors {
@@ -937,8 +937,8 @@ func TestGitStagedEmptyCoauthors(t *testing.T) {
 
 func TestLoadsKnownAlias(t *testing.T) {
 	expectedCoauthors := map[string]string{
-		"mob_t1": "t1@mob.sh",
-		"mob_t2": "t2@mob.sh",
+		"mob_t1": "t1@example.com",
+		"mob_t2": "t2@example.com",
 	}
 
 	for alias, coauthor := range expectedCoauthors {

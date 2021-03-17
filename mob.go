@@ -878,7 +878,7 @@ Basic Commands(Options):
     [--include-uncommitted-changes|-i]   Move uncommitted changes to wip branch
     [--branch|-b <branch-postfix>]       Set wip branch to 'mob/<base-branch>/<branch-postfix>'
     [--with "<coauthors>"]               A comma separated list of coauthors and/or aliases.
-                                         "Harriet Tubman <20bill@protonmail.cc> as ht, fd"
+                                         "Harriet Tubman <20bill@example.net> as ht, fd"
                                          will save Harriet Tubman as 'ht' for future use and load
                                          a coauthor already associated with 'fd'. Coauthors are stored
                                          in ~/.gitconfig

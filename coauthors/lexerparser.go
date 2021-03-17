@@ -150,7 +150,7 @@ type Token struct {
 const (
 	// Identifiers and literals
 	tokAlias  = "ALIAS"  // bh, t swift
-	tokAuthor = "AUTHOR" // Butthead <notbeavis@mtv.show>,
+	tokAuthor = "AUTHOR" // Ruby Bridges <rb@example.com>,
 	// Tay Swift <>
 	// Operators
 	tokAssign = "as"

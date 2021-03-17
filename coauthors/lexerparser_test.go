@@ -93,8 +93,8 @@ func TestLexJustOneCoauthorOnlyAlias(t *testing.T) {
 }
 
 func TestLexManyCoauthorsMixed(t *testing.T) {
-	input := `abc, Butt Head <notbeavis@mtv.net> as bh, dhh, 
-			  Taylor Swift <> as t swizzle, Bond\, James <007@mi6.co.uk> as jb,
+	input := `abc, Cool Todd <todd@example.com> as todd, dhh,
+			  Taylor Swift <> as t swizzle, Bond\, James <007@example.net> as jb,
 	 		  AS <> as as, Janet Jackson <>, pencil neck`
 
 	tests := []struct {
@@ -103,9 +103,9 @@ func TestLexManyCoauthorsMixed(t *testing.T) {
 	}{
 		{tokAlias, "abc"},
 		{tokComma, ","},
-		{tokAuthor, "Butt Head <notbeavis@mtv.net>"},
+		{tokAuthor, "Cool Todd <todd@example.com>"},
 		{tokAssign, "as"},
-		{tokAlias, "bh"},
+		{tokAlias, "todd"},
 		{tokComma, ","},
 		{tokAlias, "dhh"},
 		{tokComma, ","},
@@ -113,7 +113,7 @@ func TestLexManyCoauthorsMixed(t *testing.T) {
 		{tokAssign, "as"},
 		{tokAlias, "t swizzle"},
 		{tokComma, ","},
-		{tokAuthor, `Bond\, James <007@mi6.co.uk>`},
+		{tokAuthor, `Bond\, James <007@example.net>`},
 		{tokAssign, "as"},
 		{tokAlias, "jb"},
 		{tokComma, ","},
@@ -145,9 +145,9 @@ func TestLexManyCoauthorsMixed(t *testing.T) {
 }
 
 func TestParseSingleCoauthorFullyQualified(t *testing.T) {
-	input := `Butt Head <notbeavis@mtv.net> as bh`
+	input := `Daria Morgendorfer <daria@example.com> as dm`
 	expected := map[Alias]Author{
-		"bh": "Butt Head <notbeavis@mtv.net>",
+		"dm": "Daria Morgendorfer <daria@example.com>",
 	}
 
 	l := newLexer(input)
@@ -159,9 +159,9 @@ func TestParseSingleCoauthorFullyQualified(t *testing.T) {
 }
 
 func TestParseSingleCoauthorFullyQualifiedTrailingComma(t *testing.T) {
-	input := `Butt Head <notbeavis@mtv.net> as bh,`
+	input := `Daria Morgendorfer <daria@example.com> as dm,`
 	expected := map[Alias]Author{
-		"bh": "Butt Head <notbeavis@mtv.net>",
+		"dm": "Daria Morgendorfer <daria@example.com>",
 	}
 	l := newLexer(input)
 	p := newParser(l)
@@ -171,14 +171,14 @@ func TestParseSingleCoauthorFullyQualifiedTrailingComma(t *testing.T) {
 	testutils.Equals(t, expected, coauthors)
 }
 func TestParseManyCoauthorsFullyQualified(t *testing.T) {
-	input := `Butt Head <notbeavis@mtv.net> as bh,
-			  Taylor Swift <> as t swizzle, Bond\, James <007@mi6.co.uk> as jb,
+	input := `Daria Morgendorfer <daria@example.com> as dm,
+			  Taylor Swift <> as t swizzle, Bond\, James <007@example.net> as jb,
 	 		  AS <> as as`
 
 	expected := map[Alias]Author{
-		"bh":        "Butt Head <notbeavis@mtv.net>",
+		"dm":        "Daria Morgendorfer <daria@example.com>",
 		"t-swizzle": "Taylor Swift <>",
-		"jb":        `Bond\, James <007@mi6.co.uk>`,
+		"jb":        `Bond\, James <007@example.net>`,
 		"as":        "AS <>",
 	}
 
@@ -206,16 +206,16 @@ func TestParseSingleCoauthorsNoAlias(t *testing.T) {
 }
 
 func TestParseManyCoauthorsMixed(t *testing.T) {
-	input := `abc, Butt Head <notbeavis@mtv.net> as bh, dhh,
-			  Taylor Swift <> as t swizzle, Bond\, James <007@mi6.co.uk> as jb,
+	input := `abc, Daria Morgendorfer <daria@example.com> as dm, dhh,
+			  Taylor Swift <> as t swizzle, Bond\, James <007@example.net> as jb,
 	 		  AS <> as as, Janet Jackson <>`
 
 	expected := map[string]string{
 		"abc":       "",
-		"bh":        "Butt Head <notbeavis@mtv.net>",
+		"dm":        "Daria Morgendorfer <daria@example.com>",
 		"dhh":       "",
 		"t-swizzle": "Taylor Swift <>",
-		"jb":        `Bond\, James <007@mi6.co.uk>`,
+		"jb":        `Bond\, James <007@example.net>`,
 		"as":        "AS <>",
 		"jj":        "Janet Jackson <>",
 	}
