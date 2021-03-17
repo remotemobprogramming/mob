@@ -130,13 +130,10 @@ func writeCoauthorsToGitConfig(coauthors CoauthorsMap) {
 }
 
 func collectCoauthorsFromWipCommits(file *os.File) []Author {
-	username, _ := gitconfig(false, "user.name")
-	useremail, _ := gitconfig(false, "user.email")
-	committer := fmt.Sprintf("%s <%s>", username, useremail)
-
+	var committer string
 	coauthorsHashSet := make(map[Author]bool)
 
-	authorOrCoauthorMatcher := regexp.MustCompile("(?i).*([aA]+uthor)+.+<+.*>+")
+	authorOrCoauthorMatcher := regexp.MustCompile("(?i).*(author)+.+<+.*>+")
 	scanner := bufio.NewScanner(file)
 
 	for scanner.Scan() {
@@ -147,7 +144,6 @@ func collectCoauthorsFromWipCommits(file *os.File) []Author {
 			// committer of this commit should
 			// not be included as a co-author
 			if committer == "" || author == committer {
-				fmt.Println("SETTING COMMITTER", author)
 				committer = author
 				continue
 			}

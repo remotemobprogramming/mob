@@ -147,6 +147,7 @@ func TestStartDoneCoAuthors(t *testing.T) {
 
 	setWorkingDir("/tmp/mob/local")
 	start(configuration)
+	createFile(t, "file6.txt", "oiuo")
 	done()
 
 	output := run(t, "cat", "/tmp/mob/local/.git/SQUASH_MSG")
@@ -154,5 +155,5 @@ func TestStartDoneCoAuthors(t *testing.T) {
 	// don't include the person running `mob done`
 	assertOutputNotContains(t, output, "Co-authored-by: local <local@example.com>")
 	// include everyone else in commit order after removing duplicates
-	assertOutputContains(t, output, "\n\nCo-authored-by: localother <localother@example.com>\nCo-authored-by: alice <alice@example.com>\nCo-authored-by: bob <bob@example.com>\n")
+	assertOutputContains(t, output, "\nCo-authored-by: bob <bob@example.com>\nCo-authored-by: alice <alice@example.com>\nCo-authored-by: localother <localother@example.com>\n")
 }
