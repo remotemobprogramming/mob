@@ -91,7 +91,7 @@ func (p *parser) parseAuthorStatement() (Alias, Author, error) {
 
 	// Name <> => n, Name <>
 	if !p.expectPeek(tokAssign) {
-		return generateInitialation(author), author, nil
+		return generateInitials(author), author, nil
 	}
 
 	// Name <> as ,
@@ -120,7 +120,7 @@ func (p *parser) expectPeek(t TokenType) bool {
 	return false
 }
 
-func generateInitialation(author Author) Alias {
+func generateInitials(author Author) Alias {
 	authorWords := strings.Split(author, " ")
 
 	alias := ""
