@@ -221,7 +221,7 @@ func TestVersion(t *testing.T) {
 func TestStatusNotMobProgramming(t *testing.T) {
 	output := setup(t)
 
-	status()
+	status(configuration)
 
 	assertOutputContains(t, output, "you aren't mob programming")
 }
@@ -269,7 +269,7 @@ func TestRequireCommitMessage(t *testing.T) {
 func TestDoneNotMobProgramming(t *testing.T) {
 	output := setup(t)
 
-	done()
+	done(configuration)
 
 	assertOutputContains(t, output, "you aren't mob programming")
 }
@@ -278,7 +278,7 @@ func TestStatusMobProgramming(t *testing.T) {
 	output := setup(t)
 	start(configuration)
 
-	status()
+	status(configuration)
 
 	assertOutputContains(t, output, "you are mob programming")
 }
@@ -294,7 +294,7 @@ func TestStatusWithMoreThan5LinesOfLog(t *testing.T) {
 	}
 
 	output := captureOutput()
-	status()
+	status(configuration)
 	assertOutputContains(t, output, "This mob branch contains 6 commits.")
 }
 
@@ -393,7 +393,7 @@ func TestStartNextWithBranch(t *testing.T) {
 	assertOnBranch(t, "master")
 
 	configuration.WipBranchQualifier = "green"
-	reset()
+	reset(configuration)
 	assertNoMobSessionBranches(t, "mob/master-green")
 }
 
@@ -445,7 +445,7 @@ func TestStartNextWithBranchContainingHyphen(t *testing.T) {
 func TestReset(t *testing.T) {
 	setup(t)
 
-	reset()
+	reset(configuration)
 
 	assertOnBranch(t, "master")
 	assertNoMobSessionBranches(t, "mob-session")
@@ -458,7 +458,7 @@ func TestResetCommit(t *testing.T) {
 	next(configuration)
 	assertMobSessionBranches(t, "mob-session")
 
-	reset()
+	reset(configuration)
 
 	assertOnBranch(t, "master")
 	assertNoMobSessionBranches(t, "mob-session")
@@ -539,7 +539,7 @@ func TestStartDoneWithMobDoneSquashTrue(t *testing.T) {
 	start(configuration)
 	assertOnBranch(t, "mob-session")
 
-	done()
+	done(configuration)
 
 	assertOnBranch(t, "master")
 	assertNoMobSessionBranches(t, "mob-session")
@@ -595,7 +595,7 @@ func TestStartDoneWithMobDoneSquashFalse(t *testing.T) {
 	start(configuration)
 	assertOnBranch(t, "mob-session")
 
-	done()
+	done(configuration)
 
 	assertOnBranch(t, "master")
 	assertNoMobSessionBranches(t, "mob-session")
@@ -613,7 +613,7 @@ func TestStartDonePublishingOneManualCommit(t *testing.T) {
 	createFileAndCommitIt(t, "example.txt", "content", "[manual-commit-1] publish this commit to master")
 	assertCommits(t, 2)
 
-	done() // without squash (configuration)
+	done(configuration) // without squash (configuration)
 
 	assertOnBranch(t, "master")
 	assertCommitsOnBranch(t, 2, "master")
@@ -634,7 +634,7 @@ func TestStartDoneSquashTheOneManualCommit(t *testing.T) {
 	createFileAndCommitIt(t, "example.txt", "content", "[manual-commit-1] publish this commit to master")
 	assertCommits(t, 2)
 
-	done()
+	done(configuration)
 
 	// MAYBE assertUnstagedChanges()
 	assertOnBranch(t, "master")
@@ -651,7 +651,7 @@ func TestStartDoneFeatureBranch(t *testing.T) {
 	start(configuration)
 	assertOnBranch(t, "mob/feature1")
 
-	done()
+	done(configuration)
 
 	assertOnBranch(t, "feature1")
 	assertNoMobSessionBranches(t, "mob-session")
@@ -786,7 +786,7 @@ func TestConflictingMobSessions(t *testing.T) {
 
 	setWorkingDir("/tmp/mob/local")
 	start(configuration)
-	done()
+	done(configuration)
 	git("commit", "-m", "\"finished mob session\"")
 
 	setWorkingDir("/tmp/mob/local")
@@ -813,7 +813,7 @@ func TestConflictingMobSessionsNextStay(t *testing.T) {
 
 	setWorkingDir("/tmp/mob/local")
 	start(configuration)
-	done()
+	done(configuration)
 	git("commit", "-m", "\"finished mob session\"")
 
 	setWorkingDir("/tmp/mob/localother")
@@ -834,7 +834,7 @@ func TestDoneMergeConflict(t *testing.T) {
 
 	setWorkingDir("/tmp/mob/local")
 	start(configuration)
-	done()
+	done(configuration)
 	assertOutputContains(t, output, "Automatic merge failed; fix conflicts and then commit the result.")
 }
 
@@ -852,7 +852,7 @@ func TestDoneMerge(t *testing.T) {
 
 	setWorkingDir("/tmp/mob/local")
 	start(configuration)
-	done()
+	done(configuration)
 	assertOutputContains(t, output, "   git commit")
 }
 
@@ -980,7 +980,7 @@ func assertOutputNotContains(t *testing.T, output *string, notContains string) {
 }
 
 func assertMobSessionBranches(t *testing.T, branch string) {
-	if !hasRemoteBranch(branch) {
+	if !hasRemoteBranch(branch, configuration) {
 		failWithFailure(t, configuration.RemoteName+"/"+branch, "none")
 	}
 	if !hasLocalBranch(branch) {
@@ -989,7 +989,7 @@ func assertMobSessionBranches(t *testing.T, branch string) {
 }
 
 func assertNoMobSessionBranches(t *testing.T, branch string) {
-	if hasRemoteBranch(branch) {
+	if hasRemoteBranch(branch, configuration) {
 		failWithFailure(t, "none", configuration.RemoteName+"/"+branch)
 	}
 	if hasLocalBranch(branch) {
