@@ -58,6 +58,17 @@ func TestParseArgsMessage(t *testing.T) {
 	equals(t, "ci-skip", configuration.WipCommitMessage)
 }
 
+func TestParseArgsWith(t *testing.T) {
+	configuration = getDefaultConfiguration()
+	configuration.Coauthors = CoauthorsMap{}
+
+	command, parameters := parseArgs([]string{"mob", "start", "--with", "Pat <pat@example.com>"})
+
+	equals(t, "start", command)
+	equals(t, "", strings.Join(parameters, ""))
+	equals(t, CoauthorsMap{"p": "Pat <pat@example.com>"}, configuration.Coauthors)
+}
+
 func TestDetermineBranches(t *testing.T) {
 	configuration = getDefaultConfiguration()
 	configuration.WipBranchQualifierSeparator = "-"
