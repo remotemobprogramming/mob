@@ -160,8 +160,8 @@ func TestStartDoneCoAuthors(t *testing.T) {
 func TestAppendWithCoauthors(t *testing.T) {
 	setup(t)
 	configuration.Coauthors = CoauthorsMap{
-		"bob":   "bob <bob@example.com>",
-		"alice": "alice <alice@example.com>",
+		"mob-t1": "bob <bob@example.com>",
+		"mob-t2": "alice <alice@example.com>",
 	}
 
 	setWorkingDir("/tmp/mob/local")
