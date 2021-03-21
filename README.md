@@ -62,6 +62,12 @@ scoop install mob
 
 On [Nix](http://nixos.org) through the [mob.nix](./mob.nix) expression like this `mob = callPackage ./mob.nix {};`. To install and configure espeak-ng for text-to-spech support, pass `withSpeech = true;`.
 
+On Arch Linux via yay:
+
+```bash
+yay -S mobsh-bin
+```
+
 ## How to use
 
 You only need three commands: `mob start`, `mob next`, and `mob done`. 
