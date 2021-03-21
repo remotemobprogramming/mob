@@ -624,8 +624,8 @@ func next(configuration Configuration) {
 			sayInfo("nothing was done, so nothing to commit")
 		}
 	} else {
-		git("add", "--all")
-		git("commit", "--message", configuration.WipCommitMessage, "--no-verify")
+		makeWipCommit()
+
 		changes := getChangesOfLastCommit()
 		git("push", "--no-verify", configuration.RemoteName, currentWipBranch)
 		say(changes)
@@ -645,6 +645,12 @@ func getCachedChanges() string {
 	return strings.TrimSpace(silentgit("diff", "--cached", "--stat"))
 }
 
+func makeWipCommit() {
+	commitMsg := configuration.WipCommitMessage
+	git("add", "--all")
+	git("commit", "--allow-empty", "--message", commitMsg, "--no-verify")
+}
+
 func done(configuration Configuration) {
 	if !isMobProgramming(configuration) {
 		sayError("you aren't mob programming")
@@ -658,8 +664,7 @@ func done(configuration Configuration) {
 
 	if hasRemoteBranch(currentWipBranch, configuration) {
 		if !isNothingToCommit() {
-			git("add", "--all")
-			git("commit", "--message", configuration.WipCommitMessage, "--no-verify")
+			makeWipCommit()
 		}
 		git("push", "--no-verify", configuration.RemoteName, currentWipBranch)
 
@@ -674,6 +679,10 @@ func done(configuration Configuration) {
 		git("push", "--no-verify", configuration.RemoteName, "--delete", currentWipBranch)
 
 		say(getCachedChanges())
+		err := appendCoauthorsToSquashMsg(workingDir)
+		if err != nil {
+			sayError(err.Error())
+		}
 		sayTodo("To finish, use", "git commit")
 	} else {
 		git("checkout", currentBaseBranch)
@@ -914,6 +923,7 @@ func gitignorefailure(args ...string) error {
 	}
 	return err
 }
+
 func runCommand(name string, args ...string) (string, string, error) {
 	command := exec.Command(name, args...)
 	if len(workingDir) > 0 {
