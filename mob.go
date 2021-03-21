@@ -18,7 +18,7 @@ const (
 
 var (
 	workingDir    = ""
-	configuration Configuration
+	Debug         = false // override with --debug parameter
 )
 
 type Configuration struct {
@@ -30,7 +30,6 @@ type Configuration struct {
 	MobNextStay                       bool   // override with MOB_NEXT_STAY environment variable
 	MobNextStaySet                    bool   // override with MOB_NEXT_STAY environment variable
 	MobStartIncludeUncommittedChanges bool   // override with MOB_START_INCLUDE_UNCOMMITTED_CHANGES variable
-	Debug                             bool   // override with --debug parameter
 	WipBranchQualifier                string // override with MOB_WIP_BRANCH_QUALIFIER environment variable
 	WipBranchQualifierSet             bool   // used to enforce a start on the default wip branch with `mob start --branch ""` when other open wip branches had been detected
 	WipBranchQualifierSeparator       string // override with MOB_WIP_BRANCH_QUALIFIER_SEPARATOR environment variable
@@ -51,19 +50,19 @@ func (c Configuration) hasCustomCommitMessage() bool {
 }
 
 func main() {
-	configuration = getDefaultConfiguration()
-	configuration = parseDebug(configuration, os.Args)
+	parseDebug(os.Args)
 
+	configuration := getDefaultConfiguration()
 	configuration = parseEnvironmentVariables(configuration)
 	debugInfo("Args '" + strings.Join(os.Args, " ") + "'")
 
-	command, parameters := parseArgs(os.Args)
+	command, parameters, configuration := parseArgs(os.Args, configuration)
 	debugInfo("command '" + command + "'")
 	debugInfo("parameters '" + strings.Join(parameters, " ") + "'")
 	debugInfo("version " + versionNumber)
 	debugInfo("workingDir " + workingDir)
 
-	execute(command, parameters)
+	execute(command, parameters, configuration)
 }
 
 func getDefaultConfiguration() Configuration {
@@ -88,7 +87,6 @@ func getDefaultConfiguration() Configuration {
 		MobNextStaySet:                    false,
 		RequireCommitMessage:              false,
 		MobStartIncludeUncommittedChanges: false,
-		Debug:                             false,
 		WipBranchQualifier:                "",
 		WipBranchQualifierSet:             false,
 		WipBranchQualifierSeparator:       "-",
@@ -97,16 +95,14 @@ func getDefaultConfiguration() Configuration {
 	}
 }
 
-func parseDebug(configuration Configuration, args []string) Configuration {
+func parseDebug(args []string) {
 	// debug needs to be parsed at the beginning to have DEBUG enabled as quickly as possible
 	// otherwise, parsing other environment variables or other parameters don't have debug enabled
 	for i := 0; i < len(args); i++ {
 		if args[i] == "--debug" {
-			configuration.Debug = true
+			Debug = true
 		}
 	}
-
-	return configuration
 }
 
 func parseEnvironmentVariables(configuration Configuration) Configuration {
@@ -224,7 +220,7 @@ func config(c Configuration) {
 	say("MOB_TIMER" + "=" + c.MobTimer)
 }
 
-func parseArgs(args []string) (command string, parameters []string) {
+func parseArgs(args []string, configuration Configuration) (command string, parameters []string, configuration2 Configuration) {
 	for i := 1; i < len(args); i++ {
 		arg := args[i]
 		switch arg {
@@ -262,10 +258,11 @@ func parseArgs(args []string) (command string, parameters []string) {
 		}
 	}
 
+	configuration2 = configuration
 	return
 }
 
-func execute(command string, parameter []string) {
+func execute(command string, parameter []string, configuration Configuration) {
 
 	switch command {
 	case "s", "start":
@@ -275,9 +272,9 @@ func execute(command string, parameter []string) {
 		}
 		if len(parameter) > 0 {
 			timer := parameter[0]
-			startTimer(timer)
+			startTimer(timer, configuration)
 		} else if configuration.MobTimer != "" {
-			startTimer(configuration.MobTimer)
+			startTimer(configuration.MobTimer, configuration)
 		}
 
 		status(configuration)
@@ -294,14 +291,14 @@ func execute(command string, parameter []string) {
 	case "t", "timer":
 		if len(parameter) > 0 {
 			timer := parameter[0]
-			startTimer(timer)
+			startTimer(timer, configuration)
 		} else if configuration.MobTimer != "" {
-			startTimer(configuration.MobTimer)
+			startTimer(configuration.MobTimer, configuration)
 		} else {
 			help()
 		}
 	case "moo":
-		moo()
+		moo(configuration)
 	case "version", "--version", "-v":
 		version()
 	case "help", "--help", "-h":
@@ -417,18 +414,18 @@ func injectCommandWithMessage(command string, message string) string {
 	return fmt.Sprintf(command, message)
 }
 
-func getVoiceCommand(message string) string {
-	if len(configuration.VoiceCommand) == 0 {
+func getVoiceCommand(message string, voiceCommand string) string {
+	if len(voiceCommand) == 0 {
 		return ""
 	}
-	return injectCommandWithMessage(configuration.VoiceCommand, message)
+	return injectCommandWithMessage(voiceCommand, message)
 }
 
-func getNotifyCommand(message string) string {
-	if len(configuration.NotifyCommand) == 0 {
+func getNotifyCommand(message string, notifyCommand string) string {
+	if len(notifyCommand) == 0 {
 		return ""
 	}
-	return injectCommandWithMessage(configuration.NotifyCommand, message)
+	return injectCommandWithMessage(notifyCommand, message)
 }
 
 func executeCommandsInBackgroundProcess(commands ...string) (err error) {
@@ -450,13 +447,13 @@ func executeCommandsInBackgroundProcess(commands ...string) (err error) {
 	return err
 }
 
-func startTimer(timerInMinutes string) {
+func startTimer(timerInMinutes string, configuration Configuration) {
 	debugInfo(fmt.Sprintf("Starting timer for %s minutes", timerInMinutes))
 	timeoutInMinutes, _ := strconv.Atoi(timerInMinutes)
 	timeoutInSeconds := timeoutInMinutes * 60
 	timeOfTimeout := time.Now().Add(time.Minute * time.Duration(timeoutInMinutes)).Format("15:04")
 
-	err := executeCommandsInBackgroundProcess(getSleepCommand(timeoutInSeconds), getVoiceCommand("mob next"), getNotifyCommand("mob next"))
+	err := executeCommandsInBackgroundProcess(getSleepCommand(timeoutInSeconds), getVoiceCommand("mob next", configuration.VoiceCommand), getNotifyCommand("mob next", configuration.NotifyCommand))
 
 	if err != nil {
 		sayError(fmt.Sprintf("timer couldn't be started on your system (%s)", runtime.GOOS))
@@ -466,9 +463,9 @@ func startTimer(timerInMinutes string) {
 	}
 }
 
-func moo() {
+func moo(configuration Configuration) {
 	voiceMessage := "moo"
-	err := executeCommandsInBackgroundProcess(getVoiceCommand(voiceMessage))
+	err := executeCommandsInBackgroundProcess(getVoiceCommand(voiceMessage, configuration.VoiceCommand))
 
 	if err != nil {
 		sayError(fmt.Sprintf("can't run voice command on your system (%s)", runtime.GOOS))
@@ -512,7 +509,7 @@ func start(configuration Configuration) {
 
 	currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), gitBranches(), configuration)
 
-	hasWipBranchesWithQualifier := hasQualifiedBranches(currentBaseBranch, gitRemoteBranches())
+	hasWipBranchesWithQualifier := hasQualifiedBranches(currentBaseBranch, gitRemoteBranches(), configuration)
 
 	if !isMobProgramming(configuration) && hasWipBranchesWithQualifier && !configuration.WipBranchQualifierSet {
 		sayInfo("qualified mob branches detected")
@@ -532,9 +529,9 @@ func start(configuration Configuration) {
 	}
 
 	if hasRemoteBranch(currentWipBranch, configuration) {
-		startJoinMobSession()
+		startJoinMobSession(configuration)
 	} else {
-		startNewMobSession()
+		startNewMobSession(configuration)
 	}
 
 	if configuration.MobStartIncludeUncommittedChanges && stashed {
@@ -562,13 +559,13 @@ func sayUnstagedChangesInfo() {
 	}
 }
 
-func hasQualifiedBranches(currentBaseBranch string, remoteBranches []string) bool {
+func hasQualifiedBranches(currentBaseBranch string, remoteBranches []string, configuration Configuration) bool {
 	debugInfo("check on current base branch " + currentBaseBranch + " with remote branches " + strings.Join(remoteBranches, ","))
 	hasWipBranchesWithQualifier := strings.Contains(strings.Join(remoteBranches, "\n"), configuration.RemoteName+"/"+wipBranchPrefix+currentBaseBranch+configuration.WipBranchQualifierSeparator)
 	return hasWipBranchesWithQualifier
 }
 
-func startJoinMobSession() {
+func startJoinMobSession(configuration Configuration) {
 	_, currentWipBranch := determineBranches(gitCurrentBranch(), gitBranches(), configuration)
 
 	sayInfo("joining existing mob session from " + configuration.RemoteName + "/" + currentWipBranch)
@@ -576,7 +573,7 @@ func startJoinMobSession() {
 	git("branch", "--set-upstream-to="+configuration.RemoteName+"/"+currentWipBranch, currentWipBranch)
 }
 
-func startNewMobSession() {
+func startNewMobSession(configuration Configuration) {
 	currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), gitBranches(), configuration)
 
 	sayInfo("starting new mob session from " + configuration.RemoteName + "/" + currentBaseBranch)
@@ -947,7 +944,7 @@ func sayError(s string) {
 }
 
 func debugInfo(s string) {
-	if configuration.Debug {
+	if Debug {
 		sayWithPrefix(s, " DEBUG ")
 	}
 }

@@ -14,11 +14,15 @@ import (
 	"testing"
 )
 
+var (
+	configuration Configuration
+)
+
 func TestParseArgs(t *testing.T) {
 	configuration = getDefaultConfiguration()
 	equals(t, configuration.WipBranchQualifier, "")
 
-	command, parameters := parseArgs([]string{"mob", "start", "--branch", "green"})
+	command, parameters, configuration := parseArgs([]string{"mob", "start", "--branch", "green"}, configuration)
 
 	equals(t, "start", command)
 	equals(t, "", strings.Join(parameters, ""))
@@ -29,7 +33,7 @@ func TestParseArgsDoneNoSquash(t *testing.T) {
 	configuration = getDefaultConfiguration()
 	equals(t, true, configuration.MobDoneSquash)
 
-	command, parameters := parseArgs([]string{"mob", "done", "--no-squash"})
+	command, parameters, configuration := parseArgs([]string{"mob", "done", "--no-squash"}, configuration)
 
 	equals(t, "done", command)
 	equals(t, "", strings.Join(parameters, ""))
@@ -40,7 +44,7 @@ func TestParseArgsDoneSquash(t *testing.T) {
 	configuration = getDefaultConfiguration()
 	configuration.MobDoneSquash = false
 
-	command, parameters := parseArgs([]string{"mob", "done", "--squash"})
+	command, parameters, configuration := parseArgs([]string{"mob", "done", "--squash"}, configuration)
 
 	equals(t, "done", command)
 	equals(t, "", strings.Join(parameters, ""))
@@ -51,7 +55,7 @@ func TestParseArgsMessage(t *testing.T) {
 	configuration = getDefaultConfiguration()
 	equals(t, configuration.WipBranchQualifier, "")
 
-	command, parameters := parseArgs([]string{"mob", "next", "--message", "ci-skip"})
+	command, parameters, configuration := parseArgs([]string{"mob", "next", "--message", "ci-skip"}, configuration)
 
 	equals(t, "next", command)
 	equals(t, "", strings.Join(parameters, ""))
@@ -61,7 +65,7 @@ func TestParseArgsMessage(t *testing.T) {
 func TestDetermineBranches(t *testing.T) {
 	configuration = getDefaultConfiguration()
 	configuration.WipBranchQualifierSeparator = "-"
-	configuration.Debug = true
+	Debug = true
 
 	assertDetermineBranches(t, "master", "", []string{}, "master", "mob-session")
 	assertDetermineBranches(t, "mob-session", "", []string{}, "master", "mob-session")
@@ -85,6 +89,7 @@ func TestDetermineBranches(t *testing.T) {
 }
 
 func assertDetermineBranches(t *testing.T, branch string, qualifier string, branches []string, expectedBase string, expectedWip string) {
+	configuration := getDefaultConfiguration()
 	configuration.WipBranchQualifier = qualifier
 	baseBranch, wipBranch := determineBranches(branch, branches, configuration)
 	equals(t, expectedBase, baseBranch)
@@ -284,7 +289,7 @@ func TestStatusMobProgramming(t *testing.T) {
 }
 
 func TestStatusWithMoreThan5LinesOfLog(t *testing.T) {
-	setup(t)
+	output := setup(t)
 	configuration.MobNextStay = true
 	start(configuration)
 
@@ -293,25 +298,14 @@ func TestStatusWithMoreThan5LinesOfLog(t *testing.T) {
 		next(configuration)
 	}
 
-	output := captureOutput()
 	status(configuration)
 	assertOutputContains(t, output, "This mob branch contains 6 commits.")
-}
-
-func TestStatusDoesNotAddEmptyLineFor0Commits(t *testing.T) {
-	setup(t)
-	start(configuration)
-	currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), gitBranches(), configuration)
-
-	output := captureOutput()
-	sayLastCommitsList(currentBaseBranch, currentWipBranch)
-	assertOutputNotContains(t, output, "\n")
 }
 
 func TestExecuteKicksOffStatus(t *testing.T) {
 	output := setup(t)
 
-	execute("status", []string{})
+	execute("status", []string{}, getDefaultConfiguration())
 
 	assertOutputContains(t, output, "you aren't mob programming")
 }
@@ -319,7 +313,7 @@ func TestExecuteKicksOffStatus(t *testing.T) {
 func TestExecuteInvalidCommandKicksOffHelp(t *testing.T) {
 	output := setup(t)
 
-	execute("whatever", []string{})
+	execute("whatever", []string{}, getDefaultConfiguration())
 
 	assertOutputContains(t, output, "Basic Commands:")
 }
@@ -416,7 +410,7 @@ func TestStartNextStartWithBranch(t *testing.T) {
 func TestStartNextOnFeatureWithBranch(t *testing.T) {
 	setup(t)
 	configuration.WipBranchQualifier = "green"
-	configuration.Debug = true
+	Debug = true
 	git("checkout", "-b", "feature1")
 	git("push", "origin", "feature1", "--set-upstream")
 	assertOnBranch(t, "feature1")
@@ -867,8 +861,8 @@ func TestIsGitIdentifiesOutsideOfGitRepo(t *testing.T) {
 }
 
 func TestNotAGitRepoMessage(t *testing.T) {
+	output := setup(t)
 	setWorkingDir("/tmp/git/notgit")
-	output := captureOutput()
 	sayGitError("TEST", "TEST", errors.New("TEST"))
 	assertOutputContains(t, output, "mob expects the current working directory to be a git repository.")
 }
