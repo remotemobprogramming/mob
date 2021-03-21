@@ -1,6 +1,18 @@
+# 1.4.0
+- The list of commits included in a mob branch is now truncated to a maximum of 5 entries to prevent the need for scrolling up in order to see the latest included changes.
+- Show more informative error message when `mob <cmd>` is run outside of a git repository.
+- Add environment variable MOB_TIMER which allows setting a default timer duration for `mob start` and `mob timer` commands.
+
+# 1.3.0
+- The default `MOB_COMMIT_MESSAGE` now includes `[ci skip]` and `[skip ci]` so that all the typical CI systems (including Azure DevOps) will skip this commit.
+- Add `--squash` option to `mob done` that corresponds to `--no-squash`.
+- Fixes the default text to speech command on linux and osx.
+- Removed `MOB_DEBUG` environment variable (has been deprecated for some time).
+
 # 1.2.0
 - Add environment variable `MOB_REQUIRE_COMMIT_MESSAGE` which you could set to true to require a commit message other than the default one.
 - Fixes a bug where you could not run `mob start --branch feature-1` because feature-1 contained a dash.
+- Fixes a bug which prevented the sound output of 'mob next' and 'moo' on windows
 
 # 1.1.0
 - Add optional `--no-squash` for `mob done` to keep commits from wip branch.

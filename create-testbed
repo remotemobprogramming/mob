@@ -13,14 +13,19 @@ createrepo() {
     (cd "${dir}" && git config --local user.email ${name}@example.com)
 }
 
+# XXX tmpdir should be unique 
+# see https://github.com/remotemobprogramming/mob/issues/149
+tmpdir="/tmp/mob" 
+localdir="${tmpdir}/local"
+remotedir="${tmpdir}/remote"
+notgit="${tmpdir}/notgit"
+
 # create base dir
-tmpdir="/tmp/mob" # XXX this should be more unique
 echo ""
 echo "Creating temporary test assets in ${tmpdir}"
 mkdir -p ${tmpdir}
 
 # create remote repo
-remotedir="${tmpdir}/remote"
 echo ""
 echo "Creating remote repository ${remotedir}"
 rm -rf "${remotedir}"
@@ -28,7 +33,6 @@ mkdir -p "${remotedir}"
 (cd "${remotedir}" && git --bare init)
 
 # create first local repo
-localdir="${tmpdir}/local"
 createrepo "${localdir}"
 
 # populate an initial import
@@ -41,5 +45,7 @@ do
     createrepo "${tmpdir}/${name}"
 done
 
+# create a non-git area
+mkdir -p "${localdir}" "${notgit}"
 
 echo "Done."
