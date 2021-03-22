@@ -14,7 +14,16 @@ import (
 type Author = string
 
 func collectCoauthorsFromWipCommits(file *os.File) []Author {
-	var committer string
+	// Here we parse the SQUASH_MSG file for the list of authors on
+	// the WIP branch.  If this technique later turns out to be
+	// problematic, an alternative would be to instead fetch the
+	// authors' list from the git log, using e.g.:
+	//
+	// silentgit("log", fmt.Sprintf("%s..", currentBaseBranch), "--reverse", "--pretty=format:%an <%ae>")
+	//
+	// For details and background, see https://github.com/remotemobprogramming/mob/issues/81
+
+	committerEmail := gitUserEmail()
 	coauthorsHashSet := make(map[Author]bool)
 
 	authorOrCoauthorMatcher := regexp.MustCompile("(?i).*(author)+.+<+.*>+")
@@ -27,8 +36,7 @@ func collectCoauthorsFromWipCommits(file *os.File) []Author {
 
 			// committer of this commit should
 			// not be included as a co-author
-			if committer == "" || author == committer {
-				committer = author
+			if strings.Contains(author, committerEmail) {
 				continue
 			}
 			coauthorsHashSet[author] = true
@@ -100,4 +108,3 @@ func (s byLength) Less(i, j int) bool {
 func stripToAuthor(line string) string {
 	return strings.TrimSpace(strings.Join(strings.Split(line, ":")[1:], ""))
 }
-

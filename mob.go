@@ -797,6 +797,10 @@ func gitUserName() string {
 	return strings.TrimSpace(silentgit("config", "--get", "user.name"))
 }
 
+func gitUserEmail() string {
+	return strings.TrimSpace(silentgit("config", "--get", "user.email"))
+}
+
 func showNext(configuration Configuration) {
 	debugInfo("determining next person based on previous changes")
 
