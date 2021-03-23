@@ -648,7 +648,7 @@ func getCachedChanges() string {
 func makeWipCommit() {
 	commitMsg := configuration.WipCommitMessage
 	git("add", "--all")
-	git("commit", "--allow-empty", "--message", commitMsg, "--no-verify")
+	git("commit", "--message", commitMsg, "--no-verify")
 }
 
 func done(configuration Configuration) {
