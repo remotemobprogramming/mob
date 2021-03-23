@@ -226,7 +226,7 @@ MOB_NEXT_STAY=true mob next
 cd $PROJECT_ROOT
 
 git version # >= 2.17
-go version # >= 1.16
+go version # >= 1.14
 
 go build # builds 'mob'
 
@@ -238,20 +238,6 @@ go test -run TestDetermineBranches # runs the single test named 'TestDetermineBr
 # run tests and show test coverage in browser
 go test -coverprofile=cover.out && go tool cover -html=cover.out
 ```
-
-### Run the Tests from your IDE (GoLand or IntelliJ IDEA)
-
-When you try to run *mob_test.go* in your IDE you may get the following errors:
-```
-./mob_test.go:17:2: undefined: configuration
-./mob_test.go:17:18: undefined: getDefaultConfiguration
-... and so on ...
-```
-
-This is because the **Run Configuration** uses **Test Kind: File** as default and therefor does not find the source code within *mob.go*.
-Change the **Test Kind** to **Directory**, and try again.
-The tests should work now.
-
 
 ## Design Concepts
 
