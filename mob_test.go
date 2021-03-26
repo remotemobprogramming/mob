@@ -2,7 +2,7 @@ package main
 
 import (
 	"errors"
-	fmt "fmt"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
