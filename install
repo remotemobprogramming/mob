@@ -1,5 +1,5 @@
 #! /usr/bin/env bash
 target=/usr/local/bin/
-go build mob.go &&
+go build &&
     cp -f mob "$target" &&
     echo "installed 'mob' to $target"
