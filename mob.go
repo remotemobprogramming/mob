@@ -17,8 +17,8 @@ const (
 )
 
 var (
-	workingDir    = ""
-	Debug         = false // override with --debug parameter
+	workingDir = ""
+	Debug      = false // override with --debug parameter
 )
 
 type Configuration struct {
@@ -881,19 +881,12 @@ func git(args ...string) {
 
 func sayGitError(commandString string, output string, err error) {
 	if !isGit() {
-		path, err := os.Getwd()
-		if err == nil {
-			cwdMsg := fmt.Sprintf("The current working directory, %s, is not a git repository.", path)
-
-			sayWithPrefix("mob expects the current working directory to be a git repository.", "🤦🏿 ")
-			sayIndented(cwdMsg)
-			say(" ")
-		}
-
+		sayError("mob expects the current working directory to be a git repository.")
+	} else {
+		sayError(commandString)
+		sayError(output)
+		sayError(err.Error())
 	}
-	sayError(commandString)
-	sayError(output)
-	sayError(err.Error())
 }
 
 func isGit() bool {
@@ -939,29 +932,29 @@ var exit = func(code int) {
 	os.Exit(code)
 }
 
-func sayError(s string) {
-	sayWithPrefix(s, " ERROR ")
+func sayError(text string) {
+	sayWithPrefix(text, " ERROR ")
 }
 
-func debugInfo(s string) {
+func debugInfo(text string) {
 	if Debug {
-		sayWithPrefix(s, " DEBUG ")
+		sayWithPrefix(text, " DEBUG ")
 	}
 }
 
-func sayIndented(s string) {
-	sayWithPrefix(s, "   ")
+func sayIndented(text string) {
+	sayWithPrefix(text, "   ")
 }
 
-func sayTodo(s string, cmd string) {
-	sayWithPrefix(s, " 👉 ")
+func sayTodo(text string, command string) {
+	sayWithPrefix(text, " 👉 ")
 	sayEmptyLine()
-	sayIndented(cmd)
+	sayIndented(command)
 	sayEmptyLine()
 }
 
-func sayInfo(s string) {
-	sayWithPrefix(s, " > ")
+func sayInfo(text string) {
+	sayWithPrefix(text, " > ")
 }
 
 func sayWithPrefix(s string, prefix string) {
