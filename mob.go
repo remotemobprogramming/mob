@@ -621,7 +621,7 @@ func next(configuration Configuration) {
 			sayInfo("nothing was done, so nothing to commit")
 		}
 	} else {
-		makeWipCommit()
+		makeWipCommit(configuration)
 
 		changes := getChangesOfLastCommit()
 		git("push", "--no-verify", configuration.RemoteName, currentWipBranch)
@@ -642,7 +642,7 @@ func getCachedChanges() string {
 	return strings.TrimSpace(silentgit("diff", "--cached", "--stat"))
 }
 
-func makeWipCommit() {
+func makeWipCommit(configuration Configuration) {
 	commitMsg := configuration.WipCommitMessage
 	git("add", "--all")
 	git("commit", "--message", commitMsg, "--no-verify")
@@ -661,7 +661,7 @@ func done(configuration Configuration) {
 
 	if hasRemoteBranch(currentWipBranch, configuration) {
 		if !isNothingToCommit() {
-			makeWipCommit()
+			makeWipCommit(configuration)
 		}
 		git("push", "--no-verify", configuration.RemoteName, currentWipBranch)
 

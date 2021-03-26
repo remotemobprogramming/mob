@@ -23,8 +23,27 @@ func collectCoauthorsFromWipCommits(file *os.File) []Author {
 	//
 	// For details and background, see https://github.com/remotemobprogramming/mob/issues/81
 
-	committerEmail := gitUserEmail()
-	coauthorsHashSet := make(map[Author]bool)
+	coauthors := parseCoauthors(file)
+	debugInfo("Parsed coauthors")
+	debugInfo(strings.Join(coauthors, ","))
+
+	coauthors = removeElementsContaining(coauthors, gitUserEmail())
+	debugInfo("Parsed coauthors without committer")
+	debugInfo(strings.Join(coauthors, ","))
+
+	coauthors = removeDuplicateValues(coauthors)
+	debugInfo("Unique coauthors without committer")
+	debugInfo(strings.Join(coauthors, ","))
+
+	sortByLength(coauthors)
+	debugInfo("Sorted unique coauthors without committer")
+	debugInfo(strings.Join(coauthors, ","))
+
+	return coauthors
+}
+
+func parseCoauthors(file *os.File) []Author {
+	var coauthors []Author
 
 	authorOrCoauthorMatcher := regexp.MustCompile("(?i).*(author)+.+<+.*>+")
 	scanner := bufio.NewScanner(file)
@@ -33,24 +52,44 @@ func collectCoauthorsFromWipCommits(file *os.File) []Author {
 		line := scanner.Text()
 		if authorOrCoauthorMatcher.MatchString(line) {
 			author := stripToAuthor(line)
-
-			// committer of this commit should
-			// not be included as a co-author
-			if strings.Contains(author, committerEmail) {
-				continue
-			}
-			coauthorsHashSet[author] = true
+			coauthors = append(coauthors, author)
 		}
 	}
-
-	coauthors := make([]string, 0, len(coauthorsHashSet))
-
-	for k := range coauthorsHashSet {
-		coauthors = append(coauthors, k)
-	}
-	sort.Sort(byLength(coauthors))
-
 	return coauthors
+}
+
+func stripToAuthor(line string) Author {
+	return strings.TrimSpace(strings.Join(strings.Split(line, ":")[1:], ""))
+}
+
+func sortByLength(slice []string) {
+	sort.Slice(slice, func(i, j int) bool {
+		return len(slice[i]) < len(slice[j])
+	})
+}
+
+func removeElementsContaining(slice []string, containsFilter string) []string {
+	var result []string
+
+	for _, entry := range slice {
+		if !strings.Contains(entry, containsFilter) {
+			result = append(result, entry)
+		}
+	}
+	return result
+}
+
+func removeDuplicateValues(slice []string) []string {
+	var result []string
+
+	keys := make(map[string]bool)
+	for _, entry := range slice {
+		if _, value := keys[entry]; !value {
+			keys[entry] = true
+			result = append(result, entry)
+		}
+	}
+	return result
 }
 
 func appendCoauthorsToSquashMsg(workingDir string) error {
@@ -66,15 +105,13 @@ func appendCoauthorsToSquashMsg(workingDir string) error {
 
 	defer file.Close()
 
+	// read from .git/SQUASH_MSG
 	coauthors := collectCoauthorsFromWipCommits(file)
 
 	if len(coauthors) > 0 {
-		coauthorSuffix := "\n\n"
-		coauthorSuffix += "# mob automatically added all co-authors from WIP commits\n"
-		coauthorSuffix += "# add missing co-authors manually\n"
+		coauthorSuffix := createCommitMessage(coauthors)
 
-		coauthorSuffix += coauthorsForCommitMsg(coauthors)
-
+		// append to .git/SQUASH_MSG
 		writer := bufio.NewWriter(file)
 		_, err = writer.WriteString(coauthorSuffix)
 		err = writer.Flush()
@@ -83,28 +120,12 @@ func appendCoauthorsToSquashMsg(workingDir string) error {
 	return err
 }
 
-func coauthorsForCommitMsg(coauthors []Author) string {
-	var commitMsg string
-
+func createCommitMessage(coauthors []Author) string {
+	commitMessage := "\n\n"
+	commitMessage += "# mob automatically added all co-authors from WIP commits\n"
+	commitMessage += "# add missing co-authors manually\n"
 	for _, coauthor := range coauthors {
-		commitMsg += fmt.Sprintf("Co-authored-by: %s\n", coauthor)
+		commitMessage += fmt.Sprintf("Co-authored-by: %s\n", coauthor)
 	}
-
-	return commitMsg
-}
-
-type byLength []string
-
-func (s byLength) Len() int {
-	return len(s)
-}
-func (s byLength) Swap(i, j int) {
-	s[i], s[j] = s[j], s[i]
-}
-func (s byLength) Less(i, j int) bool {
-	return len(s[i]) < len(s[j])
-}
-
-func stripToAuthor(line string) string {
-	return strings.TrimSpace(strings.Join(strings.Split(line, ":")[1:], ""))
+	return commitMessage
 }
