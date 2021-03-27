@@ -220,35 +220,37 @@ func config(c Configuration) {
 	say("MOB_TIMER" + "=" + c.MobTimer)
 }
 
-func parseArgs(args []string, configuration Configuration) (command string, parameters []string, configuration2 Configuration) {
+func parseArgs(args []string, configuration Configuration) (command string, parameters []string, newConfiguration Configuration) {
+	newConfiguration = configuration
+
 	for i := 1; i < len(args); i++ {
 		arg := args[i]
 		switch arg {
 		case "--include-uncommitted-changes", "-i":
-			configuration.MobStartIncludeUncommittedChanges = true
+			newConfiguration.MobStartIncludeUncommittedChanges = true
 		case "--debug":
 			// ignore this, already parsed
 		case "--stay", "-s":
-			configuration.MobNextStay = true
-			configuration.MobNextStaySet = true
+			newConfiguration.MobNextStay = true
+			newConfiguration.MobNextStaySet = true
 		case "--return-to-base-branch", "-r":
-			configuration.MobNextStay = false
-			configuration.MobNextStaySet = true
+			newConfiguration.MobNextStay = false
+			newConfiguration.MobNextStaySet = true
 		case "--branch", "-b":
 			if i+1 != len(args) {
-				configuration.WipBranchQualifier = args[i+1]
-				configuration.WipBranchQualifierSet = true
+				newConfiguration.WipBranchQualifier = args[i+1]
+				newConfiguration.WipBranchQualifierSet = true
 			}
 			i++ // skip consumed parameter
 		case "--message", "-m":
 			if i+1 != len(args) {
-				configuration.WipCommitMessage = args[i+1]
+				newConfiguration.WipCommitMessage = args[i+1]
 			}
 			i++ // skip consumed parameter
 		case "--squash":
-			configuration.MobDoneSquash = true
+			newConfiguration.MobDoneSquash = true
 		case "--no-squash":
-			configuration.MobDoneSquash = false
+			newConfiguration.MobDoneSquash = false
 		default:
 			if i == 1 {
 				command = arg
@@ -258,7 +260,6 @@ func parseArgs(args []string, configuration Configuration) (command string, para
 		}
 	}
 
-	configuration2 = configuration
 	return
 }
 
