@@ -116,7 +116,7 @@ func markSquashWip(content string, configuration Configuration) string {
 	var squashNext = false
 
 	for i, line := range lines {
-		if squashNext {
+		if squashNext && isCommitLine(line) {
 			result[i] = strings.Replace(line, "pick ", "squash ", 1)
 		} else {
 			result[i] = line
@@ -128,5 +128,9 @@ func markSquashWip(content string, configuration Configuration) string {
 }
 
 func isWipCommitLine(line string, configuration Configuration) bool {
-	return strings.HasPrefix(line, "pick ") && strings.HasSuffix(line, configuration.WipCommitMessage)
+	return isCommitLine(line) && strings.HasSuffix(line, configuration.WipCommitMessage)
+}
+
+func isCommitLine(line string) bool {
+	return strings.HasPrefix(line, "pick ")
 }
