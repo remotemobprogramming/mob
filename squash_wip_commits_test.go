@@ -80,8 +80,8 @@ func TestMarkSquashWip_wipCommitFollowedByManualCommit(t *testing.T) {
 		"pick c51a56d manual commit\n" +
 		"\n" +
 		"# Rebase ..."
-	expected := "squash 01a9a31 " + configuration.WipCommitMessage + "\n" +
-		"pick c51a56d manual commit\n" +
+	expected := "pick 01a9a31 " + configuration.WipCommitMessage + "\n" +
+		"squash c51a56d manual commit\n" +
 		"\n" +
 		"# Rebase ..."
 
@@ -98,10 +98,10 @@ func TestMarkSquashWip_manyWipCommitsFollowedByManualCommit(t *testing.T) {
 		"pick c51a56d manual commit\n" +
 		"\n" +
 		"# Rebase ..."
-	expected := "squash 01a9a31 " + configuration.WipCommitMessage + "\n" +
+	expected := "pick 01a9a31 " + configuration.WipCommitMessage + "\n" +
 		"squash 01a9a32 " + configuration.WipCommitMessage + "\n" +
 		"squash 01a9a33 " + configuration.WipCommitMessage + "\n" +
-		"pick c51a56d manual commit\n" +
+		"squash c51a56d manual commit\n" +
 		"\n" +
 		"# Rebase ..."
 
@@ -113,12 +113,20 @@ func TestMarkSquashWip_manyWipCommitsFollowedByManualCommit(t *testing.T) {
 func markSquashWip(content string, configuration Configuration) string {
 	lines := strings.Split(strings.TrimSpace(content), "\n")
 	var result = make([]string, len(lines))
+	var squashNext = false
+
 	for i, line := range lines {
-		if strings.HasPrefix(line, "pick ") && strings.HasSuffix(line, configuration.WipCommitMessage) {
+		if squashNext {
 			result[i] = strings.Replace(line, "pick ", "squash ", 1)
 		} else {
 			result[i] = line
 		}
+		squashNext = isWipCommitLine(line, configuration)
 	}
+
 	return strings.Join(result, "\n")
+}
+
+func isWipCommitLine(line string, configuration Configuration) bool {
+	return strings.HasPrefix(line, "pick ") && strings.HasSuffix(line, configuration.WipCommitMessage)
 }
