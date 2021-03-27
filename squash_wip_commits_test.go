@@ -1,6 +1,7 @@
 package main
 
 import (
+	"os/exec"
 	"strings"
 	"testing"
 )
@@ -53,7 +54,7 @@ func TestMarkSquashWip_singleManualCommit(t *testing.T) {
 		"\n" +
 		"# Rebase ..."
 
-	result := rebaseMarkSquashWip(lines, configuration)
+	result := markPostWipCommitsForSquashing(strings.Split(lines, "\n"), configuration)
 
 	equals(t, lines, result)
 }
@@ -65,7 +66,7 @@ func TestMarkSquashWip_manyManualCommits(t *testing.T) {
 		"\n" +
 		"# Rebase ..."
 
-	result := rebaseMarkSquashWip(lines, configuration)
+	result := markPostWipCommitsForSquashing(strings.Split(lines, "\n"), configuration)
 
 	equals(t, lines, result)
 }
@@ -81,7 +82,7 @@ func TestMarkSquashWip_wipCommitFollowedByManualCommit(t *testing.T) {
 		"\n" +
 		"# Rebase ..."
 
-	result := rebaseMarkSquashWip(lines, configuration)
+	result := markPostWipCommitsForSquashing(strings.Split(lines, "\n"), configuration)
 
 	equals(t, expected, result)
 }
@@ -101,7 +102,7 @@ func TestMarkSquashWip_manyWipCommitsFollowedByManualCommit(t *testing.T) {
 		"\n" +
 		"# Rebase ..."
 
-	result := rebaseMarkSquashWip(lines, configuration)
+	result := markPostWipCommitsForSquashing(strings.Split(lines, "\n"), configuration)
 
 	equals(t, expected, result)
 }
@@ -129,57 +130,56 @@ func TestCommentWipCommits_oneWipAndOneManualCommit(t *testing.T) {
 		"\n" +
 		"# Please enter ..."
 
-	result := commentWipCommits(lines, configuration)
+	result := commentWipCommits(strings.Split(lines, "\n"), configuration)
 
 	equals(t, expected, result)
 }
 
-func commentWipCommits(content string, configuration Configuration) string {
-	lines := strings.Split(strings.TrimSpace(content), "\n")
-	var result = make([]string, len(lines))
+func TestSquashWipCommitGitEditor(t *testing.T) {
+	command := exec.Command("go", "run", "mob.go", "squash_wip_commits.go", "coauthors.go", "swc", "--git-editor")
+	stdin, _ := command.StdinPipe()
+	stdin.Write([]byte("# This is a combination of 2 commits.\n" +
+		"# This is the 1st commit message:\n \n" +
+		"mob next [ci-skip] [ci skip] [skip ci]\n \n" +
+		"# This is the commit message #2:\n \n" +
+		"new file\n \n" +
+		"# Please enter the commit message for your changes. Lines starting\n"))
+	stdin.Close()
 
-	for i, line := range lines {
-		if !isComment(line) && line == configuration.WipCommitMessage {
-			result[i] = "# " + line
-		} else {
-			result[i] = line
-		}
-	}
+	outputBinary, _ := command.CombinedOutput()
+	output := string(outputBinary)
+	command.Run()
 
-	return strings.Join(result, "\n")
+	expected := "# This is a combination of 2 commits.\n" +
+		"# This is the 1st commit message:\n \n" +
+		"# mob next [ci-skip] [ci skip] [skip ci]\n \n" +
+		"# This is the commit message #2:\n \n" +
+		"new file\n \n" +
+		"# Please enter the commit message for your changes. Lines starting\n"
+	equals(t, expected, output)
 }
 
-func isComment(line string) bool {
-	return strings.HasPrefix(line, "#")
-}
+func TestSquashWipCommitGitSequenceEditor(t *testing.T) {
+	configuration = getDefaultConfiguration()
+	command := exec.Command("go", "run", "mob.go", "squash_wip_commits.go", "coauthors.go", "swc", "--git-sequence-editor")
+	stdin, _ := command.StdinPipe()
+	stdin.Write([]byte("pick 01a9a31 " + configuration.WipCommitMessage + "\n" +
+		"pick 01a9a32 " + configuration.WipCommitMessage + "\n" +
+		"pick 01a9a33 " + configuration.WipCommitMessage + "\n" +
+		"pick c51a56d manual commit\n" +
+		"\n" +
+		"# Rebase ...\n"))
+	stdin.Close()
 
-func endsWithWipCommit(configuration Configuration) bool {
-	log := silentgit("--no-pager", "log", "--pretty=format:%s%n")
-	lines := strings.Split(strings.TrimSpace(log), "\n")
-	return lines[0] == configuration.WipCommitMessage
-}
+	outputBinary, _ := command.CombinedOutput()
+	output := string(outputBinary)
+	command.Run()
 
-func rebaseMarkSquashWip(content string, configuration Configuration) string {
-	lines := strings.Split(strings.TrimSpace(content), "\n")
-	var result = make([]string, len(lines))
-	var squashNext = false
-
-	for i, line := range lines {
-		if squashNext && isRebaseCommitLine(line) {
-			result[i] = strings.Replace(line, "pick ", "squash ", 1)
-		} else {
-			result[i] = line
-		}
-		squashNext = isRebaseWipCommitLine(line, configuration)
-	}
-
-	return strings.Join(result, "\n")
-}
-
-func isRebaseWipCommitLine(line string, configuration Configuration) bool {
-	return isRebaseCommitLine(line) && strings.HasSuffix(line, configuration.WipCommitMessage)
-}
-
-func isRebaseCommitLine(line string) bool {
-	return strings.HasPrefix(line, "pick ")
+	expected := "pick 01a9a31 " + configuration.WipCommitMessage + "\n" +
+		"squash 01a9a32 " + configuration.WipCommitMessage + "\n" +
+		"squash 01a9a33 " + configuration.WipCommitMessage + "\n" +
+		"squash c51a56d manual commit\n" +
+		"\n" +
+		"# Rebase ...\n"
+	equals(t, expected, output)
 }

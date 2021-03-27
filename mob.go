@@ -299,6 +299,14 @@ func execute(command string, parameter []string, configuration Configuration) {
 		}
 	case "moo":
 		moo(configuration)
+	case "swc", "squash-wip-commits":
+		if len(parameter) > 0 && parameter[0] == "--git-editor" {
+			squashWipCommitsGitEditor(configuration)
+		} else if len(parameter) > 0 && parameter[0] == "--git-sequence-editor" {
+			squashWipCommitsGitSequenceEditor(configuration)
+		} else {
+			squashWipCommits(configuration)
+		}
 	case "version", "--version", "-v":
 		version()
 	case "help", "--help", "-h":
