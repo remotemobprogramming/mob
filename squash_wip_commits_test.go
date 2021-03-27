@@ -139,9 +139,7 @@ func commentWipCommits(content string, configuration Configuration) string {
 	var result = make([]string, len(lines))
 
 	for i, line := range lines {
-		if isComment(line) {
-			result[i] = line
-		} else if line == configuration.WipCommitMessage {
+		if !isComment(line) && line == configuration.WipCommitMessage {
 			result[i] = "# " + line
 		} else {
 			result[i] = line
