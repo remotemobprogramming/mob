@@ -901,6 +901,18 @@ func setup(t *testing.T) *string {
 	return output
 }
 
+func localSetup(t *testing.T) (output *string, configuration Configuration) {
+	configuration = getDefaultConfiguration()
+	configuration.MobNextStay = false
+	output = captureOutput()
+	createTestbed(t)
+	assertOnBranch(t, "master")
+	equals(t, []string{"master"}, gitBranches())
+	equals(t, []string{"origin/master"}, gitRemoteBranches())
+	assertNoMobSessionBranches(t, "mob-session")
+	return output, configuration
+}
+
 func captureOutput() *string {
 	messages := ""
 	printToConsole = func(text string) {
