@@ -92,8 +92,9 @@ func removeDuplicateValues(slice []string) []string {
 	return result
 }
 
-func appendCoauthorsToSquashMsg(workingDir string) error {
-	squashMsgPath := path.Join(workingDir, ".git", "SQUASH_MSG")
+func appendCoauthorsToSquashMsg(gitDir string) error {
+	squashMsgPath := path.Join(gitDir, "SQUASH_MSG")
+	debugInfo("opening " + squashMsgPath)
 	file, err := os.OpenFile(squashMsgPath, os.O_APPEND|os.O_RDWR, 0644)
 	if err != nil {
 		if err == os.ErrNotExist {
@@ -105,13 +106,13 @@ func appendCoauthorsToSquashMsg(workingDir string) error {
 
 	defer file.Close()
 
-	// read from .git/SQUASH_MSG
+	// read from repo/.git/SQUASH_MSG
 	coauthors := collectCoauthorsFromWipCommits(file)
 
 	if len(coauthors) > 0 {
 		coauthorSuffix := createCommitMessage(coauthors)
 
-		// append to .git/SQUASH_MSG
+		// append to repo/.git/SQUASH_MSG
 		writer := bufio.NewWriter(file)
 		_, err = writer.WriteString(coauthorSuffix)
 		err = writer.Flush()

@@ -37,7 +37,8 @@ createrepo "${localdir}"
 
 # populate an initial import
 echo "Populating and pushing"
-(cd "${localdir}" && echo "test" >test.txt && git add . && git commit -m "initial import" && git push --set-upstream --all origin)
+(cd "${localdir}" && echo "test" >test.txt && mkdir subdir && echo "subdir" >subdir/subdir.txt)
+(cd "${localdir}" && git add . && git commit -m "initial import" && git push --set-upstream --all origin)
 
 # create more local repos
 for name in localother alice bob

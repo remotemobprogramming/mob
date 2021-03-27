@@ -65,7 +65,6 @@ func TestParseArgsMessage(t *testing.T) {
 func TestDetermineBranches(t *testing.T) {
 	configuration = getDefaultConfiguration()
 	configuration.WipBranchQualifierSeparator = "-"
-	Debug = true
 
 	assertDetermineBranches(t, "master", "", []string{}, "master", "mob-session")
 	assertDetermineBranches(t, "mob-session", "", []string{}, "master", "mob-session")
@@ -410,7 +409,6 @@ func TestStartNextStartWithBranch(t *testing.T) {
 func TestStartNextOnFeatureWithBranch(t *testing.T) {
 	setup(t)
 	configuration.WipBranchQualifier = "green"
-	Debug = true
 	git("checkout", "-b", "feature1")
 	git("push", "origin", "feature1", "--set-upstream")
 	assertOnBranch(t, "feature1")
@@ -848,6 +846,30 @@ func TestDoneMerge(t *testing.T) {
 	start(configuration)
 	done(configuration)
 	assertOutputContains(t, output, "   git commit")
+}
+
+func TestStartAndNextInSubdir(t *testing.T) {
+	setup(t)
+
+	setWorkingDir("/tmp/mob/local/subdir")
+	start(configuration)
+	createFile(t, "example.txt", "content")
+	next(configuration)
+
+	setWorkingDir("/tmp/mob/localother/subdir")
+	start(configuration)
+	createFile(t, "example2.txt", "content")
+	createFile(t, "../example3.txt", "content")
+	next(configuration)
+
+	setWorkingDir("/tmp/mob/local/subdir")
+	start(configuration)
+	done(configuration)
+
+	setWorkingDir("/tmp/mob/local")
+	assertFileExist(t, "subdir/example.txt")
+	assertFileExist(t, "subdir/example2.txt")
+	assertFileExist(t, "example3.txt")
 }
 
 func TestIsGitIdentifiesGitRepo(t *testing.T) {

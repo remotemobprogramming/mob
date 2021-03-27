@@ -676,7 +676,7 @@ func done(configuration Configuration) {
 		git("push", "--no-verify", configuration.RemoteName, "--delete", currentWipBranch)
 
 		say(getCachedChanges())
-		err := appendCoauthorsToSquashMsg(workingDir)
+		err := appendCoauthorsToSquashMsg(gitDir())
 		if err != nil {
 			sayError(err.Error())
 		}
@@ -686,6 +686,10 @@ func done(configuration Configuration) {
 		git("branch", "-D", currentWipBranch)
 		sayInfo("someone else already ended your mob session")
 	}
+}
+
+func gitDir() string {
+	return strings.TrimSpace(silentgit("rev-parse", "--absolute-git-dir"))
 }
 
 func squashOrNoCommit(configuration Configuration) string {
