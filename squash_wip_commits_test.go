@@ -55,7 +55,7 @@ func TestMarkSquashWip_singleManualCommit(t *testing.T) {
 	configuration = getDefaultConfiguration()
 	lines := "pick c51a56d new file\n" +
 		"\n" +
-		"# Rebase ...`"
+		"# Rebase ..."
 
 	result := markSquashWip(lines, configuration)
 
@@ -67,7 +67,7 @@ func TestMarkSquashWip_manyManualCommits(t *testing.T) {
 	lines := "pick c51a56d new file\n" +
 		"pick 63ef7a4 another commit\n" +
 		"\n" +
-		"# Rebase ...`"
+		"# Rebase ..."
 
 	result := markSquashWip(lines, configuration)
 
