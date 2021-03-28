@@ -7,6 +7,7 @@ import (
 	"strings"
 )
 
+//TODO chicken and egg problem
 func squashWipCommits(configuration Configuration) {
 	os.Setenv("GIT_EDITOR", "mob squash-wip-commits --git-editor")
 	os.Setenv("GIT_SEQUENCE_EDITOR", "mob squash-wip-commits --git-sequence-editor")
