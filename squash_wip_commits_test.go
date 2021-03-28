@@ -8,7 +8,12 @@ import (
 
 // TODO if last commit is wip commit, exit with warning
 
-func xTestSquashWipCommits_acceptance(t *testing.T) {
+// TODO mob.sh not closing the file when handling GIT editing
+// GIT_EDITOR="sed -i -r 's/(mob next \[ci-skip\] \[ci skip\] \[skip ci\])/# \0/'" GIT_SEQUENCE_EDITOR="sed -i -r -z 's/([0-9a-f]+ mob next \[ci-skip\] \[ci skip\] \[skip ci\]\n)pick/\1squash/g'" git rebase -i
+// GIT_EDITOR="mob swc --git-editor" GIT_SEQUENCE_EDITOR="sed -i -r -z 's/([0-9a-f]+ mob next \[ci-skip\] \[ci skip\] \[skip ci\]\n)pick/\1squash/g'" git rebase -i HEAD~2
+// GIT_EDITOR="sed -i -r 's/(mob next \[ci-skip\] \[ci skip\] \[skip ci\])/# \0/'" GIT_SEQUENCE_EDITOR="mob swc --git-sequence-editor" git rebase -i HEAD~2
+// GIT_EDITOR="mob swc --git-editor" GIT_SEQUENCE_EDITOR="mob swc --git-sequence-editor" git rebase -i HEAD~2
+func TestSquashWipCommits_acceptance(t *testing.T) {
 	_, configuration := localSetup(t)
 	start(configuration)
 	createFile(t, "file2.txt", "owqe")

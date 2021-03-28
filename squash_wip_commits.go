@@ -8,7 +8,12 @@ import (
 )
 
 func squashWipCommits(configuration Configuration) {
-	fmt.Println("TODO")
+	os.Setenv("GIT_EDITOR", "mob squash-wip-commits --git-editor")
+	os.Setenv("GIT_SEQUENCE_EDITOR", "mob squash-wip-commits --git-sequence-editor")
+	currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), gitBranches(), configuration)
+	//TODO shouldnt this always to TrimSpace?
+	mergeBase := strings.TrimSpace(silentgit("merge-base", currentWipBranch, currentBaseBranch))
+	silentgit("rebase", "-i", mergeBase)
 }
 
 // used for non-interactive fixing of commit messages of squashed commits
