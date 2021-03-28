@@ -18,7 +18,9 @@ func xTestSquashWipCommits_acceptance(t *testing.T) {
 
 	squashWipCommits(configuration)
 
-	equals(t, false, endsWithWipCommit(configuration))
+	equals(t, []string{
+		"new file",
+	}, commitsOnCurrentBranch(configuration))
 }
 
 func TestCommitsOnCurrentBranch(t *testing.T) {
