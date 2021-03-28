@@ -1,18 +1,11 @@
 package main
 
 import (
-	"os/exec"
-	"strings"
+	"io/ioutil"
 	"testing"
 )
 
 // TODO if last commit is wip commit, exit with warning
-
-// TODO mob.sh not closing the file when handling GIT editing
-// GIT_EDITOR="sed -i -r 's/(mob next \[ci-skip\] \[ci skip\] \[skip ci\])/# \0/'" GIT_SEQUENCE_EDITOR="sed -i -r -z 's/([0-9a-f]+ mob next \[ci-skip\] \[ci skip\] \[skip ci\]\n)pick/\1squash/g'" git rebase -i
-// GIT_EDITOR="mob swc --git-editor" GIT_SEQUENCE_EDITOR="sed -i -r -z 's/([0-9a-f]+ mob next \[ci-skip\] \[ci skip\] \[skip ci\]\n)pick/\1squash/g'" git rebase -i HEAD~2
-// GIT_EDITOR="sed -i -r 's/(mob next \[ci-skip\] \[ci skip\] \[skip ci\])/# \0/'" GIT_SEQUENCE_EDITOR="mob swc --git-sequence-editor" git rebase -i HEAD~2
-// GIT_EDITOR="mob swc --git-editor" GIT_SEQUENCE_EDITOR="mob swc --git-sequence-editor" git rebase -i HEAD~2
 func TestSquashWipCommits_acceptance(t *testing.T) {
 	_, configuration := localSetup(t)
 	start(configuration)
@@ -87,30 +80,30 @@ func TestEndsWithWipCommit_wipThenManualCommit(t *testing.T) {
 
 func TestMarkSquashWip_singleManualCommit(t *testing.T) {
 	configuration = getDefaultConfiguration()
-	lines := "pick c51a56d new file\n" +
+	input := "pick c51a56d new file\n" +
 		"\n" +
 		"# Rebase ..."
 
-	result := markPostWipCommitsForSquashing(strings.Split(lines, "\n"), configuration)
+	result := markPostWipCommitsForSquashing(input, configuration)
 
-	equals(t, lines, result)
+	equals(t, input, result)
 }
 
 func TestMarkSquashWip_manyManualCommits(t *testing.T) {
 	configuration = getDefaultConfiguration()
-	lines := "pick c51a56d new file\n" +
+	input := "pick c51a56d new file\n" +
 		"pick 63ef7a4 another commit\n" +
 		"\n" +
 		"# Rebase ..."
 
-	result := markPostWipCommitsForSquashing(strings.Split(lines, "\n"), configuration)
+	result := markPostWipCommitsForSquashing(input, configuration)
 
-	equals(t, lines, result)
+	equals(t, input, result)
 }
 
 func TestMarkSquashWip_wipCommitFollowedByManualCommit(t *testing.T) {
 	configuration = getDefaultConfiguration()
-	lines := "pick 01a9a31 " + configuration.WipCommitMessage + "\n" +
+	input := "pick 01a9a31 " + configuration.WipCommitMessage + "\n" +
 		"pick c51a56d manual commit\n" +
 		"\n" +
 		"# Rebase ..."
@@ -119,14 +112,14 @@ func TestMarkSquashWip_wipCommitFollowedByManualCommit(t *testing.T) {
 		"\n" +
 		"# Rebase ..."
 
-	result := markPostWipCommitsForSquashing(strings.Split(lines, "\n"), configuration)
+	result := markPostWipCommitsForSquashing(input, configuration)
 
 	equals(t, expected, result)
 }
 
 func TestMarkSquashWip_manyWipCommitsFollowedByManualCommit(t *testing.T) {
 	configuration = getDefaultConfiguration()
-	lines := "pick 01a9a31 " + configuration.WipCommitMessage + "\n" +
+	input := "pick 01a9a31 " + configuration.WipCommitMessage + "\n" +
 		"pick 01a9a32 " + configuration.WipCommitMessage + "\n" +
 		"pick 01a9a33 " + configuration.WipCommitMessage + "\n" +
 		"pick c51a56d manual commit\n" +
@@ -139,14 +132,14 @@ func TestMarkSquashWip_manyWipCommitsFollowedByManualCommit(t *testing.T) {
 		"\n" +
 		"# Rebase ..."
 
-	result := markPostWipCommitsForSquashing(strings.Split(lines, "\n"), configuration)
+	result := markPostWipCommitsForSquashing(input, configuration)
 
 	equals(t, expected, result)
 }
 
 func TestCommentWipCommits_oneWipAndOneManualCommit(t *testing.T) {
 	configuration = getDefaultConfiguration()
-	lines := "# This is a combination of 2 commits.\n" +
+	input := "# This is a combination of 2 commits.\n" +
 		"# This is the 1st commit message:\n" +
 		"\n" +
 		configuration.WipCommitMessage + "\n" +
@@ -167,56 +160,52 @@ func TestCommentWipCommits_oneWipAndOneManualCommit(t *testing.T) {
 		"\n" +
 		"# Please enter ..."
 
-	result := commentWipCommits(strings.Split(lines, "\n"), configuration)
+	result := commentWipCommits(input, configuration)
 
 	equals(t, expected, result)
 }
 
 func TestSquashWipCommitGitEditor(t *testing.T) {
-	command := exec.Command("go", "run", "mob.go", "squash_wip_commits.go", "coauthors.go", "swc", "--git-editor")
-	stdin, _ := command.StdinPipe()
-	stdin.Write([]byte("# This is a combination of 2 commits.\n" +
-		"# This is the 1st commit message:\n \n" +
-		"mob next [ci-skip] [ci skip] [skip ci]\n \n" +
-		"# This is the commit message #2:\n \n" +
-		"new file\n \n" +
-		"# Please enter the commit message for your changes. Lines starting\n"))
-	stdin.Close()
-
-	outputBinary, _ := command.CombinedOutput()
-	output := string(outputBinary)
-	command.Run()
-
+	createTestbed(t)
+	path := createFile(t, "commits",
+		"# This is a combination of 2 commits.\n"+
+			"# This is the 1st commit message:\n \n"+
+			"mob next [ci-skip] [ci skip] [skip ci]\n \n"+
+			"# This is the commit message #2:\n \n"+
+			"new file\n \n"+
+			"# Please enter the commit message for your changes. Lines starting\n")
 	expected := "# This is a combination of 2 commits.\n" +
 		"# This is the 1st commit message:\n \n" +
 		"# mob next [ci-skip] [ci skip] [skip ci]\n \n" +
 		"# This is the commit message #2:\n \n" +
 		"new file\n \n" +
 		"# Please enter the commit message for your changes. Lines starting\n"
-	equals(t, expected, output)
+
+	squashWipCommitsGitEditor(path, getDefaultConfiguration())
+
+	result, _ := ioutil.ReadFile(path)
+	equals(t, expected, string(result))
 }
 
 func TestSquashWipCommitGitSequenceEditor(t *testing.T) {
+	createTestbed(t)
 	configuration = getDefaultConfiguration()
-	command := exec.Command("go", "run", "mob.go", "squash_wip_commits.go", "coauthors.go", "swc", "--git-sequence-editor")
-	stdin, _ := command.StdinPipe()
-	stdin.Write([]byte("pick 01a9a31 " + configuration.WipCommitMessage + "\n" +
-		"pick 01a9a32 " + configuration.WipCommitMessage + "\n" +
-		"pick 01a9a33 " + configuration.WipCommitMessage + "\n" +
-		"pick c51a56d manual commit\n" +
-		"\n" +
-		"# Rebase ...\n"))
-	stdin.Close()
-
-	outputBinary, _ := command.CombinedOutput()
-	output := string(outputBinary)
-	command.Run()
-
+	path := createFile(t, "rebase",
+		"pick 01a9a31 "+configuration.WipCommitMessage+"\n"+
+			"pick 01a9a32 "+configuration.WipCommitMessage+"\n"+
+			"pick 01a9a33 "+configuration.WipCommitMessage+"\n"+
+			"pick c51a56d manual commit\n"+
+			"\n"+
+			"# Rebase ...\n")
 	expected := "pick 01a9a31 " + configuration.WipCommitMessage + "\n" +
 		"squash 01a9a32 " + configuration.WipCommitMessage + "\n" +
 		"squash 01a9a33 " + configuration.WipCommitMessage + "\n" +
 		"squash c51a56d manual commit\n" +
 		"\n" +
 		"# Rebase ...\n"
-	equals(t, expected, output)
+
+	squashWipCommitsGitSequenceEditor(path, getDefaultConfiguration())
+
+	result, _ := ioutil.ReadFile(path)
+	equals(t, expected, string(result))
 }

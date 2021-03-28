@@ -1,8 +1,8 @@
 package main
 
 import (
-	"bufio"
-	"fmt"
+	"io"
+	"io/ioutil"
 	"os"
 	"strings"
 )
@@ -17,42 +17,46 @@ func squashWipCommits(configuration Configuration) {
 }
 
 // used for non-interactive fixing of commit messages of squashed commits
-func squashWipCommitsGitEditor(configuration Configuration) {
-	scanner := bufio.NewScanner(os.Stdin)
-	var lines []string
-
-	for scanner.Scan() {
-		lines = append(lines, scanner.Text())
+func squashWipCommitsGitEditor(fileName string, configuration Configuration) {
+	file, err := os.OpenFile(fileName, os.O_RDWR, 0666)
+	input, err := ioutil.ReadAll(file)
+	if err != nil {
+		panic(err)
 	}
 
-	result := commentWipCommits(lines, configuration)
-	fmt.Println(result)
+	result := commentWipCommits(string(input), configuration)
+
+	file.Seek(0, io.SeekStart)
+	file.Truncate(0)
+	file.WriteString(result)
+	file.Close()
 }
 
 // used for non-interactive rebasing when squashing wip commits
-func squashWipCommitsGitSequenceEditor(configuration Configuration) {
-	scanner := bufio.NewScanner(os.Stdin)
-	var lines []string
-
-	for scanner.Scan() {
-		lines = append(lines, scanner.Text())
+func squashWipCommitsGitSequenceEditor(fileName string, configuration Configuration) {
+	file, err := os.OpenFile(fileName, os.O_RDWR, 0666)
+	input, err := ioutil.ReadAll(file)
+	if err != nil {
+		panic(err)
 	}
 
-	result := markPostWipCommitsForSquashing(lines, configuration)
-	fmt.Println(result)
+	result := markPostWipCommitsForSquashing(string(input), configuration)
+
+	file.Seek(0, io.SeekStart)
+	file.Truncate(0)
+	file.WriteString(result)
+	file.Close()
 }
 
-func commentWipCommits(lines []string, configuration Configuration) string {
-	var result = make([]string, len(lines))
-
-	for i, line := range lines {
+func commentWipCommits(input string, configuration Configuration) string {
+	var result []string
+	for _, line := range strings.Split(input, "\n") {
 		if !isComment(line) && line == configuration.WipCommitMessage {
-			result[i] = "# " + line
+			result = append(result, "# "+line)
 		} else {
-			result[i] = line
+			result = append(result, line)
 		}
 	}
-
 	return strings.Join(result, "\n")
 }
 
@@ -72,15 +76,15 @@ func commitsOnCurrentBranch(configuration Configuration) []string {
 	return lines
 }
 
-func markPostWipCommitsForSquashing(lines []string, configuration Configuration) string {
-	var result = make([]string, len(lines))
-	var squashNext = false
+func markPostWipCommitsForSquashing(input string, configuration Configuration) string {
+	var result []string
 
-	for i, line := range lines {
+	var squashNext = false
+	for _, line := range strings.Split(input, "\n") {
 		if squashNext && isRebaseCommitLine(line) {
-			result[i] = strings.Replace(line, "pick ", "squash ", 1)
+			result = append(result, strings.Replace(line, "pick ", "squash ", 1))
 		} else {
-			result[i] = line
+			result = append(result, line)
 		}
 		squashNext = isRebaseWipCommitLine(line, configuration)
 	}

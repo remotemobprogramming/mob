@@ -979,12 +979,14 @@ func createFileAndCommitIt(t *testing.T, filename string, content string, commit
 	git("commit", "-m", commitMessage)
 }
 
-func createFile(t *testing.T, filename string, content string) {
+func createFile(t *testing.T, filename string, content string) (path string) {
 	d1 := []byte(content)
-	err := ioutil.WriteFile(workingDir+"/"+filename, d1, 0644)
+	path = workingDir + "/" + filename
+	err := ioutil.WriteFile(path, d1, 0644)
 	if err != nil {
 		failWithFailure(t, "creating file "+filename+" with content "+content, "error")
 	}
+	return
 }
 
 func assertOnBranch(t *testing.T, branch string) {
