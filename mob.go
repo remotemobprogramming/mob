@@ -647,11 +647,11 @@ func next(configuration Configuration) {
 }
 
 func getChangesOfLastCommit() string {
-	return strings.TrimSpace(silentgit("diff", "HEAD^1", "--stat"))
+	return silentgit("diff", "HEAD^1", "--stat")
 }
 
 func getCachedChanges() string {
-	return strings.TrimSpace(silentgit("diff", "--cached", "--stat"))
+	return silentgit("diff", "--cached", "--stat")
 }
 
 func makeWipCommit(configuration Configuration) {
@@ -701,7 +701,7 @@ func done(configuration Configuration) {
 }
 
 func gitDir() string {
-	return strings.TrimSpace(silentgit("rev-parse", "--absolute-git-dir"))
+	return silentgit("rev-parse", "--absolute-git-dir")
 }
 
 func squashOrNoCommit(configuration Configuration) string {
@@ -731,7 +731,7 @@ func status(configuration Configuration) {
 
 func sayLastCommitsList(currentBaseBranch string, currentWipBranch string) {
 	log := silentgit("--no-pager", "log", currentBaseBranch+".."+currentWipBranch, "--pretty=format:%h %cr <%an>", "--abbrev-commit")
-	lines := strings.Split(strings.TrimSpace(log), "\n")
+	lines := strings.Split(log, "\n")
 	if len(lines) > 5 {
 		sayInfo("This mob branch contains " + strconv.Itoa(len(lines)) + " commits. The last 5 were:")
 		lines = lines[:5]
@@ -742,7 +742,7 @@ func sayLastCommitsList(currentBaseBranch string, currentWipBranch string) {
 
 func isNothingToCommit() bool {
 	output := silentgit("status", "--short")
-	return len(strings.TrimSpace(output)) == 0
+	return len(output) == 0
 }
 
 func hasLocalCommits(branch string, configuration Configuration) bool {
@@ -750,7 +750,7 @@ func hasLocalCommits(branch string, configuration Configuration) bool {
 		"refs/heads/"+branch)
 	remote := silentgit("for-each-ref", "--format=%(objectname)",
 		"refs/remotes/"+configuration.RemoteName+"/"+branch)
-	return strings.TrimSpace(local) != strings.TrimSpace(remote)
+	return local != remote
 }
 
 func hasUncommittedChanges() bool {
@@ -794,24 +794,24 @@ func hasRemoteBranch(branch string, configuration Configuration) bool {
 }
 
 func gitBranches() []string {
-	return strings.Split(strings.TrimSpace(silentgit("branch", "--format=%(refname:short)")), "\n")
+	return strings.Split(silentgit("branch", "--format=%(refname:short)"), "\n")
 }
 
 func gitRemoteBranches() []string {
-	return strings.Split(strings.TrimSpace(silentgit("branch", "--remotes", "--format=%(refname:short)")), "\n")
+	return strings.Split(silentgit("branch", "--remotes", "--format=%(refname:short)"), "\n")
 }
 
 func gitCurrentBranch() string {
 	// upgrade to branch --show-current when git v2.21 is more widely spread
-	return strings.TrimSpace(silentgit("rev-parse", "--abbrev-ref", "HEAD"))
+	return silentgit("rev-parse", "--abbrev-ref", "HEAD")
 }
 
 func gitUserName() string {
-	return strings.TrimSpace(silentgit("config", "--get", "user.name"))
+	return silentgit("config", "--get", "user.name")
 }
 
 func gitUserEmail() string {
-	return strings.TrimSpace(silentgit("config", "--get", "user.email"))
+	return silentgit("config", "--get", "user.email")
 }
 
 func showNext(configuration Configuration) {
@@ -819,7 +819,7 @@ func showNext(configuration Configuration) {
 
 	currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), gitBranches(), configuration)
 
-	changes := strings.TrimSpace(silentgit("--no-pager", "log", currentBaseBranch+".."+currentWipBranch, "--pretty=format:%an", "--abbrev-commit"))
+	changes := silentgit("--no-pager", "log", currentBaseBranch+".."+currentWipBranch, "--pretty=format:%an", "--abbrev-commit")
 	lines := strings.Split(strings.Replace(changes, "\r\n", "\n", -1), "\n")
 	numberOfLines := len(lines)
 	debugInfo("there have been " + strconv.Itoa(numberOfLines) + " changes")
@@ -894,7 +894,7 @@ func silentgit(args ...string) string {
 		sayGitError(commandString, output, err)
 		exit(1)
 	}
-	return output
+	return strings.TrimSpace(output)
 }
 
 func git(args ...string) {

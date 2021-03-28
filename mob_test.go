@@ -520,7 +520,7 @@ func TestStartNextStay(t *testing.T) {
 
 	next(configuration)
 
-	equals(t, strings.TrimSpace(silentgit("log", "--format=%B", "-n", "1", "HEAD")), configuration.WipCommitMessage)
+	equals(t, silentgit("log", "--format=%B", "-n", "1", "HEAD"), configuration.WipCommitMessage)
 	assertOnBranch(t, "mob-session")
 }
 
@@ -953,7 +953,7 @@ func assertCommits(t *testing.T, commits int) {
 
 func assertCommitsOnBranch(t *testing.T, commits int, branchName string) {
 	result := silentgit("rev-list", "--count", branchName)
-	number, _ := strconv.Atoi(strings.TrimSpace(result))
+	number, _ := strconv.Atoi(result)
 	if number != commits {
 		failWithFailure(t, strconv.Itoa(commits)+" commits in "+workingDir, strconv.Itoa(number)+" commits in "+workingDir)
 	}

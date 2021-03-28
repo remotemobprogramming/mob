@@ -14,8 +14,7 @@ func squashWipCommits(configuration Configuration) {
 	os.Setenv("GIT_EDITOR", "mob squash-wip-commits --git-editor")
 	os.Setenv("GIT_SEQUENCE_EDITOR", "mob squash-wip-commits --git-sequence-editor")
 	currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), gitBranches(), configuration)
-	//TODO shouldnt this always to TrimSpace?
-	mergeBase := strings.TrimSpace(silentgit("merge-base", currentWipBranch, currentBaseBranch))
+	mergeBase := silentgit("merge-base", currentWipBranch, currentBaseBranch)
 	silentgit("rebase", "-i", mergeBase)
 }
 
@@ -67,7 +66,7 @@ func endsWithWipCommit(configuration Configuration) bool {
 func commitsOnCurrentBranch(configuration Configuration) []string {
 	currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), gitBranches(), configuration)
 	log := silentgit("--no-pager", "log", currentBaseBranch+".."+currentWipBranch, "--pretty=format:%s")
-	lines := strings.Split(strings.TrimSpace(log), "\n")
+	lines := strings.Split(log, "\n")
 	return lines
 }
 
