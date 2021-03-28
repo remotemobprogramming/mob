@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-func TestSquashWipCommits_acceptance(t *testing.T) {
+func xTestSquashWipCommits_acceptance(t *testing.T) {
 	_, configuration := localSetup(t)
 	start(configuration)
 	createFile(t, "file2.txt", "irrelevant")

@@ -10,7 +10,7 @@ import (
 type Replacer func(string) string
 
 //TODO chicken and egg problem
-func xsquashWipCommits(configuration Configuration) {
+func squashWipCommits(configuration Configuration) {
 	if endsWithWipCommit(configuration) {
 		sayInfo("Make sure the final commit is a manual commit before squashing")
 		exit(1)
