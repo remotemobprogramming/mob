@@ -56,9 +56,15 @@ func isComment(line string) bool {
 }
 
 func endsWithWipCommit(configuration Configuration) bool {
-	log := silentgit("--no-pager", "log", "--pretty=format:%s%n")
+	commits := commitsOnCurrentBranch(configuration)
+	return commits[0] == configuration.WipCommitMessage
+}
+
+func commitsOnCurrentBranch(configuration Configuration) []string {
+	currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), gitBranches(), configuration)
+	log := silentgit("--no-pager", "log", currentBaseBranch+".."+currentWipBranch, "--pretty=format:%s")
 	lines := strings.Split(strings.TrimSpace(log), "\n")
-	return lines[0] == configuration.WipCommitMessage
+	return lines
 }
 
 func markPostWipCommitsForSquashing(lines []string, configuration Configuration) string {

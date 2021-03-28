@@ -8,6 +8,36 @@ import (
 
 // TODO if last commit is wip commit, exit with warning
 
+func xTestSquashWipCommits_acceptance(t *testing.T) {
+	_, configuration := localSetup(t)
+	start(configuration)
+	createFile(t, "file2.txt", "owqe")
+	next(configuration)
+	start(configuration)
+	createFileAndCommitIt(t, "file1.txt", "owqe", "new file")
+
+	squashWipCommits(configuration)
+
+	equals(t, false, endsWithWipCommit(configuration))
+}
+
+func TestCommitsOnCurrentBranch(t *testing.T) {
+	_, configuration := localSetup(t)
+	createFileAndCommitIt(t, "file1.txt", "irrelevant", "not on branch")
+	start(configuration)
+	createFileAndCommitIt(t, "file2.txt", "irrelevant", "on branch")
+	createFile(t, "file3.txt", "irrelevant")
+	next(configuration)
+	start(configuration)
+
+	commits := commitsOnCurrentBranch(configuration)
+
+	equals(t, []string{
+		configuration.WipCommitMessage,
+		"on branch",
+	}, commits)
+}
+
 func TestEndsWithWipCommit_finalManualCommit(t *testing.T) {
 	_, configuration := localSetup(t)
 	start(configuration)
