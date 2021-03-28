@@ -7,6 +7,8 @@ import (
 	"strings"
 )
 
+type Replacer func(string) string
+
 //TODO chicken and egg problem
 func squashWipCommits(configuration Configuration) {
 	os.Setenv("GIT_EDITOR", "mob squash-wip-commits --git-editor")
@@ -19,29 +21,26 @@ func squashWipCommits(configuration Configuration) {
 
 // used for non-interactive fixing of commit messages of squashed commits
 func squashWipCommitsGitEditor(fileName string, configuration Configuration) {
-	file, err := os.OpenFile(fileName, os.O_RDWR, 0666)
-	input, err := ioutil.ReadAll(file)
-	if err != nil {
-		panic(err)
-	}
-
-	result := commentWipCommits(string(input), configuration)
-
-	file.Seek(0, io.SeekStart)
-	file.Truncate(0)
-	file.WriteString(result)
-	file.Close()
+	replaceFileContents(fileName, func(input string) string {
+		return commentWipCommits(input, configuration)
+	})
 }
 
-// used for non-interactive rebasing when squashing wip commits
+// used for non-interactive rebase to squash post-wip-commits
 func squashWipCommitsGitSequenceEditor(fileName string, configuration Configuration) {
+	replaceFileContents(fileName, func(input string) string {
+		return markPostWipCommitsForSquashing(input, configuration)
+	})
+}
+
+func replaceFileContents(fileName string, replacer Replacer) {
 	file, err := os.OpenFile(fileName, os.O_RDWR, 0666)
 	input, err := ioutil.ReadAll(file)
 	if err != nil {
 		panic(err)
 	}
 
-	result := markPostWipCommitsForSquashing(string(input), configuration)
+	result := replacer(string(input))
 
 	file.Seek(0, io.SeekStart)
 	file.Truncate(0)
@@ -52,7 +51,7 @@ func squashWipCommitsGitSequenceEditor(fileName string, configuration Configurat
 func commentWipCommits(input string, configuration Configuration) string {
 	var result []string
 	for _, line := range strings.Split(input, "\n") {
-		if !isComment(line) && line == configuration.WipCommitMessage {
+		if configuration.isWipCommitMessage(line) {
 			result = append(result, "# "+line)
 		} else {
 			result = append(result, line)
@@ -61,13 +60,8 @@ func commentWipCommits(input string, configuration Configuration) string {
 	return strings.Join(result, "\n")
 }
 
-func isComment(line string) bool {
-	return strings.HasPrefix(line, "#")
-}
-
 func endsWithWipCommit(configuration Configuration) bool {
-	commits := commitsOnCurrentBranch(configuration)
-	return commits[0] == configuration.WipCommitMessage
+	return configuration.isWipCommitMessage(commitsOnCurrentBranch(configuration)[0])
 }
 
 func commitsOnCurrentBranch(configuration Configuration) []string {
@@ -82,8 +76,8 @@ func markPostWipCommitsForSquashing(input string, configuration Configuration) s
 
 	var squashNext = false
 	for _, line := range strings.Split(input, "\n") {
-		if squashNext && isRebaseCommitLine(line) {
-			result = append(result, strings.Replace(line, "pick ", "squash ", 1))
+		if squashNext && isPick(line) {
+			result = append(result, markSquash(line))
 		} else {
 			result = append(result, line)
 		}
@@ -93,10 +87,14 @@ func markPostWipCommitsForSquashing(input string, configuration Configuration) s
 	return strings.Join(result, "\n")
 }
 
-func isRebaseWipCommitLine(line string, configuration Configuration) bool {
-	return isRebaseCommitLine(line) && strings.HasSuffix(line, configuration.WipCommitMessage)
+func markSquash(line string) string {
+	return strings.Replace(line, "pick ", "squash ", 1)
 }
 
-func isRebaseCommitLine(line string) bool {
+func isRebaseWipCommitLine(line string, configuration Configuration) bool {
+	return isPick(line) && strings.HasSuffix(line, configuration.WipCommitMessage)
+}
+
+func isPick(line string) bool {
 	return strings.HasPrefix(line, "pick ")
 }

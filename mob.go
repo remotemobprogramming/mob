@@ -49,6 +49,10 @@ func (c Configuration) hasCustomCommitMessage() bool {
 	return getDefaultConfiguration().WipCommitMessage != c.WipCommitMessage
 }
 
+func (c Configuration) isWipCommitMessage(line string) bool {
+	return line == c.WipCommitMessage
+}
+
 func main() {
 	parseDebug(os.Args)
 
