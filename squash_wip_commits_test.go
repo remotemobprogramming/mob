@@ -5,20 +5,35 @@ import (
 	"testing"
 )
 
-// TODO if last commit is wip commit, exit with warning
 func TestSquashWipCommits_acceptance(t *testing.T) {
 	_, configuration := localSetup(t)
 	start(configuration)
-	createFile(t, "file2.txt", "owqe")
+	createFile(t, "file2.txt", "irrelevant")
 	next(configuration)
 	start(configuration)
-	createFileAndCommitIt(t, "file1.txt", "owqe", "new file")
+	createFileAndCommitIt(t, "file1.txt", "irrelevant", "new file")
 
 	squashWipCommits(configuration)
 
 	equals(t, []string{
 		"new file",
 	}, commitsOnCurrentBranch(configuration))
+}
+
+func TestSquashWipCommits_failOnFinalWipCommit_acceptance(t *testing.T) {
+	_, configuration := localSetup(t)
+	start(configuration)
+	createFile(t, "file2.txt", "irrelevant")
+	next(configuration)
+	start(configuration)
+	exitedWithCode := -1
+	exit = func(code int) {
+		exitedWithCode = code
+	}
+
+	squashWipCommits(configuration)
+
+	equals(t, 1, exitedWithCode)
 }
 
 func TestCommitsOnCurrentBranch(t *testing.T) {
@@ -41,7 +56,7 @@ func TestCommitsOnCurrentBranch(t *testing.T) {
 func TestEndsWithWipCommit_finalManualCommit(t *testing.T) {
 	_, configuration := localSetup(t)
 	start(configuration)
-	createFileAndCommitIt(t, "file1.txt", "owqe", "new file")
+	createFileAndCommitIt(t, "file1.txt", "irrelevant", "new file")
 
 	equals(t, false, endsWithWipCommit(configuration))
 }
@@ -49,7 +64,7 @@ func TestEndsWithWipCommit_finalManualCommit(t *testing.T) {
 func TestEndsWithWipCommit_finalWipCommit(t *testing.T) {
 	_, configuration := localSetup(t)
 	start(configuration)
-	createFile(t, "file1.txt", "owqe")
+	createFile(t, "file1.txt", "irrelevant")
 	next(configuration)
 	start(configuration)
 
@@ -59,8 +74,8 @@ func TestEndsWithWipCommit_finalWipCommit(t *testing.T) {
 func TestEndsWithWipCommit_manualThenWipCommit(t *testing.T) {
 	_, configuration := localSetup(t)
 	start(configuration)
-	createFileAndCommitIt(t, "file1.txt", "owqe", "new file")
-	createFile(t, "file2.txt", "owqe")
+	createFileAndCommitIt(t, "file1.txt", "irrelevant", "new file")
+	createFile(t, "file2.txt", "irrelevant")
 	next(configuration)
 	start(configuration)
 
@@ -70,10 +85,10 @@ func TestEndsWithWipCommit_manualThenWipCommit(t *testing.T) {
 func TestEndsWithWipCommit_wipThenManualCommit(t *testing.T) {
 	_, configuration := localSetup(t)
 	start(configuration)
-	createFile(t, "file2.txt", "owqe")
+	createFile(t, "file2.txt", "irrelevant")
 	next(configuration)
 	start(configuration)
-	createFileAndCommitIt(t, "file1.txt", "owqe", "new file")
+	createFileAndCommitIt(t, "file1.txt", "irrelevant", "new file")
 
 	equals(t, false, endsWithWipCommit(configuration))
 }

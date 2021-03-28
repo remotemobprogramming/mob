@@ -11,6 +11,11 @@ type Replacer func(string) string
 
 //TODO chicken and egg problem
 func squashWipCommits(configuration Configuration) {
+	if endsWithWipCommit(configuration) {
+		sayInfo("Make sure the final commit is a manual commit before squashing")
+		exit(1)
+		return
+	}
 	os.Setenv("GIT_EDITOR", "mob squash-wip-commits --git-editor")
 	os.Setenv("GIT_SEQUENCE_EDITOR", "mob squash-wip-commits --git-sequence-editor")
 	currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), gitBranches(), configuration)
