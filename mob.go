@@ -540,6 +540,11 @@ func start(configuration Configuration) {
 		stash := findLatestMobStash(stashes)
 		git("stash", "pop", stash)
 	}
+
+	if hasLocalCommits(currentBaseBranch, configuration) {
+		sayError("cannot start; unpushed changes on current branch must be pushed upstream")
+		return
+	}
 }
 
 func sayUntrackedFilesInfo() {

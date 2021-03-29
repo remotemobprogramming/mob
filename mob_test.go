@@ -479,6 +479,15 @@ func TestStartIncludeUnstagedChanges(t *testing.T) {
 	assertMobSessionBranches(t, "mob-session")
 }
 
+func TestStartLocalCommitsBranch(t *testing.T) {
+	output := setup(t)
+	createFileAndCommitIt(t, "test.txt", "content", "unpushed change")
+
+	start(configuration)
+
+	assertOutputContains(t, output, "unpushed changes")
+}
+
 func TestStartIncludeUntrackedFiles(t *testing.T) {
 	setup(t)
 	configuration.MobStartIncludeUncommittedChanges = true
