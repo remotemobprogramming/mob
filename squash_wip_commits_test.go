@@ -2,6 +2,7 @@ package main
 
 import (
 	"io/ioutil"
+	"os"
 	"testing"
 )
 
@@ -18,6 +19,21 @@ func TestSquashWipCommits_acceptance(t *testing.T) {
 	equals(t, []string{
 		"new file",
 	}, commitsOnCurrentBranch(configuration))
+}
+
+func TestSquashWipCommits_resetsEnv(t *testing.T) {
+	_, configuration := localSetup(t)
+	start(configuration)
+	createFileAndCommitIt(t, "file1.txt", "irrelevant", "new file")
+	originalGitEditor := "irrelevant"
+	originalGitSequenceEditor := "irrelevant, too"
+	os.Setenv("GIT_EDITOR", originalGitEditor)
+	os.Setenv("GIT_SEQUENCE_EDITOR", originalGitSequenceEditor)
+
+	squashWipCommits(configuration)
+
+	equals(t, originalGitEditor, os.Getenv("GIT_EDITOR"))
+	equals(t, originalGitSequenceEditor, os.Getenv("GIT_SEQUENCE_EDITOR"))
 }
 
 func TestSquashWipCommits_failOnFinalWipCommit_acceptance(t *testing.T) {

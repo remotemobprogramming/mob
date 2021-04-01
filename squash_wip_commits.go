@@ -15,11 +15,28 @@ func squashWipCommits(configuration Configuration) {
 		exit(1)
 		return
 	}
-	os.Setenv("GIT_EDITOR", mobExecutable()+" squash-wip-commits --git-editor")
-	os.Setenv("GIT_SEQUENCE_EDITOR", mobExecutable()+" squash-wip-commits --git-sequence-editor")
+
 	currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), gitBranches(), configuration)
 	mergeBase := silentgit("merge-base", currentWipBranch, currentBaseBranch)
+
+	originalGitEditor, originalGitSequenceEditor := getEnvGitEditor()
+	setEnvGitEditor(
+		mobExecutable()+" squash-wip-commits --git-editor",
+		mobExecutable()+" squash-wip-commits --git-sequence-editor",
+	)
 	silentgit("rebase", "-i", mergeBase)
+	setEnvGitEditor(originalGitEditor, originalGitSequenceEditor)
+}
+
+func setEnvGitEditor(gitEditor string, gitSequenceEditor string) {
+	os.Setenv("GIT_EDITOR", gitEditor)
+	os.Setenv("GIT_SEQUENCE_EDITOR", gitSequenceEditor)
+}
+
+func getEnvGitEditor() (gitEditor string, gitSequenceEditor string) {
+	gitEditor = os.Getenv("GIT_EDITOR")
+	gitSequenceEditor = os.Getenv("GIT_SEQUENCE_EDITOR")
+	return
 }
 
 func mobExecutable() string {
