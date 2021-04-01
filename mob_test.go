@@ -485,7 +485,8 @@ func TestStartHasUnpushedCommits(t *testing.T) {
 
 	start(configuration)
 
-	assertOutputContains(t, output, "unpushed changes")
+	assertOutputContains(t, output, "cannot start; unpushed changes")
+	assertOutputContains(t, output, "unpushed commits")
 }
 
 func TestStartIncludeUntrackedFiles(t *testing.T) {

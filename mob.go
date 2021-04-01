@@ -759,6 +759,7 @@ func hasUnpushedCommits(branch string, configuration Configuration) bool {
 	if err != nil {
 		panic(err)
 	}
+	sayInfo(fmt.Sprintf("there are %d unpushed commits", unpushedCount))
 	return unpushedCount != 0
 }
 
