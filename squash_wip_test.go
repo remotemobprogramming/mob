@@ -8,16 +8,34 @@ import (
 
 func TestSquashWipCommits_acceptance(t *testing.T) {
 	_, configuration := localSetup(t)
+
+	// change without manual commit
 	start(configuration)
-	createFile(t, "file2.txt", "irrelevant")
+	createFile(t, "file1.txt", "irrelevant")
 	next(configuration)
+
+	// change with a manual commit
 	start(configuration)
-	createFileAndCommitIt(t, "file1.txt", "irrelevant", "new file")
+	createFileAndCommitIt(t, "file2.txt", "irrelevant", "first manual commit")
+	next(configuration)
+
+	// change with a manual commit followed by an uncommited change
+	start(configuration)
+	createFileAndCommitIt(t, "file3.txt", "irrelevant", "second manual commit")
+	createFile(t, "file4.txt", "irrelevant")
+	next(configuration)
+
+	// change with a final manual commit
+	start(configuration)
+	createFileAndCommitIt(t, "file5.txt", "irrelevant", "third manual commit")
 
 	squashWip(configuration)
 
+	assertOnBranch(t, "mob-session")
 	equals(t, []string{
-		"new file",
+		"third manual commit",
+		"second manual commit",
+		"first manual commit",
 	}, commitsOnCurrentBranch(configuration))
 }
 

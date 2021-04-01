@@ -49,7 +49,9 @@ func mobExecutable() string {
 }
 
 func isTestEnvironment() bool {
-	return strings.HasSuffix(os.Args[0], ".test") || strings.HasSuffix(os.Args[0], "_test")
+	return strings.HasSuffix(os.Args[0], ".test") ||
+		strings.HasSuffix(os.Args[0], "_test") ||
+		os.Args[1] == "-test.v"
 }
 
 // used for non-interactive fixing of commit messages of squashed commits
