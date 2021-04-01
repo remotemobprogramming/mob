@@ -30,7 +30,7 @@ echo ""
 echo "Creating remote repository ${remotedir}"
 rm -rf "${remotedir}"
 mkdir -p "${remotedir}"
-(cd "${remotedir}" && git --bare init)
+(cd "${remotedir}" && git --bare init --initial-branch=master)
 
 # create first local repo
 createrepo "${localdir}"
@@ -38,7 +38,7 @@ createrepo "${localdir}"
 # populate an initial import
 echo "Populating and pushing"
 (cd "${localdir}" && echo "test" >test.txt && mkdir subdir && echo "subdir" >subdir/subdir.txt)
-(cd "${localdir}" && git add . && git commit -m "initial import" && git push --set-upstream --all origin)
+(cd "${localdir}" && git checkout -b master && git add . && git commit -m "initial import" && git push --set-upstream --all origin)
 
 # create more local repos
 for name in localother alice bob
