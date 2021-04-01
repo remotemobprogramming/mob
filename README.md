@@ -72,12 +72,19 @@ yay -S mobsh-bin
 ### Using go tools
 
 When you already have a working go environment with a defined GOPATH you can install latest via `go install`:
+
+With go &lt; 1.16
 ```
 go get github.com/remotemobprogramming/mob
 go install github.com/remotemobprogramming/mob
 ```
 
-If run into issues with that version and are using go >= 1.16 you can revert to a previous version by using the package@version syntax:
+go 1.16 introduced support for package@version syntax so you can install directly with:
+```
+go install github.com/remotemobprogramming/mob@latest
+```
+
+or pick a specific version:
 ```
 go install github.com/remotemobprogramming/mob@v1.2.0
 ```
