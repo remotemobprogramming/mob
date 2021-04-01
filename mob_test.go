@@ -479,7 +479,7 @@ func TestStartIncludeUnstagedChanges(t *testing.T) {
 	assertMobSessionBranches(t, "mob-session")
 }
 
-func TestStartLocalCommitsBranch(t *testing.T) {
+func TestStartHasUnpushedCommits(t *testing.T) {
 	output := setup(t)
 	createFileAndCommitIt(t, "test.txt", "content", "unpushed change")
 

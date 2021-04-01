@@ -541,7 +541,7 @@ func start(configuration Configuration) {
 		git("stash", "pop", stash)
 	}
 
-	if hasLocalCommits(currentBaseBranch, configuration) {
+	if hasUnpushedCommits(currentBaseBranch, configuration) {
 		sayError("cannot start; unpushed changes on current branch must be pushed upstream")
 		return
 	}
@@ -749,6 +749,17 @@ func hasLocalCommits(branch string, configuration Configuration) bool {
 
 func hasUncommittedChanges() bool {
 	return !isNothingToCommit()
+}
+
+func hasUnpushedCommits(branch string, configuration Configuration) bool {
+	countOutput := silentgit(
+		"rev-list", "--count", "refs/heads/"+branch+"..."+"refs/remotes/"+configuration.RemoteName+"/"+branch,
+	)
+	unpushedCount, err := strconv.Atoi(strings.TrimSpace(countOutput))
+	if err != nil {
+		panic(err)
+	}
+	return unpushedCount != 0
 }
 
 func isMobProgramming(configuration Configuration) bool {
