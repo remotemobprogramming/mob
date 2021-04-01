@@ -9,18 +9,29 @@ import (
 
 type Replacer func(string) string
 
-//TODO chicken and egg problem
 func squashWipCommits(configuration Configuration) {
 	if endsWithWipCommit(configuration) {
 		sayInfo("Make sure the final commit is a manual commit before squashing")
 		exit(1)
 		return
 	}
-	os.Setenv("GIT_EDITOR", "mob squash-wip-commits --git-editor")
-	os.Setenv("GIT_SEQUENCE_EDITOR", "mob squash-wip-commits --git-sequence-editor")
+	os.Setenv("GIT_EDITOR", mobExecutable()+" squash-wip-commits --git-editor")
+	os.Setenv("GIT_SEQUENCE_EDITOR", mobExecutable()+" squash-wip-commits --git-sequence-editor")
 	currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), gitBranches(), configuration)
 	mergeBase := silentgit("merge-base", currentWipBranch, currentBaseBranch)
 	silentgit("rebase", "-i", mergeBase)
+}
+
+func mobExecutable() string {
+	if isTestEnvironment() {
+		return "go run github.com/remotemobprogramming/mob"
+	} else {
+		return "mob"
+	}
+}
+
+func isTestEnvironment() bool {
+	return strings.HasSuffix(os.Args[0], ".test")
 }
 
 // used for non-interactive fixing of commit messages of squashed commits
