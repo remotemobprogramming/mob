@@ -755,7 +755,7 @@ func hasUnpushedCommits(branch string, configuration Configuration) bool {
 	countOutput := silentgit(
 		"rev-list", "--count", "refs/heads/"+branch+"..."+"refs/remotes/"+configuration.RemoteName+"/"+branch,
 	)
-	unpushedCount, err := strconv.Atoi(strings.TrimSpace(countOutput))
+	unpushedCount, err := strconv.Atoi(countOutput)
 	if err != nil {
 		panic(err)
 	}
