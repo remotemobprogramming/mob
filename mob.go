@@ -35,6 +35,7 @@ type Configuration struct {
 	WipBranchQualifierSeparator       string // override with MOB_WIP_BRANCH_QUALIFIER_SEPARATOR environment variable
 	MobDoneSquash                     bool   // override with MOB_DONE_SQUASH environment variable
 	MobTimer                          string // override with MOB_TIMER environment variable
+	DefaultBranch                     string // override with MOB_DEFAULT_BRANCH environment variable
 }
 
 func (c Configuration) wipBranchQualifierSuffix() string {
@@ -92,6 +93,7 @@ func getDefaultConfiguration() Configuration {
 		WipBranchQualifierSeparator:       "-",
 		MobDoneSquash:                     true,
 		MobTimer:                          "",
+		DefaultBranch:                     "main",
 	}
 }
 
@@ -129,6 +131,8 @@ func parseEnvironmentVariables(configuration Configuration) Configuration {
 	setBoolFromEnvVariable(&configuration.MobDoneSquash, "MOB_DONE_SQUASH")
 
 	setStringFromEnvVariable(&configuration.MobTimer, "MOB_TIMER")
+
+	setStringFromEnvVariable(&configuration.DefaultBranch, "MOB_DEFAULT_BRANCH")
 
 	return configuration
 }
@@ -218,6 +222,7 @@ func config(c Configuration) {
 	say("MOB_WIP_BRANCH_QUALIFIER_SEPARATOR" + "=" + c.WipBranchQualifierSeparator)
 	say("MOB_DONE_SQUASH" + "=" + strconv.FormatBool(c.MobDoneSquash))
 	say("MOB_TIMER" + "=" + c.MobTimer)
+	say("MOB_DEFAULT_BRANCH" + "=" + c.DefaultBranch)
 }
 
 func parseArgs(args []string, configuration Configuration) (command string, parameters []string, newConfiguration Configuration) {
@@ -310,8 +315,8 @@ func execute(command string, parameter []string, configuration Configuration) {
 }
 
 func determineBranches(currentBranch string, localBranches []string, configuration Configuration) (baseBranch string, wipBranch string) {
-	if currentBranch == "mob-session" || (currentBranch == "master" && !configuration.customWipBranchQualifierConfigured()) {
-		baseBranch = "master"
+	if currentBranch == "mob-session" || (currentBranch == configuration.DefaultBranch && !configuration.customWipBranchQualifierConfigured()) {
+		baseBranch = configuration.DefaultBranch
 		wipBranch = "mob-session"
 	} else if isWipBranch(currentBranch) {
 		baseBranch = removeWipQualifier(removeWipPrefix(currentBranch), localBranches, configuration)
