@@ -54,7 +54,7 @@ func TestSquashWipCommits_resetsEnv(t *testing.T) {
 	equals(t, originalGitSequenceEditor, os.Getenv("GIT_SEQUENCE_EDITOR"))
 }
 
-func TestSquashWipCommits_failOnFinalWipCommit_acceptance(t *testing.T) {
+func TestSquashWipCommits_failsOnFinalWipCommit(t *testing.T) {
 	_, configuration := localSetup(t)
 	start(configuration)
 	createFile(t, "file2.txt", "irrelevant")
