@@ -93,7 +93,7 @@ func getDefaultConfiguration() Configuration {
 		WipBranchQualifierSeparator:       "-",
 		MobDoneSquash:                     true,
 		MobTimer:                          "",
-		DefaultBranch:                     "main",
+		DefaultBranch:                     "master",
 	}
 }
 
