@@ -14,7 +14,7 @@ func TestSquashWipCommits_acceptance(t *testing.T) {
 	start(configuration)
 	createFileAndCommitIt(t, "file1.txt", "irrelevant", "new file")
 
-	squashWipCommits(configuration)
+	squashWip(configuration)
 
 	equals(t, []string{
 		"new file",
@@ -30,7 +30,7 @@ func TestSquashWipCommits_resetsEnv(t *testing.T) {
 	os.Setenv("GIT_EDITOR", originalGitEditor)
 	os.Setenv("GIT_SEQUENCE_EDITOR", originalGitSequenceEditor)
 
-	squashWipCommits(configuration)
+	squashWip(configuration)
 
 	equals(t, originalGitEditor, os.Getenv("GIT_EDITOR"))
 	equals(t, originalGitSequenceEditor, os.Getenv("GIT_SEQUENCE_EDITOR"))
@@ -47,7 +47,7 @@ func TestSquashWipCommits_failOnFinalWipCommit_acceptance(t *testing.T) {
 		exitedWithCode = code
 	}
 
-	squashWipCommits(configuration)
+	squashWip(configuration)
 
 	equals(t, 1, exitedWithCode)
 }
@@ -212,7 +212,7 @@ func TestSquashWipCommitGitEditor(t *testing.T) {
 		"new file\n \n" +
 		"# Please enter the commit message for your changes. Lines starting\n"
 
-	squashWipCommitsGitEditor(path, getDefaultConfiguration())
+	squashWipGitEditor(path, getDefaultConfiguration())
 
 	result, _ := ioutil.ReadFile(path)
 	equals(t, expected, string(result))
@@ -235,7 +235,7 @@ func TestSquashWipCommitGitSequenceEditor(t *testing.T) {
 		"\n" +
 		"# Rebase ...\n"
 
-	squashWipCommitsGitSequenceEditor(path, getDefaultConfiguration())
+	squashWipGitSequenceEditor(path, getDefaultConfiguration())
 
 	result, _ := ioutil.ReadFile(path)
 	equals(t, expected, string(result))

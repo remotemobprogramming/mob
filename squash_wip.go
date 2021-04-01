@@ -9,7 +9,7 @@ import (
 
 type Replacer func(string) string
 
-func squashWipCommits(configuration Configuration) {
+func squashWip(configuration Configuration) {
 	if endsWithWipCommit(configuration) {
 		sayInfo("Make sure the final commit is a manual commit before squashing")
 		exit(1)
@@ -21,8 +21,8 @@ func squashWipCommits(configuration Configuration) {
 
 	originalGitEditor, originalGitSequenceEditor := getEnvGitEditor()
 	setEnvGitEditor(
-		mobExecutable()+" squash-wip-commits --git-editor",
-		mobExecutable()+" squash-wip-commits --git-sequence-editor",
+		mobExecutable()+" squash-wip --git-editor",
+		mobExecutable()+" squash-wip --git-sequence-editor",
 	)
 	silentgit("rebase", "-i", mergeBase)
 	setEnvGitEditor(originalGitEditor, originalGitSequenceEditor)
@@ -53,14 +53,14 @@ func isTestEnvironment() bool {
 }
 
 // used for non-interactive fixing of commit messages of squashed commits
-func squashWipCommitsGitEditor(fileName string, configuration Configuration) {
+func squashWipGitEditor(fileName string, configuration Configuration) {
 	replaceFileContents(fileName, func(input string) string {
 		return commentWipCommits(input, configuration)
 	})
 }
 
 // used for non-interactive rebase to squash post-wip-commits
-func squashWipCommitsGitSequenceEditor(fileName string, configuration Configuration) {
+func squashWipGitSequenceEditor(fileName string, configuration Configuration) {
 	replaceFileContents(fileName, func(input string) string {
 		return markPostWipCommitsForSquashing(input, configuration)
 	})
