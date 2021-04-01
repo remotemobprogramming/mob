@@ -40,6 +40,14 @@ Smooth [git handover](https://www.remotemobprogramming.org/#git-handover) with '
 
 ## How to install
 
+Via `go install`:
+```
+# works for any environment with go tooling and a defined GOPATH
+go get -u github.com/remotemobprogramming/mob
+go install github.com/remotemobprogramming/mob
+```
+
+Via an install script:
 ```
 # works for macOS, linux, and even on windows in git bash
 curl -sL install.mob.sh | sh
