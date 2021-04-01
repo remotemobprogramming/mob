@@ -540,6 +540,11 @@ func start(configuration Configuration) {
 		stash := findLatestMobStash(stashes)
 		git("stash", "pop", stash)
 	}
+
+	if hasUnpushedCommits(currentBaseBranch, configuration) {
+		sayError("cannot start; unpushed changes on current branch must be pushed upstream")
+		return
+	}
 }
 
 func sayUntrackedFilesInfo() {
@@ -744,6 +749,18 @@ func hasLocalCommits(branch string, configuration Configuration) bool {
 
 func hasUncommittedChanges() bool {
 	return !isNothingToCommit()
+}
+
+func hasUnpushedCommits(branch string, configuration Configuration) bool {
+	countOutput := silentgit(
+		"rev-list", "--count", "refs/heads/"+branch+"..."+"refs/remotes/"+configuration.RemoteName+"/"+branch,
+	)
+	unpushedCount, err := strconv.Atoi(countOutput)
+	if err != nil {
+		panic(err)
+	}
+	sayInfo(fmt.Sprintf("there are %d unpushed commits", unpushedCount))
+	return unpushedCount != 0
 }
 
 func isMobProgramming(configuration Configuration) bool {
