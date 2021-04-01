@@ -17,6 +17,12 @@ func squashWip(configuration Configuration) {
 	}
 
 	currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), gitBranches(), configuration)
+	if gitCurrentBranch() != currentWipBranch {
+		sayInfo("Make sure you are on the wip-branch before running quash-wip")
+		exit(1)
+		return
+	}
+
 	mergeBase := silentgit("merge-base", currentWipBranch, currentBaseBranch)
 
 	originalGitEditor, originalGitSequenceEditor := getEnvGitEditor()

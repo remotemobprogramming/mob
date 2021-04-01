@@ -55,7 +55,7 @@ func TestSquashWipCommits_resetsEnv(t *testing.T) {
 }
 
 func TestSquashWipCommits_failsOnFinalWipCommit(t *testing.T) {
-	_, configuration := localSetup(t)
+	output, configuration := localSetup(t)
 	start(configuration)
 	createFile(t, "file2.txt", "irrelevant")
 	next(configuration)
@@ -68,6 +68,20 @@ func TestSquashWipCommits_failsOnFinalWipCommit(t *testing.T) {
 	squashWip(configuration)
 
 	equals(t, 1, exitedWithCode)
+	assertOutputContains(t, output, "Make sure the final commit is a manual commit before squashing")
+}
+
+func TestSquashWipCommits_failsOnMainBranch(t *testing.T) {
+	output, configuration := localSetup(t)
+	exitedWithCode := -1
+	exit = func(code int) {
+		exitedWithCode = code
+	}
+
+	squashWip(configuration)
+
+	equals(t, 1, exitedWithCode)
+	assertOutputContains(t, output, "Make sure you are on the wip-branch before running quash-wip")
 }
 
 func TestCommitsOnCurrentBranch(t *testing.T) {
