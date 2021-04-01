@@ -24,14 +24,15 @@ func squashWipCommits(configuration Configuration) {
 
 func mobExecutable() string {
 	if isTestEnvironment() {
-		return "go run mob.go"
+		wd, _ := os.Getwd()
+		return "go run $(ls -1 " + wd + "/*.go | grep -v _test.go)"
 	} else {
 		return "mob"
 	}
 }
 
 func isTestEnvironment() bool {
-	return strings.HasSuffix(os.Args[0], ".test")
+	return strings.HasSuffix(os.Args[0], ".test") || strings.HasSuffix(os.Args[0], "_test")
 }
 
 // used for non-interactive fixing of commit messages of squashed commits
