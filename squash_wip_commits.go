@@ -24,7 +24,7 @@ func squashWipCommits(configuration Configuration) {
 
 func mobExecutable() string {
 	if isTestEnvironment() {
-		return "go run github.com/remotemobprogramming/mob"
+		return "go run mob.go"
 	} else {
 		return "mob"
 	}
