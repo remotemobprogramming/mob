@@ -40,14 +40,7 @@ Smooth [git handover](https://www.remotemobprogramming.org/#git-handover) with '
 
 ## How to install
 
-Via `go install`:
-```
-# works for any environment with go tooling and a defined GOPATH
-go get -u github.com/remotemobprogramming/mob
-go install github.com/remotemobprogramming/mob
-```
-
-Via an install script:
+The preferred way to install mob is as a binary via the provided install script:
 ```
 # works for macOS, linux, and even on windows in git bash
 curl -sL install.mob.sh | sh
@@ -74,6 +67,19 @@ On Arch Linux via yay:
 
 ```bash
 yay -S mobsh-bin
+```
+
+### Using go tools
+
+When you already have a working go environment with a defined GOPATH you can install latest via `go install`:
+```
+go get github.com/remotemobprogramming/mob
+go install github.com/remotemobprogramming/mob
+```
+
+If run into issues with that version and are using go >= 1.16 you can revert to a previous version by using the package@version syntax:
+```
+go install github.com/remotemobprogramming/mob@v1.2.0
 ```
 
 ## How to use
