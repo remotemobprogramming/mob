@@ -903,7 +903,7 @@ func TestNotAGitRepoMessage(t *testing.T) {
 func setup(t *testing.T) *string {
 	configuration = getDefaultConfiguration()
 	configuration.MobNextStay = false
-	output := captureOutput()
+	output := captureOutput(t)
 	createTestbed(t)
 	assertOnBranch(t, "master")
 	equals(t, []string{"master"}, gitBranches())
@@ -912,10 +912,10 @@ func setup(t *testing.T) *string {
 	return output
 }
 
-func captureOutput() *string {
+func captureOutput(t *testing.T) *string {
 	messages := ""
 	printToConsole = func(text string) {
-		fmt.Print(text)
+		t.Log(strings.TrimRight(text, "\n"))
 		messages += text
 	}
 	return &messages

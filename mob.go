@@ -1000,9 +1000,7 @@ func sayInfo(text string) {
 func sayWithPrefix(s string, prefix string) {
 	lines := strings.Split(strings.TrimSpace(s), "\n")
 	for i := 0; i < len(lines); i++ {
-		printToConsole(prefix)
-		printToConsole(lines[i])
-		printToConsole("\n")
+		printToConsole(prefix + lines[i] + "\n")
 	}
 }
 
