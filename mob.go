@@ -449,10 +449,13 @@ func executeCommandsInBackgroundProcess(commands ...string) (err error) {
 }
 
 func startTimer(timerInMinutes string, configuration Configuration) {
-	debugInfo(fmt.Sprintf("Starting timer for %s minutes", timerInMinutes))
 	timeoutInMinutes, _ := strconv.Atoi(timerInMinutes)
+	if timeoutInMinutes < 0 {
+		timeoutInMinutes = 0
+	}
 	timeoutInSeconds := timeoutInMinutes * 60
 	timeOfTimeout := time.Now().Add(time.Minute * time.Duration(timeoutInMinutes)).Format("15:04")
+	debugInfo(fmt.Sprintf("Starting timer at %s for %d minutes = %d seconds (parsed from user input %s)", timeOfTimeout, timeoutInMinutes, timeoutInSeconds, timerInMinutes))
 
 	err := executeCommandsInBackgroundProcess(getSleepCommand(timeoutInSeconds), getVoiceCommand("mob next", configuration.VoiceCommand), getNotifyCommand("mob next", configuration.NotifyCommand))
 
@@ -460,7 +463,7 @@ func startTimer(timerInMinutes string, configuration Configuration) {
 		sayError(fmt.Sprintf("timer couldn't be started on your system (%s)", runtime.GOOS))
 		sayError(err.Error())
 	} else {
-		sayInfo(fmt.Sprintf("%s minutes timer started (finishes at approx. %s)", timerInMinutes, timeOfTimeout))
+		sayInfo(fmt.Sprintf("%d minutes timer started (finishes at approx. %s)", timeoutInMinutes, timeOfTimeout))
 	}
 }
 
