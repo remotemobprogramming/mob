@@ -277,8 +277,6 @@ func execute(command string, parameter []string, configuration Configuration) {
 		} else if configuration.MobTimer != "" {
 			startTimer(configuration.MobTimer, configuration)
 		}
-
-		status(configuration)
 	case "n", "next":
 		next(configuration)
 	case "d", "done":
@@ -510,7 +508,6 @@ func start(configuration Configuration) {
 	}
 
 	git("fetch", configuration.RemoteName, "--prune")
-
 	currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), gitBranches(), configuration)
 
 	hasWipBranchesWithQualifier := hasQualifiedBranches(currentBaseBranch, gitRemoteBranches(), configuration)
@@ -525,6 +522,11 @@ func start(configuration Configuration) {
 	if !hasRemoteBranch(currentBaseBranch, configuration) {
 		sayError("Remote branch " + configuration.RemoteName + "/" + currentBaseBranch + " is missing")
 		sayTodo("To set the upstream branch, use", "git push "+configuration.RemoteName+" "+currentBaseBranch+" --set-upstream")
+		return
+	}
+
+	if hasUnpushedCommits(currentBaseBranch, configuration) {
+		sayError("cannot start; unpushed changes on base branch must be pushed upstream")
 		return
 	}
 
@@ -544,10 +546,8 @@ func start(configuration Configuration) {
 		git("stash", "pop", stash)
 	}
 
-	if hasUnpushedCommits(currentBaseBranch, configuration) {
-		sayError("cannot start; unpushed changes on current branch must be pushed upstream")
-		return
-	}
+	sayInfo("on wip branch " + currentWipBranch + " (base branch " + currentBaseBranch + ")")
+	sayLastCommitsList(currentBaseBranch, currentWipBranch)
 }
 
 func sayUntrackedFilesInfo() {
@@ -756,13 +756,14 @@ func hasUncommittedChanges() bool {
 
 func hasUnpushedCommits(branch string, configuration Configuration) bool {
 	countOutput := silentgit(
-		"rev-list", "--count", "refs/heads/"+branch+"..."+"refs/remotes/"+configuration.RemoteName+"/"+branch,
+		"rev-list", "--count", "--left-only",
+		"refs/heads/"+branch+"..."+"refs/remotes/"+configuration.RemoteName+"/"+branch,
 	)
 	unpushedCount, err := strconv.Atoi(countOutput)
 	if err != nil {
 		panic(err)
 	}
-	sayInfo(fmt.Sprintf("there are %d unpushed commits", unpushedCount))
+	sayInfo(fmt.Sprintf("there are %d unpushed commits on local base branch <%s>", unpushedCount, branch))
 	return unpushedCount != 0
 }
 

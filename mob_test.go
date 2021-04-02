@@ -536,6 +536,7 @@ func TestStartNextStay(t *testing.T) {
 
 func TestStartDoneWithMobDoneSquashTrue(t *testing.T) {
 	setup(t)
+	Debug = true
 	configuration.MobDoneSquash = true
 
 	start(configuration)
@@ -824,6 +825,7 @@ func TestConflictingMobSessionsNextStay(t *testing.T) {
 
 func TestDoneMergeConflict(t *testing.T) {
 	output := setup(t)
+	Debug = true
 
 	setWorkingDir("/tmp/mob/local")
 	start(configuration)
@@ -942,7 +944,7 @@ func createTestbed(t *testing.T) {
 
 func setWorkingDir(dir string) {
 	workingDir = dir
-	say("\nSET WORKING DIR TO " + dir + "\n======================\n")
+	say("\n===== cd " + dir)
 }
 
 func assertCommits(t *testing.T, commits int) {
