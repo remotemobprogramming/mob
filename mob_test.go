@@ -536,7 +536,6 @@ func TestStartNextStay(t *testing.T) {
 
 func TestStartDoneWithMobDoneSquashTrue(t *testing.T) {
 	setup(t)
-	Debug = true
 	configuration.MobDoneSquash = true
 
 	start(configuration)
@@ -825,7 +824,6 @@ func TestConflictingMobSessionsNextStay(t *testing.T) {
 
 func TestDoneMergeConflict(t *testing.T) {
 	output := setup(t)
-	Debug = true
 
 	setWorkingDir("/tmp/mob/local")
 	start(configuration)
