@@ -7,36 +7,36 @@ import (
 func TestStartDoneCoAuthors(t *testing.T) {
 	setup(t)
 
-	setWorkingDir("/tmp/mob/alice")
+	setWorkingDir(tempDir + "/alice")
 	start(configuration)
 	createFile(t, "file3.txt", "owqe")
 	next(configuration)
 
-	setWorkingDir("/tmp/mob/local")
+	setWorkingDir(tempDir + "/local")
 	start(configuration)
 	createFile(t, "file1.txt", "asdf")
 	next(configuration)
 
-	setWorkingDir("/tmp/mob/localother")
+	setWorkingDir(tempDir + "/localother")
 	start(configuration)
 	createFile(t, "file2.txt", "asdf")
 	next(configuration)
 
-	setWorkingDir("/tmp/mob/alice")
+	setWorkingDir(tempDir + "/alice")
 	start(configuration)
 	createFile(t, "file4.txt", "zcvx")
 	next(configuration)
 
-	setWorkingDir("/tmp/mob/bob")
+	setWorkingDir(tempDir + "/bob")
 	start(configuration)
 	createFile(t, "file5.txt", "oiuo")
 	next(configuration)
 
-	setWorkingDir("/tmp/mob/local")
+	setWorkingDir(tempDir + "/local")
 	start(configuration)
 	done(configuration)
 
-	output := run(t, "cat", "/tmp/mob/local/.git/SQUASH_MSG")
+	output := run(t, "cat", tempDir+"/local/.git/SQUASH_MSG")
 
 	// don't include the person running `mob done`
 	assertOutputNotContains(t, output, "Co-authored-by: local <local@example.com>")
