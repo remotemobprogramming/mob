@@ -172,6 +172,9 @@ Examples:
 - **Set up a global shortcut for screensharing**
   - Set up a global keyboard shortcut to start sharing your screen. In Zoom, you can do this via Zoom > Preferences > Keyboard Shortcuts. [More tips on setting up Zoom for effective screen sharing.](https://effectivehomeoffice.com/setup-zoom-for-effective-screen-sharing/)
   - *Why?* This is just much faster than using the mouse.
+- **Set your editor to autosave**
+  - Have your editor save your files on every keystroke automatically. IntelliJ products do this automatically. VS Code, however, needs to be configured via "File > Auto Save toggle".
+  - *Why?* Sometimes people for get to things, for example saving their files. With autosave, any change you'd done in the repository will be handed over via `mob next`.
 
 ## More on Installation
 
