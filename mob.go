@@ -851,8 +851,8 @@ Basic Commands:
   next               handover changes in wip branch to next person
   done               squashes all changes in wip branch to index in base branch
   reset              removes local and remote wip branch
-  squash-wip		 combines wip commits in wip branch with subsequent manual commits to leave only manual commits 
-					 ! Works only if all wip commits have the same wip message !
+  squash-wip         combines wip commits in wip branch with subsequent manual commits to leave only manual commits 
+                     ! Works only if all wip commits have the same wip message !
 
 Basic Commands(Options):
   start [<minutes>]                      Start a <minutes> timer
@@ -867,9 +867,9 @@ Basic Commands(Options):
     [--squash]                           Squash commits from wip branch
   reset 
     [--branch|-b <branch-postfix>]       Set wip branch to 'mob/<base-branch>/<branch-postfix>'
-  squash-wip		 
-	[--git-editor]						 Not intended for manual use. Used as a non-interactive editor (GIT_EDITOR) for git.
-	[--git-sequence-editor]				 Not intended for manual use. Used as a non-interactive sequence editor (GIT_SEQUENCE_EDITOR) for git.
+  squash-wip 
+    [--git-editor]                       Not intended for manual use. Used as a non-interactive editor (GIT_EDITOR) for git.
+    [--git-sequence-editor]              Not intended for manual use. Used as a non-interactive sequence editor (GIT_SEQUENCE_EDITOR) for git.
 
 Timer Commands:
   timer <minutes>    start a <minutes> timer
