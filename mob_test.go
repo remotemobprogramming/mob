@@ -915,7 +915,7 @@ func setup(t *testing.T) *string {
 func localSetup(t *testing.T) (output *string, configuration Configuration) {
 	configuration = getDefaultConfiguration()
 	configuration.MobNextStay = false
-	output = captureOutput()
+	output = captureOutput(t)
 	createTestbed(t)
 	assertOnBranch(t, "master")
 	equals(t, []string{"master"}, gitBranches())
