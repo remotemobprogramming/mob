@@ -3,6 +3,8 @@
 - Show more informative error message when `mob <cmd>` is run outside of a git repository.
 - Add environment variable MOB_TIMER which allows setting a default timer duration for `mob start` and `mob timer` commands.
 - Add automatic co-author attribution. Mob will collect all committers from a WIP branch and add them as co-authors in the final WIP commit.
+- added support for preventing `mob start` if there are unpushed commits
+- better output if one passes a negative number for the timer
 
 # 1.3.0
 - The default `MOB_COMMIT_MESSAGE` now includes `[ci skip]` and `[skip ci]` so that all the typical CI systems (including Azure DevOps) will skip this commit.

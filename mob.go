@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	versionNumber   = "1.3.0"
+	versionNumber   = "1.4.0"
 	mobStashName    = "mob-stash-name"
 	wipBranchPrefix = "mob/"
 )
@@ -281,8 +281,6 @@ func execute(command string, parameter []string, configuration Configuration) {
 		} else if configuration.MobTimer != "" {
 			startTimer(configuration.MobTimer, configuration)
 		}
-
-		status(configuration)
 	case "n", "next":
 		next(configuration)
 	case "d", "done":
@@ -461,10 +459,13 @@ func executeCommandsInBackgroundProcess(commands ...string) (err error) {
 }
 
 func startTimer(timerInMinutes string, configuration Configuration) {
-	debugInfo(fmt.Sprintf("Starting timer for %s minutes", timerInMinutes))
 	timeoutInMinutes, _ := strconv.Atoi(timerInMinutes)
+	if timeoutInMinutes < 0 {
+		timeoutInMinutes = 0
+	}
 	timeoutInSeconds := timeoutInMinutes * 60
 	timeOfTimeout := time.Now().Add(time.Minute * time.Duration(timeoutInMinutes)).Format("15:04")
+	debugInfo(fmt.Sprintf("Starting timer at %s for %d minutes = %d seconds (parsed from user input %s)", timeOfTimeout, timeoutInMinutes, timeoutInSeconds, timerInMinutes))
 
 	err := executeCommandsInBackgroundProcess(getSleepCommand(timeoutInSeconds), getVoiceCommand("mob next", configuration.VoiceCommand), getNotifyCommand("mob next", configuration.NotifyCommand))
 
@@ -472,7 +473,7 @@ func startTimer(timerInMinutes string, configuration Configuration) {
 		sayError(fmt.Sprintf("timer couldn't be started on your system (%s)", runtime.GOOS))
 		sayError(err.Error())
 	} else {
-		sayInfo(fmt.Sprintf("%s minutes timer started (finishes at approx. %s)", timerInMinutes, timeOfTimeout))
+		sayInfo(fmt.Sprintf("%d minutes timer started (finishes at approx. %s)", timeoutInMinutes, timeOfTimeout))
 	}
 }
 
@@ -519,7 +520,6 @@ func start(configuration Configuration) {
 	}
 
 	git("fetch", configuration.RemoteName, "--prune")
-
 	currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), gitBranches(), configuration)
 
 	hasWipBranchesWithQualifier := hasQualifiedBranches(currentBaseBranch, gitRemoteBranches(), configuration)
@@ -534,6 +534,11 @@ func start(configuration Configuration) {
 	if !hasRemoteBranch(currentBaseBranch, configuration) {
 		sayError("Remote branch " + configuration.RemoteName + "/" + currentBaseBranch + " is missing")
 		sayTodo("To set the upstream branch, use", "git push "+configuration.RemoteName+" "+currentBaseBranch+" --set-upstream")
+		return
+	}
+
+	if hasUnpushedCommits(currentBaseBranch, configuration) {
+		sayError("cannot start; unpushed changes on base branch must be pushed upstream")
 		return
 	}
 
@@ -552,6 +557,9 @@ func start(configuration Configuration) {
 		stash := findLatestMobStash(stashes)
 		git("stash", "pop", stash)
 	}
+
+	sayInfo("on wip branch " + currentWipBranch + " (base branch " + currentBaseBranch + ")")
+	sayLastCommitsList(currentBaseBranch, currentWipBranch)
 }
 
 func sayUntrackedFilesInfo() {
@@ -756,6 +764,19 @@ func hasLocalCommits(branch string, configuration Configuration) bool {
 
 func hasUncommittedChanges() bool {
 	return !isNothingToCommit()
+}
+
+func hasUnpushedCommits(branch string, configuration Configuration) bool {
+	countOutput := silentgit(
+		"rev-list", "--count", "--left-only",
+		"refs/heads/"+branch+"..."+"refs/remotes/"+configuration.RemoteName+"/"+branch,
+	)
+	unpushedCount, err := strconv.Atoi(countOutput)
+	if err != nil {
+		panic(err)
+	}
+	sayInfo(fmt.Sprintf("there are %d unpushed commits on local base branch <%s>", unpushedCount, branch))
+	return unpushedCount != 0
 }
 
 func isMobProgramming(configuration Configuration) bool {
@@ -996,9 +1017,7 @@ func sayInfo(text string) {
 func sayWithPrefix(s string, prefix string) {
 	lines := strings.Split(strings.TrimSpace(s), "\n")
 	for i := 0; i < len(lines); i++ {
-		printToConsole(prefix)
-		printToConsole(lines[i])
-		printToConsole("\n")
+		printToConsole(prefix + lines[i] + "\n")
 	}
 }
 

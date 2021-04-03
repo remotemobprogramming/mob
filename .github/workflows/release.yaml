@@ -47,6 +47,8 @@ jobs:
         env:
           HOMEBREW_GITHUB_API_TOKEN: ${{ secrets.HOMEBREW }}
         run: |
+          git config --global user.email "ci@example.com"
+          git config --global user.name "CI"
           brew tap ${{github.repository_owner}}/homebrew-brew
           brew bump-formula-pr -f --version=${{ github.event.release.tag_name }} --no-browse --no-audit \
           --sha256=${{ steps.shasum.outputs.sha }} \

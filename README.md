@@ -40,6 +40,7 @@ Smooth [git handover](https://www.remotemobprogramming.org/#git-handover) with '
 
 ## How to install
 
+The preferred way to install mob is as a binary via the provided install script:
 ```
 # works for macOS, linux, and even on windows in git bash
 curl -sL install.mob.sh | sh
@@ -66,6 +67,26 @@ On Arch Linux via yay:
 
 ```bash
 yay -S mobsh-bin
+```
+
+### Using go tools
+
+When you already have a working go environment with a defined GOPATH you can install latest via `go install`:
+
+With go &lt; 1.16
+```
+go get github.com/remotemobprogramming/mob
+go install github.com/remotemobprogramming/mob
+```
+
+go 1.16 introduced support for package@version syntax so you can install directly with:
+```
+go install github.com/remotemobprogramming/mob@latest
+```
+
+or pick a specific version:
+```
+go install github.com/remotemobprogramming/mob@v1.2.0
 ```
 
 ## How to use
@@ -156,6 +177,9 @@ Examples:
 - **Set up a global shortcut for screensharing**
   - Set up a global keyboard shortcut to start sharing your screen. In Zoom, you can do this via Zoom > Preferences > Keyboard Shortcuts. [More tips on setting up Zoom for effective screen sharing.](https://effectivehomeoffice.com/setup-zoom-for-effective-screen-sharing/)
   - *Why?* This is just much faster than using the mouse.
+- **Set your editor to autosave**
+  - Have your editor save your files on every keystroke automatically. IntelliJ products do this automatically. VS Code, however, needs to be configured via "File > Auto Save toggle".
+  - *Why?* Sometimes people for get to things, for example saving their files. With autosave, any change you'd done in the repository will be handed over via `mob next`.
 
 ## More on Installation
 

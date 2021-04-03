@@ -13,9 +13,7 @@ createrepo() {
     (cd "${dir}" && git config --local user.email ${name}@example.com)
 }
 
-# XXX tmpdir should be unique 
-# see https://github.com/remotemobprogramming/mob/issues/149
-tmpdir="/tmp/mob" 
+tmpdir=$1
 localdir="${tmpdir}/local"
 remotedir="${tmpdir}/remote"
 notgit="${tmpdir}/notgit"

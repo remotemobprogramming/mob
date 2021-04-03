@@ -97,7 +97,8 @@ func appendCoauthorsToSquashMsg(gitDir string) error {
 	debugInfo("opening " + squashMsgPath)
 	file, err := os.OpenFile(squashMsgPath, os.O_APPEND|os.O_RDWR, 0644)
 	if err != nil {
-		if err == os.ErrNotExist {
+		if os.IsNotExist(err) {
+			debugInfo(squashMsgPath + " does not exist")
 			// No wip commits, nothing to squash, this isn't really an error
 			return nil
 		}

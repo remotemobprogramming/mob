@@ -16,6 +16,7 @@ import (
 
 var (
 	configuration Configuration
+	tempDir       string
 )
 
 func TestParseArgs(t *testing.T) {
@@ -479,6 +480,16 @@ func TestStartIncludeUnstagedChanges(t *testing.T) {
 	assertMobSessionBranches(t, "mob-session")
 }
 
+func TestStartHasUnpushedCommits(t *testing.T) {
+	output := setup(t)
+	createFileAndCommitIt(t, "test.txt", "content", "unpushed change")
+
+	start(configuration)
+
+	assertOutputContains(t, output, "cannot start; unpushed changes")
+	assertOutputContains(t, output, "unpushed commits")
+}
+
 func TestStartIncludeUntrackedFiles(t *testing.T) {
 	setup(t)
 	configuration.MobStartIncludeUncommittedChanges = true
@@ -540,37 +551,37 @@ func TestStartDoneWithMobDoneSquashTrue(t *testing.T) {
 func TestRunOutput(t *testing.T) {
 	setup(t)
 
-	setWorkingDir("/tmp/mob/local")
+	setWorkingDir(tempDir + "/local")
 	start(configuration)
 	createFile(t, "file1.txt", "asdf")
-	output := run(t, "cat", "/tmp/mob/local/file1.txt")
+	output := run(t, "cat", tempDir+"/local/file1.txt")
 	assertOutputContains(t, output, "asdf")
 }
 
 func TestTestbed(t *testing.T) {
 	setup(t)
 
-	setWorkingDir("/tmp/mob/local")
+	setWorkingDir(tempDir + "/local")
 	start(configuration)
 	createFile(t, "file1.txt", "asdf")
 	next(configuration)
 
-	setWorkingDir("/tmp/mob/localother")
+	setWorkingDir(tempDir + "/localother")
 	start(configuration)
 	createFile(t, "file2.txt", "asdf")
 	next(configuration)
 
-	setWorkingDir("/tmp/mob/alice")
+	setWorkingDir(tempDir + "/alice")
 	start(configuration)
 	createFile(t, "file3.txt", "owqe")
 	next(configuration)
 
-	setWorkingDir("/tmp/mob/bob")
+	setWorkingDir(tempDir + "/bob")
 	start(configuration)
 	createFile(t, "file4.txt", "zcvx")
 	next(configuration)
 
-	setWorkingDir("/tmp/mob/local")
+	setWorkingDir(tempDir + "/local")
 	start(configuration)
 
 	output := silentgit("log", "--pretty=format:'%ae'")
@@ -676,28 +687,28 @@ func TestStartDoneLocalFeatureBranch(t *testing.T) {
 func TestBothCreateNonemptyCommitWithNext(t *testing.T) {
 	setup(t)
 
-	setWorkingDir("/tmp/mob/local")
+	setWorkingDir(tempDir + "/local")
 	start(configuration)
 	createFile(t, "file1.txt", "asdf")
 
-	setWorkingDir("/tmp/mob/localother")
+	setWorkingDir(tempDir + "/localother")
 	start(configuration)
 	createFile(t, "file2.txt", "asdf")
 
-	setWorkingDir("/tmp/mob/local")
+	setWorkingDir(tempDir + "/local")
 	next(configuration)
 
-	setWorkingDir("/tmp/mob/localother")
+	setWorkingDir(tempDir + "/localother")
 	// next(configuration) not possible, would fail
 	git("pull")
 	next(configuration)
 
-	setWorkingDir("/tmp/mob/local")
+	setWorkingDir(tempDir + "/local")
 	start(configuration)
 	assertFileExist(t, "file1.txt")
 	assertFileExist(t, "file2.txt")
 
-	setWorkingDir("/tmp/mob/localother")
+	setWorkingDir(tempDir + "/localother")
 	start(configuration)
 	assertFileExist(t, "file1.txt")
 	assertFileExist(t, "file2.txt")
@@ -706,25 +717,25 @@ func TestBothCreateNonemptyCommitWithNext(t *testing.T) {
 func TestNothingToCommitCreatesNoCommits(t *testing.T) {
 	setup(t)
 
-	setWorkingDir("/tmp/mob/local")
+	setWorkingDir(tempDir + "/local")
 	start(configuration)
 	assertCommits(t, 1)
 
-	setWorkingDir("/tmp/mob/localother")
+	setWorkingDir(tempDir + "/localother")
 	start(configuration)
 	assertCommits(t, 1)
 
-	setWorkingDir("/tmp/mob/local")
+	setWorkingDir(tempDir + "/local")
 	next(configuration)
 
-	setWorkingDir("/tmp/mob/localother")
+	setWorkingDir(tempDir + "/localother")
 	next(configuration)
 
-	setWorkingDir("/tmp/mob/local")
+	setWorkingDir(tempDir + "/local")
 	start(configuration)
 	assertCommits(t, 1)
 
-	setWorkingDir("/tmp/mob/localother")
+	setWorkingDir(tempDir + "/localother")
 	start(configuration)
 	assertCommits(t, 1)
 }
@@ -732,13 +743,13 @@ func TestNothingToCommitCreatesNoCommits(t *testing.T) {
 func TestStartNextPushManualCommits(t *testing.T) {
 	setup(t)
 
-	setWorkingDir("/tmp/mob/local")
+	setWorkingDir(tempDir + "/local")
 
 	start(configuration)
 	createFileAndCommitIt(t, "example.txt", "content", "asdf")
 	next(configuration)
 
-	setWorkingDir("/tmp/mob/localother")
+	setWorkingDir(tempDir + "/localother")
 	start(configuration)
 	assertFileExist(t, "example.txt")
 }
@@ -746,7 +757,7 @@ func TestStartNextPushManualCommits(t *testing.T) {
 func TestStartNextPushManualCommitsFeatureBranch(t *testing.T) {
 	setup(t)
 
-	setWorkingDir("/tmp/mob/local")
+	setWorkingDir(tempDir + "/local")
 
 	git("checkout", "-b", "feature1")
 	git("push", "origin", "feature1", "--set-upstream")
@@ -757,7 +768,7 @@ func TestStartNextPushManualCommitsFeatureBranch(t *testing.T) {
 	createFileAndCommitIt(t, "example.txt", "content", "asdf")
 	next(configuration)
 
-	setWorkingDir("/tmp/mob/localother")
+	setWorkingDir(tempDir + "/localother")
 	git("fetch")
 	git("checkout", "feature1")
 	start(configuration)
@@ -767,26 +778,26 @@ func TestStartNextPushManualCommitsFeatureBranch(t *testing.T) {
 func TestConflictingMobSessions(t *testing.T) {
 	setup(t)
 
-	setWorkingDir("/tmp/mob/local")
+	setWorkingDir(tempDir + "/local")
 	start(configuration)
 	createFile(t, "example.txt", "content")
 	next(configuration)
 
-	setWorkingDir("/tmp/mob/localother")
+	setWorkingDir(tempDir + "/localother")
 	start(configuration)
 	next(configuration)
 
-	setWorkingDir("/tmp/mob/local")
+	setWorkingDir(tempDir + "/local")
 	start(configuration)
 	done(configuration)
 	git("commit", "-m", "\"finished mob session\"")
 
-	setWorkingDir("/tmp/mob/local")
+	setWorkingDir(tempDir + "/local")
 	start(configuration)
 	createFile(t, "example2.txt", "content")
 	next(configuration)
 
-	setWorkingDir("/tmp/mob/localother")
+	setWorkingDir(tempDir + "/localother")
 	start(configuration)
 }
 
@@ -794,37 +805,37 @@ func TestConflictingMobSessionsNextStay(t *testing.T) {
 	setup(t)
 	configuration.MobNextStay = true
 
-	setWorkingDir("/tmp/mob/local")
+	setWorkingDir(tempDir + "/local")
 	start(configuration)
 	createFile(t, "example.txt", "content")
 	next(configuration)
 
-	setWorkingDir("/tmp/mob/localother")
+	setWorkingDir(tempDir + "/localother")
 	start(configuration)
 	next(configuration)
 
-	setWorkingDir("/tmp/mob/local")
+	setWorkingDir(tempDir + "/local")
 	start(configuration)
 	done(configuration)
 	git("commit", "-m", "\"finished mob session\"")
 
-	setWorkingDir("/tmp/mob/localother")
+	setWorkingDir(tempDir + "/localother")
 	start(configuration)
 }
 
 func TestDoneMergeConflict(t *testing.T) {
 	output := setup(t)
 
-	setWorkingDir("/tmp/mob/local")
+	setWorkingDir(tempDir + "/local")
 	start(configuration)
 	createFile(t, "example.txt", "content")
 	next(configuration)
 
-	setWorkingDir("/tmp/mob/localother")
+	setWorkingDir(tempDir + "/localother")
 	createFileAndCommitIt(t, "example.txt", "asdf", "asdf")
 	git("push")
 
-	setWorkingDir("/tmp/mob/local")
+	setWorkingDir(tempDir + "/local")
 	start(configuration)
 	done(configuration)
 	assertOutputContains(t, output, "Automatic merge failed; fix conflicts and then commit the result.")
@@ -833,16 +844,16 @@ func TestDoneMergeConflict(t *testing.T) {
 func TestDoneMerge(t *testing.T) {
 	output := setup(t)
 
-	setWorkingDir("/tmp/mob/local")
+	setWorkingDir(tempDir + "/local")
 	start(configuration)
 	createFile(t, "example.txt", "content")
 	next(configuration)
 
-	setWorkingDir("/tmp/mob/localother")
+	setWorkingDir(tempDir + "/localother")
 	createFileAndCommitIt(t, "example2.txt", "asdf", "asdf")
 	git("push")
 
-	setWorkingDir("/tmp/mob/local")
+	setWorkingDir(tempDir + "/local")
 	start(configuration)
 	done(configuration)
 	assertOutputContains(t, output, "   git commit")
@@ -851,22 +862,22 @@ func TestDoneMerge(t *testing.T) {
 func TestStartAndNextInSubdir(t *testing.T) {
 	setup(t)
 
-	setWorkingDir("/tmp/mob/local/subdir")
+	setWorkingDir(tempDir + "/local/subdir")
 	start(configuration)
 	createFile(t, "example.txt", "content")
 	next(configuration)
 
-	setWorkingDir("/tmp/mob/localother/subdir")
+	setWorkingDir(tempDir + "/localother/subdir")
 	start(configuration)
 	createFile(t, "example2.txt", "content")
 	createFile(t, "../example3.txt", "content")
 	next(configuration)
 
-	setWorkingDir("/tmp/mob/local/subdir")
+	setWorkingDir(tempDir + "/local/subdir")
 	start(configuration)
 	done(configuration)
 
-	setWorkingDir("/tmp/mob/local")
+	setWorkingDir(tempDir + "/local")
 	assertFileExist(t, "subdir/example.txt")
 	assertFileExist(t, "subdir/example2.txt")
 	assertFileExist(t, "example3.txt")
@@ -878,13 +889,13 @@ func TestIsGitIdentifiesGitRepo(t *testing.T) {
 }
 
 func TestIsGitIdentifiesOutsideOfGitRepo(t *testing.T) {
-	setWorkingDir("/tmp/git/notgit")
+	setWorkingDir(tempDir + "/notgit")
 	equals(t, false, isGit())
 }
 
 func TestNotAGitRepoMessage(t *testing.T) {
 	output := setup(t)
-	setWorkingDir("/tmp/git/notgit")
+	setWorkingDir(tempDir + "/notgit")
 	sayGitError("TEST", "TEST", errors.New("TEST"))
 	assertOutputContains(t, output, "mob expects the current working directory to be a git repository.")
 }
@@ -892,7 +903,7 @@ func TestNotAGitRepoMessage(t *testing.T) {
 func setup(t *testing.T) *string {
 	configuration = getDefaultConfiguration()
 	configuration.MobNextStay = false
-	output := captureOutput()
+	output := captureOutput(t)
 	createTestbed(t)
 	assertOnBranch(t, "master")
 	equals(t, []string{"master"}, gitBranches())
@@ -913,10 +924,10 @@ func localSetup(t *testing.T) (output *string, configuration Configuration) {
 	return output, configuration
 }
 
-func captureOutput() *string {
+func captureOutput(t *testing.T) *string {
 	messages := ""
 	printToConsole = func(text string) {
-		fmt.Print(text)
+		t.Log(strings.TrimRight(text, "\n"))
 		messages += text
 	}
 	return &messages
@@ -935,16 +946,20 @@ func run(t *testing.T, name string, args ...string) *string {
 
 func createTestbed(t *testing.T) {
 	workingDir = ""
-	run(t, "./create-testbed")
 
-	setWorkingDir("/tmp/mob/local")
+	tempDir = t.TempDir()
+	say("Creating testbed in temporary directory " + tempDir)
+
+	run(t, "./create-testbed", tempDir)
+
+	setWorkingDir(tempDir + "/local")
 	assertOnBranch(t, "master")
 	assertNoMobSessionBranches(t, "mob-session")
 }
 
 func setWorkingDir(dir string) {
 	workingDir = dir
-	say("\nSET WORKING DIR TO " + dir + "\n======================\n")
+	say("\n===== cd " + dir)
 }
 
 func assertCommits(t *testing.T, commits int) {
