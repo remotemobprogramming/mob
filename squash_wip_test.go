@@ -87,6 +87,7 @@ func TestSquashWipCommits_failsOnMainBranch(t *testing.T) {
 func TestCommitsOnCurrentBranch(t *testing.T) {
 	_, configuration := localSetup(t)
 	createFileAndCommitIt(t, "file1.txt", "irrelevant", "not on branch")
+	silentgit("push")
 	start(configuration)
 	createFileAndCommitIt(t, "file2.txt", "irrelevant", "on branch")
 	createFile(t, "file3.txt", "irrelevant")
