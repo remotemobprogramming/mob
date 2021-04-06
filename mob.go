@@ -892,6 +892,12 @@ Basic Commands(Options):
     [--git-editor]                       Not intended for manual use. Used as a non-interactive editor (GIT_EDITOR) for git.
     [--git-sequence-editor]              Not intended for manual use. Used as a non-interactive sequence editor (GIT_SEQUENCE_EDITOR) for git.
 
+Experimental Commands:
+  squash-wip                             Combines wip commits in wip branch with subsequent manual commits to leave only manual commits.
+                                         ! Works only if all wip commits have the same wip commit message !
+    [--git-editor]                       Not intended for manual use. Used as a non-interactive editor (GIT_EDITOR) for git.
+    [--git-sequence-editor]              Not intended for manual use. Used as a non-interactive sequence editor (GIT_SEQUENCE_EDITOR) for git.
+
 Timer Commands:
   timer <minutes>    start a <minutes> timer
   start <minutes>    start mob session in wip branch and a timer
