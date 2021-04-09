@@ -11,6 +11,7 @@ createrepo() {
     (cd "${dir}" && git clone --origin origin "file://${remotedir}" .)
     (cd "${dir}" && git config --local user.name ${name})
     (cd "${dir}" && git config --local user.email ${name}@example.com)
+    (cd "${dir}" && git checkout master)
 }
 
 tmpdir=$1
@@ -28,7 +29,7 @@ echo ""
 echo "Creating remote repository ${remotedir}"
 rm -rf "${remotedir}"
 mkdir -p "${remotedir}"
-(cd "${remotedir}" && git --bare init --initial-branch=master)
+(cd "${remotedir}" && git --bare init)
 
 # create first local repo
 createrepo "${localdir}"
