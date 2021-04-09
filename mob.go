@@ -118,7 +118,7 @@ func parseEnvironmentVariables(configuration Configuration) Configuration {
 	setStringFromEnvVariable(&configuration.WipBranchQualifierSeparator, "MOB_WIP_BRANCH_QUALIFIER_SEPARATOR")
 
 	setStringFromEnvVariable(&configuration.WipBranchQualifier, "MOB_WIP_BRANCH_QUALIFIER")
-	if configuration.WipBranchQualifier != "" {
+	if configuration.customWipBranchQualifierConfigured() {
 		configuration.WipBranchQualifierSet = true
 	}
 
@@ -337,7 +337,7 @@ func addWipQualifier(branch string, configuration Configuration) string {
 func removeWipQualifier(branch string, localBranches []string, configuration Configuration) string {
 	for !branchExists(branch, localBranches) && hasWipBranchQualifierSeparator(branch, configuration) {
 		var afterRemoval string
-		if configuration.WipBranchQualifier == "" { // WipBranchQualifier not configured
+		if !configuration.customWipBranchQualifierConfigured() { // WipBranchQualifier not configured
 			afterRemoval = removeFromSeparator(branch, configuration.WipBranchQualifierSeparator)
 		} else { // WipBranchQualifier not configured
 			afterRemoval = removeSuffix(branch, configuration.wipBranchQualifierSuffix())
@@ -570,7 +570,8 @@ func sayUnstagedChangesInfo() {
 
 func hasQualifiedBranches(currentBaseBranch string, remoteBranches []string, configuration Configuration) bool {
 	debugInfo("check on current base branch " + currentBaseBranch + " with remote branches " + strings.Join(remoteBranches, ","))
-	hasWipBranchesWithQualifier := strings.Contains(strings.Join(remoteBranches, "\n"), configuration.RemoteName+"/"+wipBranchPrefix+currentBaseBranch+configuration.WipBranchQualifierSeparator)
+	remoteBranchWithQualifier := configuration.RemoteName + "/" + wipBranchPrefix + currentBaseBranch + configuration.WipBranchQualifierSeparator
+	hasWipBranchesWithQualifier := strings.Contains(strings.Join(remoteBranches, "\n"), remoteBranchWithQualifier)
 	return hasWipBranchesWithQualifier
 }
 
@@ -652,9 +653,8 @@ func getCachedChanges() string {
 }
 
 func makeWipCommit(configuration Configuration) {
-	commitMsg := configuration.WipCommitMessage
 	git("add", "--all")
-	git("commit", "--message", commitMsg, "--no-verify")
+	git("commit", "--message", configuration.WipCommitMessage, "--no-verify")
 }
 
 func done(configuration Configuration) {
@@ -765,7 +765,7 @@ func hasUnpushedCommits(branch string, configuration Configuration) bool {
 	}
 	unpushedCommits := unpushedCount != 0
 	if unpushedCommits {
-	  sayInfo(fmt.Sprintf("there are %d unpushed commits on local base branch <%s>", unpushedCount, branch))
+		sayInfo(fmt.Sprintf("there are %d unpushed commits on local base branch <%s>", unpushedCount, branch))
 	}
 	return unpushedCommits
 }
