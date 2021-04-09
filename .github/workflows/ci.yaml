@@ -4,6 +4,8 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
+    - name: Show git version
+      run: git version
     - uses: actions/checkout@v2
     - name: Use Go 1.16 to test
       uses: cedrickring/golang-action/go1.16@1.7.0
