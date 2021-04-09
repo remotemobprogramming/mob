@@ -1,6 +1,5 @@
 #!/bin/bash
-set -ex
-
+set -e
 
 cleanrepo() {
     dir=$1
@@ -41,27 +40,34 @@ echo ""
 echo "Creating temporary test assets in ${tmpdir}"
 mkdir -p "${tmpdir}"
 
-# create remote repo
+echo "create remote repo"
 cleanrepo "${remotedir}"
 createremoterepo "${remotedir}"
 
-# create first local repo
+echo "create first local repo"
 cleanrepo "${localdir}"
 clonerepo "${localdir}"
 
-# populate an initial import
-echo "Populating and pushing"
+echo "Populating and initial import pushing"
 (cd "${localdir}" && echo "test" >test.txt && mkdir -p subdir && echo "subdir" >subdir/subdir.txt)
 (cd "${localdir}" && git checkout -b "${branch}" && git add . && git commit --message "initial import" && git push --set-upstream --all origin)
 
-# create more local repos
+
+echo "Creating more local repos"
 for name in localother alice bob
 do
     cleanrepo "${tmpdir}/${name}"
     clonerepo "${tmpdir}/${name}"
+    echo "Created local repo ${name}"
 done
 
-# create a non-git area
-mkdir -p "${localdir}" "${notgit}"
+
+echo "Creating non-git dirs"
+for dir in "${localdir}" "${notgit}"
+do
+    mkdir -p "${dir}"
+    echo "Created non-git dir ${dir}"
+done
+
 
 echo "Done."
