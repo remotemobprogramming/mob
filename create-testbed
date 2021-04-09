@@ -21,10 +21,10 @@ clonerepo() {
     dir=$1
     echo ""
     echo "clonerepo: Cloning remote ${remotedir} to ${dir}"
-    name=$(basename $dir)
+    name=$(basename "${dir}")
     mkdir -p "${dir}"
     (cd "${dir}" && git clone --origin origin "file://${remotedir}" .)
-    (cd "${dir}" && git config --local user.name ${name})
+    (cd "${dir}" && git config --local user.name "${name}")
     (cd "${dir}" && git config --local user.email "${name}@example.com")
 }
 
@@ -39,7 +39,7 @@ branch=master # fixed to master for now
 # create base dir
 echo ""
 echo "Creating temporary test assets in ${tmpdir}"
-mkdir -p ${tmpdir}
+mkdir -p "${tmpdir}"
 
 # create remote repo
 cleanrepo "${remotedir}"
