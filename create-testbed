@@ -1,17 +1,31 @@
 #!/bin/bash
-set -e
+set -ex
 
-createrepo() {
+
+cleanrepo() {
     dir=$1
-    name=$(basename $dir)
     echo ""
-    echo "Cloning remote to ${dir}"
+    echo "cleanrepo: Delete ${dir}"
     rm -rf "${dir}"
+}
+
+createremoterepo() {
+    dir=$1
+    echo ""
+    echo "createremoterepo: Creating remote repository ${dir}"
+    mkdir -p "${dir}"
+    (cd "${dir}" && git --bare init && git symbolic-ref HEAD "refs/heads/${branch}")
+}
+
+clonerepo() {
+    dir=$1
+    echo ""
+    echo "clonerepo: Cloning remote ${remotedir} to ${dir}"
+    name=$(basename $dir)
     mkdir -p "${dir}"
     (cd "${dir}" && git clone --origin origin "file://${remotedir}" .)
     (cd "${dir}" && git config --local user.name ${name})
-    (cd "${dir}" && git config --local user.email ${name}@example.com)
-    (cd "${dir}" && git checkout -b master)
+    (cd "${dir}" && git config --local user.email "${name}@example.com")
 }
 
 tmpdir=$1
@@ -19,30 +33,32 @@ localdir="${tmpdir}/local"
 remotedir="${tmpdir}/remote"
 notgit="${tmpdir}/notgit"
 
+branch=master # fixed to master for now
+
+
 # create base dir
 echo ""
 echo "Creating temporary test assets in ${tmpdir}"
 mkdir -p ${tmpdir}
 
 # create remote repo
-echo ""
-echo "Creating remote repository ${remotedir}"
-rm -rf "${remotedir}"
-mkdir -p "${remotedir}"
-(cd "${remotedir}" && git --bare init)
+cleanrepo "${remotedir}"
+createremoterepo "${remotedir}"
 
 # create first local repo
-createrepo "${localdir}"
+cleanrepo "${localdir}"
+clonerepo "${localdir}"
 
 # populate an initial import
 echo "Populating and pushing"
-(cd "${localdir}" && echo "test" >test.txt && mkdir subdir && echo "subdir" >subdir/subdir.txt)
-(cd "${localdir}" && git checkout -b master && git add . && git commit --message "initial import" && git push --set-upstream --all origin)
+(cd "${localdir}" && echo "test" >test.txt && mkdir -p subdir && echo "subdir" >subdir/subdir.txt)
+(cd "${localdir}" && git checkout -b "${branch}" && git add . && git commit --message "initial import" && git push --set-upstream --all origin)
 
 # create more local repos
 for name in localother alice bob
 do
-    createrepo "${tmpdir}/${name}"
+    cleanrepo "${tmpdir}/${name}"
+    clonerepo "${tmpdir}/${name}"
 done
 
 # create a non-git area
