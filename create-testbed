@@ -11,7 +11,7 @@ createrepo() {
     (cd "${dir}" && git clone --origin origin "file://${remotedir}" .)
     (cd "${dir}" && git config --local user.name ${name})
     (cd "${dir}" && git config --local user.email ${name}@example.com)
-    (cd "${dir}" && git checkout master)
+    (cd "${dir}" && git checkout -b master)
 }
 
 tmpdir=$1
@@ -37,7 +37,7 @@ createrepo "${localdir}"
 # populate an initial import
 echo "Populating and pushing"
 (cd "${localdir}" && echo "test" >test.txt && mkdir subdir && echo "subdir" >subdir/subdir.txt)
-(cd "${localdir}" && git checkout -b master && git add . && git commit -m "initial import" && git push --set-upstream --all origin)
+(cd "${localdir}" && git checkout -b master && git add . && git commit --message "initial import" && git push --set-upstream --all origin)
 
 # create more local repos
 for name in localother alice bob
