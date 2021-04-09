@@ -763,8 +763,11 @@ func hasUnpushedCommits(branch string, configuration Configuration) bool {
 	if err != nil {
 		panic(err)
 	}
-	sayInfo(fmt.Sprintf("there are %d unpushed commits on local base branch <%s>", unpushedCount, branch))
-	return unpushedCount != 0
+	unpushedCommits := unpushedCount != 0
+	if unpushedCommits {
+	  sayInfo(fmt.Sprintf("there are %d unpushed commits on local base branch <%s>", unpushedCount, branch))
+	}
+	return unpushedCommits
 }
 
 func isMobProgramming(configuration Configuration) bool {
