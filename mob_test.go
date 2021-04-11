@@ -994,10 +994,10 @@ func createFileAndCommitIt(t *testing.T, filename string, content string, commit
 	git("commit", "-m", commitMessage)
 }
 
-func createFile(t *testing.T, filename string, content string) (path string) {
-	d1 := []byte(content)
-	path = workingDir + "/" + filename
-	err := ioutil.WriteFile(path, d1, 0644)
+func createFile(t *testing.T, filename string, content string) (pathToFile string) {
+	contentAsBytes := []byte(content)
+	pathToFile = workingDir + "/" + filename
+	err := ioutil.WriteFile(pathToFile, contentAsBytes, 0644)
 	if err != nil {
 		failWithFailure(t, "creating file "+filename+" with content "+content, "error")
 	}
