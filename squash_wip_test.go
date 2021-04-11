@@ -70,15 +70,10 @@ func TestSquashWipCommits_failsOnFinalWipCommit(t *testing.T) {
 
 func TestSquashWipCommits_failsOnMainBranch(t *testing.T) {
 	output, configuration := localSetup(t)
-	exitedWithCode := -1
-	exit = func(code int) {
-		exitedWithCode = code
-	}
 
 	squashWip(configuration)
 
-	equals(t, 1, exitedWithCode)
-	assertOutputContains(t, output, "Make sure you are on the wip-branch before running quash-wip")
+	assertOutputContains(t, output, "you aren't mob programming")
 }
 
 func TestSquashWipCommits_worksWithEmptyCommits(t *testing.T) {

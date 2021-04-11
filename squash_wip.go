@@ -10,6 +10,12 @@ import (
 type Replacer func(string) string
 
 func squashWip(configuration Configuration) {
+	if !isMobProgramming(configuration) {
+		sayError("you aren't mob programming")
+		sayTodo("to start mob programming, use", "mob start")
+		return
+	}
+
 	if endsWithWipCommit(configuration) {
 		sayError(`failed to squash wip commits
 last commit must be a manual commit`)
@@ -19,12 +25,6 @@ last commit must be a manual commit`)
 	}
 
 	currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), gitBranches(), configuration)
-	if gitCurrentBranch() != currentWipBranch {
-		//todo should be same logic as in other methods when one should be mob programming but isn't
-		sayInfo("Make sure you are on the wip-branch before running quash-wip")
-		return
-	}
-
 	mergeBase := silentgit("merge-base", currentWipBranch, currentBaseBranch)
 
 	originalGitEditor, originalGitSequenceEditor := getEnvGitEditor()
