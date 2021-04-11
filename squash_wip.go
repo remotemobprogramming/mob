@@ -15,7 +15,6 @@ func squashWip(configuration Configuration) {
 last commit must be a manual commit`)
 		sayEmptyLine()
 		sayTodo("create a manual commit with a commit message to fix this:", "git commit --allow-empty -m \"your message goes here\"")
-		exit(1)
 		return
 	}
 
@@ -23,7 +22,6 @@ last commit must be a manual commit`)
 	if gitCurrentBranch() != currentWipBranch {
 		//todo should be same logic as in other methods when one should be mob programming but isn't
 		sayInfo("Make sure you are on the wip-branch before running quash-wip")
-		exit(1)
 		return
 	}
 

@@ -61,14 +61,10 @@ func TestSquashWipCommits_failsOnFinalWipCommit(t *testing.T) {
 	createFile(t, "file2.txt", "irrelevant")
 	next(configuration)
 	start(configuration)
-	exitedWithCode := -1
-	exit = func(code int) {
-		exitedWithCode = code
-	}
 
 	squashWip(configuration)
 
-	equals(t, 1, exitedWithCode)
+	assertCommitLogContainsMessage(t, gitCurrentBranch(), configuration.WipCommitMessage)
 	assertOutputContains(t, output, "failed to squash wip commits")
 }
 
