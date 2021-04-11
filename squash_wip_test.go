@@ -69,7 +69,7 @@ func TestSquashWipCommits_failsOnFinalWipCommit(t *testing.T) {
 	squashWip(configuration)
 
 	equals(t, 1, exitedWithCode)
-	assertOutputContains(t, output, "Make sure the final commit is a manual commit before squashing")
+	assertOutputContains(t, output, "failed to squash wip commits")
 }
 
 func TestSquashWipCommits_failsOnMainBranch(t *testing.T) {

@@ -11,13 +11,16 @@ type Replacer func(string) string
 
 func squashWip(configuration Configuration) {
 	if endsWithWipCommit(configuration) {
-		sayInfo("Make sure the final commit is a manual commit before squashing")
+		sayError(`failed to squash wip commits
+last commit must be a manual commit`)
+		sayTodo("create a manual commit with a commit message to fix this:", "git commit --allow-empty")
 		exit(1)
 		return
 	}
 
 	currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), gitBranches(), configuration)
 	if gitCurrentBranch() != currentWipBranch {
+		//todo should be same logic as in other methods when one should be mob programming but isn't
 		sayInfo("Make sure you are on the wip-branch before running quash-wip")
 		exit(1)
 		return
