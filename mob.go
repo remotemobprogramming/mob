@@ -749,6 +749,17 @@ func sayLastCommitsList(currentBaseBranch string, currentWipBranch string) {
 	say(output)
 }
 
+func sayLastCommitsWithMessage(currentBaseBranch string, currentWipBranch string) {
+	log := silentgit("--no-pager", "log", currentBaseBranch+".."+currentWipBranch, "--pretty=oneline", "--abbrev-commit")
+	lines := strings.Split(log, "\n")
+	if len(lines) > 10 {
+		sayInfo("This mob branch contains " + strconv.Itoa(len(lines)) + " commits. The last 10 were:")
+		lines = lines[:10]
+	}
+	output := strings.Join(lines, "\n")
+	say(output)
+}
+
 func isNothingToCommit() bool {
 	output := silentgit("status", "--short")
 	return len(output) == 0
