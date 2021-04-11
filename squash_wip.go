@@ -14,7 +14,7 @@ func squashWip(configuration Configuration) {
 		sayError(`failed to squash wip commits
 last commit must be a manual commit`)
 		sayEmptyLine()
-		sayTodo("create a manual commit with a commit message to fix this:", "git commit --amend -m \"your message goes here\"")
+		sayTodo("create a manual commit with a commit message to fix this:", "git commit --allow-empty -m \"your message goes here\"")
 		exit(1)
 		return
 	}
@@ -34,7 +34,7 @@ last commit must be a manual commit`)
 		mobExecutable()+" squash-wip --git-editor",
 		mobExecutable()+" squash-wip --git-sequence-editor",
 	)
-	silentgit("rebase", "-i", mergeBase)
+	silentgit("rebase", "-i", "--keep-empty", mergeBase)
 	setEnvGitEditor(originalGitEditor, originalGitSequenceEditor)
 	sayInfo("the history of your " + currentWipBranch + " branch has been rewritten to combine all wip commits with their following manual commits:")
 	sayEmptyLine()

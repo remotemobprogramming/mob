@@ -85,6 +85,25 @@ func TestSquashWipCommits_failsOnMainBranch(t *testing.T) {
 	assertOutputContains(t, output, "Make sure you are on the wip-branch before running quash-wip")
 }
 
+func TestSquashWipCommits_worksWithEmptyCommits(t *testing.T) {
+	_, configuration := localSetup(t)
+
+	// change without manual commit
+	start(configuration)
+	createFile(t, "file1.txt", "irrelevant")
+	next(configuration)
+
+	start(configuration)
+	silentgit("commit", "--allow-empty", "-m ok")
+
+	squashWip(configuration)
+
+	assertOnBranch(t, "mob-session")
+	equals(t, []string{
+		"ok",
+	}, commitsOnCurrentBranch(configuration))
+}
+
 func TestCommitsOnCurrentBranch(t *testing.T) {
 	_, configuration := localSetup(t)
 	createFileAndCommitIt(t, "file1.txt", "irrelevant", "not on branch")
