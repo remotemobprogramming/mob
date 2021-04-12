@@ -49,6 +49,10 @@ func (c Configuration) hasCustomCommitMessage() bool {
 	return getDefaultConfiguration().WipCommitMessage != c.WipCommitMessage
 }
 
+func (c Configuration) isWipCommitMessage(line string) bool {
+	return line == c.WipCommitMessage
+}
+
 func main() {
 	parseDebug(os.Args)
 
@@ -298,6 +302,14 @@ func execute(command string, parameter []string, configuration Configuration) {
 		}
 	case "moo":
 		moo(configuration)
+	case "sw", "squash-wip":
+		if len(parameter) > 1 && parameter[0] == "--git-editor" {
+			squashWipGitEditor(parameter[1], configuration)
+		} else if len(parameter) > 1 && parameter[0] == "--git-sequence-editor" {
+			squashWipGitSequenceEditor(parameter[1], configuration)
+		} else {
+			squashWip(configuration)
+		}
 	case "version", "--version", "-v":
 		version()
 	case "help", "--help", "-h":
@@ -737,6 +749,17 @@ func sayLastCommitsList(currentBaseBranch string, currentWipBranch string) {
 	say(output)
 }
 
+func sayLastCommitsWithMessage(currentBaseBranch string, currentWipBranch string) {
+	log := silentgit("--no-pager", "log", currentBaseBranch+".."+currentWipBranch, "--pretty=oneline", "--abbrev-commit")
+	lines := strings.Split(log, "\n")
+	if len(lines) > 10 {
+		sayInfo("This mob branch contains " + strconv.Itoa(len(lines)) + " commits. The last 10 were:")
+		lines = lines[:10]
+	}
+	output := strings.Join(lines, "\n")
+	say(output)
+}
+
 func isNothingToCommit() bool {
 	output := silentgit("status", "--short")
 	return len(output) == 0
@@ -863,6 +886,8 @@ Basic Commands:
   next               handover changes in wip branch to next person
   done               squashes all changes in wip branch to index in base branch
   reset              removes local and remote wip branch
+  squash-wip         combines wip commits in wip branch with subsequent manual commits to leave only manual commits 
+                     ! Works only if all wip commits have the same wip message !
 
 Basic Commands(Options):
   start [<minutes>]                      Start a <minutes> timer
@@ -877,6 +902,15 @@ Basic Commands(Options):
     [--squash]                           Squash commits from wip branch
   reset 
     [--branch|-b <branch-postfix>]       Set wip branch to 'mob/<base-branch>/<branch-postfix>'
+  squash-wip 
+    [--git-editor]                       Not intended for manual use. Used as a non-interactive editor (GIT_EDITOR) for git.
+    [--git-sequence-editor]              Not intended for manual use. Used as a non-interactive sequence editor (GIT_SEQUENCE_EDITOR) for git.
+
+Experimental Commands:
+  squash-wip                             Combines wip commits in wip branch with subsequent manual commits to leave only manual commits.
+                                         ! Works only if all wip commits have the same wip commit message !
+    [--git-editor]                       Not intended for manual use. Used as a non-interactive editor (GIT_EDITOR) for git.
+    [--git-sequence-editor]              Not intended for manual use. Used as a non-interactive sequence editor (GIT_SEQUENCE_EDITOR) for git.
 
 Timer Commands:
   timer <minutes>    start a <minutes> timer

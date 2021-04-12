@@ -912,6 +912,18 @@ func setup(t *testing.T) *string {
 	return output
 }
 
+func localSetup(t *testing.T) (output *string, configuration Configuration) {
+	configuration = getDefaultConfiguration()
+	configuration.MobNextStay = false
+	output = captureOutput(t)
+	createTestbed(t)
+	assertOnBranch(t, "master")
+	equals(t, []string{"master"}, gitBranches())
+	equals(t, []string{"origin/master"}, gitRemoteBranches())
+	assertNoMobSessionBranches(t, "mob-session")
+	return output, configuration
+}
+
 func captureOutput(t *testing.T) *string {
 	messages := ""
 	printToConsole = func(text string) {
@@ -982,12 +994,14 @@ func createFileAndCommitIt(t *testing.T, filename string, content string, commit
 	git("commit", "-m", commitMessage)
 }
 
-func createFile(t *testing.T, filename string, content string) {
-	d1 := []byte(content)
-	err := ioutil.WriteFile(workingDir+"/"+filename, d1, 0644)
+func createFile(t *testing.T, filename string, content string) (pathToFile string) {
+	contentAsBytes := []byte(content)
+	pathToFile = workingDir + "/" + filename
+	err := ioutil.WriteFile(pathToFile, contentAsBytes, 0644)
 	if err != nil {
 		failWithFailure(t, "creating file "+filename+" with content "+content, "error")
 	}
+	return
 }
 
 func assertOnBranch(t *testing.T, branch string) {
