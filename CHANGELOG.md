@@ -1,6 +1,7 @@
 # 1.5.0
 - Less noisy output: Only show number of unpushed commits in output if there are more than 0.
 - Add experimental command `mob squash-wip` to squash any WIP commits in the wip branch into a following manual commit using `git rebase --interactive` with `mob` as the temporary `GIT_EDITOR`.
+- The order of the latest commit is now reversed, the latest one is shown last.
 
 # 1.4.0
 - The list of commits included in a mob branch is now truncated to a maximum of 5 entries to prevent the need for scrolling up in order to see the latest included changes.

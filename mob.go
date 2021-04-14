@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"reflect"
 	"runtime"
 	"strconv"
 	"strings"
@@ -745,8 +746,17 @@ func sayLastCommitsList(currentBaseBranch string, currentWipBranch string) {
 		sayInfo("This mob branch contains " + strconv.Itoa(len(lines)) + " commits. The last 5 were:")
 		lines = lines[:5]
 	}
+	ReverseSlice(lines)
 	output := strings.Join(lines, "\n")
 	say(output)
+}
+
+func ReverseSlice(s interface{}) {
+	size := reflect.ValueOf(s).Len()
+	swap := reflect.Swapper(s)
+	for i, j := 0, size-1; i < j; i, j = i+1, j-1 {
+		swap(i, j)
+	}
 }
 
 func sayLastCommitsWithMessage(currentBaseBranch string, currentWipBranch string) {
