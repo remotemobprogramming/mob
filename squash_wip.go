@@ -4,6 +4,7 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
+	"strconv"
 	"strings"
 )
 
@@ -39,6 +40,18 @@ last commit must be a manual commit`)
 	sayLastCommitsWithMessage(currentBaseBranch, currentWipBranch)
 	sayEmptyLine()
 	sayTodo("to finally put the changes into the base branch preserving the resulting commits, call:", "mob done --no-squash")
+}
+
+func sayLastCommitsWithMessage(currentBaseBranch string, currentWipBranch string) {
+	commitsBaseWipBranch := currentBaseBranch + ".." + currentWipBranch
+	log := silentgit("--no-pager", "log", commitsBaseWipBranch, "--pretty=oneline", "--abbrev-commit")
+	lines := strings.Split(log, "\n")
+	if len(lines) > 10 {
+		sayInfo("This mob branch contains " + strconv.Itoa(len(lines)) + " commits. The last 10 were:")
+		lines = lines[:10]
+	}
+	output := strings.Join(lines, "\n")
+	say(output)
 }
 
 func setEnvGitEditor(gitEditor string, gitSequenceEditor string) {
@@ -114,7 +127,8 @@ func endsWithWipCommit(configuration Configuration) bool {
 
 func commitsOnCurrentBranch(configuration Configuration) []string {
 	currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), gitBranches(), configuration)
-	log := silentgit("--no-pager", "log", currentBaseBranch+".."+currentWipBranch, "--pretty=format:%s")
+	commitsBaseWipBranch := currentBaseBranch + ".." + currentWipBranch
+	log := silentgit("--no-pager", "log", commitsBaseWipBranch, "--pretty=format:%s")
 	lines := strings.Split(log, "\n")
 	return lines
 }

@@ -740,7 +740,8 @@ func status(configuration Configuration) {
 }
 
 func sayLastCommitsList(currentBaseBranch string, currentWipBranch string) {
-	log := silentgit("--no-pager", "log", currentBaseBranch+".."+currentWipBranch, "--pretty=format:%h %cr <%an>", "--abbrev-commit")
+	commitsBaseWipBranch := currentBaseBranch + ".." + currentWipBranch
+	log := silentgit("--no-pager", "log", commitsBaseWipBranch, "--pretty=format:%h %cr <%an>", "--abbrev-commit")
 	lines := strings.Split(log, "\n")
 	if len(lines) > 5 {
 		sayInfo("This mob branch contains " + strconv.Itoa(len(lines)) + " commits. The last 5 were:")
@@ -757,17 +758,6 @@ func ReverseSlice(s interface{}) {
 	for i, j := 0, size-1; i < j; i, j = i+1, j-1 {
 		swap(i, j)
 	}
-}
-
-func sayLastCommitsWithMessage(currentBaseBranch string, currentWipBranch string) {
-	log := silentgit("--no-pager", "log", currentBaseBranch+".."+currentWipBranch, "--pretty=oneline", "--abbrev-commit")
-	lines := strings.Split(log, "\n")
-	if len(lines) > 10 {
-		sayInfo("This mob branch contains " + strconv.Itoa(len(lines)) + " commits. The last 10 were:")
-		lines = lines[:10]
-	}
-	output := strings.Join(lines, "\n")
-	say(output)
 }
 
 func isNothingToCommit() bool {
@@ -864,8 +854,9 @@ func showNext(configuration Configuration) {
 	debugInfo("determining next person based on previous changes")
 
 	currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), gitBranches(), configuration)
+	commitsBaseWipBranch := currentBaseBranch + ".." + currentWipBranch
 
-	changes := silentgit("--no-pager", "log", currentBaseBranch+".."+currentWipBranch, "--pretty=format:%an", "--abbrev-commit")
+	changes := silentgit("--no-pager", "log", commitsBaseWipBranch, "--pretty=format:%an", "--abbrev-commit")
 	lines := strings.Split(strings.Replace(changes, "\r\n", "\n", -1), "\n")
 	numberOfLines := len(lines)
 	debugInfo("there have been " + strconv.Itoa(numberOfLines) + " changes")
