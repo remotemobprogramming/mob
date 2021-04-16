@@ -219,7 +219,7 @@ func (c Configuration) GetRequireCommitMessage() bool {
 }
 
 func TestVersion(t *testing.T) {
-	output, _ := localSetup(t)
+	output, _ := setup(t)
 
 	version()
 
@@ -227,7 +227,7 @@ func TestVersion(t *testing.T) {
 }
 
 func TestStatusNotMobProgramming(t *testing.T) {
-	output, configuration := localSetup(t)
+	output, configuration := setup(t)
 
 	status(configuration)
 
@@ -235,7 +235,7 @@ func TestStatusNotMobProgramming(t *testing.T) {
 }
 
 func TestNextNotMobProgramming(t *testing.T) {
-	output, configuration := localSetup(t)
+	output, configuration := setup(t)
 
 	next(configuration)
 
@@ -243,7 +243,7 @@ func TestNextNotMobProgramming(t *testing.T) {
 }
 
 func TestRequireCommitMessage(t *testing.T) {
-	output, _ := localSetup(t)
+	output, _ := setup(t)
 
 	os.Unsetenv("MOB_REQUIRE_COMMIT_MESSAGE")
 	defer os.Unsetenv("MOB_REQUIRE_COMMIT_MESSAGE")
@@ -275,7 +275,7 @@ func TestRequireCommitMessage(t *testing.T) {
 }
 
 func TestDoneNotMobProgramming(t *testing.T) {
-	output, configuration := localSetup(t)
+	output, configuration := setup(t)
 
 	done(configuration)
 
@@ -283,7 +283,7 @@ func TestDoneNotMobProgramming(t *testing.T) {
 }
 
 func TestStatusMobProgramming(t *testing.T) {
-	output, configuration := localSetup(t)
+	output, configuration := setup(t)
 	start(configuration)
 
 	status(configuration)
@@ -292,7 +292,7 @@ func TestStatusMobProgramming(t *testing.T) {
 }
 
 func TestStatusWithMoreThan5LinesOfLog(t *testing.T) {
-	output, configuration := localSetup(t)
+	output, configuration := setup(t)
 	configuration.MobNextStay = true
 	start(configuration)
 
@@ -306,7 +306,7 @@ func TestStatusWithMoreThan5LinesOfLog(t *testing.T) {
 }
 
 func TestExecuteKicksOffStatus(t *testing.T) {
-	output, _ := localSetup(t)
+	output, _ := setup(t)
 
 	execute("status", []string{}, getDefaultConfiguration())
 
@@ -314,7 +314,7 @@ func TestExecuteKicksOffStatus(t *testing.T) {
 }
 
 func TestExecuteInvalidCommandKicksOffHelp(t *testing.T) {
-	output, _ := localSetup(t)
+	output, _ := setup(t)
 
 	execute("whatever", []string{}, getDefaultConfiguration())
 
@@ -322,7 +322,7 @@ func TestExecuteInvalidCommandKicksOffHelp(t *testing.T) {
 }
 
 func TestStart(t *testing.T) {
-	_, configuration := localSetup(t)
+	_, configuration := setup(t)
 
 	start(configuration)
 
@@ -331,7 +331,7 @@ func TestStart(t *testing.T) {
 }
 
 func TestStartWithMultipleExistingBranches(t *testing.T) {
-	output, configuration := localSetup(t)
+	output, configuration := setup(t)
 
 	configuration.WipBranchQualifier = "green"
 	start(configuration)
@@ -346,7 +346,7 @@ func TestStartWithMultipleExistingBranches(t *testing.T) {
 }
 
 func TestStartWithMultipleExistingBranchesAndEmptyWipBranchQualifier(t *testing.T) {
-	output, configuration := localSetup(t)
+	output, configuration := setup(t)
 
 	configuration.WipBranchQualifier = "green"
 	start(configuration)
@@ -360,7 +360,7 @@ func TestStartWithMultipleExistingBranchesAndEmptyWipBranchQualifier(t *testing.
 }
 
 func TestStartWithMultipleExistingBranchesWithStay(t *testing.T) {
-	output, configuration := localSetup(t)
+	output, configuration := setup(t)
 	configuration.MobNextStay = true
 
 	configuration.WipBranchQualifier = "green"
@@ -377,7 +377,7 @@ func TestStartWithMultipleExistingBranchesWithStay(t *testing.T) {
 }
 
 func TestStartNextWithBranch(t *testing.T) {
-	_, configuration := localSetup(t)
+	_, configuration := setup(t)
 	assertOnBranch(t, "master")
 	configuration.WipBranchQualifier = "green"
 
@@ -395,7 +395,7 @@ func TestStartNextWithBranch(t *testing.T) {
 }
 
 func TestStartNextStartWithBranch(t *testing.T) {
-	_, configuration := localSetup(t)
+	_, configuration := setup(t)
 	configuration.WipBranchQualifier = "green"
 	configuration.MobNextStay = true
 	assertOnBranch(t, "master")
@@ -411,7 +411,7 @@ func TestStartNextStartWithBranch(t *testing.T) {
 }
 
 func TestStartNextOnFeatureWithBranch(t *testing.T) {
-	_, configuration := localSetup(t)
+	_, configuration := setup(t)
 	configuration.WipBranchQualifier = "green"
 	git("checkout", "-b", "feature1")
 	git("push", "origin", "feature1", "--set-upstream")
@@ -426,7 +426,7 @@ func TestStartNextOnFeatureWithBranch(t *testing.T) {
 
 // reproduces #117
 func TestStartNextWithBranchContainingHyphen(t *testing.T) {
-	_, configuration := localSetup(t)
+	_, configuration := setup(t)
 	configuration.WipBranchQualifier = "test-branch"
 	configuration.WipBranchQualifierSet = true
 	start(configuration)
@@ -439,7 +439,7 @@ func TestStartNextWithBranchContainingHyphen(t *testing.T) {
 }
 
 func TestReset(t *testing.T) {
-	_, configuration := localSetup(t)
+	_, configuration := setup(t)
 
 	reset(configuration)
 
@@ -448,7 +448,7 @@ func TestReset(t *testing.T) {
 }
 
 func TestResetCommit(t *testing.T) {
-	_, configuration := localSetup(t)
+	_, configuration := setup(t)
 	start(configuration)
 	createFile(t, "example.txt", "content")
 	next(configuration)
@@ -461,7 +461,7 @@ func TestResetCommit(t *testing.T) {
 }
 
 func TestStartUnstagedChanges(t *testing.T) {
-	output, configuration := localSetup(t)
+	output, configuration := setup(t)
 	configuration.MobStartIncludeUncommittedChanges = false
 	createFile(t, "test.txt", "content")
 
@@ -473,7 +473,7 @@ func TestStartUnstagedChanges(t *testing.T) {
 }
 
 func TestStartIncludeUnstagedChanges(t *testing.T) {
-	_, configuration := localSetup(t)
+	_, configuration := setup(t)
 	configuration.MobStartIncludeUncommittedChanges = true
 	createFile(t, "test.txt", "content")
 
@@ -484,7 +484,7 @@ func TestStartIncludeUnstagedChanges(t *testing.T) {
 }
 
 func TestStartHasUnpushedCommits(t *testing.T) {
-	output, configuration := localSetup(t)
+	output, configuration := setup(t)
 	createFileAndCommitIt(t, "test.txt", "content", "unpushed change")
 
 	start(configuration)
@@ -494,7 +494,7 @@ func TestStartHasUnpushedCommits(t *testing.T) {
 }
 
 func TestStartIncludeUntrackedFiles(t *testing.T) {
-	_, configuration := localSetup(t)
+	_, configuration := setup(t)
 	configuration.MobStartIncludeUncommittedChanges = true
 	createFile(t, "example.txt", "content")
 
@@ -504,7 +504,7 @@ func TestStartIncludeUntrackedFiles(t *testing.T) {
 }
 
 func TestStartUntrackedFiles(t *testing.T) {
-	_, configuration := localSetup(t)
+	_, configuration := setup(t)
 	configuration.MobStartIncludeUncommittedChanges = false
 	createFile(t, "example.txt", "content")
 
@@ -514,7 +514,7 @@ func TestStartUntrackedFiles(t *testing.T) {
 }
 
 func TestStartNextBackToMaster(t *testing.T) {
-	_, configuration := localSetup(t)
+	_, configuration := setup(t)
 	start(configuration)
 	createFile(t, "example.txt", "content")
 	assertOnBranch(t, "mob-session")
@@ -526,7 +526,7 @@ func TestStartNextBackToMaster(t *testing.T) {
 }
 
 func TestStartNextStay(t *testing.T) {
-	_, configuration := localSetup(t)
+	_, configuration := setup(t)
 	configuration.MobNextStay = true
 	start(configuration)
 	createFile(t, "file1.txt", "asdf")
@@ -539,7 +539,7 @@ func TestStartNextStay(t *testing.T) {
 }
 
 func TestStartDoneWithMobDoneSquashTrue(t *testing.T) {
-	_, configuration := localSetup(t)
+	_, configuration := setup(t)
 	configuration.MobDoneSquash = true
 
 	start(configuration)
@@ -552,7 +552,7 @@ func TestStartDoneWithMobDoneSquashTrue(t *testing.T) {
 }
 
 func TestRunOutput(t *testing.T) {
-	_, configuration := localSetup(t)
+	_, configuration := setup(t)
 
 	setWorkingDir(tempDir + "/local")
 	start(configuration)
@@ -562,7 +562,7 @@ func TestRunOutput(t *testing.T) {
 }
 
 func TestTestbed(t *testing.T) {
-	_, configuration := localSetup(t)
+	_, configuration := setup(t)
 
 	setWorkingDir(tempDir + "/local")
 	start(configuration)
@@ -595,7 +595,7 @@ func TestTestbed(t *testing.T) {
 }
 
 func TestStartDoneWithMobDoneSquashFalse(t *testing.T) {
-	_, configuration := localSetup(t)
+	_, configuration := setup(t)
 	configuration.MobDoneSquash = false
 
 	start(configuration)
@@ -608,7 +608,7 @@ func TestStartDoneWithMobDoneSquashFalse(t *testing.T) {
 }
 
 func TestStartDonePublishingOneManualCommit(t *testing.T) {
-	_, configuration := localSetup(t)
+	_, configuration := setup(t)
 	// REFACTOR Replace string with enum value
 	configuration.MobDoneSquash = false // default is probably true
 
@@ -629,7 +629,7 @@ func TestStartDonePublishingOneManualCommit(t *testing.T) {
 }
 
 func TestStartDoneSquashTheOneManualCommit(t *testing.T) {
-	_, configuration := localSetup(t)
+	_, configuration := setup(t)
 	// REFACTOR Replace string with enum value
 	configuration.MobDoneSquash = true
 
@@ -650,7 +650,7 @@ func TestStartDoneSquashTheOneManualCommit(t *testing.T) {
 }
 
 func TestStartDoneFeatureBranch(t *testing.T) {
-	_, configuration := localSetup(t)
+	_, configuration := setup(t)
 	git("checkout", "-b", "feature1")
 	git("push", "origin", "feature1", "--set-upstream")
 	assertOnBranch(t, "feature1")
@@ -664,7 +664,7 @@ func TestStartDoneFeatureBranch(t *testing.T) {
 }
 
 func TestStartNextFeatureBranch(t *testing.T) {
-	_, configuration := localSetup(t)
+	_, configuration := setup(t)
 	git("checkout", "-b", "feature1")
 	git("push", "origin", "feature1", "--set-upstream")
 	assertOnBranch(t, "feature1")
@@ -678,7 +678,7 @@ func TestStartNextFeatureBranch(t *testing.T) {
 }
 
 func TestStartDoneLocalFeatureBranch(t *testing.T) {
-	output, configuration := localSetup(t)
+	output, configuration := setup(t)
 	git("checkout", "-b", "feature1")
 
 	start(configuration)
@@ -688,7 +688,7 @@ func TestStartDoneLocalFeatureBranch(t *testing.T) {
 }
 
 func TestBothCreateNonemptyCommitWithNext(t *testing.T) {
-	_, configuration := localSetup(t)
+	_, configuration := setup(t)
 
 	setWorkingDir(tempDir + "/local")
 	start(configuration)
@@ -718,7 +718,7 @@ func TestBothCreateNonemptyCommitWithNext(t *testing.T) {
 }
 
 func TestNothingToCommitCreatesNoCommits(t *testing.T) {
-	_, configuration := localSetup(t)
+	_, configuration := setup(t)
 
 	setWorkingDir(tempDir + "/local")
 	start(configuration)
@@ -744,7 +744,7 @@ func TestNothingToCommitCreatesNoCommits(t *testing.T) {
 }
 
 func TestStartNextPushManualCommits(t *testing.T) {
-	_, configuration := localSetup(t)
+	_, configuration := setup(t)
 
 	setWorkingDir(tempDir + "/local")
 
@@ -758,7 +758,7 @@ func TestStartNextPushManualCommits(t *testing.T) {
 }
 
 func TestStartNextPushManualCommitsFeatureBranch(t *testing.T) {
-	_, configuration := localSetup(t)
+	_, configuration := setup(t)
 
 	setWorkingDir(tempDir + "/local")
 
@@ -779,7 +779,7 @@ func TestStartNextPushManualCommitsFeatureBranch(t *testing.T) {
 }
 
 func TestConflictingMobSessions(t *testing.T) {
-	_, configuration := localSetup(t)
+	_, configuration := setup(t)
 
 	setWorkingDir(tempDir + "/local")
 	start(configuration)
@@ -805,7 +805,7 @@ func TestConflictingMobSessions(t *testing.T) {
 }
 
 func TestConflictingMobSessionsNextStay(t *testing.T) {
-	_, configuration := localSetup(t)
+	_, configuration := setup(t)
 	configuration.MobNextStay = true
 
 	setWorkingDir(tempDir + "/local")
@@ -827,7 +827,7 @@ func TestConflictingMobSessionsNextStay(t *testing.T) {
 }
 
 func TestDoneMergeConflict(t *testing.T) {
-	output, configuration := localSetup(t)
+	output, configuration := setup(t)
 
 	setWorkingDir(tempDir + "/local")
 	start(configuration)
@@ -845,7 +845,7 @@ func TestDoneMergeConflict(t *testing.T) {
 }
 
 func TestDoneMerge(t *testing.T) {
-	output, configuration := localSetup(t)
+	output, configuration := setup(t)
 
 	setWorkingDir(tempDir + "/local")
 	start(configuration)
@@ -863,7 +863,7 @@ func TestDoneMerge(t *testing.T) {
 }
 
 func TestStartAndNextInSubdir(t *testing.T) {
-	_, configuration := localSetup(t)
+	_, configuration := setup(t)
 
 	setWorkingDir(tempDir + "/local/subdir")
 	start(configuration)
@@ -887,7 +887,7 @@ func TestStartAndNextInSubdir(t *testing.T) {
 }
 
 func TestIsGitIdentifiesGitRepo(t *testing.T) {
-	localSetup(t)
+	setup(t)
 	equals(t, true, isGit())
 }
 
@@ -897,13 +897,13 @@ func TestIsGitIdentifiesOutsideOfGitRepo(t *testing.T) {
 }
 
 func TestNotAGitRepoMessage(t *testing.T) {
-	output, _ := localSetup(t)
+	output, _ := setup(t)
 	setWorkingDir(tempDir + "/notgit")
 	sayGitError("TEST", "TEST", errors.New("TEST"))
 	assertOutputContains(t, output, "mob expects the current working directory to be a git repository.")
 }
 
-func localSetup(t *testing.T) (output *string, configuration Configuration) {
+func setup(t *testing.T) (output *string, configuration Configuration) {
 	configuration = getDefaultConfiguration()
 	configuration.MobNextStay = false
 	output = captureOutput(t)

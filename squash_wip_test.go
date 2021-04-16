@@ -8,7 +8,7 @@ import (
 )
 
 func TestSquashWipCommits_acceptance(t *testing.T) {
-	_, configuration := localSetup(t)
+	_, configuration := setup(t)
 
 	// change without manual commit
 	start(configuration)
@@ -41,7 +41,7 @@ func TestSquashWipCommits_acceptance(t *testing.T) {
 }
 
 func TestSquashWipCommits_resetsEnv(t *testing.T) {
-	_, configuration := localSetup(t)
+	_, configuration := setup(t)
 	start(configuration)
 	createFileAndCommitIt(t, "file1.txt", "irrelevant", "new file")
 	originalGitEditor := "irrelevant"
@@ -56,7 +56,7 @@ func TestSquashWipCommits_resetsEnv(t *testing.T) {
 }
 
 func TestSquashWipCommits_failsOnFinalWipCommit(t *testing.T) {
-	output, configuration := localSetup(t)
+	output, configuration := setup(t)
 	start(configuration)
 	createFile(t, "file2.txt", "irrelevant")
 	next(configuration)
@@ -69,7 +69,7 @@ func TestSquashWipCommits_failsOnFinalWipCommit(t *testing.T) {
 }
 
 func TestSquashWipCommits_failsOnMainBranch(t *testing.T) {
-	output, configuration := localSetup(t)
+	output, configuration := setup(t)
 
 	squashWip(configuration)
 
@@ -77,7 +77,7 @@ func TestSquashWipCommits_failsOnMainBranch(t *testing.T) {
 }
 
 func TestSquashWipCommits_worksWithEmptyCommits(t *testing.T) {
-	_, configuration := localSetup(t)
+	_, configuration := setup(t)
 
 	// change without manual commit
 	start(configuration)
@@ -96,7 +96,7 @@ func TestSquashWipCommits_worksWithEmptyCommits(t *testing.T) {
 }
 
 func TestCommitsOnCurrentBranch(t *testing.T) {
-	_, configuration := localSetup(t)
+	_, configuration := setup(t)
 	createFileAndCommitIt(t, "file1.txt", "irrelevant", "not on branch")
 	silentgit("push")
 	start(configuration)
@@ -114,7 +114,7 @@ func TestCommitsOnCurrentBranch(t *testing.T) {
 }
 
 func TestEndsWithWipCommit_finalManualCommit(t *testing.T) {
-	_, configuration := localSetup(t)
+	_, configuration := setup(t)
 	start(configuration)
 	createFileAndCommitIt(t, "file1.txt", "irrelevant", "new file")
 
@@ -122,7 +122,7 @@ func TestEndsWithWipCommit_finalManualCommit(t *testing.T) {
 }
 
 func TestEndsWithWipCommit_finalWipCommit(t *testing.T) {
-	_, configuration := localSetup(t)
+	_, configuration := setup(t)
 	start(configuration)
 	createFile(t, "file1.txt", "irrelevant")
 	next(configuration)
@@ -132,7 +132,7 @@ func TestEndsWithWipCommit_finalWipCommit(t *testing.T) {
 }
 
 func TestEndsWithWipCommit_manualThenWipCommit(t *testing.T) {
-	_, configuration := localSetup(t)
+	_, configuration := setup(t)
 	start(configuration)
 	createFileAndCommitIt(t, "file1.txt", "irrelevant", "new file")
 	createFile(t, "file2.txt", "irrelevant")
@@ -143,7 +143,7 @@ func TestEndsWithWipCommit_manualThenWipCommit(t *testing.T) {
 }
 
 func TestEndsWithWipCommit_wipThenManualCommit(t *testing.T) {
-	_, configuration := localSetup(t)
+	_, configuration := setup(t)
 	start(configuration)
 	createFile(t, "file2.txt", "irrelevant")
 	next(configuration)
