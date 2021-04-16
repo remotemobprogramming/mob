@@ -154,7 +154,7 @@ func TestEndsWithWipCommit_wipThenManualCommit(t *testing.T) {
 }
 
 func TestMarkSquashWip_singleManualCommit(t *testing.T) {
-	configuration = getDefaultConfiguration()
+	configuration := getDefaultConfiguration()
 	input := `pick c51a56d new file
 
 # Rebase ...`
@@ -165,7 +165,7 @@ func TestMarkSquashWip_singleManualCommit(t *testing.T) {
 }
 
 func TestMarkSquashWip_manyManualCommits(t *testing.T) {
-	configuration = getDefaultConfiguration()
+	configuration := getDefaultConfiguration()
 	input := `pick c51a56d new file
 pick 63ef7a4 another commit
 
@@ -177,7 +177,7 @@ pick 63ef7a4 another commit
 }
 
 func TestMarkSquashWip_wipCommitFollowedByManualCommit(t *testing.T) {
-	configuration = getDefaultConfiguration()
+	configuration := getDefaultConfiguration()
 	input := fmt.Sprintf(`pick 01a9a31 %s
 pick c51a56d manual commit
 
@@ -193,7 +193,7 @@ squash c51a56d manual commit
 }
 
 func TestMarkSquashWip_manyWipCommitsFollowedByManualCommit(t *testing.T) {
-	configuration = getDefaultConfiguration()
+	configuration := getDefaultConfiguration()
 	input := fmt.Sprintf(`pick 01a9a31 %[1]s
 pick 01a9a32 %[1]s
 pick 01a9a33 %[1]s
@@ -213,7 +213,7 @@ squash c51a56d manual commit
 }
 
 func TestCommentWipCommits_oneWipAndOneManualCommit(t *testing.T) {
-	configuration = getDefaultConfiguration()
+	configuration := getDefaultConfiguration()
 	input := fmt.Sprintf(`# This is a combination of 2 commits.
 # This is the 1st commit message:
 
@@ -242,7 +242,7 @@ manual commit
 
 func TestSquashWipCommitGitEditor(t *testing.T) {
 	configuration := getDefaultConfiguration()
-	createTestbed(t)
+	createTestbed(t, configuration)
 	input := createFile(t, "commits", fmt.Sprintf(
 		`# This is a combination of 2 commits.
 # This is the 1st commit message:
@@ -273,8 +273,8 @@ new file
 }
 
 func TestSquashWipCommitGitSequenceEditor(t *testing.T) {
-	createTestbed(t)
-	configuration = getDefaultConfiguration()
+	configuration := getDefaultConfiguration()
+	createTestbed(t, configuration)
 	input := createFile(t, "rebase", fmt.Sprintf(
 		`pick 01a9a31 %[1]s
 pick 01a9a32 %[1]s
