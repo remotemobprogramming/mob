@@ -15,12 +15,11 @@ import (
 )
 
 var (
-	configuration Configuration
-	tempDir       string
+	tempDir string
 )
 
 func TestParseArgs(t *testing.T) {
-	configuration = getDefaultConfiguration()
+	configuration := getDefaultConfiguration()
 	equals(t, configuration.WipBranchQualifier, "")
 
 	command, parameters, configuration := parseArgs([]string{"mob", "start", "--branch", "green"}, configuration)
@@ -31,7 +30,7 @@ func TestParseArgs(t *testing.T) {
 }
 
 func TestParseArgsDoneNoSquash(t *testing.T) {
-	configuration = getDefaultConfiguration()
+	configuration := getDefaultConfiguration()
 	equals(t, true, configuration.MobDoneSquash)
 
 	command, parameters, configuration := parseArgs([]string{"mob", "done", "--no-squash"}, configuration)
@@ -42,7 +41,7 @@ func TestParseArgsDoneNoSquash(t *testing.T) {
 }
 
 func TestParseArgsDoneSquash(t *testing.T) {
-	configuration = getDefaultConfiguration()
+	configuration := getDefaultConfiguration()
 	configuration.MobDoneSquash = false
 
 	command, parameters, configuration := parseArgs([]string{"mob", "done", "--squash"}, configuration)
@@ -53,7 +52,7 @@ func TestParseArgsDoneSquash(t *testing.T) {
 }
 
 func TestParseArgsMessage(t *testing.T) {
-	configuration = getDefaultConfiguration()
+	configuration := getDefaultConfiguration()
 	equals(t, configuration.WipBranchQualifier, "")
 
 	command, parameters, configuration := parseArgs([]string{"mob", "next", "--message", "ci-skip"}, configuration)
@@ -64,7 +63,7 @@ func TestParseArgsMessage(t *testing.T) {
 }
 
 func TestDetermineBranches(t *testing.T) {
-	configuration = getDefaultConfiguration()
+	configuration := getDefaultConfiguration()
 	configuration.WipBranchQualifierSeparator = "-"
 
 	assertDetermineBranches(t, "master", "", []string{}, "master", "mob-session")
@@ -103,6 +102,8 @@ func TestRemoveWipPrefix(t *testing.T) {
 }
 
 func TestRemoveWipBranchQualifier(t *testing.T) {
+	var configuration Configuration
+
 	configuration.WipBranchQualifierSeparator = "-"
 	configuration.WipBranchQualifier = "green"
 	configuration.WipBranchQualifierSet = true
@@ -140,6 +141,8 @@ func TestRemoveWipBranchQualifier(t *testing.T) {
 }
 
 func TestRemoveWipBranchQualifierWithoutBranchQualifierSet(t *testing.T) {
+	var configuration Configuration
+
 	configuration.WipBranchQualifierSeparator = "-"
 	configuration.WipBranchQualifier = ""
 	configuration.WipBranchQualifierSet = false
@@ -152,13 +155,13 @@ func TestRemoveWipBranchQualifierWithoutBranchQualifierSet(t *testing.T) {
 }
 
 func TestMobRemoteNameEnvironmentVariable(t *testing.T) {
-	configuration = setEnvVarAndParse("MOB_REMOTE_NAME", "GITHUB")
+	configuration := setEnvVarAndParse("MOB_REMOTE_NAME", "GITHUB")
 
 	equals(t, "GITHUB", configuration.RemoteName)
 }
 
 func TestMobRemoteNameEnvironmentVariableEmptyString(t *testing.T) {
-	configuration = setEnvVarAndParse("MOB_REMOTE_NAME", "")
+	configuration := setEnvVarAndParse("MOB_REMOTE_NAME", "")
 
 	equals(t, "origin", configuration.RemoteName)
 }
@@ -181,7 +184,7 @@ func assertBoolEnvVarParsed(t *testing.T, envVar string, defaultValue bool, actu
 
 func assertEnvVarParsed(t *testing.T, variable string, value string, expected interface{}, actual func(Configuration) interface{}) {
 	t.Run(fmt.Sprintf("%s=\"%s\"->(expects:%t)", variable, value, expected), func(t *testing.T) {
-		configuration = setEnvVarAndParse(variable, value)
+		configuration := setEnvVarAndParse(variable, value)
 		equals(t, expected, actual(configuration))
 	})
 }
@@ -216,7 +219,7 @@ func (c Configuration) GetRequireCommitMessage() bool {
 }
 
 func TestVersion(t *testing.T) {
-	output := setup(t)
+	output, _ := setup(t)
 
 	version()
 
@@ -224,7 +227,7 @@ func TestVersion(t *testing.T) {
 }
 
 func TestStatusNotMobProgramming(t *testing.T) {
-	output := setup(t)
+	output, configuration := setup(t)
 
 	status(configuration)
 
@@ -232,7 +235,7 @@ func TestStatusNotMobProgramming(t *testing.T) {
 }
 
 func TestNextNotMobProgramming(t *testing.T) {
-	output := setup(t)
+	output, configuration := setup(t)
 
 	next(configuration)
 
@@ -240,12 +243,12 @@ func TestNextNotMobProgramming(t *testing.T) {
 }
 
 func TestRequireCommitMessage(t *testing.T) {
-	output := setup(t)
+	output, _ := setup(t)
 
 	os.Unsetenv("MOB_REQUIRE_COMMIT_MESSAGE")
 	defer os.Unsetenv("MOB_REQUIRE_COMMIT_MESSAGE")
 
-	configuration = parseEnvironmentVariables(getDefaultConfiguration())
+	configuration := parseEnvironmentVariables(getDefaultConfiguration())
 	equals(t, false, configuration.RequireCommitMessage)
 
 	os.Setenv("MOB_REQUIRE_COMMIT_MESSAGE", "false")
@@ -272,7 +275,7 @@ func TestRequireCommitMessage(t *testing.T) {
 }
 
 func TestDoneNotMobProgramming(t *testing.T) {
-	output := setup(t)
+	output, configuration := setup(t)
 
 	done(configuration)
 
@@ -280,7 +283,7 @@ func TestDoneNotMobProgramming(t *testing.T) {
 }
 
 func TestStatusMobProgramming(t *testing.T) {
-	output := setup(t)
+	output, configuration := setup(t)
 	start(configuration)
 
 	status(configuration)
@@ -289,7 +292,7 @@ func TestStatusMobProgramming(t *testing.T) {
 }
 
 func TestStatusWithMoreThan5LinesOfLog(t *testing.T) {
-	output := setup(t)
+	output, configuration := setup(t)
 	configuration.MobNextStay = true
 	start(configuration)
 
@@ -303,7 +306,7 @@ func TestStatusWithMoreThan5LinesOfLog(t *testing.T) {
 }
 
 func TestExecuteKicksOffStatus(t *testing.T) {
-	output := setup(t)
+	output, _ := setup(t)
 
 	execute("status", []string{}, getDefaultConfiguration())
 
@@ -311,7 +314,7 @@ func TestExecuteKicksOffStatus(t *testing.T) {
 }
 
 func TestExecuteInvalidCommandKicksOffHelp(t *testing.T) {
-	output := setup(t)
+	output, _ := setup(t)
 
 	execute("whatever", []string{}, getDefaultConfiguration())
 
@@ -319,16 +322,16 @@ func TestExecuteInvalidCommandKicksOffHelp(t *testing.T) {
 }
 
 func TestStart(t *testing.T) {
-	setup(t)
+	_, configuration := setup(t)
 
 	start(configuration)
 
 	assertOnBranch(t, "mob-session")
-	assertMobSessionBranches(t, "mob-session")
+	assertMobSessionBranches(t, configuration, "mob-session")
 }
 
 func TestStartWithMultipleExistingBranches(t *testing.T) {
-	output := setup(t)
+	output, configuration := setup(t)
 
 	configuration.WipBranchQualifier = "green"
 	start(configuration)
@@ -343,7 +346,7 @@ func TestStartWithMultipleExistingBranches(t *testing.T) {
 }
 
 func TestStartWithMultipleExistingBranchesAndEmptyWipBranchQualifier(t *testing.T) {
-	output := setup(t)
+	output, configuration := setup(t)
 
 	configuration.WipBranchQualifier = "green"
 	start(configuration)
@@ -357,7 +360,7 @@ func TestStartWithMultipleExistingBranchesAndEmptyWipBranchQualifier(t *testing.
 }
 
 func TestStartWithMultipleExistingBranchesWithStay(t *testing.T) {
-	output := setup(t)
+	output, configuration := setup(t)
 	configuration.MobNextStay = true
 
 	configuration.WipBranchQualifier = "green"
@@ -374,13 +377,13 @@ func TestStartWithMultipleExistingBranchesWithStay(t *testing.T) {
 }
 
 func TestStartNextWithBranch(t *testing.T) {
-	setup(t)
+	_, configuration := setup(t)
 	assertOnBranch(t, "master")
 	configuration.WipBranchQualifier = "green"
 
 	start(configuration)
 	assertOnBranch(t, "mob/master-green")
-	assertMobSessionBranches(t, "mob/master-green")
+	assertMobSessionBranches(t, configuration, "mob/master-green")
 	configuration.WipBranchQualifier = ""
 
 	next(configuration)
@@ -388,11 +391,11 @@ func TestStartNextWithBranch(t *testing.T) {
 
 	configuration.WipBranchQualifier = "green"
 	reset(configuration)
-	assertNoMobSessionBranches(t, "mob/master-green")
+	assertNoMobSessionBranches(t, configuration, "mob/master-green")
 }
 
 func TestStartNextStartWithBranch(t *testing.T) {
-	setup(t)
+	_, configuration := setup(t)
 	configuration.WipBranchQualifier = "green"
 	configuration.MobNextStay = true
 	assertOnBranch(t, "master")
@@ -408,7 +411,7 @@ func TestStartNextStartWithBranch(t *testing.T) {
 }
 
 func TestStartNextOnFeatureWithBranch(t *testing.T) {
-	setup(t)
+	_, configuration := setup(t)
 	configuration.WipBranchQualifier = "green"
 	git("checkout", "-b", "feature1")
 	git("push", "origin", "feature1", "--set-upstream")
@@ -423,12 +426,12 @@ func TestStartNextOnFeatureWithBranch(t *testing.T) {
 
 // reproduces #117
 func TestStartNextWithBranchContainingHyphen(t *testing.T) {
-	setup(t)
+	_, configuration := setup(t)
 	configuration.WipBranchQualifier = "test-branch"
 	configuration.WipBranchQualifierSet = true
 	start(configuration)
 	assertOnBranch(t, "mob/master-test-branch")
-	assertMobSessionBranches(t, "mob/master-test-branch")
+	assertMobSessionBranches(t, configuration, "mob/master-test-branch")
 
 	configuration.WipBranchQualifier = ""
 	configuration.WipBranchQualifierSet = false
@@ -436,52 +439,52 @@ func TestStartNextWithBranchContainingHyphen(t *testing.T) {
 }
 
 func TestReset(t *testing.T) {
-	setup(t)
+	_, configuration := setup(t)
 
 	reset(configuration)
 
 	assertOnBranch(t, "master")
-	assertNoMobSessionBranches(t, "mob-session")
+	assertNoMobSessionBranches(t, configuration, "mob-session")
 }
 
 func TestResetCommit(t *testing.T) {
-	setup(t)
+	_, configuration := setup(t)
 	start(configuration)
 	createFile(t, "example.txt", "content")
 	next(configuration)
-	assertMobSessionBranches(t, "mob-session")
+	assertMobSessionBranches(t, configuration, "mob-session")
 
 	reset(configuration)
 
 	assertOnBranch(t, "master")
-	assertNoMobSessionBranches(t, "mob-session")
+	assertNoMobSessionBranches(t, configuration, "mob-session")
 }
 
 func TestStartUnstagedChanges(t *testing.T) {
-	output := setup(t)
+	output, configuration := setup(t)
 	configuration.MobStartIncludeUncommittedChanges = false
 	createFile(t, "test.txt", "content")
 
 	start(configuration)
 
 	assertOnBranch(t, "master")
-	assertNoMobSessionBranches(t, "mob-session")
+	assertNoMobSessionBranches(t, configuration, "mob-session")
 	assertOutputContains(t, output, "mob start --include-uncommitted-changes")
 }
 
 func TestStartIncludeUnstagedChanges(t *testing.T) {
-	setup(t)
+	_, configuration := setup(t)
 	configuration.MobStartIncludeUncommittedChanges = true
 	createFile(t, "test.txt", "content")
 
 	start(configuration)
 
 	assertOnBranch(t, "mob-session")
-	assertMobSessionBranches(t, "mob-session")
+	assertMobSessionBranches(t, configuration, "mob-session")
 }
 
 func TestStartHasUnpushedCommits(t *testing.T) {
-	output := setup(t)
+	output, configuration := setup(t)
 	createFileAndCommitIt(t, "test.txt", "content", "unpushed change")
 
 	start(configuration)
@@ -491,7 +494,7 @@ func TestStartHasUnpushedCommits(t *testing.T) {
 }
 
 func TestStartIncludeUntrackedFiles(t *testing.T) {
-	setup(t)
+	_, configuration := setup(t)
 	configuration.MobStartIncludeUncommittedChanges = true
 	createFile(t, "example.txt", "content")
 
@@ -501,7 +504,7 @@ func TestStartIncludeUntrackedFiles(t *testing.T) {
 }
 
 func TestStartUntrackedFiles(t *testing.T) {
-	setup(t)
+	_, configuration := setup(t)
 	configuration.MobStartIncludeUncommittedChanges = false
 	createFile(t, "example.txt", "content")
 
@@ -511,7 +514,7 @@ func TestStartUntrackedFiles(t *testing.T) {
 }
 
 func TestStartNextBackToMaster(t *testing.T) {
-	setup(t)
+	_, configuration := setup(t)
 	start(configuration)
 	createFile(t, "example.txt", "content")
 	assertOnBranch(t, "mob-session")
@@ -519,11 +522,11 @@ func TestStartNextBackToMaster(t *testing.T) {
 	next(configuration)
 
 	assertOnBranch(t, "master")
-	assertMobSessionBranches(t, "mob-session")
+	assertMobSessionBranches(t, configuration, "mob-session")
 }
 
 func TestStartNextStay(t *testing.T) {
-	setup(t)
+	_, configuration := setup(t)
 	configuration.MobNextStay = true
 	start(configuration)
 	createFile(t, "file1.txt", "asdf")
@@ -536,7 +539,7 @@ func TestStartNextStay(t *testing.T) {
 }
 
 func TestStartDoneWithMobDoneSquashTrue(t *testing.T) {
-	setup(t)
+	_, configuration := setup(t)
 	configuration.MobDoneSquash = true
 
 	start(configuration)
@@ -545,11 +548,11 @@ func TestStartDoneWithMobDoneSquashTrue(t *testing.T) {
 	done(configuration)
 
 	assertOnBranch(t, "master")
-	assertNoMobSessionBranches(t, "mob-session")
+	assertNoMobSessionBranches(t, configuration, "mob-session")
 }
 
 func TestRunOutput(t *testing.T) {
-	setup(t)
+	_, configuration := setup(t)
 
 	setWorkingDir(tempDir + "/local")
 	start(configuration)
@@ -559,7 +562,7 @@ func TestRunOutput(t *testing.T) {
 }
 
 func TestTestbed(t *testing.T) {
-	setup(t)
+	_, configuration := setup(t)
 
 	setWorkingDir(tempDir + "/local")
 	start(configuration)
@@ -592,7 +595,7 @@ func TestTestbed(t *testing.T) {
 }
 
 func TestStartDoneWithMobDoneSquashFalse(t *testing.T) {
-	setup(t)
+	_, configuration := setup(t)
 	configuration.MobDoneSquash = false
 
 	start(configuration)
@@ -601,11 +604,11 @@ func TestStartDoneWithMobDoneSquashFalse(t *testing.T) {
 	done(configuration)
 
 	assertOnBranch(t, "master")
-	assertNoMobSessionBranches(t, "mob-session")
+	assertNoMobSessionBranches(t, configuration, "mob-session")
 }
 
 func TestStartDonePublishingOneManualCommit(t *testing.T) {
-	setup(t)
+	_, configuration := setup(t)
 	// REFACTOR Replace string with enum value
 	configuration.MobDoneSquash = false // default is probably true
 
@@ -622,11 +625,11 @@ func TestStartDonePublishingOneManualCommit(t *testing.T) {
 	assertCommitsOnBranch(t, 2, "master")
 	assertCommitLogContainsMessage(t, "master", "[manual-commit-1] publish this commit to master")
 	assertCommitsOnBranch(t, 1, "origin/master")
-	assertNoMobSessionBranches(t, "mob-session")
+	assertNoMobSessionBranches(t, configuration, "mob-session")
 }
 
 func TestStartDoneSquashTheOneManualCommit(t *testing.T) {
-	setup(t)
+	_, configuration := setup(t)
 	// REFACTOR Replace string with enum value
 	configuration.MobDoneSquash = true
 
@@ -643,11 +646,11 @@ func TestStartDoneSquashTheOneManualCommit(t *testing.T) {
 	assertOnBranch(t, "master")
 	assertCommitsOnBranch(t, 1, "master")
 	assertCommitsOnBranch(t, 1, "origin/master")
-	assertNoMobSessionBranches(t, "mob-session")
+	assertNoMobSessionBranches(t, configuration, "mob-session")
 }
 
 func TestStartDoneFeatureBranch(t *testing.T) {
-	setup(t)
+	_, configuration := setup(t)
 	git("checkout", "-b", "feature1")
 	git("push", "origin", "feature1", "--set-upstream")
 	assertOnBranch(t, "feature1")
@@ -657,11 +660,11 @@ func TestStartDoneFeatureBranch(t *testing.T) {
 	done(configuration)
 
 	assertOnBranch(t, "feature1")
-	assertNoMobSessionBranches(t, "mob-session")
+	assertNoMobSessionBranches(t, configuration, "mob-session")
 }
 
 func TestStartNextFeatureBranch(t *testing.T) {
-	setup(t)
+	_, configuration := setup(t)
 	git("checkout", "-b", "feature1")
 	git("push", "origin", "feature1", "--set-upstream")
 	assertOnBranch(t, "feature1")
@@ -671,11 +674,11 @@ func TestStartNextFeatureBranch(t *testing.T) {
 	next(configuration)
 
 	assertOnBranch(t, "feature1")
-	assertNoMobSessionBranches(t, "mob-session")
+	assertNoMobSessionBranches(t, configuration, "mob-session")
 }
 
 func TestStartDoneLocalFeatureBranch(t *testing.T) {
-	output := setup(t)
+	output, configuration := setup(t)
 	git("checkout", "-b", "feature1")
 
 	start(configuration)
@@ -685,7 +688,7 @@ func TestStartDoneLocalFeatureBranch(t *testing.T) {
 }
 
 func TestBothCreateNonemptyCommitWithNext(t *testing.T) {
-	setup(t)
+	_, configuration := setup(t)
 
 	setWorkingDir(tempDir + "/local")
 	start(configuration)
@@ -715,7 +718,7 @@ func TestBothCreateNonemptyCommitWithNext(t *testing.T) {
 }
 
 func TestNothingToCommitCreatesNoCommits(t *testing.T) {
-	setup(t)
+	_, configuration := setup(t)
 
 	setWorkingDir(tempDir + "/local")
 	start(configuration)
@@ -741,7 +744,7 @@ func TestNothingToCommitCreatesNoCommits(t *testing.T) {
 }
 
 func TestStartNextPushManualCommits(t *testing.T) {
-	setup(t)
+	_, configuration := setup(t)
 
 	setWorkingDir(tempDir + "/local")
 
@@ -755,7 +758,7 @@ func TestStartNextPushManualCommits(t *testing.T) {
 }
 
 func TestStartNextPushManualCommitsFeatureBranch(t *testing.T) {
-	setup(t)
+	_, configuration := setup(t)
 
 	setWorkingDir(tempDir + "/local")
 
@@ -776,7 +779,7 @@ func TestStartNextPushManualCommitsFeatureBranch(t *testing.T) {
 }
 
 func TestConflictingMobSessions(t *testing.T) {
-	setup(t)
+	_, configuration := setup(t)
 
 	setWorkingDir(tempDir + "/local")
 	start(configuration)
@@ -802,7 +805,7 @@ func TestConflictingMobSessions(t *testing.T) {
 }
 
 func TestConflictingMobSessionsNextStay(t *testing.T) {
-	setup(t)
+	_, configuration := setup(t)
 	configuration.MobNextStay = true
 
 	setWorkingDir(tempDir + "/local")
@@ -824,7 +827,7 @@ func TestConflictingMobSessionsNextStay(t *testing.T) {
 }
 
 func TestDoneMergeConflict(t *testing.T) {
-	output := setup(t)
+	output, configuration := setup(t)
 
 	setWorkingDir(tempDir + "/local")
 	start(configuration)
@@ -842,7 +845,7 @@ func TestDoneMergeConflict(t *testing.T) {
 }
 
 func TestDoneMerge(t *testing.T) {
-	output := setup(t)
+	output, configuration := setup(t)
 
 	setWorkingDir(tempDir + "/local")
 	start(configuration)
@@ -860,7 +863,7 @@ func TestDoneMerge(t *testing.T) {
 }
 
 func TestStartAndNextInSubdir(t *testing.T) {
-	setup(t)
+	_, configuration := setup(t)
 
 	setWorkingDir(tempDir + "/local/subdir")
 	start(configuration)
@@ -894,33 +897,21 @@ func TestIsGitIdentifiesOutsideOfGitRepo(t *testing.T) {
 }
 
 func TestNotAGitRepoMessage(t *testing.T) {
-	output := setup(t)
+	output, _ := setup(t)
 	setWorkingDir(tempDir + "/notgit")
 	sayGitError("TEST", "TEST", errors.New("TEST"))
 	assertOutputContains(t, output, "mob expects the current working directory to be a git repository.")
 }
 
-func setup(t *testing.T) *string {
-	configuration = getDefaultConfiguration()
-	configuration.MobNextStay = false
-	output := captureOutput(t)
-	createTestbed(t)
-	assertOnBranch(t, "master")
-	equals(t, []string{"master"}, gitBranches())
-	equals(t, []string{"origin/master"}, gitRemoteBranches())
-	assertNoMobSessionBranches(t, "mob-session")
-	return output
-}
-
-func localSetup(t *testing.T) (output *string, configuration Configuration) {
+func setup(t *testing.T) (output *string, configuration Configuration) {
 	configuration = getDefaultConfiguration()
 	configuration.MobNextStay = false
 	output = captureOutput(t)
-	createTestbed(t)
+	createTestbed(t, configuration)
 	assertOnBranch(t, "master")
 	equals(t, []string{"master"}, gitBranches())
 	equals(t, []string{"origin/master"}, gitRemoteBranches())
-	assertNoMobSessionBranches(t, "mob-session")
+	assertNoMobSessionBranches(t, configuration, "mob-session")
 	return output, configuration
 }
 
@@ -944,7 +935,7 @@ func run(t *testing.T, name string, args ...string) *string {
 	return &output
 }
 
-func createTestbed(t *testing.T) {
+func createTestbed(t *testing.T, configuration Configuration) {
 	workingDir = ""
 
 	tempDir = t.TempDir()
@@ -954,7 +945,7 @@ func createTestbed(t *testing.T) {
 
 	setWorkingDir(tempDir + "/local")
 	assertOnBranch(t, "master")
-	assertNoMobSessionBranches(t, "mob-session")
+	assertNoMobSessionBranches(t, configuration, "mob-session")
 }
 
 func setWorkingDir(dir string) {
@@ -1024,7 +1015,7 @@ func assertOutputNotContains(t *testing.T, output *string, notContains string) {
 	}
 }
 
-func assertMobSessionBranches(t *testing.T, branch string) {
+func assertMobSessionBranches(t *testing.T, configuration Configuration, branch string) {
 	if !hasRemoteBranch(branch, configuration) {
 		failWithFailure(t, configuration.RemoteName+"/"+branch, "none")
 	}
@@ -1033,7 +1024,7 @@ func assertMobSessionBranches(t *testing.T, branch string) {
 	}
 }
 
-func assertNoMobSessionBranches(t *testing.T, branch string) {
+func assertNoMobSessionBranches(t *testing.T, configuration Configuration, branch string) {
 	if hasRemoteBranch(branch, configuration) {
 		failWithFailure(t, "none", configuration.RemoteName+"/"+branch)
 	}

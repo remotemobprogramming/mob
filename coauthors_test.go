@@ -5,7 +5,7 @@ import (
 )
 
 func TestStartDoneCoAuthors(t *testing.T) {
-	setup(t)
+	_, configuration := setup(t)
 
 	setWorkingDir(tempDir + "/alice")
 	start(configuration)
