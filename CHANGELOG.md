@@ -5,7 +5,7 @@
 
 # 1.4.0
 - The list of commits included in a mob branch is now truncated to a maximum of 5 entries to prevent the need for scrolling up in order to see the latest included changes.
-- Show more informative error message when `mob <cmd>` is run 1îtoutside of a git repository.
+- Show more informative error message when `mob <cmd>` is run outside of a git repository.
 - Add environment variable MOB_TIMER which allows setting a default timer duration for `mob start` and `mob timer` commands.
 - Add automatic co-author attribution. Mob will collect all committers from a WIP branch and add them as co-authors in the final WIP commit.
 - added support for preventing `mob start` if there are unpushed commits
