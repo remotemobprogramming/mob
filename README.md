@@ -61,7 +61,7 @@ On windows via [Scoop](https://scoop.sh/):
 scoop install mob
 ``` 
 
-On [Nix](http://nixos.org) through the [mob.nix](./mob.nix) expression like this `mob = callPackage ./mob.nix {};`. To install and configure espeak-ng for text-to-spech support, pass `withSpeech = true;`.
+On [Nix](http://nixos.org) through the [mob.nix](./mob.nix) expression like this `mob = callPackage ./mob.nix {};`. To install and configure espeak-ng for text-to-speech support, pass `withSpeech = true;`.
 
 On Arch Linux via yay:
 
@@ -79,7 +79,7 @@ go get github.com/remotemobprogramming/mob
 go install github.com/remotemobprogramming/mob
 ```
 
-go 1.16 introduced support for package@version syntax so you can install directly with:
+go 1.16 introduced support for package@version syntax, so you can install directly with:
 ```
 go install github.com/remotemobprogramming/mob@latest
 ```
@@ -165,7 +165,7 @@ Examples:
 
 - **Say out loud**
   - Whenever you key in `mob next` at the end of your turn or `mob start` at the beginning of your turn say the command out loud. 
-  - *Why?* Everybody sees and also hears who's turn is ending and who's turn has started.But even more important, the person who's turn is about to start needs to know when the previous person entered `mob next` so they get the latest commit via their `mob start`.
+  - *Why?* Everybody sees and also hears whose turn is ending and whose turn has started. But even more important, the person whose turn is about to start needs to know when the previous person entered `mob next` so they get the latest commit via their `mob start`.
 - **Steal the screenshare**
   - After your turn, don't disable the screenshare. Let the next person steal the screenshare. (Requires a setting in Zoom)
   - *Why?* This provides more calm (and less diversion) for the rest of the mob as the video conference layout doesn't change, allowing the rest of the mob to keep discussing the problem and finding the best solution, even during a Git handover.
@@ -180,7 +180,7 @@ Examples:
   - *Why?* This is just much faster than using the mouse.
 - **Set your editor to autosave**
   - Have your editor save your files on every keystroke automatically. IntelliJ products do this automatically. VS Code, however, needs to be configured via "File > Auto Save toggle".
-  - *Why?* Sometimes people for get to things, for example saving their files. With autosave, any change you'd done in the repository will be handed over via `mob next`.
+  - *Why?* Sometimes people forget to save their files. With autosave, any change will be handed over via `mob next`.
 
 ## More on Installation
 
