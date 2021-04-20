@@ -12,9 +12,8 @@ import (
 )
 
 const (
-	versionNumber   = "1.5.0-SNAPSHOT"
-	mobStashName    = "mob-stash-name"
-	wipBranchPrefix = "mob/"
+	versionNumber = "1.5.0-SNAPSHOT"
+	mobStashName  = "mob-stash-name"
 )
 
 var (
@@ -36,6 +35,7 @@ type Configuration struct {
 	WipBranchQualifierSeparator       string // override with MOB_WIP_BRANCH_QUALIFIER_SEPARATOR environment variable
 	MobDoneSquash                     bool   // override with MOB_DONE_SQUASH environment variable
 	MobTimer                          string // override with MOB_TIMER environment variable
+	WipBranchPrefix                   string // override with MOB_WIP_BRANCH_PREFIX environment variable (experimental)
 }
 
 func (c Configuration) wipBranchQualifierSuffix() string {
@@ -97,6 +97,7 @@ func getDefaultConfiguration() Configuration {
 		WipBranchQualifierSeparator:       "-",
 		MobDoneSquash:                     true,
 		MobTimer:                          "",
+		WipBranchPrefix:                   "mob/",
 	}
 }
 
@@ -114,6 +115,7 @@ func parseEnvironmentVariables(configuration Configuration) Configuration {
 	removed("MOB_BASE_BRANCH", "Use 'mob start' on your base branch instead.")
 	removed("MOB_WIP_BRANCH", "Use 'mob start --branch <branch>' instead.")
 	deprecated("MOB_START_INCLUDE_UNCOMMITTED_CHANGES", "Use the parameter --include-uncommitted-changes instead.")
+	experimental("MOB_WIP_BRANCH_PREFIX")
 
 	setStringFromEnvVariable(&configuration.RemoteName, "MOB_REMOTE_NAME")
 	setStringFromEnvVariable(&configuration.WipCommitMessage, "MOB_WIP_COMMIT_MESSAGE")
@@ -126,6 +128,7 @@ func parseEnvironmentVariables(configuration Configuration) Configuration {
 	if configuration.customWipBranchQualifierConfigured() {
 		configuration.WipBranchQualifierSet = true
 	}
+	setStringFromEnvVariable(&configuration.WipBranchPrefix, "MOB_WIP_BRANCH_PREFIX")
 
 	setBoolFromEnvVariableSet(&configuration.MobNextStay, &configuration.MobNextStaySet, "MOB_NEXT_STAY")
 
@@ -208,6 +211,12 @@ func deprecated(key string, message string) {
 	if _, set := os.LookupEnv(key); set {
 		say("'mob' will stop supporting the configuration option '" + key + "' sometime in the future")
 		say(message)
+	}
+}
+
+func experimental(key string) {
+	if _, set := os.LookupEnv(key); set {
+		say("configuration option '" + key + "' is experimental. 'mob' might stop supporting this option sometime in the future")
 	}
 }
 
@@ -324,12 +333,12 @@ func determineBranches(currentBranch string, localBranches []string, configurati
 	if currentBranch == "mob-session" || (currentBranch == "master" && !configuration.customWipBranchQualifierConfigured()) {
 		baseBranch = "master"
 		wipBranch = "mob-session"
-	} else if isWipBranch(currentBranch) {
-		baseBranch = removeWipQualifier(removeWipPrefix(currentBranch), localBranches, configuration)
+	} else if configuration.isWipBranch(currentBranch) {
+		baseBranch = removeWipQualifier(configuration.removeWipPrefix(currentBranch), localBranches, configuration)
 		wipBranch = currentBranch
 	} else {
 		baseBranch = currentBranch
-		wipBranch = addWipQualifier(addWipPrefix(currentBranch), configuration)
+		wipBranch = addWipQualifier(configuration.addWipPrefix(currentBranch), configuration)
 	}
 
 	debugInfo("on currentBranch " + currentBranch + " => BASE " + baseBranch + " WIP " + wipBranch + " with allLocalBranches " + strings.Join(localBranches, ","))
@@ -376,16 +385,16 @@ func removeFromSeparator(branch string, separator string) string {
 	return branch[:strings.LastIndex(branch, separator)]
 }
 
-func isWipBranch(branch string) bool {
-	return strings.Index(branch, wipBranchPrefix) == 0
+func (c Configuration) isWipBranch(branch string) bool {
+	return strings.Index(branch, c.WipBranchPrefix) == 0
 }
 
-func addWipPrefix(branch string) string {
-	return wipBranchPrefix + branch
+func (c Configuration) addWipPrefix(branch string) string {
+	return c.WipBranchPrefix + branch
 }
 
-func removeWipPrefix(branch string) string { //TODO improve, add tests
-	return branch[len(wipBranchPrefix):]
+func (c Configuration) removeWipPrefix(branch string) string { //TODO improve, add tests
+	return branch[len(c.WipBranchPrefix):]
 }
 
 func addSuffix(branch string, suffix string) string {
@@ -583,7 +592,7 @@ func sayUnstagedChangesInfo() {
 
 func hasQualifiedBranches(currentBaseBranch string, remoteBranches []string, configuration Configuration) bool {
 	debugInfo("check on current base branch " + currentBaseBranch + " with remote branches " + strings.Join(remoteBranches, ","))
-	remoteBranchWithQualifier := configuration.RemoteName + "/" + wipBranchPrefix + currentBaseBranch + configuration.WipBranchQualifierSeparator
+	remoteBranchWithQualifier := configuration.RemoteName + "/" + configuration.WipBranchPrefix + currentBaseBranch + configuration.WipBranchQualifierSeparator
 	hasWipBranchesWithQualifier := strings.Contains(strings.Join(remoteBranches, "\n"), remoteBranchWithQualifier)
 	return hasWipBranchesWithQualifier
 }
