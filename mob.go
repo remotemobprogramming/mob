@@ -711,7 +711,10 @@ func done(configuration Configuration) {
 		if err != nil {
 			sayError(err.Error())
 		}
-		sayTodo("To finish, use", "git commit")
+		if configuration.MobDoneSquash {
+			sayTodo("To finish, use", "git commit")
+		}
+
 	} else {
 		git("checkout", currentBaseBranch)
 		git("branch", "-D", currentWipBranch)
@@ -901,14 +904,14 @@ Basic Commands(Options):
   start [<minutes>]                      Start a <minutes> timer
     [--include-uncommitted-changes|-i]   Move uncommitted changes to wip branch
     [--branch|-b <branch-postfix>]       Set wip branch to 'mob/<base-branch>/<branch-postfix>'
-  next 
+  next
     [--stay|-s]                          Stay on wip branch (default)
     [--return-to-base-branch|-r]         Return to base branch
     [--message|-m <commit-message>]      Override commit message
   done
     [--no-squash]                        Do not squash commits from wip branch
     [--squash]                           Squash commits from wip branch
-  reset 
+  reset
     [--branch|-b <branch-postfix>]       Set wip branch to 'mob/<base-branch>/<branch-postfix>'
 
 Experimental Commands:
