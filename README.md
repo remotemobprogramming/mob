@@ -69,6 +69,14 @@ On Arch Linux via yay:
 yay -S mobsh-bin
 ```
 
+On Ubuntu via [snap](https://snapcraft.io/mob-sh):
+
+```bash
+snap install mob-sh
+snap alias mob-sh mob
+```
+
+
 ### Using go tools
 
 When you already have a working go environment with a defined GOPATH you can install latest via `go install`:
@@ -200,7 +208,9 @@ yay -S mobsh-bin
 yay -S mobsh
 ```
 
-### Linux Timer
+### Linux Timer 
+
+(This is not needed when installing via snap.)
 
 To get the timer to play "mob next" on your speakers when your time is up, you'll need an installed speech engine. 
 Install that on Debian/Ubuntu/Mint as follows:
