@@ -32,7 +32,6 @@ parts:
       say: bin/say
       usr/share/mbrola/us1/us1: usr/lib/x86_64-linux-gnu/espeak-ng-data/mbrola/us1
 
-
 apps:
   mob-sh:
     command: mob
@@ -41,3 +40,4 @@ apps:
       - audio-playback
       - desktop
       - x11
+      - home
