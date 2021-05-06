@@ -72,8 +72,9 @@ yay -S mobsh-bin
 On Ubuntu via [snap](https://snapcraft.io/mob-sh):
 
 ```bash
-snap install mob-sh
-snap alias mob-sh mob
+sudo snap install mob-sh
+sudo snap connect mob-sh:ssh-keys
+sudo snap alias mob-sh mob
 ```
 
 

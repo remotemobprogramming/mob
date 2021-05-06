@@ -16,6 +16,7 @@ parts:
     source-type: git
     stage-packages:
       - git
+      - openssh-client
       - libnotify-bin
       
   say:
@@ -41,3 +42,4 @@ apps:
       - desktop
       - x11
       - home
+      - ssh-keys
