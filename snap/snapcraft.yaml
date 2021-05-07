@@ -19,7 +19,7 @@ parts:
       - openssh-client
       - libnotify-bin
       
-  say:
+  local:
     plugin: dump
     source: snap/local
     source-type: local
@@ -31,15 +31,28 @@ parts:
       sed -i 's|/usr|$SNAP/usr|g' $SNAPCRAFT_PART_INSTALL/usr/bin/mbrola
     organize: 
       say: bin/say
+      mob-launcher: bin/mob-launcher
       usr/share/mbrola/us1/us1: usr/lib/x86_64-linux-gnu/espeak-ng-data/mbrola/us1
+
+plugs:
+  gitconfig:
+    interface: personal-files
+    read:
+      - $HOME/.gitconfig
+      - $HOME/.config/git/config
 
 apps:
   mob-sh:
-    command: mob
+    command: bin/mob-launcher
     plugs:
       - network
+      - home
+      - removable-media 
+      - ssh-keys
+      - gitconfig
       - audio-playback
       - desktop
       - x11
-      - home
-      - ssh-keys
+    environment:
+      GIT_TEMPLATE_DIR: $SNAP/usr/share/git-core/templates
+      GIT_EXEC_PATH: $SNAP/usr/lib/git-core

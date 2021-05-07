@@ -74,6 +74,7 @@ On Ubuntu via [snap](https://snapcraft.io/mob-sh):
 ```bash
 sudo snap install mob-sh
 sudo snap connect mob-sh:ssh-keys
+sudo snap connect mob-sh:gitconfig
 sudo snap alias mob-sh mob
 ```
 

@@ -1,0 +1,2 @@
+#!/bin/sh
+HOME=$(getent passwd $(id -u) | cut -d ':' -f 6); mob "$@"
