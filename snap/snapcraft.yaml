@@ -1,0 +1,58 @@
+name: mob-sh
+base: core18
+version: '1.5.0'
+summary: Fast git handover with mob
+description: |
+  Smooth git handover with 'mob' for remote mob or pair programming.
+  See mob.sh for details.
+
+grade: stable
+confinement: strict
+
+parts:
+  mob-sh:
+    plugin: go
+    source: .
+    source-type: git
+    stage-packages:
+      - git
+      - openssh-client
+      - libnotify-bin
+      
+  local:
+    plugin: dump
+    source: snap/local
+    source-type: local
+    stage-packages:
+      - espeak-ng-espeak
+      - mbrola-us1
+    override-build: |
+      snapcraftctl build
+      sed -i 's|/usr|$SNAP/usr|g' $SNAPCRAFT_PART_INSTALL/usr/bin/mbrola
+    organize: 
+      say: bin/say
+      mob-launcher: bin/mob-launcher
+      usr/share/mbrola/us1/us1: usr/lib/x86_64-linux-gnu/espeak-ng-data/mbrola/us1
+
+plugs:
+  gitconfig:
+    interface: personal-files
+    read:
+      - $HOME/.gitconfig
+      - $HOME/.config/git/config
+
+apps:
+  mob-sh:
+    command: bin/mob-launcher
+    plugs:
+      - network
+      - home
+      - removable-media 
+      - ssh-keys
+      - gitconfig
+      - audio-playback
+      - desktop
+      - x11
+    environment:
+      GIT_TEMPLATE_DIR: $SNAP/usr/share/git-core/templates
+      GIT_EXEC_PATH: $SNAP/usr/lib/git-core

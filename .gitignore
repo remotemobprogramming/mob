@@ -8,3 +8,4 @@ mob.test
 *.tar.gz
 *_checksum.txt
 mob.sh
+*.snap
