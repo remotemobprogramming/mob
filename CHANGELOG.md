@@ -1,5 +1,5 @@
 # 1.6.0
-- When `mob start` fails the timer won't start now.
+- When `mob start` fails, the timer no longer starts to run.
 
 # 1.5.0
 - Less noisy output: Only show number of unpushed commits in output if there are more than 0.
