@@ -1,3 +1,6 @@
+# 1.6.0
+- When `mob start` fails the timer won't start now.
+
 # 1.5.0
 - Less noisy output: Only show number of unpushed commits in output if there are more than 0.
 - Add experimental command `mob squash-wip` to squash any WIP commits in the wip branch into a following manual commit using `git rebase --interactive` with `mob` as the temporary `GIT_EDITOR`.
