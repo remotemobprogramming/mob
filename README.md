@@ -20,7 +20,7 @@ Smooth [git handover](https://www.remotemobprogramming.org/#git-handover) with '
 
 - **mob** is [an open source command line tool written in go](https://github.com/remotemobprogramming/mob)
 - **mob** is the fastest way to [hand over code via git](https://www.remotemobprogramming.org/#git-handover) and feels [ubersmooth](https://twitter.com/holgerGP/status/1277653842444902400?s=20)
-- **mob** supports remote mob or pair programming using screen sharing
+- **mob** supports remote mob/ensemble or pair programming using screen sharing
 - **mob** works on every platform, even [ Apple Silicon](https://twitter.com/simonharrer/status/1332236430429581312?s=20)
 - **mob** keeps your branches clean and only creates WIP commits on temporary wip branches
 - **mob** supports multiple wip branches per base branch
@@ -37,6 +37,8 @@ Smooth [git handover](https://www.remotemobprogramming.org/#git-handover) with '
 >"What a great tool to organise remote working." &mdash; [Jennifer Gommans, IT Consultant](https://twitter.com/missjennbo)
 
 > "I was recently introduced to [mob.sh](https://mob.sh) for remote pairing/mobbing collaboration and I absolutely love it. The timer feature is really a selling point for me. Kudos" &mdash; [Fabien Illert, IT Consultant](https://twitter.com/fabienillert)
+
+> "Really enjoying working with http://mob.sh. Whole team added it to the "Glad" column during yesterday's retro ;-)" &mdash; [twitter.com/miljar](https://twitter.com/miljar/status/1392040059105382401)
 
 ## How to install
 
