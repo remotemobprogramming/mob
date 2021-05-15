@@ -1,2 +1,11 @@
 #!/bin/sh
-HOME=$(getent passwd $(id -u) | cut -d ':' -f 6); mob "$@"
+if snapctl is-connected ssh-keys; then
+  HOME=$(getent passwd $(id -u) | cut -d ':' -f 6); mob "$@"
+else
+  echo " 👉 mob-sh has no access to ssh-keys, please run"
+  echo ""
+  echo "   sudo snap connect mob-sh:ssh-keys"
+  echo ""
+  exit 1
+fi
+
