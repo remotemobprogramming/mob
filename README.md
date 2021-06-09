@@ -228,6 +228,16 @@ Create a little script in your `$PATH` called `say` with the following content:
 espeak -v us-mbrola-1 "$@"
 ```
 
+If you use WSL2 on windows, install eSpeak as windows tool and Create a little script in your `$PATH` called `say` with the following content:
+
+```bash
+#!/bin/sh
+/mnt/c/Program\ Files\ \(x86\)/eSpeak/command_line/espeak.exe "$@"
+```
+
+make sure that the path to the windows `espeak.exe`fits your installation.
+You can avoid the long path by adding it to your windows path variable.
+
 ## How to configure
 
 Show your current configuration with `mob config`:
