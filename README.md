@@ -42,7 +42,7 @@ Smooth [git handover](https://www.remotemobprogramming.org/#git-handover) with '
 
 ## How to install
 
-The preferred way to install mob is as a binary via the provided install script:
+The recommended way to install mob is as a binary via the provided install script:
 ```
 # works for macOS, linux, and even on windows in git bash
 curl -sL install.mob.sh | sh
@@ -71,7 +71,7 @@ On Arch Linux via yay:
 yay -S mobsh-bin
 ```
 
-On Ubuntu via [snap](https://snapcraft.io/mob-sh):
+On Ubuntu there's an EXPERIMENTAL [snap](https://snapcraft.io/mob-sh) package with known limitations (ssh-agent not working, not handling global `.gitignore` files, etc.):
 
 ```bash
 sudo snap install mob-sh
