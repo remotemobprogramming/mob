@@ -40,6 +40,11 @@ plugs:
     read:
       - $HOME/.gitconfig
       - $HOME/.config/git/config
+  dot-gitignore:
+    interface: personal-files
+    read:
+      - $HOME/.gitignore
+      - $HOME/.gitignore_global
 
 apps:
   mob-sh:
@@ -50,6 +55,7 @@ apps:
       - removable-media 
       - ssh-keys
       - gitconfig
+      - dot-gitignore
       - audio-playback
       - desktop
       - x11

@@ -71,7 +71,7 @@ On Arch Linux via yay:
 yay -S mobsh-bin
 ```
 
-On Ubuntu there's an EXPERIMENTAL [snap](https://snapcraft.io/mob-sh) package with known limitations (ssh-agent not working, not handling global `.gitignore` files, etc.):
+On Ubuntu there's an EXPERIMENTAL [snap](https://snapcraft.io/mob-sh) package with a known limitation (ssh-agent not working):
 
 ```bash
 sudo snap install mob-sh
