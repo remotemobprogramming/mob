@@ -1,3 +1,6 @@
+# 1.7.0
+- `mob branch` shows all remote mob branches currently available.
+
 # 1.6.0
 - When `mob start` fails, the timer no longer starts to run.
 

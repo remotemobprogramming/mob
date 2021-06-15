@@ -292,6 +292,8 @@ func execute(command string, parameter []string, configuration Configuration) {
 		} else if configuration.MobTimer != "" {
 			startTimer(configuration.MobTimer, configuration)
 		}
+	case "b", "branch":
+		branch(configuration)
 	case "n", "next":
 		next(configuration)
 	case "d", "done":
@@ -330,8 +332,16 @@ func execute(command string, parameter []string, configuration Configuration) {
 	}
 }
 
+func branch(configuration Configuration) {
+	say(silentgit("branch", "--list", "--remote", configuration.RemoteName+"/"+configuration.WipBranchPrefix+"*"))
+
+	// DEPRECATED
+	say(silentgit("branch", "--list", "--remote", configuration.RemoteName+"/mob-session"))
+}
+
 func determineBranches(currentBranch string, localBranches []string, configuration Configuration) (baseBranch string, wipBranch string) {
 	if currentBranch == "mob-session" || (currentBranch == "master" && !configuration.customWipBranchQualifierConfigured()) {
+		// DEPRECATED
 		baseBranch = "master"
 		wipBranch = "mob-session"
 	} else if configuration.isWipBranch(currentBranch) {
@@ -929,6 +939,7 @@ Timer Commands:
 
 Get more information:
   status             show the status of the current mob session
+  branch             show remote mob branches
   config             show all configuration options
   version            show the version of mob
   help               show help

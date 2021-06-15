@@ -495,6 +495,15 @@ func TestStartHasUnpushedCommits(t *testing.T) {
 	assertOutputContains(t, output, "unpushed commits")
 }
 
+func TestBranch(t *testing.T) {
+	output, configuration := setup(t)
+	start(configuration)
+
+	branch(configuration)
+
+	assertOutputContains(t, output, "\norigin/mob-session\n")
+}
+
 func TestStartIncludeUntrackedFiles(t *testing.T) {
 	_, configuration := setup(t)
 	configuration.MobStartIncludeUncommittedChanges = true
