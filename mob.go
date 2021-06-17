@@ -554,7 +554,7 @@ func start(configuration Configuration) error {
 		return errors.New("cannot start; unpushed changes on base branch must be pushed upstream")
 	}
 
-	wipBranchesWithQualifier := hasQualifiedBranches(currentBaseBranch, configuration)
+	wipBranchesWithQualifier := getQualifiedBranches(currentBaseBranch, configuration)
 	if !isMobProgramming(configuration) && len(wipBranchesWithQualifier) > 0 && !configuration.WipBranchQualifierSet {
 		sayWithPrefix("other qualified mob branches detected:", " ⚠ ")
 		for _, wipBranch := range wipBranchesWithQualifier {
@@ -602,9 +602,10 @@ func sayUnstagedChangesInfo() {
 	}
 }
 
-func hasQualifiedBranches(currentBaseBranch string, configuration Configuration) []string {
+func getQualifiedBranches(currentBaseBranch string, configuration Configuration) []string {
 	remoteBranches := gitRemoteBranches()
 	debugInfo("check on current base branch " + currentBaseBranch + " with remote branches " + strings.Join(remoteBranches, ","))
+	//remoteBranchWithQualifier := configuration.RemoteName + "/" + addWipQualifier(configuration.addWipPrefix(currentBaseBranch), configuration)
 	remoteBranchWithQualifier := configuration.RemoteName + "/" + configuration.WipBranchPrefix + currentBaseBranch + configuration.WipBranchQualifierSeparator
 
 	var branchesWithQualifier []string

@@ -413,6 +413,26 @@ func TestStartNextStartWithBranch(t *testing.T) {
 	assertOnBranch(t, "mob/master-green")
 }
 
+func TestStartFromDivergingBranches(t *testing.T) {
+	output, configuration := setup(t)
+	git("checkout", "-b", "feature-something")
+	git("push", "origin", "feature-something", "--set-upstream")
+	git("checkout", "-b", "feature-something-2")
+	git("push", "origin", "feature-something-2", "--set-upstream")
+
+	assertOnBranch(t, "feature-something-2")
+	start(configuration)
+	assertOnBranch(t, "mob/feature-something-2")
+	next(configuration)
+
+	git("checkout", "feature-something")
+	start(configuration)
+	assertOnBranch(t, "mob/feature-something")
+
+	assertOutputContains(t, output, "qualified mob branches detected")
+	assertOutputContains(t, output, "mob/feature-something-2")
+}
+
 func TestStartNextOnFeatureWithBranch(t *testing.T) {
 	_, configuration := setup(t)
 	configuration.WipBranchQualifier = "green"
