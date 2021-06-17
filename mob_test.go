@@ -345,6 +345,7 @@ func TestStartWithMultipleExistingBranches(t *testing.T) {
 	start(configuration)
 	assertOnBranch(t, "mob-session")
 	assertOutputContains(t, output, "qualified mob branches detected")
+	assertOutputContains(t, output, "mob/master-green")
 }
 
 func TestStartWithMultipleExistingBranchesAndEmptyWipBranchQualifier(t *testing.T) {
