@@ -343,7 +343,7 @@ func TestStartWithMultipleExistingBranches(t *testing.T) {
 
 	configuration.WipBranchQualifier = ""
 	start(configuration)
-	assertOnBranch(t, "master")
+	assertOnBranch(t, "mob-session")
 	assertOutputContains(t, output, "qualified mob branches detected")
 }
 

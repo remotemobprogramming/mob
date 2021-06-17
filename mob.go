@@ -543,15 +543,6 @@ func start(configuration Configuration) error {
 	git("fetch", configuration.RemoteName, "--prune")
 	currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), gitBranches(), configuration)
 
-	hasWipBranchesWithQualifier := hasQualifiedBranches(currentBaseBranch, gitRemoteBranches(), configuration)
-
-	if !isMobProgramming(configuration) && hasWipBranchesWithQualifier && !configuration.WipBranchQualifierSet {
-		sayInfo("qualified mob branches detected")
-		sayTodo("To start mob programming, use", "mob start --branch <branch>")
-		sayIndented("(use \"\" for the default mob branch)")
-		return errors.New("qualified mob branches detected")
-	}
-
 	if !hasRemoteBranch(currentBaseBranch, configuration) {
 		sayError("Remote branch " + configuration.RemoteName + "/" + currentBaseBranch + " is missing")
 		sayTodo("To set the upstream branch, use", "git push "+configuration.RemoteName+" "+currentBaseBranch+" --set-upstream")
@@ -561,6 +552,11 @@ func start(configuration Configuration) error {
 	if hasUnpushedCommits(currentBaseBranch, configuration) {
 		sayError("cannot start; unpushed changes on base branch must be pushed upstream")
 		return errors.New("cannot start; unpushed changes on base branch must be pushed upstream")
+	}
+
+	hasWipBranchesWithQualifier := hasQualifiedBranches(currentBaseBranch, gitRemoteBranches(), configuration)
+	if !isMobProgramming(configuration) && hasWipBranchesWithQualifier && !configuration.WipBranchQualifierSet {
+		sayInfo("⚠️️️ qualified mob branches detected")
 	}
 
 	if !isMobProgramming(configuration) {
