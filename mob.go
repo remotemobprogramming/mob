@@ -605,8 +605,7 @@ func sayUnstagedChangesInfo() {
 func getQualifiedBranches(currentBaseBranch string, configuration Configuration) []string {
 	remoteBranches := gitRemoteBranches()
 	debugInfo("check on current base branch " + currentBaseBranch + " with remote branches " + strings.Join(remoteBranches, ","))
-	//remoteBranchWithQualifier := configuration.RemoteName + "/" + addWipQualifier(configuration.addWipPrefix(currentBaseBranch), configuration)
-	remoteBranchWithQualifier := configuration.RemoteName + "/" + configuration.WipBranchPrefix + currentBaseBranch + configuration.WipBranchQualifierSeparator
+	remoteBranchWithQualifier := configuration.RemoteName + "/" + addWipQualifier(configuration.addWipPrefix(currentBaseBranch), configuration)
 
 	var branchesWithQualifier []string
 	for _, remoteBranch := range remoteBranches {
