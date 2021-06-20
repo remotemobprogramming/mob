@@ -555,7 +555,7 @@ func start(configuration Configuration) error {
 	}
 
 	wipBranchesWithQualifier := getQualifiedBranches(currentBaseBranch, configuration)
-	if !isMobProgramming(configuration) && len(wipBranchesWithQualifier) > 0 && !configuration.WipBranchQualifierSet {
+	if !isMobProgramming(configuration) && !hasRemoteBranch(currentWipBranch, configuration) && len(wipBranchesWithQualifier) > 0 && !configuration.WipBranchQualifierSet {
 		sayWithPrefix("other qualified mob branches detected:", " ⚠ ")
 		for _, wipBranch := range wipBranchesWithQualifier {
 			sayWithPrefix(wipBranch, "   - ")
