@@ -430,6 +430,20 @@ func TestStartFromDivergingBranches(t *testing.T) {
 	assertOutputContains(t, output, "mob/feature-something-2")
 }
 
+func TestStartFromDivergingBranches_noWarning(t *testing.T) {
+	output, configuration := setup(t)
+	checkoutBranch("mob/feature-something")
+	checkoutBranch("feature-something")
+	checkoutBranch("mob/feature-something-2")
+	checkoutBranch("feature-something-2")
+
+	assertOnBranch(t, "feature-something-2")
+	start(configuration)
+	assertOnBranch(t, "mob/feature-something-2")
+
+	assertOutputNotContains(t, output, "qualified mob branches detected")
+}
+
 func TestStartNextOnFeatureWithBranch(t *testing.T) {
 	_, configuration := setup(t)
 	configuration.WipBranchQualifier = "green"
