@@ -343,8 +343,9 @@ func TestStartWithMultipleExistingBranches(t *testing.T) {
 
 	configuration.WipBranchQualifier = ""
 	start(configuration)
-	assertOnBranch(t, "master")
-	assertOutputContains(t, output, "qualified mob branches detected")
+	assertOnBranch(t, "mob-session")
+	assertOutputContains(t, output, "preexisting mob branches have been detected")
+	assertOutputContains(t, output, "mob/master-green")
 }
 
 func TestStartWithMultipleExistingBranchesAndEmptyWipBranchQualifier(t *testing.T) {
@@ -410,6 +411,37 @@ func TestStartNextStartWithBranch(t *testing.T) {
 
 	start(configuration)
 	assertOnBranch(t, "mob/master-green")
+}
+
+func TestStartFromDivergingBranches(t *testing.T) {
+	output, configuration := setup(t)
+	checkoutBranch("feature-something")
+	checkoutBranch("feature-something-2")
+
+	assertOnBranch(t, "feature-something-2")
+	start(configuration)
+	assertOnBranch(t, "mob/feature-something-2")
+	next(configuration)
+
+	git("checkout", "feature-something")
+	start(configuration)
+	assertOnBranch(t, "mob/feature-something")
+	assertOutputContains(t, output, "preexisting mob branches have been detected")
+	assertOutputContains(t, output, "mob/feature-something-2")
+}
+
+func TestStartFromDivergingBranches_noWarning(t *testing.T) {
+	output, configuration := setup(t)
+	checkoutBranch("mob/feature-something")
+	checkoutBranch("feature-something")
+	checkoutBranch("mob/feature-something-2")
+	checkoutBranch("feature-something-2")
+
+	assertOnBranch(t, "feature-something-2")
+	start(configuration)
+	assertOnBranch(t, "mob/feature-something-2")
+
+	assertOutputNotContains(t, output, "qualified mob branches detected")
 }
 
 func TestStartNextOnFeatureWithBranch(t *testing.T) {
@@ -1055,4 +1087,9 @@ func failWithFailure(t *testing.T, exp interface{}, act interface{}) {
 	_, file, line, _ := runtime.Caller(1)
 	fmt.Printf("\033[31m%s:%d:\n\n\texp: %#v\n\n\tgot: %#v\033[39m\n\n", filepath.Base(file), line, exp, act)
 	t.FailNow()
+}
+
+func checkoutBranch(datBranch string) {
+	git("checkout", "-b", datBranch)
+	git("push", "origin", datBranch, "--set-upstream")
 }
