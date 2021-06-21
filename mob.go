@@ -554,9 +554,9 @@ func start(configuration Configuration) error {
 		return errors.New("cannot start; unpushed changes on base branch must be pushed upstream")
 	}
 
-	wipBranchesWithQualifier := getQualifiedBranches(currentBaseBranch, configuration)
+	wipBranchesWithQualifier := getQualifiedWipBranches(currentBaseBranch, configuration)
 	if !isMobProgramming(configuration) && !hasRemoteBranch(currentWipBranch, configuration) && len(wipBranchesWithQualifier) > 0 && !configuration.WipBranchQualifierSet {
-		sayWithPrefix("other qualified mob branches detected:", " ⚠ ")
+		sayWarning("Creating a new mob branch even though preexisting mob branches have been detected.")
 		for _, wipBranch := range wipBranchesWithQualifier {
 			sayWithPrefix(wipBranch, "   - ")
 		}
@@ -602,7 +602,7 @@ func sayUnstagedChangesInfo() {
 	}
 }
 
-func getQualifiedBranches(currentBaseBranch string, configuration Configuration) []string {
+func getQualifiedWipBranches(currentBaseBranch string, configuration Configuration) []string {
 	remoteBranches := gitRemoteBranches()
 	debugInfo("check on current base branch " + currentBaseBranch + " with remote branches " + strings.Join(remoteBranches, ","))
 	remoteBranchWithQualifier := configuration.RemoteName + "/" + addWipQualifier(configuration.addWipPrefix(currentBaseBranch), configuration)
@@ -1061,6 +1061,10 @@ func sayTodo(text string, command string) {
 
 func sayInfo(text string) {
 	sayWithPrefix(text, " > ")
+}
+
+func sayWarning(text string) {
+	sayWithPrefix(text, " ⚠ ")
 }
 
 func sayWithPrefix(s string, prefix string) {
