@@ -1,7 +1,5 @@
-# 1.8.0
-- Allows creating parallel mob-sessions on the same repository more easily.
-
 # 1.7.0
+- Allows creating parallel mob sessions on the same repository more easily.
 - `mob branch` shows all remote mob branches currently available.
 
 # 1.6.0

@@ -55,6 +55,10 @@ func (c Configuration) isWipCommitMessage(line string) bool {
 	return line == c.WipCommitMessage
 }
 
+func (c Configuration) remoteBranch(branch string) string {
+	return c.RemoteName + "/" + branch
+}
+
 func main() {
 	parseDebug(os.Args)
 
@@ -522,7 +526,7 @@ func reset(configuration Configuration) {
 	if hasRemoteBranch(currentWipBranch, configuration) {
 		git("push", "--no-verify", configuration.RemoteName, "--delete", currentWipBranch)
 	}
-	sayInfo("Branches " + currentWipBranch + " and " + configuration.RemoteName + "/" + currentWipBranch + " deleted")
+	sayInfo("Branches " + currentWipBranch + " and " + configuration.remoteBranch(currentWipBranch) + " deleted")
 }
 
 func start(configuration Configuration) error {
@@ -544,7 +548,7 @@ func start(configuration Configuration) error {
 	currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), gitBranches(), configuration)
 
 	if !hasRemoteBranch(currentBaseBranch, configuration) {
-		sayError("Remote branch " + configuration.RemoteName + "/" + currentBaseBranch + " is missing")
+		sayError("Remote branch " + configuration.remoteBranch(currentBaseBranch) + " is missing")
 		sayTodo("To set the upstream branch, use", "git push "+configuration.RemoteName+" "+currentBaseBranch+" --set-upstream")
 		return errors.New("Remote branch is missing")
 	}
@@ -554,14 +558,6 @@ func start(configuration Configuration) error {
 		return errors.New("cannot start; unpushed changes on base branch must be pushed upstream")
 	}
 
-	wipBranchesWithQualifier := getQualifiedWipBranches(currentBaseBranch, configuration)
-	if !isMobProgramming(configuration) && !hasRemoteBranch(currentWipBranch, configuration) && len(wipBranchesWithQualifier) > 0 && !configuration.WipBranchQualifierSet {
-		sayWarning("Creating a new mob branch even though preexisting mob branches have been detected.")
-		for _, wipBranch := range wipBranchesWithQualifier {
-			sayWithPrefix(wipBranch, "   - ")
-		}
-	}
-
 	if !isMobProgramming(configuration) {
 		git("merge", "FETCH_HEAD", "--ff-only")
 	}
@@ -569,6 +565,8 @@ func start(configuration Configuration) error {
 	if hasRemoteBranch(currentWipBranch, configuration) {
 		startJoinMobSession(configuration)
 	} else {
+		showActiveMobSessions(configuration, currentBaseBranch, currentWipBranch)
+
 		startNewMobSession(configuration)
 	}
 
@@ -582,6 +580,25 @@ func start(configuration Configuration) error {
 	sayLastCommitsList(currentBaseBranch, currentWipBranch)
 
 	return nil // no error
+}
+
+func showActiveMobSessions(configuration Configuration, currentBaseBranch string, currentWipBranch string) {
+	if hasRemoteBranch(currentWipBranch, configuration) {
+		return
+	}
+
+	if isMobProgramming(configuration) {
+		return
+	}
+
+	// TODO show all active mob sessions, even non-qualified ones
+	existingWipBranches := getWipBranchesForBaseBranch(currentBaseBranch, configuration)
+	if len(existingWipBranches) > 0 && !configuration.WipBranchQualifierSet {
+		sayWarning("Creating a new wip branch even though preexisting wip branches have been detected.")
+		for _, wipBranch := range existingWipBranches {
+			sayWithPrefix(wipBranch, "   - ")
+		}
+	}
 }
 
 func sayUntrackedFilesInfo() {
@@ -602,34 +619,43 @@ func sayUnstagedChangesInfo() {
 	}
 }
 
-func getQualifiedWipBranches(currentBaseBranch string, configuration Configuration) []string {
+func getWipBranchesForBaseBranch(currentBaseBranch string, configuration Configuration) []string {
 	remoteBranches := gitRemoteBranches()
 	debugInfo("check on current base branch " + currentBaseBranch + " with remote branches " + strings.Join(remoteBranches, ","))
-	remoteBranchWithQualifier := configuration.RemoteName + "/" + addWipQualifier(configuration.addWipPrefix(currentBaseBranch), configuration)
 
-	var branchesWithQualifier []string
+	// determineBranches(currentBaseBranch, gitBranches(), configuration)
+	remoteBranchWithQualifier := configuration.remoteBranch(addWipQualifier(configuration.addWipPrefix(currentBaseBranch), configuration))
+	remoteBranchNoQualifier := configuration.remoteBranch(configuration.addWipPrefix(currentBaseBranch))
+	if currentBaseBranch == "master" {
+		// LEGACY
+		remoteBranchNoQualifier = "mob-session"
+	}
+
+	var result []string
 	for _, remoteBranch := range remoteBranches {
 		if strings.Contains(remoteBranch, remoteBranchWithQualifier) {
-			branchesWithQualifier = append(branchesWithQualifier, remoteBranch)
+			result = append(result, remoteBranch)
+		} else if strings.Contains(remoteBranch, remoteBranchNoQualifier) {
+			result = append(result, remoteBranch)
 		}
 	}
 
-	return branchesWithQualifier
+	return result
 }
 
 func startJoinMobSession(configuration Configuration) {
 	_, currentWipBranch := determineBranches(gitCurrentBranch(), gitBranches(), configuration)
 
-	sayInfo("joining existing mob session from " + configuration.RemoteName + "/" + currentWipBranch)
-	git("checkout", "-B", currentWipBranch, configuration.RemoteName+"/"+currentWipBranch)
+	sayInfo("joining existing mob session from " + configuration.remoteBranch(currentWipBranch))
+	git("checkout", "-B", currentWipBranch, configuration.remoteBranch(currentWipBranch))
 	git("branch", "--set-upstream-to="+configuration.RemoteName+"/"+currentWipBranch, currentWipBranch)
 }
 
 func startNewMobSession(configuration Configuration) {
 	currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), gitBranches(), configuration)
 
-	sayInfo("starting new mob session from " + configuration.RemoteName + "/" + currentBaseBranch)
-	git("checkout", "-B", currentWipBranch, configuration.RemoteName+"/"+currentBaseBranch)
+	sayInfo("starting new mob session from " + configuration.remoteBranch(currentBaseBranch))
+	git("checkout", "-B", currentWipBranch, configuration.remoteBranch(currentBaseBranch))
 	git("push", "--no-verify", "--set-upstream", configuration.RemoteName, currentWipBranch)
 }
 
@@ -848,7 +874,7 @@ func hasLocalBranch(localBranch string) bool {
 
 func hasRemoteBranch(branch string, configuration Configuration) bool {
 	remoteBranches := gitRemoteBranches()
-	remoteBranch := configuration.RemoteName + "/" + branch
+	remoteBranch := configuration.remoteBranch(branch)
 	debugInfo("Remote Branches: " + strings.Join(remoteBranches, "\n"))
 	debugInfo("Remote Branch: " + remoteBranch)
 

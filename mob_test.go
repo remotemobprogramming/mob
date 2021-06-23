@@ -344,7 +344,7 @@ func TestStartWithMultipleExistingBranches(t *testing.T) {
 	configuration.WipBranchQualifier = ""
 	start(configuration)
 	assertOnBranch(t, "mob-session")
-	assertOutputContains(t, output, "preexisting mob branches have been detected")
+	assertOutputContains(t, output, "preexisting wip branches have been detected")
 	assertOutputContains(t, output, "mob/master-green")
 }
 
@@ -426,7 +426,7 @@ func TestStartFromDivergingBranches(t *testing.T) {
 	git("checkout", "feature-something")
 	start(configuration)
 	assertOnBranch(t, "mob/feature-something")
-	assertOutputContains(t, output, "preexisting mob branches have been detected")
+	assertOutputContains(t, output, "preexisting wip branches have been detected")
 	assertOutputContains(t, output, "mob/feature-something-2")
 }
 
