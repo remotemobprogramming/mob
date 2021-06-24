@@ -337,10 +337,10 @@ func execute(command string, parameter []string, configuration Configuration) {
 }
 
 func branch(configuration Configuration) {
-	say(silentgit("branch", "--list", "--remote", configuration.RemoteName+"/"+configuration.WipBranchPrefix+"*"))
+	say(silentgit("branch", "--list", "--remote", configuration.remoteBranch(configuration.addWipPrefix("*"))))
 
 	// DEPRECATED
-	say(silentgit("branch", "--list", "--remote", configuration.RemoteName+"/mob-session"))
+	say(silentgit("branch", "--list", "--remote", configuration.remoteBranch("mob-session")))
 }
 
 func determineBranches(currentBranch string, localBranches []string, configuration Configuration) (baseBranch string, wipBranch string) {
@@ -565,7 +565,7 @@ func start(configuration Configuration) error {
 	if hasRemoteBranch(currentWipBranch, configuration) {
 		startJoinMobSession(configuration)
 	} else {
-		showActiveMobSessions(configuration, currentBaseBranch, currentWipBranch)
+		warnForActiveMobSessions(configuration, currentBaseBranch)
 
 		startNewMobSession(configuration)
 	}
@@ -582,11 +582,7 @@ func start(configuration Configuration) error {
 	return nil // no error
 }
 
-func showActiveMobSessions(configuration Configuration, currentBaseBranch string, currentWipBranch string) {
-	if hasRemoteBranch(currentWipBranch, configuration) {
-		return
-	}
-
+func warnForActiveMobSessions(configuration Configuration, currentBaseBranch string) {
 	if isMobProgramming(configuration) {
 		return
 	}
@@ -595,6 +591,16 @@ func showActiveMobSessions(configuration Configuration, currentBaseBranch string
 	existingWipBranches := getWipBranchesForBaseBranch(currentBaseBranch, configuration)
 	if len(existingWipBranches) > 0 && !configuration.WipBranchQualifierSet {
 		sayWarning("Creating a new wip branch even though preexisting wip branches have been detected.")
+		for _, wipBranch := range existingWipBranches {
+			sayWithPrefix(wipBranch, "   - ")
+		}
+	}
+}
+
+func showActiveMobSessions(configuration Configuration, currentBaseBranch string) {
+	existingWipBranches := getWipBranchesForBaseBranch(currentBaseBranch, configuration)
+	if len(existingWipBranches) > 0 {
+		sayWarning("remote wip branches detected for base branch " + currentBaseBranch + ":")
 		for _, wipBranch := range existingWipBranches {
 			sayWithPrefix(wipBranch, "   - ")
 		}
@@ -633,9 +639,7 @@ func getWipBranchesForBaseBranch(currentBaseBranch string, configuration Configu
 
 	var result []string
 	for _, remoteBranch := range remoteBranches {
-		if strings.Contains(remoteBranch, remoteBranchWithQualifier) {
-			result = append(result, remoteBranch)
-		} else if strings.Contains(remoteBranch, remoteBranchNoQualifier) {
+		if strings.Contains(remoteBranch, remoteBranchWithQualifier) || strings.Contains(remoteBranch, remoteBranchNoQualifier) {
 			result = append(result, remoteBranch)
 		}
 	}
@@ -785,15 +789,14 @@ func status(configuration Configuration) {
 		sayInfo("you are mob programming")
 
 		currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), gitBranches(), configuration)
-		sayInfo("on wip branch " + currentWipBranch + " (base branch " + currentBaseBranch + ")")
+		sayInfo("you are on wip branch " + currentWipBranch + " (base branch " + currentBaseBranch + ")")
 
 		sayLastCommitsList(currentBaseBranch, currentWipBranch)
 	} else {
 		sayInfo("you aren't mob programming")
-		currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), gitBranches(), configuration)
-		sayInfo("on base branch " + currentBaseBranch + " (wip branch " + currentWipBranch + ")")
-
-		sayTodo("to start mob programming, use", "mob start")
+		currentBaseBranch, _ := determineBranches(gitCurrentBranch(), gitBranches(), configuration)
+		sayInfo("you are on base branch " + currentBaseBranch)
+		showActiveMobSessions(configuration, currentBaseBranch)
 	}
 }
 
