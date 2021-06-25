@@ -576,7 +576,7 @@ func start(configuration Configuration) error {
 		git("stash", "pop", stash)
 	}
 
-	sayInfo("on wip branch " + currentWipBranch + " (base branch " + currentBaseBranch + ")")
+	sayInfo("you are on wip branch " + currentWipBranch + " (base branch " + currentBaseBranch + ")")
 	sayLastCommitsList(currentBaseBranch, currentWipBranch)
 
 	return nil // no error
@@ -600,7 +600,7 @@ func warnForActiveMobSessions(configuration Configuration, currentBaseBranch str
 func showActiveMobSessions(configuration Configuration, currentBaseBranch string) {
 	existingWipBranches := getWipBranchesForBaseBranch(currentBaseBranch, configuration)
 	if len(existingWipBranches) > 0 {
-		sayWarning("remote wip branches detected for base branch " + currentBaseBranch + ":")
+		sayInfo("remote wip branches detected:")
 		for _, wipBranch := range existingWipBranches {
 			sayWithPrefix(wipBranch, "   - ")
 		}
@@ -747,7 +747,7 @@ func done(configuration Configuration) {
 		git("push", "--no-verify", configuration.RemoteName, currentWipBranch)
 
 		git("checkout", currentBaseBranch)
-		git("merge", configuration.RemoteName+"/"+currentBaseBranch, "--ff-only")
+		git("merge", configuration.remoteBranch(currentBaseBranch), "--ff-only")
 		mergeFailed := gitignorefailure("merge", squashOrNoCommit(configuration), "--ff", currentWipBranch)
 		if mergeFailed != nil {
 			return
@@ -827,7 +827,7 @@ func hasLocalCommits(branch string, configuration Configuration) bool {
 	local := silentgit("for-each-ref", "--format=%(objectname)",
 		"refs/heads/"+branch)
 	remote := silentgit("for-each-ref", "--format=%(objectname)",
-		"refs/remotes/"+configuration.RemoteName+"/"+branch)
+		"refs/remotes/"+configuration.remoteBranch(branch))
 	return local != remote
 }
 
@@ -838,7 +838,7 @@ func hasUncommittedChanges() bool {
 func hasUnpushedCommits(branch string, configuration Configuration) bool {
 	countOutput := silentgit(
 		"rev-list", "--count", "--left-only",
-		"refs/heads/"+branch+"..."+"refs/remotes/"+configuration.RemoteName+"/"+branch,
+		"refs/heads/"+branch+"..."+"refs/remotes/"+configuration.remoteBranch(branch),
 	)
 	unpushedCount, err := strconv.Atoi(countOutput)
 	if err != nil {

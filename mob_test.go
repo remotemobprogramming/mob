@@ -1052,7 +1052,7 @@ func assertOutputNotContains(t *testing.T, output *string, notContains string) {
 
 func assertMobSessionBranches(t *testing.T, configuration Configuration, branch string) {
 	if !hasRemoteBranch(branch, configuration) {
-		failWithFailure(t, configuration.RemoteName+"/"+branch, "none")
+		failWithFailure(t, configuration.remoteBranch(branch), "none")
 	}
 	if !hasLocalBranch(branch) {
 		failWithFailure(t, branch, "none")
@@ -1061,7 +1061,7 @@ func assertMobSessionBranches(t *testing.T, configuration Configuration, branch 
 
 func assertNoMobSessionBranches(t *testing.T, configuration Configuration, branch string) {
 	if hasRemoteBranch(branch, configuration) {
-		failWithFailure(t, "none", configuration.RemoteName+"/"+branch)
+		failWithFailure(t, "none", configuration.remoteBranch(branch))
 	}
 	if hasLocalBranch(branch) {
 		failWithFailure(t, "none", branch)
