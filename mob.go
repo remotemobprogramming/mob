@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	versionNumber = "1.6.0"
+	versionNumber = "1.7.0"
 	mobStashName  = "mob-stash-name"
 )
 
@@ -302,6 +302,8 @@ func execute(command string, parameter []string, configuration Configuration) {
 		next(configuration)
 	case "d", "done":
 		done(configuration)
+	case "fetch":
+		fetch(configuration)
 	case "reset":
 		reset(configuration)
 	case "config":
@@ -729,6 +731,10 @@ func makeWipCommit(configuration Configuration) {
 	git("commit", "--message", configuration.WipCommitMessage, "--no-verify")
 }
 
+func fetch(configuration Configuration) {
+	git("fetch", configuration.RemoteName, "--prune")
+}
+
 func done(configuration Configuration) {
 	if !isMobProgramming(configuration) {
 		sayError("you aren't mob programming")
@@ -972,6 +978,7 @@ Timer Commands:
 
 Get more information:
   status             show the status of the current mob session
+  fetch              fetch remote state
   branch             show remote mob branches
   config             show all configuration options
   version            show the version of mob

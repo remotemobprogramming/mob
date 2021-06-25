@@ -1,6 +1,7 @@
 # 1.7.0
 - Allows creating parallel mob sessions on the same repository more easily.
 - `mob branch` shows all remote mob branches currently available.
+- `mob fetch` fetches the remote state, so you have everything up to date locally. Helpful to combine with `mob status` and `mob branch` who don't fetch by themselves.
 
 # 1.6.0
 - When `mob start` fails, the timer no longer starts to run.
