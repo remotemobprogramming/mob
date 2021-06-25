@@ -228,14 +228,6 @@ func TestVersion(t *testing.T) {
 	assertOutputContains(t, output, versionNumber)
 }
 
-func TestStatusNotMobProgramming(t *testing.T) {
-	output, configuration := setup(t)
-
-	status(configuration)
-
-	assertOutputContains(t, output, "you aren't mob programming")
-}
-
 func TestNextNotMobProgramming(t *testing.T) {
 	output, configuration := setup(t)
 
@@ -290,7 +282,7 @@ func TestStatusMobProgramming(t *testing.T) {
 
 	status(configuration)
 
-	assertOutputContains(t, output, "you are mob programming")
+	assertOutputContains(t, output, "you are on wip branch mob-session")
 }
 
 func TestStatusWithMoreThan5LinesOfLog(t *testing.T) {
@@ -312,7 +304,7 @@ func TestExecuteKicksOffStatus(t *testing.T) {
 
 	execute("status", []string{}, getDefaultConfiguration())
 
-	assertOutputContains(t, output, "you aren't mob programming")
+	assertOutputContains(t, output, "you are on base branch master")
 }
 
 func TestExecuteInvalidCommandKicksOffHelp(t *testing.T) {

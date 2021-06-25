@@ -539,7 +539,7 @@ func start(configuration Configuration) error {
 			sayInfo("cannot start; clean working tree required")
 			sayUnstagedChangesInfo()
 			sayUntrackedFilesInfo()
-			sayTodo("To start mob programming including uncommitted changes, use", "mob start --include-uncommitted-changes")
+			sayTodo("To start, including uncommitted changes, use", "mob start --include-uncommitted-changes")
 			return errors.New("cannot start; clean working tree required")
 		}
 	}
@@ -685,7 +685,7 @@ func findLatestMobStash(stashes string) string {
 func next(configuration Configuration) {
 	if !isMobProgramming(configuration) {
 		sayError("you aren't mob programming")
-		sayTodo("to start mob programming, use", "mob start")
+		sayTodo("to start, use", "mob start")
 		return
 	}
 
@@ -732,7 +732,7 @@ func makeWipCommit(configuration Configuration) {
 func done(configuration Configuration) {
 	if !isMobProgramming(configuration) {
 		sayError("you aren't mob programming")
-		sayTodo("to start mob programming, use", "mob start")
+		sayTodo("to start, use", "mob start")
 		return
 	}
 
@@ -786,14 +786,11 @@ func squashOrNoCommit(configuration Configuration) string {
 
 func status(configuration Configuration) {
 	if isMobProgramming(configuration) {
-		sayInfo("you are mob programming")
-
 		currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), gitBranches(), configuration)
 		sayInfo("you are on wip branch " + currentWipBranch + " (base branch " + currentBaseBranch + ")")
 
 		sayLastCommitsList(currentBaseBranch, currentWipBranch)
 	} else {
-		sayInfo("you aren't mob programming")
 		currentBaseBranch, _ := determineBranches(gitCurrentBranch(), gitBranches(), configuration)
 		sayInfo("you are on base branch " + currentBaseBranch)
 		showActiveMobSessions(configuration, currentBaseBranch)
