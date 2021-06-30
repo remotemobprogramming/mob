@@ -907,7 +907,7 @@ func gitCurrentBranch() string {
 }
 
 func gitUserName() string {
-	return silentgit("config", "--get", "user.name")
+	return silentgitignorefailure("config", "--get", "user.name")
 }
 
 func gitUserEmail() string {
@@ -916,6 +916,12 @@ func gitUserEmail() string {
 
 func showNext(configuration Configuration) {
 	debugInfo("determining next person based on previous changes")
+	gitUserName := gitUserName()
+	if gitUserName == "" {
+		sayWarning("mob failed to detect who's next because you haven't set your git user name")
+		sayTodo("To fix, use", "git config --global user.name \"Your Name Here\"")
+		return
+	}
 
 	currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), gitBranches(), configuration)
 	commitsBaseWipBranch := currentBaseBranch + ".." + currentWipBranch
@@ -924,7 +930,6 @@ func showNext(configuration Configuration) {
 	lines := strings.Split(strings.Replace(changes, "\r\n", "\n", -1), "\n")
 	numberOfLines := len(lines)
 	debugInfo("there have been " + strconv.Itoa(numberOfLines) + " changes")
-	gitUserName := gitUserName()
 	debugInfo("current git user.name is '" + gitUserName + "'")
 	if numberOfLines < 1 {
 		return
@@ -1006,6 +1011,16 @@ func silentgit(args ...string) string {
 	return strings.TrimSpace(output)
 }
 
+func silentgitignorefailure(args ...string) string {
+	commandString, output, err := runCommand("git", args...)
+
+	if err != nil {
+		sayGitError(commandString, output, err)
+		return ""
+	}
+	return strings.TrimSpace(output)
+}
+
 func git(args ...string) {
 	commandString, output, err := runCommand("git", args...)
 
@@ -1042,6 +1057,8 @@ func gitignorefailure(args ...string) error {
 	}
 	return err
 }
+
+
 
 func runCommand(name string, args ...string) (string, string, error) {
 	command := exec.Command(name, args...)

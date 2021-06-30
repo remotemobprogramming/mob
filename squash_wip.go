@@ -13,7 +13,7 @@ type Replacer func(string) string
 func squashWip(configuration Configuration) {
 	if !isMobProgramming(configuration) {
 		sayError("you aren't mob programming")
-		sayTodo("to start mob programming, use", "mob start")
+		sayTodo("to start, use", "mob start")
 		return
 	}
 
