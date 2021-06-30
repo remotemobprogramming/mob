@@ -1012,10 +1012,9 @@ func silentgit(args ...string) string {
 }
 
 func silentgitignorefailure(args ...string) string {
-	commandString, output, err := runCommand("git", args...)
+	_, output, err := runCommand("git", args...)
 
 	if err != nil {
-		sayGitError(commandString, output, err)
 		return ""
 	}
 	return strings.TrimSpace(output)
