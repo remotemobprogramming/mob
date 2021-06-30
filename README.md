@@ -192,6 +192,14 @@ Examples:
   - Have your editor save your files on every keystroke automatically. IntelliJ products do this automatically. VS Code, however, needs to be configured via "File > Auto Save toggle".
   - *Why?* Sometimes people forget to save their files. With autosave, any change will be handed over via `mob next`.
 
+### Complimentary Scripts
+
+`mob-start feature1` creates a new base branch `feature1` to immediately start a wip branch `mob/feature1` from there. 
+
+```bash
+mob-start() { git checkout -b "$@" && git push origin "$@" --set-upstream && mob start --include-uncommitted-changes; }
+```
+
 ## More on Installation
 
 ### Arch Linux
