@@ -1,3 +1,6 @@
+# 1.8.0
+- When user.name is not set in the git config, mob no longer shows an error but a warning with a help how to fix it.
+
 # 1.7.0
 - Allows creating parallel mob sessions on the same repository more easily.
 - `mob branch` shows all remote mob branches currently available.
