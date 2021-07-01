@@ -200,6 +200,15 @@ Examples:
 mob-start() { git checkout -b "$@" && git push origin "$@" --set-upstream && mob start --include-uncommitted-changes; }
 ```
 
+Some use aliases to type less.
+
+```bash
+alias ms='mob start'
+alias mn='mob next'
+alias md='mob done'
+alias moo='mob moo'
+```
+
 ## More on Installation
 
 ### Arch Linux
