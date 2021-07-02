@@ -200,7 +200,7 @@ Examples:
 mob-start() { git checkout -b "$@" && git push origin "$@" --set-upstream && mob start --include-uncommitted-changes; }
 ```
 
-Some use aliases to type less.
+### Useful Aliases
 
 ```bash
 alias ms='mob start'
