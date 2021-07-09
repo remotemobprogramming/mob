@@ -14,6 +14,7 @@
     <img alt="Version" src="https://img.shields.io/github/v/release/remotemobprogramming/mob?sort=semver" /></a>
   <a href="https://img.shields.io/github/stars/remotemobprogramming/mob">
     <img alt="Stars" src="https://img.shields.io/github/stars/remotemobprogramming/mob" /></a>
+  <a href="https://www.producthunt.com/posts/mob-2?utm_source=badge-featured&utm_medium=badge&utm_souce=badge-mob-2" target="_blank"><img src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=303256&theme=light" alt="mob - Fast git handover for remote mob or pair programming | Product Hunt" style="width: 250px; height: 54px;" width="250" height="54" /></a>
 </p>
 
 Smooth [git handover](https://www.remotemobprogramming.org/#git-handover) with 'mob'.
