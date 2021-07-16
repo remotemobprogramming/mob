@@ -109,6 +109,31 @@ When you're done, get your changes into the staging area of the `master` branch 
 
 [![asciicast](https://asciinema.org/a/321885.svg)](https://asciinema.org/a/321885)
 
+Here's a short example on how the two developers Carola and Maria code a feature together and push it in the end.
+
+```
+# Carola
+main $ mob start
+mob/main $ echo "hello" > work.txt
+mob/main $ mob next
+
+# Maria
+main $ mob start
+mob/main $ cat work.txt # shows "hello"
+mob/main $ echo " world" >> work.txt
+mob/main $ mob next
+
+# Carola
+mob/main $ mob start
+mob/main $ cat work.txt # shows "hello world"
+mob/main $ echo "!" >> work.txt
+mob/main $ mob done
+main $ git commit -m "create greeting file"
+main $ git push
+```
+
+And here's the man page of the tool:
+
 ```
 mob enables a fast Git handover
 
