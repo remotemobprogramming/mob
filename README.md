@@ -111,7 +111,7 @@ When you're done, get your changes into the staging area of the `master` branch 
 
 Here's a short example on how the two developers Carola and Maria code a feature together and push it in the end.
 
-```
+```bash
 # Carola
 main $ mob start
 mob/main $ echo "hello" > work.txt
