@@ -140,6 +140,12 @@ func (branch Branch) hasWipBranchQualifierSeparator(configuration Configuration)
 	return strings.Contains(branch.Name, configuration.WipBranchQualifierSeparator)
 }
 
+func (branch Branch) hasLocalCommits(configuration Configuration) bool {
+	local := silentgit("for-each-ref", "--format=%(objectname)", "refs/heads/"+branch.Name)
+	remote := silentgit("for-each-ref", "--format=%(objectname)", "refs/remotes/"+branch.remote(configuration).Name)
+	return local != remote
+}
+
 func stringContains(list []string, element string) bool {
 	found := false
 	for i := 0; i < len(list); i++ {
@@ -720,8 +726,8 @@ func next(configuration Configuration) {
 	currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), gitBranches(), configuration)
 
 	if isNothingToCommit() {
-		if hasLocalCommits(currentWipBranch.String(), configuration) {
-			git("push", "--no-verify", configuration.RemoteName, currentWipBranch.String())
+		if currentWipBranch.hasLocalCommits(configuration) {
+			git("push", "--no-verify", configuration.RemoteName, currentWipBranch.Name)
 		} else {
 			sayInfo("nothing was done, so nothing to commit")
 		}
@@ -729,13 +735,13 @@ func next(configuration Configuration) {
 		makeWipCommit(configuration)
 
 		changes := getChangesOfLastCommit()
-		git("push", "--no-verify", configuration.RemoteName, currentWipBranch.String())
+		git("push", "--no-verify", configuration.RemoteName, currentWipBranch.Name)
 		say(changes)
 	}
 	showNext(configuration)
 
 	if !configuration.MobNextStay {
-		git("checkout", currentBaseBranch.String())
+		git("checkout", currentBaseBranch.Name)
 	}
 }
 
@@ -848,14 +854,6 @@ func ReverseSlice(s interface{}) {
 func isNothingToCommit() bool {
 	output := silentgit("status", "--short")
 	return len(output) == 0
-}
-
-func hasLocalCommits(branch string, configuration Configuration) bool {
-	local := silentgit("for-each-ref", "--format=%(objectname)",
-		"refs/heads/"+branch)
-	remote := silentgit("for-each-ref", "--format=%(objectname)",
-		"refs/remotes/"+newBranch(branch).remote(configuration).Name)
-	return local != remote
 }
 
 func hasUncommittedChanges() bool {
