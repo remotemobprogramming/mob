@@ -59,6 +59,14 @@ func (c Configuration) remoteBranch(branch string) string {
 	return c.RemoteName + "/" + branch
 }
 
+func (c Configuration) addWipPrefix(branch string) string {
+	return c.WipBranchPrefix + branch
+}
+
+func (c Configuration) removeWipPrefix(branch string) string { //TODO improve, add tests
+	return branch[len(c.WipBranchPrefix):]
+}
+
 type Branch struct {
 	Name string
 }
@@ -75,6 +83,10 @@ func (branch Branch) String() string {
 
 func (branch Branch) Is(branchName string) bool {
 	return branch.Name == branchName
+}
+
+func (branch Branch) IsWipBranch(configuration Configuration) bool {
+	return strings.Index(branch.Name, configuration.WipBranchPrefix) == 0
 }
 
 func main() {
@@ -368,7 +380,7 @@ func determineBranches(currentBranch Branch, localBranches []string, configurati
 		// DEPRECATED
 		baseBranch = newBranch("master")
 		wipBranch = newBranch("mob-session")
-	} else if configuration.isWipBranch(currentBranch.Name) {
+	} else if currentBranch.IsWipBranch(configuration) {
 		baseBranch = newBranch(removeWipQualifier(configuration.removeWipPrefix(currentBranch.Name), localBranches, configuration))
 		wipBranch = currentBranch
 	} else {
@@ -418,18 +430,6 @@ func removeSuffix(branch string, suffix string) string {
 
 func removeFromSeparator(branch string, separator string) string {
 	return branch[:strings.LastIndex(branch, separator)]
-}
-
-func (c Configuration) isWipBranch(branch string) bool {
-	return strings.Index(branch, c.WipBranchPrefix) == 0
-}
-
-func (c Configuration) addWipPrefix(branch string) string {
-	return c.WipBranchPrefix + branch
-}
-
-func (c Configuration) removeWipPrefix(branch string) string { //TODO improve, add tests
-	return branch[len(c.WipBranchPrefix):]
 }
 
 func addSuffix(branch string, suffix string) string {
