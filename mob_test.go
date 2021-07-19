@@ -98,9 +98,9 @@ func assertDetermineBranches(t *testing.T, branch string, qualifier string, bran
 func TestRemoveWipPrefix(t *testing.T) {
 	configuration := getDefaultConfiguration()
 	configuration.WipBranchPrefix = "mob/"
-	equals(t, "master-green", configuration.removeWipPrefix("mob/master-green"))
-	equals(t, "master-green-blue", configuration.removeWipPrefix("mob/master-green-blue"))
-	equals(t, "main-branch", configuration.removeWipPrefix("mob/main-branch"))
+	equals(t, "master-green", newBranch("mob/master-green").removeWipPrefix(configuration).Name)
+	equals(t, "master-green-blue", newBranch("mob/master-green-blue").removeWipPrefix(configuration).Name)
+	equals(t, "main-branch", newBranch("mob/main-branch").removeWipPrefix(configuration).Name)
 }
 
 func TestRemoveWipBranchQualifier(t *testing.T) {

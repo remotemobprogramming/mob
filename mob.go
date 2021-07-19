@@ -59,14 +59,6 @@ func (c Configuration) remoteBranch(branch string) string {
 	return c.RemoteName + "/" + branch
 }
 
-func (c Configuration) addWipPrefix(branch string) string {
-	return c.WipBranchPrefix + branch
-}
-
-func (c Configuration) removeWipPrefix(branch string) string { //TODO improve, add tests
-	return branch[len(c.WipBranchPrefix):]
-}
-
 type Branch struct {
 	Name string
 }
@@ -87,6 +79,14 @@ func (branch Branch) Is(branchName string) bool {
 
 func (branch Branch) IsWipBranch(configuration Configuration) bool {
 	return strings.Index(branch.Name, configuration.WipBranchPrefix) == 0
+}
+
+func (branch Branch) addWipPrefix(configuration Configuration) Branch {
+	return newBranch(configuration.WipBranchPrefix + branch.Name)
+}
+
+func (branch Branch) removeWipPrefix(configuration Configuration) Branch {
+	return newBranch(branch.Name[len(configuration.WipBranchPrefix):])
 }
 
 func main() {
@@ -369,7 +369,7 @@ func execute(command string, parameter []string, configuration Configuration) {
 }
 
 func branch(configuration Configuration) {
-	say(silentgit("branch", "--list", "--remote", configuration.remoteBranch(configuration.addWipPrefix("*"))))
+	say(silentgit("branch", "--list", "--remote", configuration.remoteBranch(newBranch("*").addWipPrefix(configuration).Name)))
 
 	// DEPRECATED
 	say(silentgit("branch", "--list", "--remote", configuration.remoteBranch("mob-session")))
@@ -381,11 +381,11 @@ func determineBranches(currentBranch Branch, localBranches []string, configurati
 		baseBranch = newBranch("master")
 		wipBranch = newBranch("mob-session")
 	} else if currentBranch.IsWipBranch(configuration) {
-		baseBranch = newBranch(removeWipQualifier(configuration.removeWipPrefix(currentBranch.Name), localBranches, configuration))
+		baseBranch = newBranch(removeWipQualifier(currentBranch.removeWipPrefix(configuration).Name, localBranches, configuration))
 		wipBranch = currentBranch
 	} else {
 		baseBranch = currentBranch
-		wipBranch = newBranch(addWipQualifier(configuration.addWipPrefix(currentBranch.Name), configuration))
+		wipBranch = newBranch(addWipQualifier(currentBranch.addWipPrefix(configuration).Name, configuration))
 	}
 
 	debugInfo("on currentBranch " + currentBranch.Name + " => BASE " + baseBranch.String() + " WIP " + wipBranch.String() + " with allLocalBranches " + strings.Join(localBranches, ","))
@@ -650,8 +650,8 @@ func getWipBranchesForBaseBranch(currentBaseBranch string, configuration Configu
 	debugInfo("check on current base branch " + currentBaseBranch + " with remote branches " + strings.Join(remoteBranches, ","))
 
 	// determineBranches(currentBaseBranch, gitBranches(), configuration)
-	remoteBranchWithQualifier := configuration.remoteBranch(addWipQualifier(configuration.addWipPrefix(currentBaseBranch), configuration))
-	remoteBranchNoQualifier := configuration.remoteBranch(configuration.addWipPrefix(currentBaseBranch))
+	remoteBranchWithQualifier := configuration.remoteBranch(addWipQualifier(newBranch(currentBaseBranch).addWipPrefix(configuration).Name, configuration))
+	remoteBranchNoQualifier := configuration.remoteBranch(newBranch(currentBaseBranch).addWipPrefix(configuration).Name)
 	if currentBaseBranch == "master" {
 		// LEGACY
 		remoteBranchNoQualifier = "mob-session"
