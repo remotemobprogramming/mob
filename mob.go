@@ -65,7 +65,7 @@ type Branch struct {
 
 func newBranch(name string) Branch {
 	return Branch{
-		Name: name,
+		Name: strings.TrimSpace(name),
 	}
 }
 
@@ -359,21 +359,21 @@ func branch(configuration Configuration) {
 	say(silentgit("branch", "--list", "--remote", configuration.remoteBranch("mob-session")))
 }
 
-func determineBranches(currentBranch string, localBranches []string, configuration Configuration) (baseBranch Branch, wipBranch Branch) {
-	if currentBranch == "mob-session" || (currentBranch == "master" && !configuration.customWipBranchQualifierConfigured()) {
+func determineBranches(currentBranch Branch, localBranches []string, configuration Configuration) (baseBranch Branch, wipBranch Branch) {
+	if currentBranch.Name == "mob-session" || (currentBranch.Name == "master" && !configuration.customWipBranchQualifierConfigured()) {
 		// DEPRECATED
 		baseBranch = newBranch("master")
 		wipBranch = newBranch("mob-session")
-	} else if configuration.isWipBranch(currentBranch) {
-		baseBranch = newBranch(removeWipQualifier(configuration.removeWipPrefix(currentBranch), localBranches, configuration))
-		wipBranch = newBranch(currentBranch)
+	} else if configuration.isWipBranch(currentBranch.Name) {
+		baseBranch = newBranch(removeWipQualifier(configuration.removeWipPrefix(currentBranch.Name), localBranches, configuration))
+		wipBranch = currentBranch
 	} else {
-		baseBranch = newBranch(currentBranch)
-		wipBranch = newBranch(addWipQualifier(configuration.addWipPrefix(currentBranch), configuration))
+		baseBranch = currentBranch
+		wipBranch = newBranch(addWipQualifier(configuration.addWipPrefix(currentBranch.Name), configuration))
 	}
 
-	debugInfo("on currentBranch " + currentBranch + " => BASE " + baseBranch.String() + " WIP " + wipBranch.String() + " with allLocalBranches " + strings.Join(localBranches, ","))
-	if currentBranch != baseBranch.String() && currentBranch != wipBranch.String() {
+	debugInfo("on currentBranch " + currentBranch.Name + " => BASE " + baseBranch.String() + " WIP " + wipBranch.String() + " with allLocalBranches " + strings.Join(localBranches, ","))
+	if currentBranch != baseBranch && currentBranch != wipBranch {
 		// this is unreachable code, but we keep it as a backup
 		panic("assertion failed! neither on base nor on wip branch")
 	}
@@ -874,8 +874,8 @@ func hasUnpushedCommits(branch string, configuration Configuration) bool {
 func isMobProgramming(configuration Configuration) bool {
 	currentBranch := gitCurrentBranch()
 	_, currentWipBranch := determineBranches(currentBranch, gitBranches(), configuration)
-	debugInfo("current branch " + currentBranch + " and currentWipBranch " + currentWipBranch.String())
-	return currentWipBranch.String() == currentBranch
+	debugInfo("current branch " + currentBranch.String() + " and currentWipBranch " + currentWipBranch.String())
+	return currentWipBranch == currentBranch
 }
 
 func hasLocalBranch(localBranch string) bool {
@@ -915,9 +915,9 @@ func gitRemoteBranches() []string {
 	return strings.Split(silentgit("branch", "--remotes", "--format=%(refname:short)"), "\n")
 }
 
-func gitCurrentBranch() string {
+func gitCurrentBranch() Branch {
 	// upgrade to branch --show-current when git v2.21 is more widely spread
-	return silentgit("rev-parse", "--abbrev-ref", "HEAD")
+	return newBranch(silentgit("rev-parse", "--abbrev-ref", "HEAD"))
 }
 
 func gitUserName() string {

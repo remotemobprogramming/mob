@@ -90,7 +90,7 @@ func TestDetermineBranches(t *testing.T) {
 func assertDetermineBranches(t *testing.T, branch string, qualifier string, branches []string, expectedBase string, expectedWip string) {
 	configuration := getDefaultConfiguration()
 	configuration.WipBranchQualifier = qualifier
-	baseBranch, wipBranch := determineBranches(branch, branches, configuration)
+	baseBranch, wipBranch := determineBranches(newBranch(branch), branches, configuration)
 	equals(t, newBranch(expectedBase), baseBranch)
 	equals(t, newBranch(expectedWip), wipBranch)
 }
@@ -1032,8 +1032,8 @@ func createFile(t *testing.T, filename string, content string) (pathToFile strin
 
 func assertOnBranch(t *testing.T, branch string) {
 	currentBranch := gitCurrentBranch()
-	if currentBranch != branch {
-		failWithFailure(t, "on branch "+branch, "on branch "+currentBranch)
+	if currentBranch.Name != branch {
+		failWithFailure(t, "on branch "+branch, "on branch "+currentBranch.String())
 	}
 }
 
