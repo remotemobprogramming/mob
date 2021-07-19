@@ -73,6 +73,10 @@ func (branch Branch) String() string {
 	return branch.Name
 }
 
+func (branch Branch) Is(branchName string) bool {
+	return branch.Name == branchName
+}
+
 func main() {
 	parseDebug(os.Args)
 
@@ -360,7 +364,7 @@ func branch(configuration Configuration) {
 }
 
 func determineBranches(currentBranch Branch, localBranches []string, configuration Configuration) (baseBranch Branch, wipBranch Branch) {
-	if currentBranch.Name == "mob-session" || (currentBranch.Name == "master" && !configuration.customWipBranchQualifierConfigured()) {
+	if currentBranch.Is("mob-session") || (currentBranch.Is("master") && !configuration.customWipBranchQualifierConfigured()) {
 		// DEPRECATED
 		baseBranch = newBranch("master")
 		wipBranch = newBranch("mob-session")
