@@ -77,6 +77,21 @@ func (branch Branch) remote(configuration Configuration) Branch {
 	return newBranch(configuration.RemoteName + "/" + branch.Name)
 }
 
+func (branch Branch) hasRemoteBranch(configuration Configuration) bool {
+	remoteBranches := gitRemoteBranches()
+	remoteBranch := branch.remote(configuration).Name
+	debugInfo("Remote Branches: " + strings.Join(remoteBranches, "\n"))
+	debugInfo("Remote Branch: " + remoteBranch)
+
+	for i := 0; i < len(remoteBranches); i++ {
+		if remoteBranches[i] == remoteBranch {
+			return true
+		}
+	}
+
+	return false
+}
+
 func (branch Branch) IsWipBranch(configuration Configuration) bool {
 	return strings.Index(branch.Name, configuration.WipBranchPrefix) == 0
 }
@@ -552,7 +567,7 @@ func reset(configuration Configuration) {
 	if hasLocalBranch(currentWipBranch.String()) {
 		git("branch", "--delete", "--force", currentWipBranch.String())
 	}
-	if hasRemoteBranch(currentWipBranch.String(), configuration) {
+	if currentWipBranch.hasRemoteBranch(configuration) {
 		git("push", "--no-verify", configuration.RemoteName, "--delete", currentWipBranch.String())
 	}
 	sayInfo("Branches " + currentWipBranch.String() + " and " + currentWipBranch.remote(configuration).String() + " deleted")
@@ -576,7 +591,7 @@ func start(configuration Configuration) error {
 	git("fetch", configuration.RemoteName, "--prune")
 	currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), gitBranches(), configuration)
 
-	if !hasRemoteBranch(currentBaseBranch.String(), configuration) {
+	if !currentBaseBranch.hasRemoteBranch(configuration) {
 		sayError("Remote branch " + currentBaseBranch.remote(configuration).String() + " is missing")
 		sayTodo("To set the upstream branch, use", "git push "+configuration.RemoteName+" "+currentBaseBranch.String()+" --set-upstream")
 		return errors.New("Remote branch is missing")
@@ -591,7 +606,7 @@ func start(configuration Configuration) error {
 		git("merge", "FETCH_HEAD", "--ff-only")
 	}
 
-	if hasRemoteBranch(currentWipBranch.String(), configuration) {
+	if currentWipBranch.hasRemoteBranch(configuration) {
 		startJoinMobSession(configuration)
 	} else {
 		warnForActiveMobSessions(configuration, currentBaseBranch.String())
@@ -773,7 +788,7 @@ func done(configuration Configuration) {
 
 	currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), gitBranches(), configuration)
 
-	if hasRemoteBranch(currentWipBranch.String(), configuration) {
+	if currentWipBranch.hasRemoteBranch(configuration) {
 		if !isNothingToCommit() {
 			makeWipCommit(configuration)
 		}
@@ -890,21 +905,6 @@ func hasLocalBranch(localBranch string) bool {
 
 	for i := 0; i < len(localBranches); i++ {
 		if localBranches[i] == localBranch {
-			return true
-		}
-	}
-
-	return false
-}
-
-func hasRemoteBranch(branch string, configuration Configuration) bool {
-	remoteBranches := gitRemoteBranches()
-	remoteBranch := newBranch(branch).remote(configuration).Name
-	debugInfo("Remote Branches: " + strings.Join(remoteBranches, "\n"))
-	debugInfo("Remote Branch: " + remoteBranch)
-
-	for i := 0; i < len(remoteBranches); i++ {
-		if remoteBranches[i] == remoteBranch {
 			return true
 		}
 	}
