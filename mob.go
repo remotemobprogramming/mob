@@ -85,8 +85,69 @@ func (branch Branch) addWipPrefix(configuration Configuration) Branch {
 	return newBranch(configuration.WipBranchPrefix + branch.Name)
 }
 
+func (branch Branch) addWipQualifier(configuration Configuration) Branch {
+	if configuration.customWipBranchQualifierConfigured() {
+		return newBranch(addSuffix(branch.Name, configuration.wipBranchQualifierSuffix()))
+	}
+	return branch
+}
+
+func addSuffix(branch string, suffix string) string {
+	return branch + suffix
+}
+
 func (branch Branch) removeWipPrefix(configuration Configuration) Branch {
 	return newBranch(branch.Name[len(configuration.WipBranchPrefix):])
+}
+
+func (branch Branch) removeWipQualifier(localBranches []string, configuration Configuration) Branch {
+	for !branch.exists(localBranches) && branch.hasWipBranchQualifierSeparator(configuration) {
+		afterRemoval := branch.removeWipQualifierSuffixOrSeparator(configuration)
+
+		if branch == afterRemoval { // avoids infinite loop
+			break
+		}
+
+		branch = afterRemoval
+	}
+	return branch
+}
+
+func (branch Branch) removeWipQualifierSuffixOrSeparator(configuration Configuration) Branch {
+	if !configuration.customWipBranchQualifierConfigured() { // WipBranchQualifier not configured
+		return branch.removeFromSeparator(configuration.WipBranchQualifierSeparator)
+	} else { // WipBranchQualifier not configured
+		return branch.removeWipQualifierSuffix(configuration)
+	}
+}
+
+func (branch Branch) removeFromSeparator(separator string) Branch {
+	return newBranch(branch.Name[:strings.LastIndex(branch.Name, separator)])
+}
+
+func (branch Branch) removeWipQualifierSuffix(configuration Configuration) Branch {
+	if strings.HasSuffix(branch.Name, configuration.wipBranchQualifierSuffix()) {
+		return newBranch(branch.Name[:strings.LastIndex(branch.Name, configuration.wipBranchQualifierSuffix())])
+	}
+	return branch
+}
+
+func (branch Branch) exists(existingBranches []string) bool {
+	return stringContains(existingBranches, branch.Name)
+}
+
+func (branch Branch) hasWipBranchQualifierSeparator(configuration Configuration) bool { //TODO improve (dont use strings.Contains, add tests)
+	return strings.Contains(branch.Name, configuration.WipBranchQualifierSeparator)
+}
+
+func stringContains(list []string, element string) bool {
+	found := false
+	for i := 0; i < len(list); i++ {
+		if list[i] == element {
+			found = true
+		}
+	}
+	return found
 }
 
 func main() {
@@ -381,77 +442,19 @@ func determineBranches(currentBranch Branch, localBranches []string, configurati
 		baseBranch = newBranch("master")
 		wipBranch = newBranch("mob-session")
 	} else if currentBranch.IsWipBranch(configuration) {
-		baseBranch = newBranch(removeWipQualifier(currentBranch.removeWipPrefix(configuration).Name, localBranches, configuration))
+		baseBranch = currentBranch.removeWipPrefix(configuration).removeWipQualifier(localBranches, configuration)
 		wipBranch = currentBranch
 	} else {
 		baseBranch = currentBranch
-		wipBranch = newBranch(addWipQualifier(currentBranch.addWipPrefix(configuration).Name, configuration))
+		wipBranch = currentBranch.addWipPrefix(configuration).addWipQualifier(configuration)
 	}
 
-	debugInfo("on currentBranch " + currentBranch.Name + " => BASE " + baseBranch.String() + " WIP " + wipBranch.String() + " with allLocalBranches " + strings.Join(localBranches, ","))
+	debugInfo("on currentBranch " + currentBranch.String() + " => BASE " + baseBranch.String() + " WIP " + wipBranch.String() + " with allLocalBranches " + strings.Join(localBranches, ","))
 	if currentBranch != baseBranch && currentBranch != wipBranch {
 		// this is unreachable code, but we keep it as a backup
 		panic("assertion failed! neither on base nor on wip branch")
 	}
 	return
-}
-
-func addWipQualifier(branch string, configuration Configuration) string {
-	if configuration.customWipBranchQualifierConfigured() {
-		return addSuffix(branch, configuration.wipBranchQualifierSuffix())
-	}
-	return branch
-}
-
-func removeWipQualifier(branch string, localBranches []string, configuration Configuration) string {
-	for !branchExists(branch, localBranches) && hasWipBranchQualifierSeparator(branch, configuration) {
-		var afterRemoval string
-		if !configuration.customWipBranchQualifierConfigured() { // WipBranchQualifier not configured
-			afterRemoval = removeFromSeparator(branch, configuration.WipBranchQualifierSeparator)
-		} else { // WipBranchQualifier not configured
-			afterRemoval = removeSuffix(branch, configuration.wipBranchQualifierSuffix())
-		}
-
-		if branch == afterRemoval { // avoids infinite loop
-			break
-		}
-
-		branch = afterRemoval
-	}
-	return branch
-}
-
-func removeSuffix(branch string, suffix string) string {
-	if strings.HasSuffix(branch, suffix) {
-		return branch[:strings.LastIndex(branch, suffix)]
-	}
-	return branch
-}
-
-func removeFromSeparator(branch string, separator string) string {
-	return branch[:strings.LastIndex(branch, separator)]
-}
-
-func addSuffix(branch string, suffix string) string {
-	return branch + suffix
-}
-
-func hasWipBranchQualifierSeparator(branch string, configuration Configuration) bool { //TODO improve (dont use strings.Contains, add tests)
-	return strings.Contains(branch, configuration.WipBranchQualifierSeparator)
-}
-
-func branchExists(branchInQuestion string, existingBranches []string) bool {
-	return stringContains(existingBranches, branchInQuestion)
-}
-
-func stringContains(list []string, element string) bool {
-	found := false
-	for i := 0; i < len(list); i++ {
-		if list[i] == element {
-			found = true
-		}
-	}
-	return found
 }
 
 func getSleepCommand(timeoutInSeconds int) string {
@@ -650,7 +653,7 @@ func getWipBranchesForBaseBranch(currentBaseBranch string, configuration Configu
 	debugInfo("check on current base branch " + currentBaseBranch + " with remote branches " + strings.Join(remoteBranches, ","))
 
 	// determineBranches(currentBaseBranch, gitBranches(), configuration)
-	remoteBranchWithQualifier := configuration.remoteBranch(addWipQualifier(newBranch(currentBaseBranch).addWipPrefix(configuration).Name, configuration))
+	remoteBranchWithQualifier := configuration.remoteBranch(newBranch(currentBaseBranch).addWipPrefix(configuration).addWipQualifier(configuration).Name)
 	remoteBranchNoQualifier := configuration.remoteBranch(newBranch(currentBaseBranch).addWipPrefix(configuration).Name)
 	if currentBaseBranch == "master" {
 		// LEGACY

@@ -109,37 +109,37 @@ func TestRemoveWipBranchQualifier(t *testing.T) {
 	configuration.WipBranchQualifierSeparator = "-"
 	configuration.WipBranchQualifier = "green"
 	configuration.WipBranchQualifierSet = true
-	equals(t, "master", removeWipQualifier("master-green", []string{}, configuration))
+	equals(t, "master", newBranch("master-green").removeWipQualifier([]string{}, configuration).Name)
 
 	configuration.WipBranchQualifierSeparator = "-"
 	configuration.WipBranchQualifier = "test-branch"
 	configuration.WipBranchQualifierSet = true
-	equals(t, "master", removeWipQualifier("master-test-branch", []string{}, configuration))
+	equals(t, "master", newBranch("master-test-branch").removeWipQualifier([]string{}, configuration).Name)
 
 	configuration.WipBranchQualifierSeparator = "-"
 	configuration.WipBranchQualifier = "branch"
 	configuration.WipBranchQualifierSet = true
-	equals(t, "master-test", removeWipQualifier("master-test-branch", []string{}, configuration))
+	equals(t, "master-test", newBranch("master-test-branch").removeWipQualifier([]string{}, configuration).Name)
 
 	configuration.WipBranchQualifierSeparator = "-"
 	configuration.WipBranchQualifier = "branch"
 	configuration.WipBranchQualifierSet = true
-	equals(t, "master-test", removeWipQualifier("master-test-branch", []string{"master-test"}, configuration))
+	equals(t, "master-test", newBranch("master-test-branch").removeWipQualifier([]string{"master-test"}, configuration).Name)
 
 	configuration.WipBranchQualifierSeparator = "/-/"
 	configuration.WipBranchQualifier = "branch-qualifier"
 	configuration.WipBranchQualifierSet = true
-	equals(t, "main", removeWipQualifier("main/-/branch-qualifier", []string{}, configuration))
+	equals(t, "main", newBranch("main/-/branch-qualifier").removeWipQualifier([]string{}, configuration).Name)
 
 	configuration.WipBranchQualifierSeparator = "-"
 	configuration.WipBranchQualifier = "branchqualifier"
 	configuration.WipBranchQualifierSet = true
-	equals(t, "main/branchqualifier", removeWipQualifier("main/branchqualifier", []string{}, configuration))
+	equals(t, "main/branchqualifier", newBranch("main/branchqualifier").removeWipQualifier([]string{}, configuration).Name)
 
 	configuration.WipBranchQualifierSeparator = ""
 	configuration.WipBranchQualifier = "branchqualifier"
 	configuration.WipBranchQualifierSet = true
-	equals(t, "main", removeWipQualifier("mainbranchqualifier", []string{}, configuration))
+	equals(t, "main", newBranch("mainbranchqualifier").removeWipQualifier([]string{}, configuration).Name)
 }
 
 func TestRemoveWipBranchQualifierWithoutBranchQualifierSet(t *testing.T) {
@@ -148,12 +148,12 @@ func TestRemoveWipBranchQualifierWithoutBranchQualifierSet(t *testing.T) {
 	configuration.WipBranchQualifierSeparator = "-"
 	configuration.WipBranchQualifier = ""
 	configuration.WipBranchQualifierSet = false
-	equals(t, "main", removeWipQualifier("main", []string{}, configuration))
+	equals(t, "main", newBranch("main").removeWipQualifier([]string{}, configuration).Name)
 
 	configuration.WipBranchQualifierSeparator = "-"
 	configuration.WipBranchQualifier = ""
 	configuration.WipBranchQualifierSet = false
-	equals(t, "master", removeWipQualifier("master-test-branch", []string{}, configuration))
+	equals(t, "master", newBranch("master-test-branch").removeWipQualifier([]string{}, configuration).Name)
 }
 
 func TestMobRemoteNameEnvironmentVariable(t *testing.T) {
