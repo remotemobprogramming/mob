@@ -59,6 +59,20 @@ func (c Configuration) remoteBranch(branch string) string {
 	return c.RemoteName + "/" + branch
 }
 
+type Branch struct {
+	Name string
+}
+
+func newBranch(name string) Branch {
+	return Branch{
+		Name: name,
+	}
+}
+
+func (branch Branch) String() string {
+	return branch.Name
+}
+
 func main() {
 	parseDebug(os.Args)
 
@@ -345,21 +359,21 @@ func branch(configuration Configuration) {
 	say(silentgit("branch", "--list", "--remote", configuration.remoteBranch("mob-session")))
 }
 
-func determineBranches(currentBranch string, localBranches []string, configuration Configuration) (baseBranch string, wipBranch string) {
+func determineBranches(currentBranch string, localBranches []string, configuration Configuration) (baseBranch Branch, wipBranch Branch) {
 	if currentBranch == "mob-session" || (currentBranch == "master" && !configuration.customWipBranchQualifierConfigured()) {
 		// DEPRECATED
-		baseBranch = "master"
-		wipBranch = "mob-session"
+		baseBranch = newBranch("master")
+		wipBranch = newBranch("mob-session")
 	} else if configuration.isWipBranch(currentBranch) {
-		baseBranch = removeWipQualifier(configuration.removeWipPrefix(currentBranch), localBranches, configuration)
-		wipBranch = currentBranch
+		baseBranch = newBranch(removeWipQualifier(configuration.removeWipPrefix(currentBranch), localBranches, configuration))
+		wipBranch = newBranch(currentBranch)
 	} else {
-		baseBranch = currentBranch
-		wipBranch = addWipQualifier(configuration.addWipPrefix(currentBranch), configuration)
+		baseBranch = newBranch(currentBranch)
+		wipBranch = newBranch(addWipQualifier(configuration.addWipPrefix(currentBranch), configuration))
 	}
 
-	debugInfo("on currentBranch " + currentBranch + " => BASE " + baseBranch + " WIP " + wipBranch + " with allLocalBranches " + strings.Join(localBranches, ","))
-	if currentBranch != baseBranch && currentBranch != wipBranch {
+	debugInfo("on currentBranch " + currentBranch + " => BASE " + baseBranch.String() + " WIP " + wipBranch.String() + " with allLocalBranches " + strings.Join(localBranches, ","))
+	if currentBranch != baseBranch.String() && currentBranch != wipBranch.String() {
 		// this is unreachable code, but we keep it as a backup
 		panic("assertion failed! neither on base nor on wip branch")
 	}
@@ -521,14 +535,14 @@ func reset(configuration Configuration) {
 
 	currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), gitBranches(), configuration)
 
-	git("checkout", currentBaseBranch)
-	if hasLocalBranch(currentWipBranch) {
-		git("branch", "--delete", "--force", currentWipBranch)
+	git("checkout", currentBaseBranch.String())
+	if hasLocalBranch(currentWipBranch.String()) {
+		git("branch", "--delete", "--force", currentWipBranch.String())
 	}
-	if hasRemoteBranch(currentWipBranch, configuration) {
-		git("push", "--no-verify", configuration.RemoteName, "--delete", currentWipBranch)
+	if hasRemoteBranch(currentWipBranch.String(), configuration) {
+		git("push", "--no-verify", configuration.RemoteName, "--delete", currentWipBranch.String())
 	}
-	sayInfo("Branches " + currentWipBranch + " and " + configuration.remoteBranch(currentWipBranch) + " deleted")
+	sayInfo("Branches " + currentWipBranch.String() + " and " + configuration.remoteBranch(currentWipBranch.String()) + " deleted")
 }
 
 func start(configuration Configuration) error {
@@ -549,13 +563,13 @@ func start(configuration Configuration) error {
 	git("fetch", configuration.RemoteName, "--prune")
 	currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), gitBranches(), configuration)
 
-	if !hasRemoteBranch(currentBaseBranch, configuration) {
-		sayError("Remote branch " + configuration.remoteBranch(currentBaseBranch) + " is missing")
-		sayTodo("To set the upstream branch, use", "git push "+configuration.RemoteName+" "+currentBaseBranch+" --set-upstream")
+	if !hasRemoteBranch(currentBaseBranch.String(), configuration) {
+		sayError("Remote branch " + configuration.remoteBranch(currentBaseBranch.String()) + " is missing")
+		sayTodo("To set the upstream branch, use", "git push "+configuration.RemoteName+" "+currentBaseBranch.String()+" --set-upstream")
 		return errors.New("Remote branch is missing")
 	}
 
-	if hasUnpushedCommits(currentBaseBranch, configuration) {
+	if hasUnpushedCommits(currentBaseBranch.String(), configuration) {
 		sayError("cannot start; unpushed changes on base branch must be pushed upstream")
 		return errors.New("cannot start; unpushed changes on base branch must be pushed upstream")
 	}
@@ -564,10 +578,10 @@ func start(configuration Configuration) error {
 		git("merge", "FETCH_HEAD", "--ff-only")
 	}
 
-	if hasRemoteBranch(currentWipBranch, configuration) {
+	if hasRemoteBranch(currentWipBranch.String(), configuration) {
 		startJoinMobSession(configuration)
 	} else {
-		warnForActiveMobSessions(configuration, currentBaseBranch)
+		warnForActiveMobSessions(configuration, currentBaseBranch.String())
 
 		startNewMobSession(configuration)
 	}
@@ -578,8 +592,8 @@ func start(configuration Configuration) error {
 		git("stash", "pop", stash)
 	}
 
-	sayInfo("you are on wip branch " + currentWipBranch + " (base branch " + currentBaseBranch + ")")
-	sayLastCommitsList(currentBaseBranch, currentWipBranch)
+	sayInfo("you are on wip branch " + currentWipBranch.String() + " (base branch " + currentBaseBranch.String() + ")")
+	sayLastCommitsList(currentBaseBranch.String(), currentWipBranch.String())
 
 	return nil // no error
 }
@@ -652,17 +666,17 @@ func getWipBranchesForBaseBranch(currentBaseBranch string, configuration Configu
 func startJoinMobSession(configuration Configuration) {
 	_, currentWipBranch := determineBranches(gitCurrentBranch(), gitBranches(), configuration)
 
-	sayInfo("joining existing mob session from " + configuration.remoteBranch(currentWipBranch))
-	git("checkout", "-B", currentWipBranch, configuration.remoteBranch(currentWipBranch))
-	git("branch", "--set-upstream-to="+configuration.RemoteName+"/"+currentWipBranch, currentWipBranch)
+	sayInfo("joining existing mob session from " + configuration.remoteBranch(currentWipBranch.String()))
+	git("checkout", "-B", currentWipBranch.String(), configuration.remoteBranch(currentWipBranch.String()))
+	git("branch", "--set-upstream-to="+configuration.RemoteName+"/"+currentWipBranch.String(), currentWipBranch.String())
 }
 
 func startNewMobSession(configuration Configuration) {
 	currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), gitBranches(), configuration)
 
-	sayInfo("starting new mob session from " + configuration.remoteBranch(currentBaseBranch))
-	git("checkout", "-B", currentWipBranch, configuration.remoteBranch(currentBaseBranch))
-	git("push", "--no-verify", "--set-upstream", configuration.RemoteName, currentWipBranch)
+	sayInfo("starting new mob session from " + configuration.remoteBranch(currentBaseBranch.String()))
+	git("checkout", "-B", currentWipBranch.String(), configuration.remoteBranch(currentBaseBranch.String()))
+	git("push", "--no-verify", "--set-upstream", configuration.RemoteName, currentWipBranch.String())
 }
 
 func getUntrackedFiles() string {
@@ -699,8 +713,8 @@ func next(configuration Configuration) {
 	currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), gitBranches(), configuration)
 
 	if isNothingToCommit() {
-		if hasLocalCommits(currentWipBranch, configuration) {
-			git("push", "--no-verify", configuration.RemoteName, currentWipBranch)
+		if hasLocalCommits(currentWipBranch.String(), configuration) {
+			git("push", "--no-verify", configuration.RemoteName, currentWipBranch.String())
 		} else {
 			sayInfo("nothing was done, so nothing to commit")
 		}
@@ -708,13 +722,13 @@ func next(configuration Configuration) {
 		makeWipCommit(configuration)
 
 		changes := getChangesOfLastCommit()
-		git("push", "--no-verify", configuration.RemoteName, currentWipBranch)
+		git("push", "--no-verify", configuration.RemoteName, currentWipBranch.String())
 		say(changes)
 	}
 	showNext(configuration)
 
 	if !configuration.MobNextStay {
-		git("checkout", currentBaseBranch)
+		git("checkout", currentBaseBranch.String())
 	}
 }
 
@@ -746,21 +760,21 @@ func done(configuration Configuration) {
 
 	currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), gitBranches(), configuration)
 
-	if hasRemoteBranch(currentWipBranch, configuration) {
+	if hasRemoteBranch(currentWipBranch.String(), configuration) {
 		if !isNothingToCommit() {
 			makeWipCommit(configuration)
 		}
-		git("push", "--no-verify", configuration.RemoteName, currentWipBranch)
+		git("push", "--no-verify", configuration.RemoteName, currentWipBranch.String())
 
-		git("checkout", currentBaseBranch)
-		git("merge", configuration.remoteBranch(currentBaseBranch), "--ff-only")
-		mergeFailed := gitignorefailure("merge", squashOrNoCommit(configuration), "--ff", currentWipBranch)
+		git("checkout", currentBaseBranch.String())
+		git("merge", configuration.remoteBranch(currentBaseBranch.String()), "--ff-only")
+		mergeFailed := gitignorefailure("merge", squashOrNoCommit(configuration), "--ff", currentWipBranch.String())
 		if mergeFailed != nil {
 			return
 		}
 
-		git("branch", "-D", currentWipBranch)
-		git("push", "--no-verify", configuration.RemoteName, "--delete", currentWipBranch)
+		git("branch", "-D", currentWipBranch.String())
+		git("push", "--no-verify", configuration.RemoteName, "--delete", currentWipBranch.String())
 
 		say(getCachedChanges())
 		err := appendCoauthorsToSquashMsg(gitDir())
@@ -772,8 +786,8 @@ func done(configuration Configuration) {
 		}
 
 	} else {
-		git("checkout", currentBaseBranch)
-		git("branch", "-D", currentWipBranch)
+		git("checkout", currentBaseBranch.String())
+		git("branch", "-D", currentWipBranch.String())
 		sayInfo("someone else already ended your mob session")
 	}
 }
@@ -793,13 +807,13 @@ func squashOrNoCommit(configuration Configuration) string {
 func status(configuration Configuration) {
 	if isMobProgramming(configuration) {
 		currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), gitBranches(), configuration)
-		sayInfo("you are on wip branch " + currentWipBranch + " (base branch " + currentBaseBranch + ")")
+		sayInfo("you are on wip branch " + currentWipBranch.String() + " (base branch " + currentBaseBranch.String() + ")")
 
-		sayLastCommitsList(currentBaseBranch, currentWipBranch)
+		sayLastCommitsList(currentBaseBranch.String(), currentWipBranch.String())
 	} else {
 		currentBaseBranch, _ := determineBranches(gitCurrentBranch(), gitBranches(), configuration)
-		sayInfo("you are on base branch " + currentBaseBranch)
-		showActiveMobSessions(configuration, currentBaseBranch)
+		sayInfo("you are on base branch " + currentBaseBranch.String())
+		showActiveMobSessions(configuration, currentBaseBranch.String())
 	}
 }
 
@@ -860,8 +874,8 @@ func hasUnpushedCommits(branch string, configuration Configuration) bool {
 func isMobProgramming(configuration Configuration) bool {
 	currentBranch := gitCurrentBranch()
 	_, currentWipBranch := determineBranches(currentBranch, gitBranches(), configuration)
-	debugInfo("current branch " + currentBranch + " and currentWipBranch " + currentWipBranch)
-	return currentWipBranch == currentBranch
+	debugInfo("current branch " + currentBranch + " and currentWipBranch " + currentWipBranch.String())
+	return currentWipBranch.String() == currentBranch
 }
 
 func hasLocalBranch(localBranch string) bool {
@@ -924,7 +938,7 @@ func showNext(configuration Configuration) {
 	}
 
 	currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), gitBranches(), configuration)
-	commitsBaseWipBranch := currentBaseBranch + ".." + currentWipBranch
+	commitsBaseWipBranch := currentBaseBranch.String() + ".." + currentWipBranch.String()
 
 	changes := silentgit("--no-pager", "log", commitsBaseWipBranch, "--pretty=format:%an", "--abbrev-commit")
 	lines := strings.Split(strings.Replace(changes, "\r\n", "\n", -1), "\n")
@@ -1056,8 +1070,6 @@ func gitignorefailure(args ...string) error {
 	}
 	return err
 }
-
-
 
 func runCommand(name string, args ...string) (string, string, error) {
 	command := exec.Command(name, args...)

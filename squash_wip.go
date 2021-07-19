@@ -26,7 +26,7 @@ last commit must be a manual commit`)
 	}
 
 	currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), gitBranches(), configuration)
-	mergeBase := silentgit("merge-base", currentWipBranch, currentBaseBranch)
+	mergeBase := silentgit("merge-base", currentWipBranch.String(), currentBaseBranch.String())
 
 	originalGitEditor, originalGitSequenceEditor := getEnvGitEditor()
 	setEnvGitEditor(
@@ -35,9 +35,9 @@ last commit must be a manual commit`)
 	)
 	silentgit("rebase", "-i", "--keep-empty", mergeBase)
 	setEnvGitEditor(originalGitEditor, originalGitSequenceEditor)
-	sayInfo("the history of your " + currentWipBranch + " branch has been rewritten to combine all wip commits with their following manual commits:")
+	sayInfo("the history of your " + currentWipBranch.String() + " branch has been rewritten to combine all wip commits with their following manual commits:")
 	sayEmptyLine()
-	sayLastCommitsWithMessage(currentBaseBranch, currentWipBranch)
+	sayLastCommitsWithMessage(currentBaseBranch.String(), currentWipBranch.String())
 	sayEmptyLine()
 	sayTodo("to finally put the changes into the base branch preserving the resulting commits, call:", "mob done --no-squash")
 }
@@ -127,7 +127,7 @@ func endsWithWipCommit(configuration Configuration) bool {
 
 func commitsOnCurrentBranch(configuration Configuration) []string {
 	currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), gitBranches(), configuration)
-	commitsBaseWipBranch := currentBaseBranch + ".." + currentWipBranch
+	commitsBaseWipBranch := currentBaseBranch.String() + ".." + currentWipBranch.String()
 	log := silentgit("--no-pager", "log", commitsBaseWipBranch, "--pretty=format:%s")
 	lines := strings.Split(log, "\n")
 	return lines
