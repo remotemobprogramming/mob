@@ -161,6 +161,22 @@ func (branch Branch) hasLocalCommits(configuration Configuration) bool {
 	return local != remote
 }
 
+func (branch Branch) hasUnpushedCommits(configuration Configuration) bool {
+	countOutput := silentgit(
+		"rev-list", "--count", "--left-only",
+		"refs/heads/"+branch.Name+"..."+"refs/remotes/"+branch.remote(configuration).Name,
+	)
+	unpushedCount, err := strconv.Atoi(countOutput)
+	if err != nil {
+		panic(err)
+	}
+	unpushedCommits := unpushedCount != 0
+	if unpushedCommits {
+		sayInfo(fmt.Sprintf("there are %d unpushed commits on local base branch <%s>", unpushedCount, branch.Name))
+	}
+	return unpushedCommits
+}
+
 func stringContains(list []string, element string) bool {
 	found := false
 	for i := 0; i < len(list); i++ {
@@ -597,7 +613,7 @@ func start(configuration Configuration) error {
 		return errors.New("Remote branch is missing")
 	}
 
-	if hasUnpushedCommits(currentBaseBranch.String(), configuration) {
+	if currentBaseBranch.hasUnpushedCommits(configuration) {
 		sayError("cannot start; unpushed changes on base branch must be pushed upstream")
 		return errors.New("cannot start; unpushed changes on base branch must be pushed upstream")
 	}
@@ -873,22 +889,6 @@ func isNothingToCommit() bool {
 
 func hasUncommittedChanges() bool {
 	return !isNothingToCommit()
-}
-
-func hasUnpushedCommits(branch string, configuration Configuration) bool {
-	countOutput := silentgit(
-		"rev-list", "--count", "--left-only",
-		"refs/heads/"+branch+"..."+"refs/remotes/"+newBranch(branch).remote(configuration).Name,
-	)
-	unpushedCount, err := strconv.Atoi(countOutput)
-	if err != nil {
-		panic(err)
-	}
-	unpushedCommits := unpushedCount != 0
-	if unpushedCommits {
-		sayInfo(fmt.Sprintf("there are %d unpushed commits on local base branch <%s>", unpushedCount, branch))
-	}
-	return unpushedCommits
 }
 
 func isMobProgramming(configuration Configuration) bool {
