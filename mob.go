@@ -712,7 +712,7 @@ func startJoinMobSession(configuration Configuration) {
 
 	sayInfo("joining existing mob session from " + currentWipBranch.remote(configuration).String())
 	git("checkout", "-B", currentWipBranch.Name, currentWipBranch.remote(configuration).Name)
-	git("branch", "--set-upstream-to="+configuration.RemoteName+"/"+currentWipBranch.String(), currentWipBranch.String())
+	git("branch", "--set-upstream-to="+currentWipBranch.remote(configuration).Name, currentWipBranch.Name)
 }
 
 func startNewMobSession(configuration Configuration) {
@@ -720,7 +720,7 @@ func startNewMobSession(configuration Configuration) {
 
 	sayInfo("starting new mob session from " + currentBaseBranch.remote(configuration).String())
 	git("checkout", "-B", currentWipBranch.Name, currentBaseBranch.remote(configuration).Name)
-	git("push", "--no-verify", "--set-upstream", configuration.RemoteName, currentWipBranch.String())
+	git("push", "--no-verify", "--set-upstream", configuration.RemoteName, currentWipBranch.Name)
 }
 
 func getUntrackedFiles() string {
