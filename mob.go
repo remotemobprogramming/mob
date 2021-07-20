@@ -625,7 +625,7 @@ func start(configuration Configuration) error {
 	if currentWipBranch.hasRemoteBranch(configuration) {
 		startJoinMobSession(configuration)
 	} else {
-		warnForActiveMobSessions(configuration, currentBaseBranch.String())
+		warnForActiveMobSessions(configuration, currentBaseBranch)
 
 		startNewMobSession(configuration)
 	}
@@ -642,7 +642,7 @@ func start(configuration Configuration) error {
 	return nil // no error
 }
 
-func warnForActiveMobSessions(configuration Configuration, currentBaseBranch string) {
+func warnForActiveMobSessions(configuration Configuration, currentBaseBranch Branch) {
 	if isMobProgramming(configuration) {
 		return
 	}
@@ -657,7 +657,7 @@ func warnForActiveMobSessions(configuration Configuration, currentBaseBranch str
 	}
 }
 
-func showActiveMobSessions(configuration Configuration, currentBaseBranch string) {
+func showActiveMobSessions(configuration Configuration, currentBaseBranch Branch) {
 	existingWipBranches := getWipBranchesForBaseBranch(currentBaseBranch, configuration)
 	if len(existingWipBranches) > 0 {
 		sayInfo("remote wip branches detected:")
@@ -685,14 +685,14 @@ func sayUnstagedChangesInfo() {
 	}
 }
 
-func getWipBranchesForBaseBranch(currentBaseBranch string, configuration Configuration) []string {
+func getWipBranchesForBaseBranch(currentBaseBranch Branch, configuration Configuration) []string {
 	remoteBranches := gitRemoteBranches()
-	debugInfo("check on current base branch " + currentBaseBranch + " with remote branches " + strings.Join(remoteBranches, ","))
+	debugInfo("check on current base branch " + currentBaseBranch.String() + " with remote branches " + strings.Join(remoteBranches, ","))
 
 	// determineBranches(currentBaseBranch, gitBranches(), configuration)
-	remoteBranchWithQualifier := newBranch(currentBaseBranch).addWipPrefix(configuration).addWipQualifier(configuration).remote(configuration).Name
-	remoteBranchNoQualifier := newBranch(currentBaseBranch).addWipPrefix(configuration).remote(configuration).Name
-	if currentBaseBranch == "master" {
+	remoteBranchWithQualifier := currentBaseBranch.addWipPrefix(configuration).addWipQualifier(configuration).remote(configuration).Name
+	remoteBranchNoQualifier := currentBaseBranch.addWipPrefix(configuration).remote(configuration).Name
+	if currentBaseBranch.Is("master") {
 		// LEGACY
 		remoteBranchNoQualifier = "mob-session"
 	}
@@ -808,17 +808,17 @@ func done(configuration Configuration) {
 		if !isNothingToCommit() {
 			makeWipCommit(configuration)
 		}
-		git("push", "--no-verify", configuration.RemoteName, currentWipBranch.String())
+		git("push", "--no-verify", configuration.RemoteName, currentWipBranch.Name)
 
-		git("checkout", currentBaseBranch.String())
+		git("checkout", currentBaseBranch.Name)
 		git("merge", currentBaseBranch.remote(configuration).Name, "--ff-only")
-		mergeFailed := gitignorefailure("merge", squashOrNoCommit(configuration), "--ff", currentWipBranch.String())
+		mergeFailed := gitignorefailure("merge", squashOrNoCommit(configuration), "--ff", currentWipBranch.Name)
 		if mergeFailed != nil {
 			return
 		}
 
-		git("branch", "-D", currentWipBranch.String())
-		git("push", "--no-verify", configuration.RemoteName, "--delete", currentWipBranch.String())
+		git("branch", "-D", currentWipBranch.Name)
+		git("push", "--no-verify", configuration.RemoteName, "--delete", currentWipBranch.Name)
 
 		say(getCachedChanges())
 		err := appendCoauthorsToSquashMsg(gitDir())
@@ -830,8 +830,8 @@ func done(configuration Configuration) {
 		}
 
 	} else {
-		git("checkout", currentBaseBranch.String())
-		git("branch", "-D", currentWipBranch.String())
+		git("checkout", currentBaseBranch.Name)
+		git("branch", "-D", currentWipBranch.Name)
 		sayInfo("someone else already ended your mob session")
 	}
 }
@@ -857,7 +857,7 @@ func status(configuration Configuration) {
 	} else {
 		currentBaseBranch, _ := determineBranches(gitCurrentBranch(), gitBranches(), configuration)
 		sayInfo("you are on base branch " + currentBaseBranch.String())
-		showActiveMobSessions(configuration, currentBaseBranch.String())
+		showActiveMobSessions(configuration, currentBaseBranch)
 	}
 }
 
