@@ -48,3 +48,12 @@ func TestFindNextTypistThreeCommitters(t *testing.T) {
 	equals(t, nextTypist, "craig")
 	equals(t, history, []string{"craig", "bob", "alice"})
 }
+
+func TestFindNextTypistIgnoreMultipleCommitsFromSamePerson(t *testing.T) {
+	lastCommitters := []string{"alice", "bob", "craig", "craig", "alice"}
+
+	nextTypist, history := findNextTypist(lastCommitters, "alice")
+
+	equals(t, nextTypist, "craig")
+	equals(t, history, []string{"craig", "bob", "alice"})
+}

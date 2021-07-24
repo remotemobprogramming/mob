@@ -1,3 +1,6 @@
+# 1.9.0
+- `mob next` does not show the same committer multiple times in the list of previous committers.
+
 # 1.8.0
 - When user.name is not set in the git config, mob no longer shows an error but a warning with a help how to fix it.
 

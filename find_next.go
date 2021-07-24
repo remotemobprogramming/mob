@@ -6,7 +6,10 @@ func findNextTypist(lastCommitters []string, gitUserName string) (nextTypist str
 			nextTypist = lastCommitters[i-1]
 			return
 		}
-		previousCommitters = prepend(previousCommitters, lastCommitters[i])
+		// Do not add the last committer multiple times.
+		if i == 0 || previousCommitters[0] != lastCommitters[i] {
+			previousCommitters = prepend(previousCommitters, lastCommitters[i])
+		}
 	}
 	return
 }
