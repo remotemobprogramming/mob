@@ -552,7 +552,7 @@ func start(configuration Configuration) error {
 	if !hasRemoteBranch(currentBaseBranch, configuration) {
 		sayError("Remote branch " + configuration.remoteBranch(currentBaseBranch) + " is missing")
 		sayTodo("To set the upstream branch, use", "git push "+configuration.RemoteName+" "+currentBaseBranch+" --set-upstream")
-		return errors.New("Remote branch is missing")
+		return errors.New("remote branch is missing")
 	}
 
 	if hasUnpushedCommits(currentBaseBranch, configuration) {
@@ -1057,8 +1057,6 @@ func gitignorefailure(args ...string) error {
 	return err
 }
 
-
-
 func runCommand(name string, args ...string) (string, string, error) {
 	command := exec.Command(name, args...)
 	if len(workingDir) > 0 {
@@ -1127,7 +1125,7 @@ func say(s string) {
 	if len(s) == 0 {
 		return
 	}
-	printToConsole(strings.TrimRight(s, " \r\n\t\v\f\r") + "\n")
+	printToConsole(strings.TrimRight(s, " \r\n\t\v\f") + "\n")
 }
 
 func sayEmptyLine() {
