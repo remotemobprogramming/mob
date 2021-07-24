@@ -1,6 +1,7 @@
 # 1.9.0
 - `mob next` does not show the same committer multiple times in the list of previous committers.
 - `mob next` does not suggest the current Git user to be the next typist as long as there were other persons involved in the mob.
+- `mob next` performs a simple lookahead to also suggest persons who might have been absent only during the last mob round.
 
 # 1.8.0
 - When user.name is not set in the git config, mob no longer shows an error but a warning with a help how to fix it.

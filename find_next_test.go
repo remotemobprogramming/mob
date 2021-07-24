@@ -57,3 +57,30 @@ func TestFindNextTypistIgnoreMultipleCommitsFromSamePerson(t *testing.T) {
 	equals(t, nextTypist, "craig")
 	equals(t, history, []string{"craig", "bob", "alice"})
 }
+
+func TestFindNextTypistSuggestCommitterBeforeLastCommit(t *testing.T) {
+	lastCommitters := []string{"alice", "bob", "craig", "alice", "bob", "dan"}
+
+	nextTypist, history := findNextTypist(lastCommitters, "alice")
+
+	equals(t, nextTypist, "dan")
+	equals(t, history, []string{"craig", "bob", "alice"})
+}
+
+func TestFindNextTypistSuggestCommitterBeforeLastCommitInThreshold(t *testing.T) {
+	lastCommitters := []string{"alice", "bob", "craig", "alice", "bob", "dan", "erik", "fin"}
+
+	nextTypist, history := findNextTypist(lastCommitters, "alice")
+
+	equals(t, nextTypist, "erik")
+	equals(t, history, []string{"craig", "bob", "alice"})
+}
+
+func TestFindNextTypistIgnoreCommitterBeforeLastCommitOutsideThreshold(t *testing.T) {
+	lastCommitters := []string{"alice", "bob", "craig", "alice", "craig", "bob", "alice", "fin"}
+
+	nextTypist, history := findNextTypist(lastCommitters, "alice")
+
+	equals(t, nextTypist, "craig")
+	equals(t, history, []string{"craig", "bob", "alice"})
+}
