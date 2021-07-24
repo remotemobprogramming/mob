@@ -934,17 +934,10 @@ func showNext(configuration Configuration) {
 	if numberOfLines < 1 {
 		return
 	}
-	var history = ""
-	for i := 0; i < len(lines); i++ {
-		if lines[i] == gitUserName && i > 0 {
-			sayInfo("Committers after your last commit: " + history)
-			sayInfo("***" + lines[i-1] + "*** is (probably) next.")
-			return
-		}
-		if history != "" {
-			history = ", " + history
-		}
-		history = lines[i] + history
+	nextTypist, previousCommitters := findNextTypist(lines, gitUserName)
+	if nextTypist != "" {
+		sayInfo("Committers after your last commit: " + previousCommitters)
+		sayInfo("***" + nextTypist + "*** is (probably) next.")
 	}
 }
 
