@@ -936,7 +936,7 @@ func showNext(configuration Configuration) {
 	}
 	nextTypist, previousCommitters := findNextTypist(lines, gitUserName)
 	if nextTypist != "" {
-		sayInfo("Committers after your last commit: " + previousCommitters)
+		sayInfo("Committers after your last commit: " + strings.Join(previousCommitters, ", "))
 		sayInfo("***" + nextTypist + "*** is (probably) next.")
 	}
 }

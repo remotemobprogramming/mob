@@ -1,15 +1,19 @@
 package main
 
-func findNextTypist(lastCommitters []string, gitUserName string) (string, string) {
-	var history = ""
+func findNextTypist(lastCommitters []string, gitUserName string) (nextTypist string, previousCommitters []string) {
 	for i := 0; i < len(lastCommitters); i++ {
 		if lastCommitters[i] == gitUserName && i > 0 {
-			return lastCommitters[i-1], history
+			nextTypist = lastCommitters[i-1]
+			return
 		}
-		if history != "" {
-			history = ", " + history
-		}
-		history = lastCommitters[i] + history
+		previousCommitters = prepend(previousCommitters, lastCommitters[i])
 	}
-	return "", history
+	return
+}
+
+func prepend(list []string, element string) []string {
+	list = append(list, element)
+	copy(list[1:], list)
+	list[0] = element
+	return list
 }
