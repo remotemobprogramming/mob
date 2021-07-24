@@ -115,7 +115,7 @@ func appendCoauthorsToSquashMsg(gitDir string) error {
 
 		// append to repo/.git/SQUASH_MSG
 		writer := bufio.NewWriter(file)
-		_, err = writer.WriteString(coauthorSuffix)
+		writer.WriteString(coauthorSuffix)
 		err = writer.Flush()
 	}
 
