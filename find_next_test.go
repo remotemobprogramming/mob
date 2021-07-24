@@ -36,8 +36,8 @@ func TestFindNextTypistCurrentCommitterCommittedBefore(t *testing.T) {
 
 	nextTypist, history := findNextTypist(lastCommitters, "alice")
 
-	equals(t, nextTypist, "alice")
-	equals(t, history, []string{"alice"})
+	equals(t, nextTypist, "bob")
+	equals(t, history, []string{"bob", "alice"})
 }
 
 func TestFindNextTypistThreeCommitters(t *testing.T) {

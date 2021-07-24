@@ -1,10 +1,13 @@
 package main
 
 func findNextTypist(lastCommitters []string, gitUserName string) (nextTypist string, previousCommitters []string) {
-	for i := 0; i < len(lastCommitters); i++ {
+	numberOfLastCommitters := len(lastCommitters)
+	for i := 0; i < numberOfLastCommitters; i++ {
 		if lastCommitters[i] == gitUserName && i > 0 {
 			nextTypist = lastCommitters[i-1]
-			return
+			if nextTypist != gitUserName {
+				return
+			}
 		}
 		// Do not add the last committer multiple times.
 		if i == 0 || previousCommitters[0] != lastCommitters[i] {
