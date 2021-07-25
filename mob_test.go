@@ -90,17 +90,17 @@ func TestDetermineBranches(t *testing.T) {
 func assertDetermineBranches(t *testing.T, branch string, qualifier string, branches []string, expectedBase string, expectedWip string) {
 	configuration := getDefaultConfiguration()
 	configuration.WipBranchQualifier = qualifier
-	baseBranch, wipBranch := determineBranches(branch, branches, configuration)
-	equals(t, expectedBase, baseBranch)
-	equals(t, expectedWip, wipBranch)
+	baseBranch, wipBranch := determineBranches(newBranch(branch), branches, configuration)
+	equals(t, newBranch(expectedBase), baseBranch)
+	equals(t, newBranch(expectedWip), wipBranch)
 }
 
 func TestRemoveWipPrefix(t *testing.T) {
 	configuration := getDefaultConfiguration()
 	configuration.WipBranchPrefix = "mob/"
-	equals(t, "master-green", configuration.removeWipPrefix("mob/master-green"))
-	equals(t, "master-green-blue", configuration.removeWipPrefix("mob/master-green-blue"))
-	equals(t, "main-branch", configuration.removeWipPrefix("mob/main-branch"))
+	equals(t, "master-green", newBranch("mob/master-green").removeWipPrefix(configuration).Name)
+	equals(t, "master-green-blue", newBranch("mob/master-green-blue").removeWipPrefix(configuration).Name)
+	equals(t, "main-branch", newBranch("mob/main-branch").removeWipPrefix(configuration).Name)
 }
 
 func TestRemoveWipBranchQualifier(t *testing.T) {
@@ -109,37 +109,37 @@ func TestRemoveWipBranchQualifier(t *testing.T) {
 	configuration.WipBranchQualifierSeparator = "-"
 	configuration.WipBranchQualifier = "green"
 	configuration.WipBranchQualifierSet = true
-	equals(t, "master", removeWipQualifier("master-green", []string{}, configuration))
+	equals(t, "master", newBranch("master-green").removeWipQualifier([]string{}, configuration).Name)
 
 	configuration.WipBranchQualifierSeparator = "-"
 	configuration.WipBranchQualifier = "test-branch"
 	configuration.WipBranchQualifierSet = true
-	equals(t, "master", removeWipQualifier("master-test-branch", []string{}, configuration))
+	equals(t, "master", newBranch("master-test-branch").removeWipQualifier([]string{}, configuration).Name)
 
 	configuration.WipBranchQualifierSeparator = "-"
 	configuration.WipBranchQualifier = "branch"
 	configuration.WipBranchQualifierSet = true
-	equals(t, "master-test", removeWipQualifier("master-test-branch", []string{}, configuration))
+	equals(t, "master-test", newBranch("master-test-branch").removeWipQualifier([]string{}, configuration).Name)
 
 	configuration.WipBranchQualifierSeparator = "-"
 	configuration.WipBranchQualifier = "branch"
 	configuration.WipBranchQualifierSet = true
-	equals(t, "master-test", removeWipQualifier("master-test-branch", []string{"master-test"}, configuration))
+	equals(t, "master-test", newBranch("master-test-branch").removeWipQualifier([]string{"master-test"}, configuration).Name)
 
 	configuration.WipBranchQualifierSeparator = "/-/"
 	configuration.WipBranchQualifier = "branch-qualifier"
 	configuration.WipBranchQualifierSet = true
-	equals(t, "main", removeWipQualifier("main/-/branch-qualifier", []string{}, configuration))
+	equals(t, "main", newBranch("main/-/branch-qualifier").removeWipQualifier([]string{}, configuration).Name)
 
 	configuration.WipBranchQualifierSeparator = "-"
 	configuration.WipBranchQualifier = "branchqualifier"
 	configuration.WipBranchQualifierSet = true
-	equals(t, "main/branchqualifier", removeWipQualifier("main/branchqualifier", []string{}, configuration))
+	equals(t, "main/branchqualifier", newBranch("main/branchqualifier").removeWipQualifier([]string{}, configuration).Name)
 
 	configuration.WipBranchQualifierSeparator = ""
 	configuration.WipBranchQualifier = "branchqualifier"
 	configuration.WipBranchQualifierSet = true
-	equals(t, "main", removeWipQualifier("mainbranchqualifier", []string{}, configuration))
+	equals(t, "main", newBranch("mainbranchqualifier").removeWipQualifier([]string{}, configuration).Name)
 }
 
 func TestRemoveWipBranchQualifierWithoutBranchQualifierSet(t *testing.T) {
@@ -148,12 +148,12 @@ func TestRemoveWipBranchQualifierWithoutBranchQualifierSet(t *testing.T) {
 	configuration.WipBranchQualifierSeparator = "-"
 	configuration.WipBranchQualifier = ""
 	configuration.WipBranchQualifierSet = false
-	equals(t, "main", removeWipQualifier("main", []string{}, configuration))
+	equals(t, "main", newBranch("main").removeWipQualifier([]string{}, configuration).Name)
 
 	configuration.WipBranchQualifierSeparator = "-"
 	configuration.WipBranchQualifier = ""
 	configuration.WipBranchQualifierSet = false
-	equals(t, "master", removeWipQualifier("master-test-branch", []string{}, configuration))
+	equals(t, "master", newBranch("master-test-branch").removeWipQualifier([]string{}, configuration).Name)
 }
 
 func TestMobRemoteNameEnvironmentVariable(t *testing.T) {
@@ -1032,8 +1032,8 @@ func createFile(t *testing.T, filename string, content string) (pathToFile strin
 
 func assertOnBranch(t *testing.T, branch string) {
 	currentBranch := gitCurrentBranch()
-	if currentBranch != branch {
-		failWithFailure(t, "on branch "+branch, "on branch "+currentBranch)
+	if currentBranch.Name != branch {
+		failWithFailure(t, "on branch "+branch, "on branch "+currentBranch.String())
 	}
 }
 
@@ -1051,8 +1051,8 @@ func assertOutputNotContains(t *testing.T, output *string, notContains string) {
 }
 
 func assertMobSessionBranches(t *testing.T, configuration Configuration, branch string) {
-	if !hasRemoteBranch(branch, configuration) {
-		failWithFailure(t, configuration.remoteBranch(branch), "none")
+	if !newBranch(branch).hasRemoteBranch(configuration) {
+		failWithFailure(t, newBranch(branch).remote(configuration).Name, "none")
 	}
 	if !hasLocalBranch(branch) {
 		failWithFailure(t, branch, "none")
@@ -1060,8 +1060,8 @@ func assertMobSessionBranches(t *testing.T, configuration Configuration, branch 
 }
 
 func assertNoMobSessionBranches(t *testing.T, configuration Configuration, branch string) {
-	if hasRemoteBranch(branch, configuration) {
-		failWithFailure(t, "none", configuration.remoteBranch(branch))
+	if newBranch(branch).hasRemoteBranch(configuration) {
+		failWithFailure(t, "none", newBranch(branch).remote(configuration).Name)
 	}
 	if hasLocalBranch(branch) {
 		failWithFailure(t, "none", branch)

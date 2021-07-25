@@ -64,7 +64,7 @@ func TestSquashWipCommits_failsOnFinalWipCommit(t *testing.T) {
 
 	squashWip(configuration)
 
-	assertCommitLogContainsMessage(t, gitCurrentBranch(), configuration.WipCommitMessage)
+	assertCommitLogContainsMessage(t, gitCurrentBranch().Name, configuration.WipCommitMessage)
 	assertOutputContains(t, output, "failed to squash wip commits")
 }
 
