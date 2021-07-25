@@ -610,7 +610,7 @@ func start(configuration Configuration) error {
 	if !currentBaseBranch.hasRemoteBranch(configuration) {
 		sayError("Remote branch " + currentBaseBranch.remote(configuration).String() + " is missing")
 		sayTodo("To set the upstream branch, use", "git push "+configuration.RemoteName+" "+currentBaseBranch.String()+" --set-upstream")
-		return errors.New("Remote branch is missing")
+		return errors.New("remote branch is missing")
 	}
 
 	if currentBaseBranch.hasUnpushedCommits(configuration) {
@@ -953,17 +953,10 @@ func showNext(configuration Configuration) {
 	if numberOfLines < 1 {
 		return
 	}
-	var history = ""
-	for i := 0; i < len(lines); i++ {
-		if lines[i] == gitUserName && i > 0 {
-			sayInfo("Committers after your last commit: " + history)
-			sayInfo("***" + lines[i-1] + "*** is (probably) next.")
-			return
-		}
-		if history != "" {
-			history = ", " + history
-		}
-		history = lines[i] + history
+	nextTypist, previousCommitters := findNextTypist(lines, gitUserName)
+	if nextTypist != "" {
+		sayInfo("Committers after your last commit: " + strings.Join(previousCommitters, ", "))
+		sayInfo("***" + nextTypist + "*** is (probably) next.")
 	}
 }
 
@@ -1144,7 +1137,7 @@ func say(s string) {
 	if len(s) == 0 {
 		return
 	}
-	printToConsole(strings.TrimRight(s, " \r\n\t\v\f\r") + "\n")
+	printToConsole(strings.TrimRight(s, " \r\n\t\v\f") + "\n")
 }
 
 func sayEmptyLine() {

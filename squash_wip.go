@@ -95,7 +95,7 @@ func squashWipGitSequenceEditor(fileName string, configuration Configuration) {
 }
 
 func replaceFileContents(fileName string, replacer Replacer) {
-	file, err := os.OpenFile(fileName, os.O_RDWR, 0666)
+	file, _ := os.OpenFile(fileName, os.O_RDWR, 0666)
 	input, err := ioutil.ReadAll(file)
 	if err != nil {
 		panic(err)
