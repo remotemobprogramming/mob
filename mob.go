@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	versionNumber = "1.7.0"
+	versionNumber = "1.8.0"
 	mobStashName  = "mob-stash-name"
 )
 
