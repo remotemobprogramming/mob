@@ -10,26 +10,17 @@
     <img alt="Downloads" src="https://img.shields.io/github/downloads/remotemobprogramming/mob/total" /></a>
   <a href="https://github.com/remotemobprogramming/mob/releases">
     <img  alt="Downloads of latest" src="https://img.shields.io/github/downloads/remotemobprogramming/mob/latest/total" /></a>
-  <a href="https://github.com/remotemobprogramming/mob/releases/latest">
-    <img alt="Version" src="https://img.shields.io/github/v/release/remotemobprogramming/mob?sort=semver" /></a>
   <a href="https://img.shields.io/github/stars/remotemobprogramming/mob">
     <img alt="Stars" src="https://img.shields.io/github/stars/remotemobprogramming/mob" /></a>
-  <a href="https://www.producthunt.com/posts/mob-2?utm_source=badge-featured&utm_medium=badge&utm_souce=badge-mob-2" target="_blank"><img src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=303256&theme=light" alt="mob - Fast git handover for remote mob or pair programming | Product Hunt" style="width: 250px; height: 54px;" width="250" height="54" /></a>
 </p>
 
-Smooth [git handover](https://www.remotemobprogramming.org/#git-handover) with 'mob'.
+Smooth [git handover](https://www.remotemobprogramming.org/#git-handover) for remote pair/mob programming.
 
 - **mob** is [an open source command line tool written in go](https://github.com/remotemobprogramming/mob)
-- **mob** is the fastest way to [hand over code via git](https://www.remotemobprogramming.org/#git-handover) and feels [ubersmooth](https://twitter.com/holgerGP/status/1277653842444902400?s=20)
-- **mob** supports remote mob/ensemble or pair programming using screen sharing
-- **mob** works on every platform, even [ Apple Silicon](https://twitter.com/simonharrer/status/1332236430429581312?s=20)
-- **mob** keeps your branches clean and only creates WIP commits on temporary wip branches
-- **mob** supports multiple wip branches per base branch
-- **mob** notifies you when it's time ⏱️ to handover
-- **mob** can moo 🐄
-- **mob** is even better when you follow its [best practices](#best-practices)
+- **mob** is the fastest way to [hand over code via git](https://www.remotemobprogramming.org/#git-handover)
+- **mob** keeps your branches clean and only creates WIP commits on temporary branches
 
-## What people say about 'mob'
+## What people say about mob
 
 > "Mob has allowed us to run fast-paced, engaging, and effective sessions by enabling sub-10-second handover times and otherwise getting out of the way. A simple but great tool!" &mdash; [Jeff Langr, developer](https://twitter.com/jlangr)
 
@@ -38,8 +29,6 @@ Smooth [git handover](https://www.remotemobprogramming.org/#git-handover) with '
 >"What a great tool to organise remote working." &mdash; [Jennifer Gommans, IT Consultant](https://twitter.com/missjennbo)
 
 > "I was recently introduced to [mob.sh](https://mob.sh) for remote pairing/mobbing collaboration and I absolutely love it. The timer feature is really a selling point for me. Kudos" &mdash; [Fabien Illert, IT Consultant](https://twitter.com/fabienillert)
-
-> "Really enjoying working with http://mob.sh. Whole team added it to the "Glad" column during yesterday's retro ;-)" &mdash; [twitter.com/miljar](https://twitter.com/miljar/status/1392040059105382401)
 
 ## How to install
 
@@ -58,7 +47,7 @@ brew install remotemobprogramming/brew/mob
 brew upgrade remotemobprogramming/brew/mob
 ```
 
-On windows via [Scoop](https://scoop.sh/):
+On Windows via [Scoop](https://scoop.sh/):
 
 ```
 scoop install mob
@@ -102,10 +91,11 @@ go install github.com/remotemobprogramming/mob@v1.2.0
 
 ## How to use
 
-You only need three commands: `mob start`, `mob next`, and `mob done`. 
+You only need three commands: `mob start`, `mob next`, and `mob done`.
+
 Switch to a separate branch with `mob start` and handover to the next person with `mob next`.
 Repeat.
-When you're done, get your changes into the staging area of the `master` branch with `mob done` and commit them.  
+When you're done, get your changes into the staging area of the `main` branch with `mob done` and commit them.  
 
 [![asciicast](https://asciinema.org/a/321885.svg)](https://asciinema.org/a/321885)
 
