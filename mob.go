@@ -764,10 +764,7 @@ func next(configuration Configuration) {
 		}
 	} else {
 		makeWipCommit(configuration)
-
-		changes := getChangesOfLastCommit()
 		git("push", "--no-verify", configuration.RemoteName, currentWipBranch.Name)
-		say(changes)
 	}
 	showNext(configuration)
 
@@ -787,6 +784,8 @@ func getCachedChanges() string {
 func makeWipCommit(configuration Configuration) {
 	git("add", "--all")
 	git("commit", "--message", configuration.WipCommitMessage, "--no-verify")
+	say(getChangesOfLastCommit())
+	sayIndented(gitCommitHash())
 }
 
 func fetch(configuration Configuration) {
@@ -1041,6 +1040,10 @@ func git(args ...string) {
 	} else {
 		sayIndented(commandString)
 	}
+}
+
+func gitCommitHash() string {
+	return silentgitignorefailure("rev-parse", "HEAD")
 }
 
 func sayGitError(commandString string, output string, err error) {

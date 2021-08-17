@@ -1,3 +1,6 @@
+# 1.9.0
+- Show commit hash of WIP commits made by the `mob` tool on the console.
+
 # 1.8.0
 - `mob next` does not show the same committer multiple times in the list of previous committers.
 - `mob next` does not suggest the current Git user to be the next typist as long as there were other persons involved in the mob.
