@@ -1,5 +1,6 @@
 # 1.9.0
 - Show commit hash of WIP commits made by the `mob` tool on the console.
+- `mob start --include-uncommitted-changes` now fails fast. That means, if `mob` can detect any issue preventing it to succeed, it will exit BEFORE calling `git stash`. This will make error recovery much easier as one doesn't have to think about applying any stashes by themselves. 
 
 # 1.8.0
 - `mob next` does not show the same committer multiple times in the list of previous committers.

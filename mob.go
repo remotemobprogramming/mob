@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	versionNumber = "1.8.0"
+	versionNumber = "1.9.0"
 	mobStashName  = "mob-stash-name"
 )
 
@@ -590,18 +590,13 @@ func reset(configuration Configuration) {
 }
 
 func start(configuration Configuration) error {
-	stashed := false
-	if hasUncommittedChanges() {
-		if configuration.MobStartIncludeUncommittedChanges {
-			git("stash", "push", "--include-untracked", "--message", mobStashName)
-			stashed = true
-		} else {
-			sayInfo("cannot start; clean working tree required")
-			sayUnstagedChangesInfo()
-			sayUntrackedFilesInfo()
-			sayTodo("To start, including uncommitted changes, use", "mob start --include-uncommitted-changes")
-			return errors.New("cannot start; clean working tree required")
-		}
+	uncommittedChanges := hasUncommittedChanges()
+	if uncommittedChanges && !configuration.MobStartIncludeUncommittedChanges {
+		sayInfo("cannot start; clean working tree required")
+		sayUnstagedChangesInfo()
+		sayUntrackedFilesInfo()
+		sayTodo("To start, including uncommitted changes, use", "mob start --include-uncommitted-changes")
+		return errors.New("cannot start; clean working tree required")
 	}
 
 	git("fetch", configuration.RemoteName, "--prune")
@@ -618,6 +613,10 @@ func start(configuration Configuration) error {
 		return errors.New("cannot start; unpushed changes on base branch must be pushed upstream")
 	}
 
+	if uncommittedChanges {
+		git("stash", "push", "--include-untracked", "--message", mobStashName)
+	}
+
 	if !isMobProgramming(configuration) {
 		git("merge", "FETCH_HEAD", "--ff-only")
 	}
@@ -630,7 +629,7 @@ func start(configuration Configuration) error {
 		startNewMobSession(configuration)
 	}
 
-	if configuration.MobStartIncludeUncommittedChanges && stashed {
+	if uncommittedChanges && configuration.MobStartIncludeUncommittedChanges {
 		stashes := silentgit("stash", "list")
 		stash := findLatestMobStash(stashes)
 		git("stash", "pop", stash)
