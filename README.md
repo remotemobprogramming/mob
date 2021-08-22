@@ -254,6 +254,12 @@ Install that on Debian/Ubuntu/Mint as follows:
 sudo apt-get install espeak-ng-espeak mbrola-us1
 ```
 
+or on Arch Linux as follows:
+```bash
+sudo pacman -S espeak-ng-espeak
+yay -S mbrola-voices-us1
+```
+
 Create a little script in your `$PATH` called `say` with the following content:
 
 ```bash
