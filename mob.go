@@ -423,6 +423,8 @@ func execute(command string, parameter []string, configuration Configuration) {
 			startTimer(timer, configuration)
 		} else if configuration.MobTimer != "" {
 			startTimer(configuration.MobTimer, configuration)
+		} else {
+			sayInfo("It's now " + currentTime() + ". Happy collaborating!")
 		}
 	case "b", "branch":
 		branch(configuration)
@@ -558,8 +560,12 @@ func startTimer(timerInMinutes string, configuration Configuration) {
 		sayError(fmt.Sprintf("timer couldn't be started on your system (%s)", runtime.GOOS))
 		sayError(err.Error())
 	} else {
-		sayInfo(fmt.Sprintf("%d minutes timer started (finishes at approx. %s)", timeoutInMinutes, timeOfTimeout))
+		sayInfo("It's now " + currentTime() + ". " + fmt.Sprintf("%d min timer finishes at approx. %s", timeoutInMinutes, timeOfTimeout) + " Happy collaborating!")
 	}
+}
+
+func currentTime() string {
+	return time.Now().Format("15:04")
 }
 
 func moo(configuration Configuration) {
