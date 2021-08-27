@@ -641,7 +641,7 @@ func start(configuration Configuration) error {
 		git("stash", "pop", stash)
 	}
 
-	sayInfo("you are on wip branch " + currentWipBranch.String() + " (base branch " + currentBaseBranch.String() + ")")
+	sayInfo("you are on wip branch '" + currentWipBranch.String() + "' (base branch '" + currentBaseBranch.String() + "')")
 	sayLastCommitsList(currentBaseBranch.String(), currentWipBranch.String())
 
 	return nil // no error
@@ -715,7 +715,7 @@ func getWipBranchesForBaseBranch(currentBaseBranch Branch, configuration Configu
 func startJoinMobSession(configuration Configuration) {
 	_, currentWipBranch := determineBranches(gitCurrentBranch(), gitBranches(), configuration)
 
-	sayInfo("joining existing mob session from " + currentWipBranch.remote(configuration).String())
+	sayInfo("joining existing session from " + currentWipBranch.remote(configuration).String())
 	git("checkout", "-B", currentWipBranch.Name, currentWipBranch.remote(configuration).Name)
 	git("branch", "--set-upstream-to="+currentWipBranch.remote(configuration).Name, currentWipBranch.Name)
 }
@@ -723,7 +723,7 @@ func startJoinMobSession(configuration Configuration) {
 func startNewMobSession(configuration Configuration) {
 	currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), gitBranches(), configuration)
 
-	sayInfo("starting new mob session from " + currentBaseBranch.remote(configuration).String())
+	sayInfo("starting new session from " + currentBaseBranch.remote(configuration).String())
 	git("checkout", "-B", currentWipBranch.Name, currentBaseBranch.remote(configuration).Name)
 	git("push", "--no-verify", "--set-upstream", configuration.RemoteName, currentWipBranch.Name)
 }
@@ -836,7 +836,7 @@ func done(configuration Configuration) {
 	} else {
 		git("checkout", currentBaseBranch.Name)
 		git("branch", "-D", currentWipBranch.Name)
-		sayInfo("someone else already ended your mob session")
+		sayInfo("someone else already ended your session")
 	}
 }
 
@@ -860,7 +860,7 @@ func status(configuration Configuration) {
 		sayLastCommitsList(currentBaseBranch.String(), currentWipBranch.String())
 	} else {
 		currentBaseBranch, _ := determineBranches(gitCurrentBranch(), gitBranches(), configuration)
-		sayInfo("you are on base branch " + currentBaseBranch.String())
+		sayInfo("you are on base branch '" + currentBaseBranch.String() + "'")
 		showActiveMobSessions(configuration, currentBaseBranch)
 	}
 }
@@ -870,7 +870,7 @@ func sayLastCommitsList(currentBaseBranch string, currentWipBranch string) {
 	log := silentgit("--no-pager", "log", commitsBaseWipBranch, "--pretty=format:%h %cr <%an>", "--abbrev-commit")
 	lines := strings.Split(log, "\n")
 	if len(lines) > 5 {
-		sayInfo("This mob branch contains " + strconv.Itoa(len(lines)) + " commits. The last 5 were:")
+		sayInfo("wip branch '" + currentWipBranch + "' contains " + strconv.Itoa(len(lines)) + " commits. The last 5 were:")
 		lines = lines[:5]
 	}
 	ReverseSlice(lines)
@@ -941,7 +941,7 @@ func showNext(configuration Configuration) {
 	debugInfo("determining next person based on previous changes")
 	gitUserName := gitUserName()
 	if gitUserName == "" {
-		sayWarning("mob failed to detect who's next because you haven't set your git user name")
+		sayWarning("'mob' failed to detect who's next because you haven't set your git user name")
 		sayTodo("To fix, use", "git config --global user.name \"Your Name Here\"")
 		return
 	}
@@ -968,7 +968,7 @@ func help() {
 	output := `mob enables a smooth Git handover
 
 Basic Commands:
-  start              start mob session from base branch in wip branch
+  start              start session from base branch in wip branch
   next               handover changes in wip branch to next person
   done               squashes all changes in wip branch to index in base branch
   reset              removes local and remote wip branch
@@ -995,14 +995,14 @@ Experimental Commands:
 
 Timer Commands:
   timer <minutes>    start a <minutes> timer
-  start <minutes>    start mob session in wip branch and a timer
+  start <minutes>    start session in wip branch and a timer
 
 Get more information:
-  status             show the status of the current mob session
+  status             show the status of the current session
   fetch              fetch remote state
-  branch             show remote mob branches
+  branch             show remote wip branches
   config             show all configuration options
-  version            show the version of mob
+  version            show the version of 'mob'
   help               show help
 
 Other
@@ -1053,7 +1053,7 @@ func gitCommitHash() string {
 
 func sayGitError(commandString string, output string, err error) {
 	if !isGit() {
-		sayError("mob expects the current working directory to be a git repository.")
+		sayError("'mob' expects the current working directory to be a git repository.")
 	} else {
 		sayError(commandString)
 		sayError(output)

@@ -296,7 +296,7 @@ func TestStatusWithMoreThan5LinesOfLog(t *testing.T) {
 	}
 
 	status(configuration)
-	assertOutputContains(t, output, "This mob branch contains 6 commits.")
+	assertOutputContains(t, output, "wip branch 'mob-session' contains 6 commits.")
 }
 
 func TestExecuteKicksOffStatus(t *testing.T) {
@@ -304,7 +304,7 @@ func TestExecuteKicksOffStatus(t *testing.T) {
 
 	execute("status", []string{}, getDefaultConfiguration())
 
-	assertOutputContains(t, output, "you are on base branch master")
+	assertOutputContains(t, output, "you are on base branch 'master'")
 }
 
 func TestExecuteInvalidCommandKicksOffHelp(t *testing.T) {
@@ -935,7 +935,7 @@ func TestNotAGitRepoMessage(t *testing.T) {
 	output, _ := setup(t)
 	setWorkingDir(tempDir + "/notgit")
 	sayGitError("TEST", "TEST", errors.New("TEST"))
-	assertOutputContains(t, output, "mob expects the current working directory to be a git repository.")
+	assertOutputContains(t, output, "'mob' expects the current working directory to be a git repository.")
 }
 
 func setup(t *testing.T) (output *string, configuration Configuration) {

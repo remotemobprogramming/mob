@@ -35,7 +35,7 @@ last commit must be a manual commit`)
 	)
 	silentgit("rebase", "-i", "--keep-empty", mergeBase)
 	setEnvGitEditor(originalGitEditor, originalGitSequenceEditor)
-	sayInfo("the history of your " + currentWipBranch.String() + " branch has been rewritten to combine all wip commits with their following manual commits:")
+	sayInfo("the history of your '" + currentWipBranch.String() + "' branch has been rewritten to combine all wip commits with their following manual commits:")
 	sayEmptyLine()
 	sayLastCommitsWithMessage(currentBaseBranch.String(), currentWipBranch.String())
 	sayEmptyLine()
@@ -47,7 +47,7 @@ func sayLastCommitsWithMessage(currentBaseBranch string, currentWipBranch string
 	log := silentgit("--no-pager", "log", commitsBaseWipBranch, "--pretty=oneline", "--abbrev-commit")
 	lines := strings.Split(log, "\n")
 	if len(lines) > 10 {
-		sayInfo("This mob branch contains " + strconv.Itoa(len(lines)) + " commits. The last 10 were:")
+		sayInfo("wip branch '" + currentWipBranch + "' contains " + strconv.Itoa(len(lines)) + " commits. The last 10 were:")
 		lines = lines[:10]
 	}
 	output := strings.Join(lines, "\n")
