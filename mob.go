@@ -198,7 +198,8 @@ func main() {
 	debugInfo("command '" + command + "'")
 	debugInfo("parameters '" + strings.Join(parameters, " ") + "'")
 	debugInfo("version " + versionNumber)
-	debugInfo("workingDir " + workingDir)
+	debugInfo("workingDir '" + workingDir + "'")
+	debugInfo("git dir is '" + gitDir() + "'")
 
 	execute(command, parameters, configuration)
 }
@@ -677,7 +678,7 @@ func sayUntrackedFilesInfo() {
 	hasUntrackedFiles := len(untrackedFiles) > 0
 	if hasUntrackedFiles {
 		sayInfo("untracked files present:")
-		sayInfo(untrackedFiles)
+		sayInfoIndented(untrackedFiles)
 	}
 }
 
@@ -686,7 +687,7 @@ func sayUnstagedChangesInfo() {
 	hasUnstagedChanges := len(unstagedChanges) > 0
 	if hasUnstagedChanges {
 		sayInfo("unstaged changes present:")
-		sayInfo(unstagedChanges)
+		sayInfoIndented(unstagedChanges)
 	}
 }
 
@@ -729,7 +730,7 @@ func startNewMobSession(configuration Configuration) {
 }
 
 func getUntrackedFiles() string {
-	return silentgit("ls-files", "--others", "--exclude-standard")
+	return silentgit("ls-files", "--others", "--exclude-standard", "--full-name")
 }
 
 func getUnstagedChanges() string {
@@ -789,8 +790,8 @@ func getCachedChanges() string {
 func makeWipCommit(configuration Configuration) {
 	git("add", "--all")
 	git("commit", "--message", configuration.WipCommitMessage, "--no-verify")
-	say(getChangesOfLastCommit())
-	sayIndented(gitCommitHash())
+	sayInfoIndented(getChangesOfLastCommit())
+	sayInfoIndented(gitCommitHash())
 }
 
 func fetch(configuration Configuration) {
@@ -824,7 +825,7 @@ func done(configuration Configuration) {
 		git("branch", "-D", currentWipBranch.Name)
 		git("push", "--no-verify", configuration.RemoteName, "--delete", currentWipBranch.Name)
 
-		say(getCachedChanges())
+		sayInfoIndented(getCachedChanges())
 		err := appendCoauthorsToSquashMsg(gitDir())
 		if err != nil {
 			sayError(err.Error())
@@ -1106,38 +1107,42 @@ var exit = func(code int) {
 }
 
 func sayError(text string) {
-	sayWithPrefix(text, " ERROR ")
+	sayWithPrefix(text, "ERROR ")
 }
 
 func debugInfo(text string) {
 	if Debug {
-		sayWithPrefix(text, " DEBUG ")
+		sayWithPrefix(text, "DEBUG ")
 	}
 }
 
 func sayIndented(text string) {
-	sayWithPrefix(text, "   ")
+	sayWithPrefix(text, "  ")
 }
 
 func sayTodo(text string, command string) {
-	sayWithPrefix(text, " 👉 ")
+	sayWithPrefix(text, "👉 ")
 	sayEmptyLine()
 	sayIndented(command)
 	sayEmptyLine()
 }
 
 func sayInfo(text string) {
-	sayWithPrefix(text, " > ")
+	sayWithPrefix(text, "> ")
+}
+
+func sayInfoIndented(text string) {
+	sayWithPrefix(text, "    ")
 }
 
 func sayWarning(text string) {
-	sayWithPrefix(text, " ⚠ ")
+	sayWithPrefix(text, "⚠ ")
 }
 
 func sayWithPrefix(s string, prefix string) {
 	lines := strings.Split(strings.TrimSpace(s), "\n")
 	for i := 0; i < len(lines); i++ {
-		printToConsole(prefix + lines[i] + "\n")
+		printToConsole(prefix + strings.TrimSpace(lines[i]) + "\n")
 	}
 }
 

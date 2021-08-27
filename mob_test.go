@@ -894,7 +894,7 @@ func TestDoneMerge(t *testing.T) {
 	setWorkingDir(tempDir + "/local")
 	start(configuration)
 	done(configuration)
-	assertOutputContains(t, output, "   git commit")
+	assertOutputContains(t, output, "  git commit")
 }
 
 func TestStartAndNextInSubdir(t *testing.T) {
