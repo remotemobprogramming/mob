@@ -658,7 +658,7 @@ func warnForActiveMobSessions(configuration Configuration, currentBaseBranch Bra
 	if len(existingWipBranches) > 0 && !configuration.WipBranchQualifierSet {
 		sayWarning("Creating a new wip branch even though preexisting wip branches have been detected.")
 		for _, wipBranch := range existingWipBranches {
-			sayWithPrefix(wipBranch, "   - ")
+			sayWithPrefix(wipBranch, "  - ")
 		}
 	}
 }
@@ -668,7 +668,7 @@ func showActiveMobSessions(configuration Configuration, currentBaseBranch Branch
 	if len(existingWipBranches) > 0 {
 		sayInfo("remote wip branches detected:")
 		for _, wipBranch := range existingWipBranches {
-			sayWithPrefix(wipBranch, "   - ")
+			sayWithPrefix(wipBranch, "  - ")
 		}
 	}
 }
