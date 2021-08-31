@@ -622,6 +622,7 @@ func start(configuration Configuration) error {
 
 	if uncommittedChanges {
 		git("stash", "push", "--include-untracked", "--message", mobStashName)
+		sayInfo("'mob' stashed uncommitted changes. If an error occurs later on, you can recover them with 'git stash pop'.")
 	}
 
 	if !isMobProgramming(configuration) {
