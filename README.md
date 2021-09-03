@@ -225,6 +225,20 @@ alias md='mob done'
 alias moo='mob moo'
 ```
 
+### Use the name you like
+
+```bash
+mob version
+#v1.11.0
+alias ensemble='mob' # introduce alias
+export MOB_CLI_NAME='ensemble' # makes it aware of the alias
+ensemble next
+#👉 to start working together, use
+#
+#  ensemble start
+#
+```
+
 ## More on Installation
 
 ### Arch Linux
