@@ -73,7 +73,7 @@ func TestSquashWipCommits_failsOnMainBranch(t *testing.T) {
 
 	squashWip(configuration)
 
-	assertOutputContains(t, output, "you aren't mob programming")
+	assertOutputContains(t, output, "to start working together")
 }
 
 func TestSquashWipCommits_worksWithEmptyCommits(t *testing.T) {

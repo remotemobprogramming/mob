@@ -1,5 +1,7 @@
 # 1.11.0
 - Allow to override the text in the notification and the voice via environment variables `MOB_NOTIFY_MESSAGE` and `MOB_VOICE_MESSAGE`.
+- Allow to override the stash name used for stashing uncommitted changes via the environment variable `MOB_STASH_NAME`.
+- Allow to override the cli name of the tool via `MOB_CLI_NAME` so you can use `pair`, `ensemble`, `team`, or whatever you like best, instead of `mob`. Just install the `mob` tool, set an alias in your cli and set the environment variable `MOB_CLI_NAME` to the name of your alias.
 
 # 1.10.0
 - Print current time after mob start. This helps when scrolling through the terminal to distinguish the mob start calls.

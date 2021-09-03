@@ -47,7 +47,7 @@ func TestStartDoneCoAuthors(t *testing.T) {
 func TestCreateCommitMessage(t *testing.T) {
 	equals(t, `
 
-# mob automatically added all co-authors from WIP commits
+# automatically added all co-authors from WIP commits
 # add missing co-authors manually
 Co-authored-by: Alice <alice@example.com>
 Co-authored-by: Bob <bob@example.com>

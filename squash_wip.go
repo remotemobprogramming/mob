@@ -12,7 +12,7 @@ type Replacer func(string) string
 
 func squashWip(configuration Configuration) {
 	if !isMobProgramming(configuration) {
-		sayTodo("to start working together, use", appCliName+" start")
+		sayTodo("to start working together, use", configuration.mob("start"))
 		return
 	}
 
@@ -38,7 +38,7 @@ last commit must be a manual commit`)
 	sayEmptyLine()
 	sayLastCommitsWithMessage(currentBaseBranch.String(), currentWipBranch.String())
 	sayEmptyLine()
-	sayTodo("to finally put the changes into the base branch preserving the resulting commits, call:", appCliName+" done --no-squash")
+	sayTodo("to finally put the changes into the base branch preserving the resulting commits, call:", configuration.mob("done --no-squash"))
 }
 
 func sayLastCommitsWithMessage(currentBaseBranch string, currentWipBranch string) {

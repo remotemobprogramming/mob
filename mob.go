@@ -14,8 +14,6 @@ import (
 
 const (
 	versionNumber = "1.10.0"
-	stashName     = "mob-stash-name"
-	appCliName    = "mob"
 )
 
 var (
@@ -24,6 +22,7 @@ var (
 )
 
 type Configuration struct {
+	cliName                           string // override with MOB_CLI_NAME environment variable
 	RemoteName                        string // override with MOB_REMOTE_NAME environment variable
 	WipCommitMessage                  string // override with MOB_WIP_COMMIT_MESSAGE environment variable
 	RequireCommitMessage              bool   // override with MOB_REQUIRE_COMMIT_MESSAGE environment variable
@@ -40,6 +39,7 @@ type Configuration struct {
 	MobDoneSquash                     bool   // override with MOB_DONE_SQUASH environment variable
 	MobTimer                          string // override with MOB_TIMER environment variable
 	WipBranchPrefix                   string // override with MOB_WIP_BRANCH_PREFIX environment variable (experimental)
+	StashName                         string // override with MOB_STASH_NAME environment variable
 }
 
 func (c Configuration) wipBranchQualifierSuffix() string {
@@ -221,12 +221,13 @@ func getDefaultConfiguration() Configuration {
 		voiceCommand = "(New-Object -ComObject SAPI.SPVoice).Speak(\\\"%s\\\")"
 	}
 	return Configuration{
+		cliName:                           "mob",
 		RemoteName:                        "origin",
-		WipCommitMessage:                  appCliName + " next [ci-skip] [ci skip] [skip ci]",
+		WipCommitMessage:                  "mob next [ci-skip] [ci skip] [skip ci]",
 		VoiceCommand:                      voiceCommand,
-		VoiceMessage:                      appCliName + " next",
+		VoiceMessage:                      "mob next",
 		NotifyCommand:                     notifyCommand,
-		NotifyMessage:                     appCliName + " next",
+		NotifyMessage:                     "mob next",
 		MobNextStay:                       true,
 		MobNextStaySet:                    false,
 		RequireCommitMessage:              false,
@@ -237,6 +238,7 @@ func getDefaultConfiguration() Configuration {
 		MobDoneSquash:                     true,
 		MobTimer:                          "",
 		WipBranchPrefix:                   "mob/",
+		StashName:                         "mob-stash-name",
 	}
 }
 
@@ -250,9 +252,20 @@ func parseDebug(args []string) {
 	}
 }
 
+func (c Configuration) mob(command string) string {
+	return c.cliName + " " + command
+}
+
 func parseEnvironmentVariables(configuration Configuration) Configuration {
-	removed("MOB_BASE_BRANCH", "Use '"+appCliName+" start' on your base branch instead.")
-	removed("MOB_WIP_BRANCH", "Use '"+appCliName+" start --branch <branch>' instead.")
+	setStringFromEnvVariable(&configuration.cliName, "MOB_CLI_NAME")
+	if configuration.cliName != getDefaultConfiguration().cliName {
+		configuration.WipCommitMessage = configuration.cliName + " next [ci-skip] [ci skip] [skip ci]"
+		configuration.VoiceMessage = configuration.cliName + " next"
+		configuration.NotifyMessage = configuration.cliName + " next"
+	}
+
+	removed("MOB_BASE_BRANCH", "Use '"+configuration.mob("start")+"' on your base branch instead.")
+	removed("MOB_WIP_BRANCH", "Use '"+configuration.mob("start --branch <branch>")+"' instead.")
 	deprecated("MOB_START_INCLUDE_UNCOMMITTED_CHANGES", "Use the parameter --include-uncommitted-changes instead.")
 	experimental("MOB_WIP_BRANCH_PREFIX")
 
@@ -260,9 +273,9 @@ func parseEnvironmentVariables(configuration Configuration) Configuration {
 	setStringFromEnvVariable(&configuration.WipCommitMessage, "MOB_WIP_COMMIT_MESSAGE")
 	setBoolFromEnvVariable(&configuration.RequireCommitMessage, "MOB_REQUIRE_COMMIT_MESSAGE")
 	setOptionalStringFromEnvVariable(&configuration.VoiceCommand, "MOB_VOICE_COMMAND")
-	setOptionalStringFromEnvVariable(&configuration.VoiceMessage, "MOB_VOICE_MESSAGE")
+	setStringFromEnvVariable(&configuration.VoiceMessage, "MOB_VOICE_MESSAGE")
 	setOptionalStringFromEnvVariable(&configuration.NotifyCommand, "MOB_NOTIFY_COMMAND")
-	setOptionalStringFromEnvVariable(&configuration.NotifyMessage, "MOB_NOTIFY_MESSAGE")
+	setStringFromEnvVariable(&configuration.NotifyMessage, "MOB_NOTIFY_MESSAGE")
 	setStringFromEnvVariable(&configuration.WipBranchQualifierSeparator, "MOB_WIP_BRANCH_QUALIFIER_SEPARATOR")
 
 	setStringFromEnvVariable(&configuration.WipBranchQualifier, "MOB_WIP_BRANCH_QUALIFIER")
@@ -343,25 +356,26 @@ func setBoolFromEnvVariableSet(s *bool, overridden *bool, key string) {
 
 func removed(key string, message string) {
 	if _, set := os.LookupEnv(key); set {
-		say("'" + appCliName + "' no longer supports the configuration option '" + key + "'")
+		say("Configuration option '" + key + "' is no longer used.")
 		say(message)
 	}
 }
 
 func deprecated(key string, message string) {
 	if _, set := os.LookupEnv(key); set {
-		say("'" + appCliName + "' will stop supporting the configuration option '" + key + "' sometime in the future")
+		say("Configuration option '" + key + "' is deprecated.")
 		say(message)
 	}
 }
 
 func experimental(key string) {
 	if _, set := os.LookupEnv(key); set {
-		say("configuration option '" + key + "' is experimental. '" + appCliName + "' might stop supporting this option sometime in the future")
+		say("Configuration option '" + key + "' is experimental. Be prepared that this option will be removed!")
 	}
 }
 
 func config(c Configuration) {
+	say("MOB_CLI_NAME" + "=" + c.cliName)
 	say("MOB_REMOTE_NAME" + "=" + c.RemoteName)
 	say("MOB_WIP_COMMIT_MESSAGE" + "=" + c.WipCommitMessage)
 	say("MOB_REQUIRE_COMMIT_MESSAGE" + "=" + strconv.FormatBool(c.RequireCommitMessage))
@@ -375,6 +389,7 @@ func config(c Configuration) {
 	say("MOB_WIP_BRANCH_QUALIFIER_SEPARATOR" + "=" + c.WipBranchQualifierSeparator)
 	say("MOB_DONE_SQUASH" + "=" + strconv.FormatBool(c.MobDoneSquash))
 	say("MOB_TIMER" + "=" + c.MobTimer)
+	say("MOB_STASH_NAME" + "=" + c.StashName)
 }
 
 func parseArgs(args []string, configuration Configuration) (command string, parameters []string, newConfiguration Configuration) {
@@ -457,7 +472,7 @@ func execute(command string, parameter []string, configuration Configuration) {
 		} else if configuration.MobTimer != "" {
 			startTimer(configuration.MobTimer, configuration)
 		} else {
-			help()
+			help(configuration)
 		}
 	case "moo":
 		moo(configuration)
@@ -472,9 +487,9 @@ func execute(command string, parameter []string, configuration Configuration) {
 	case "version", "--version", "-v":
 		version()
 	case "help", "--help", "-h":
-		help()
+		help(configuration)
 	default:
-		help()
+		help(configuration)
 	}
 }
 
@@ -611,7 +626,7 @@ func start(configuration Configuration) error {
 		sayInfo("cannot start; clean working tree required")
 		sayUnstagedChangesInfo()
 		sayUntrackedFilesInfo()
-		sayTodo("To start, including uncommitted changes, use", appCliName+" start --include-uncommitted-changes")
+		sayTodo("To start, including uncommitted changes, use", configuration.mob("start --include-uncommitted-changes"))
 		return errors.New("cannot start; clean working tree required")
 	}
 
@@ -630,8 +645,8 @@ func start(configuration Configuration) error {
 	}
 
 	if uncommittedChanges {
-		git("stash", "push", "--include-untracked", "--message", stashName)
-		sayInfo("'" + appCliName + "' stashed uncommitted changes. If an error occurs later on, you can recover them with 'git stash pop'.")
+		git("stash", "push", "--include-untracked", "--message", configuration.StashName)
+		sayInfo("uncommitted changes were stashed. If an error occurs later on, you can recover them with 'git stash pop'.")
 	}
 
 	if !isMobProgramming(configuration) {
@@ -648,7 +663,7 @@ func start(configuration Configuration) error {
 
 	if uncommittedChanges && configuration.MobStartIncludeUncommittedChanges {
 		stashes := silentgit("stash", "list")
-		stash := findLatestMobStash(stashes)
+		stash := findStashByName(stashes, configuration.StashName)
 		git("stash", "pop", stash)
 	}
 
@@ -747,11 +762,11 @@ func getUnstagedChanges() string {
 	return silentgit("diff", "--stat")
 }
 
-func findLatestMobStash(stashes string) string {
+func findStashByName(stashes string, stash string) string {
 	lines := strings.Split(stashes, "\n")
 	for i := 0; i < len(lines); i++ {
 		line := lines[i]
-		if strings.Contains(line, stashName) {
+		if strings.Contains(line, stash) {
 			return line[:strings.Index(line, ":")]
 		}
 	}
@@ -760,7 +775,7 @@ func findLatestMobStash(stashes string) string {
 
 func next(configuration Configuration) {
 	if !isMobProgramming(configuration) {
-		sayTodo("to start working together, use", appCliName+" start")
+		sayTodo("to start working together, use", configuration.mob("start"))
 		return
 	}
 
@@ -809,7 +824,7 @@ func fetch(configuration Configuration) {
 
 func done(configuration Configuration) {
 	if !isMobProgramming(configuration) {
-		sayTodo("to start working together, use", appCliName+" start")
+		sayTodo("to start working together, use", configuration.mob("start"))
 		return
 	}
 
@@ -950,7 +965,7 @@ func showNext(configuration Configuration) {
 	debugInfo("determining next person based on previous changes")
 	gitUserName := gitUserName()
 	if gitUserName == "" {
-		sayWarning("'" + appCliName + "' failed to detect who's next because you haven't set your git user name")
+		sayWarning("failed to detect who's next because you haven't set your git user name")
 		sayTodo("To fix, use", "git config --global user.name \"Your Name Here\"")
 		return
 	}
@@ -973,8 +988,8 @@ func showNext(configuration Configuration) {
 	}
 }
 
-func help() {
-	output := appCliName + ` enables a smooth Git handover
+func help(configuration Configuration) {
+	output := configuration.cliName + ` enables a smooth Git handover
 
 Basic Commands:
   start              start session from base branch in wip branch
@@ -1062,7 +1077,7 @@ func gitCommitHash() string {
 
 func sayGitError(commandString string, output string, err error) {
 	if !isGit() {
-		sayError("'" + appCliName + "' expects the current working directory to be a git repository.")
+		sayError("expecting the current working directory to be a git repository.")
 	} else {
 		sayError(commandString)
 		sayError(output)

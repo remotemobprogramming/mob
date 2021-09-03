@@ -124,7 +124,7 @@ func appendCoauthorsToSquashMsg(gitDir string) error {
 
 func createCommitMessage(coauthors []Author) string {
 	commitMessage := "\n\n"
-	commitMessage += "# mob automatically added all co-authors from WIP commits\n"
+	commitMessage += "# automatically added all co-authors from WIP commits\n"
 	commitMessage += "# add missing co-authors manually\n"
 	for _, coauthor := range coauthors {
 		commitMessage += fmt.Sprintf("Co-authored-by: %s\n", coauthor)

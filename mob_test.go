@@ -233,7 +233,7 @@ func TestNextNotMobProgramming(t *testing.T) {
 
 	next(configuration)
 
-	assertOutputContains(t, output, "you aren't mob programming")
+	assertOutputContains(t, output, "to start working together")
 }
 
 func TestRequireCommitMessage(t *testing.T) {
@@ -273,7 +273,7 @@ func TestDoneNotMobProgramming(t *testing.T) {
 
 	done(configuration)
 
-	assertOutputContains(t, output, "you aren't mob programming")
+	assertOutputContains(t, output, "to start working together")
 }
 
 func TestStatusMobProgramming(t *testing.T) {
@@ -935,7 +935,7 @@ func TestNotAGitRepoMessage(t *testing.T) {
 	output, _ := setup(t)
 	setWorkingDir(tempDir + "/notgit")
 	sayGitError("TEST", "TEST", errors.New("TEST"))
-	assertOutputContains(t, output, "'mob' expects the current working directory to be a git repository.")
+	assertOutputContains(t, output, "expecting the current working directory to be a git repository.")
 }
 
 func setup(t *testing.T) (output *string, configuration Configuration) {
