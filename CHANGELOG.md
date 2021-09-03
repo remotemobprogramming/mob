@@ -1,3 +1,6 @@
+# 1.11.0
+- Allow to override the text in the notification and the voice via environment variables `MOB_NOTIFY_MESSAGE` and `MOB_VOICE_MESSAGE`.
+
 # 1.10.0
 - Print current time after mob start. This helps when scrolling through the terminal to distinguish the mob start calls.
 
