@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	versionNumber = "1.11.0"
+	versionNumber = "1.11.1"
 )
 
 var (
@@ -202,7 +202,6 @@ func main() {
 	debugInfo("parameters '" + strings.Join(parameters, " ") + "'")
 	debugInfo("version " + versionNumber)
 	debugInfo("workingDir '" + workingDir + "'")
-	debugInfo("git dir is '" + gitDir() + "'")
 
 	execute(command, parameters, configuration)
 }
