@@ -1,6 +1,6 @@
 name: mob-sh
 base: core18
-version: '1.9.0'
+version: '1.11.1'
 summary: Fast git handover with mob
 description: |
   Smooth git handover with 'mob' for remote mob or pair programming.
