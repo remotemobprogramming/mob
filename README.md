@@ -239,6 +239,19 @@ ensemble next
 #
 ```
 
+And starting with v1.12.0, `mob` is symlink aware as well:
+
+```bash
+mob version
+#v1.12.0
+ln -s /usr/local/bin/mob /usr/local/bin/ensemble
+ensemble next
+#👉 to start working together, use
+#
+#  ensemble start
+#
+```
+
 ## More on Installation
 
 ### Arch Linux
