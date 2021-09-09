@@ -1,5 +1,6 @@
 # 1.12.0
 - If you renamed the executable or use a symlink to use a different name, `mob` will detect the new name and use that in its console output.
+- Improves error handling when using `mob start -i`. When the working directory is a subdirectory that would be removed due to `git stash` the mob tool will tell the user about this and aborts with an error. 
 
 # 1.11.1
 - Fixes a bug which let `mob version` fail when run outside of a git repository.

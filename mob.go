@@ -656,6 +656,12 @@ func start(configuration Configuration) error {
 		return errors.New("cannot start; unpushed changes on base branch must be pushed upstream")
 	}
 
+	if uncommittedChanges && silentgit("ls-tree", "-r", "HEAD", "--full-name", "--name-only", ".") == "" {
+		sayError("cannot start; current working dir is an uncommitted subdir")
+		sayTodo("to fix this, go to the parent directory and try again", "cd ..")
+		return errors.New("cannot start; current working dir is an uncommitted subdir")
+	}
+
 	if uncommittedChanges {
 		git("stash", "push", "--include-untracked", "--message", configuration.StashName)
 		sayInfo("uncommitted changes were stashed. If an error occurs later on, you can recover them with 'git stash pop'.")

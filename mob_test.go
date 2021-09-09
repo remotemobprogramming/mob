@@ -516,6 +516,20 @@ func TestStartIncludeUnstagedChanges(t *testing.T) {
 	assertMobSessionBranches(t, configuration, "mob-session")
 }
 
+func TestStartIncludeUnstagedChangesInNewWorkingDirectory(t *testing.T) {
+	output, configuration := setup(t)
+	configuration.MobStartIncludeUncommittedChanges = true
+	Debug = true
+	createDirectory(t, "subdirnew")
+	setWorkingDir(tempDir + "/local/subdirnew")
+	createFile(t, "test.txt", "content")
+	assertFileExist(t, tempDir+"/local/subdirnew/test.txt")
+
+	start(configuration)
+
+	assertOutputContains(t, output, "cannot start; current working dir is an uncommitted subdir")
+}
+
 func TestStartHasUnpushedCommits(t *testing.T) {
 	output, configuration := setup(t)
 	createFileAndCommitIt(t, "test.txt", "content", "unpushed change")
@@ -1016,6 +1030,9 @@ func assertCommitLogContainsMessage(t *testing.T, branchName string, commitMessa
 
 func assertFileExist(t *testing.T, filename string) {
 	path := workingDir + "/" + filename
+	if strings.Index(filename, "/") == 0 {
+		path = filename
+	}
 	if _, err := os.Stat(path); os.IsNotExist(err) {
 		failWithFailure(t, "existing file "+path, "no file at "+path)
 	}
@@ -1033,6 +1050,15 @@ func createFile(t *testing.T, filename string, content string) (pathToFile strin
 	err := ioutil.WriteFile(pathToFile, contentAsBytes, 0644)
 	if err != nil {
 		failWithFailure(t, "creating file "+filename+" with content "+content, "error")
+	}
+	return
+}
+
+func createDirectory(t *testing.T, directory string) (pathToFile string) {
+	pathToFile = workingDir + "/" + directory
+	err := os.Mkdir(pathToFile, 0755)
+	if err != nil {
+		failWithFailure(t, "creating directory "+pathToFile, "error")
 	}
 	return
 }
