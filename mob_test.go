@@ -18,6 +18,13 @@ var (
 	tempDir string
 )
 
+func TestCurrentCliName(t *testing.T) {
+	equals(t, "mob", currentCliName("mob"))
+	equals(t, "mob", currentCliName("mob.exe"))
+	equals(t, "mob", currentCliName("./mob"))
+	equals(t, "mob", currentCliName("folder/mob"))
+}
+
 func TestParseArgs(t *testing.T) {
 	configuration := getDefaultConfiguration()
 	equals(t, configuration.WipBranchQualifier, "")

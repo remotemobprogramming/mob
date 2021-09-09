@@ -1,3 +1,9 @@
+# 1.12.0
+- If you renamed the executable or use a symlink to use a different name, `mob` will detect the new name and use that in its console output.
+
+# 1.11.1
+- Fixes a bug which let `mob version` fail when run outside of a git repository.
+
 # 1.11.0
 - Allow to override the text in the notification and the voice via environment variables `MOB_NOTIFY_MESSAGE` and `MOB_VOICE_MESSAGE`.
 - Allow to override the stash name used for stashing uncommitted changes via the environment variable `MOB_STASH_NAME`.

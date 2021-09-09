@@ -196,6 +196,11 @@ func main() {
 	configuration := getDefaultConfiguration()
 	configuration = parseEnvironmentVariables(configuration)
 	debugInfo("Args '" + strings.Join(os.Args, " ") + "'")
+	currentCliName := currentCliName(os.Args[0])
+	if currentCliName != configuration.cliName {
+		debugInfo("Updating cli name to " + currentCliName)
+		configuration.cliName = currentCliName
+	}
 
 	command, parameters, configuration := parseArgs(os.Args, configuration)
 	debugInfo("command '" + command + "'")
@@ -204,6 +209,14 @@ func main() {
 	debugInfo("workingDir '" + workingDir + "'")
 
 	execute(command, parameters, configuration)
+}
+
+func currentCliName(argZero string) string {
+	argZero = strings.TrimSuffix(argZero, ".exe")
+	if strings.Contains(argZero, "/") {
+		argZero = argZero[strings.LastIndex(argZero, "/")+1:]
+	}
+	return argZero
 }
 
 func getDefaultConfiguration() Configuration {
