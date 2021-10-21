@@ -1,8 +1,12 @@
 package main
 
 import (
+	"bytes"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"io/ioutil"
+	"net/http"
 	"os"
 	"os/exec"
 	"reflect"
@@ -14,6 +18,7 @@ import (
 
 const (
 	versionNumber = "1.12.0"
+	timerService = "http://localhost:8080/"//"https://timer.mob.sh/"
 )
 
 var (
@@ -38,6 +43,7 @@ type Configuration struct {
 	WipBranchQualifierSeparator       string // override with MOB_WIP_BRANCH_QUALIFIER_SEPARATOR environment variable
 	MobDoneSquash                     bool   // override with MOB_DONE_SQUASH environment variable
 	MobTimer                          string // override with MOB_TIMER environment variable
+	MobTimerRoom                      string // override with MOB_TIMER_ROOM environment variable
 	WipBranchPrefix                   string // override with MOB_WIP_BRANCH_PREFIX environment variable (experimental)
 	StashName                         string // override with MOB_STASH_NAME environment variable
 }
@@ -249,6 +255,7 @@ func getDefaultConfiguration() Configuration {
 		WipBranchQualifierSeparator:       "-",
 		MobDoneSquash:                     true,
 		MobTimer:                          "",
+		MobTimerRoom:                      "",
 		WipBranchPrefix:                   "mob/",
 		StashName:                         "mob-stash-name",
 	}
@@ -303,6 +310,7 @@ func parseEnvironmentVariables(configuration Configuration) Configuration {
 	setBoolFromEnvVariable(&configuration.MobDoneSquash, "MOB_DONE_SQUASH")
 
 	setStringFromEnvVariable(&configuration.MobTimer, "MOB_TIMER")
+	setStringFromEnvVariable(&configuration.MobTimerRoom, "MOB_TIMER_ROOM")
 
 	return configuration
 }
@@ -591,14 +599,54 @@ func startTimer(timerInMinutes string, configuration Configuration) {
 	timeOfTimeout := time.Now().Add(time.Minute * time.Duration(timeoutInMinutes)).Format("15:04")
 	debugInfo(fmt.Sprintf("Starting timer at %s for %d minutes = %d seconds (parsed from user input %s)", timeOfTimeout, timeoutInMinutes, timeoutInSeconds, timerInMinutes))
 
-	err := executeCommandsInBackgroundProcess(getSleepCommand(timeoutInSeconds), getVoiceCommand(configuration.VoiceMessage, configuration.VoiceCommand), getNotifyCommand(configuration.NotifyMessage, configuration.NotifyCommand))
-
-	if err != nil {
-		sayError(fmt.Sprintf("timer couldn't be started on your system (%s)", runtime.GOOS))
-		sayError(err.Error())
+	if configuration.MobTimerRoom != "" {
+		err := putTimerMobShRoom(timeoutInMinutes, configuration.MobTimerRoom)
+		if err != nil {
+			sayError(fmt.Sprintf("remote timer couldn't be started"))
+			sayError(err.Error())
+		} else {
+			sayInfo("It's now " + currentTime() + ". " + fmt.Sprintf("%d min timer finishes at approx. %s", timeoutInMinutes, timeOfTimeout) + ". Happy collaborating!")
+		}
 	} else {
-		sayInfo("It's now " + currentTime() + ". " + fmt.Sprintf("%d min timer finishes at approx. %s", timeoutInMinutes, timeOfTimeout) + ". Happy collaborating!")
+		err := executeCommandsInBackgroundProcess(getSleepCommand(timeoutInSeconds), getVoiceCommand(configuration.VoiceMessage, configuration.VoiceCommand), getNotifyCommand(configuration.NotifyMessage, configuration.NotifyCommand))
+
+		if err != nil {
+			sayError(fmt.Sprintf("timer couldn't be started on your system (%s)", runtime.GOOS))
+			sayError(err.Error())
+		} else {
+			sayInfo("It's now " + currentTime() + ". " + fmt.Sprintf("%d min timer finishes at approx. %s", timeoutInMinutes, timeOfTimeout) + ". Happy collaborating!")
+		}
 	}
+}
+
+func putTimerMobShRoom(timeoutInMinutes int, room string) error {
+	putBody, _ := json.Marshal(map[string]int{
+		"timer": timeoutInMinutes,
+	})
+	method := "PUT"
+	url := timerService + room
+	sayInfo(method + " " + url + " " + string(putBody))
+
+	responseBody := bytes.NewBuffer(putBody)
+	request, requestCreationError := http.NewRequest(method, url, responseBody)
+	if requestCreationError != nil {
+		return fmt.Errorf("failed to create the http request object: %w", requestCreationError)
+	}
+
+	request.Header.Set("Content-Type", "application/json")
+	response, responseErr := http.DefaultClient.Do(request)
+	if responseErr != nil {
+		return fmt.Errorf("failed to make the http request: %w", responseErr)
+	}
+	defer response.Body.Close()
+	body, responseReadingErr := ioutil.ReadAll(response.Body)
+	if responseReadingErr != nil {
+		return fmt.Errorf("failed to read the http response: %w", responseReadingErr)
+	}
+	if string(body) != "" {
+		sayInfo(string(body))
+	}
+	return nil
 }
 
 func currentTime() string {
