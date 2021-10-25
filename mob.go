@@ -684,8 +684,8 @@ func putTimerMobShRoom(timeoutInMinutes int, room string, user string, timerServ
 
 func putBreakMobShRoom(timeoutInMinutes int, room string, user string, timerService string) error {
 	putBody, _ := json.Marshal(map[string]interface{}{
-		"break": timeoutInMinutes,
-		"user":  user,
+		"breaktimer": timeoutInMinutes,
+		"user":       user,
 	})
 	return sendRequest(putBody, "PUT", timerService+room)
 }
