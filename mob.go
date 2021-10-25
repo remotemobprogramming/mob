@@ -18,7 +18,6 @@ import (
 
 const (
 	versionNumber = "1.12.0"
-	timerService = "http://localhost:8080/"//"https://timer.mob.sh/"
 )
 
 var (
@@ -44,6 +43,8 @@ type Configuration struct {
 	MobDoneSquash                     bool   // override with MOB_DONE_SQUASH environment variable
 	MobTimer                          string // override with MOB_TIMER environment variable
 	MobTimerRoom                      string // override with MOB_TIMER_ROOM environment variable
+	MobTimerUser                      string // override with MOB_TIMER_USER environment variable
+	MobTimerUrl                       string // override with MOB_TIMER_URL environment variable
 	WipBranchPrefix                   string // override with MOB_WIP_BRANCH_PREFIX environment variable (experimental)
 	StashName                         string // override with MOB_STASH_NAME environment variable
 }
@@ -256,6 +257,8 @@ func getDefaultConfiguration() Configuration {
 		MobDoneSquash:                     true,
 		MobTimer:                          "",
 		MobTimerRoom:                      "",
+		MobTimerUser:                      "",
+		MobTimerUrl:                       "https://timer.mob.sh/",
 		WipBranchPrefix:                   "mob/",
 		StashName:                         "mob-stash-name",
 	}
@@ -311,6 +314,8 @@ func parseEnvironmentVariables(configuration Configuration) Configuration {
 
 	setStringFromEnvVariable(&configuration.MobTimer, "MOB_TIMER")
 	setStringFromEnvVariable(&configuration.MobTimerRoom, "MOB_TIMER_ROOM")
+	setStringFromEnvVariable(&configuration.MobTimerUser, "MOB_TIMER_USER")
+	setStringFromEnvVariable(&configuration.MobTimerUrl, "MOB_TIMER_URL")
 
 	return configuration
 }
@@ -409,6 +414,9 @@ func config(c Configuration) {
 	say("MOB_WIP_BRANCH_QUALIFIER_SEPARATOR" + "=" + c.WipBranchQualifierSeparator)
 	say("MOB_DONE_SQUASH" + "=" + strconv.FormatBool(c.MobDoneSquash))
 	say("MOB_TIMER" + "=" + c.MobTimer)
+	say("MOB_TIMER_ROOM" + "=" + c.MobTimerRoom)
+	say("MOB_TIMER_USER" + "=" + c.MobTimerUser)
+	say("MOB_TIMER_URL" + "=" + c.MobTimerUrl)
 	say("MOB_STASH_NAME" + "=" + c.StashName)
 }
 
@@ -491,6 +499,12 @@ func execute(command string, parameter []string, configuration Configuration) {
 			startTimer(timer, configuration)
 		} else if configuration.MobTimer != "" {
 			startTimer(configuration.MobTimer, configuration)
+		} else {
+			help(configuration)
+		}
+	case "break":
+		if len(parameter) > 0 {
+			startBreakTimer(parameter[0], configuration)
 		} else {
 			help(configuration)
 		}
@@ -591,16 +605,18 @@ func executeCommandsInBackgroundProcess(commands ...string) (err error) {
 }
 
 func startTimer(timerInMinutes string, configuration Configuration) {
-	timeoutInMinutes, _ := strconv.Atoi(timerInMinutes)
-	if timeoutInMinutes < 0 {
-		timeoutInMinutes = 0
-	}
+	timeoutInMinutes := toMinutes(timerInMinutes)
+
 	timeoutInSeconds := timeoutInMinutes * 60
 	timeOfTimeout := time.Now().Add(time.Minute * time.Duration(timeoutInMinutes)).Format("15:04")
 	debugInfo(fmt.Sprintf("Starting timer at %s for %d minutes = %d seconds (parsed from user input %s)", timeOfTimeout, timeoutInMinutes, timeoutInSeconds, timerInMinutes))
 
 	if configuration.MobTimerRoom != "" {
-		err := putTimerMobShRoom(timeoutInMinutes, configuration.MobTimerRoom)
+		user := configuration.MobTimerUser
+		if user == "" {
+			user = gitUserName()
+		}
+		err := putTimerMobShRoom(timeoutInMinutes, configuration.MobTimerRoom, user, configuration.MobTimerUrl)
 		if err != nil {
 			sayError(fmt.Sprintf("remote timer couldn't be started"))
 			sayError(err.Error())
@@ -619,16 +635,66 @@ func startTimer(timerInMinutes string, configuration Configuration) {
 	}
 }
 
-func putTimerMobShRoom(timeoutInMinutes int, room string) error {
-	putBody, _ := json.Marshal(map[string]int{
-		"timer": timeoutInMinutes,
-	})
-	method := "PUT"
-	url := timerService + room
-	sayInfo(method + " " + url + " " + string(putBody))
+func startBreakTimer(timerInMinutes string, configuration Configuration) {
+	timeoutInMinutes := toMinutes(timerInMinutes)
 
-	responseBody := bytes.NewBuffer(putBody)
-	request, requestCreationError := http.NewRequest(method, url, responseBody)
+	timeoutInSeconds := timeoutInMinutes * 60
+	timeOfTimeout := time.Now().Add(time.Minute * time.Duration(timeoutInMinutes)).Format("15:04")
+	debugInfo(fmt.Sprintf("Starting break timer at %s for %d minutes = %d seconds (parsed from user input %s)", timeOfTimeout, timeoutInMinutes, timeoutInSeconds, timerInMinutes))
+
+	if configuration.MobTimerRoom != "" {
+		user := configuration.MobTimerUser
+		if user == "" {
+			user = gitUserName()
+		}
+		err := putBreakMobShRoom(timeoutInMinutes, configuration.MobTimerRoom, user, configuration.MobTimerUrl)
+		if err != nil {
+			sayError(fmt.Sprintf("remote break timer couldn't be started"))
+			sayError(err.Error())
+		} else {
+			sayInfo("It's now " + currentTime() + ". " + fmt.Sprintf("%d min break timer finishes at approx. %s", timeoutInMinutes, timeOfTimeout) + ". Enjoy your break!")
+		}
+	} else {
+		err := executeCommandsInBackgroundProcess(getSleepCommand(timeoutInSeconds), getVoiceCommand("mob start", configuration.VoiceCommand), getNotifyCommand("mob start", configuration.NotifyCommand))
+
+		if err != nil {
+			sayError(fmt.Sprintf("break timer couldn't be started on your system (%s)", runtime.GOOS))
+			sayError(err.Error())
+		} else {
+			sayInfo("It's now " + currentTime() + ". " + fmt.Sprintf("%d min break timer finishes at approx. %s", timeoutInMinutes, timeOfTimeout) + ". Enjoy your break!")
+		}
+	}
+}
+
+func toMinutes(timerInMinutes string) int {
+	timeoutInMinutes, _ := strconv.Atoi(timerInMinutes)
+	if timeoutInMinutes < 0 {
+		timeoutInMinutes = 0
+	}
+	return timeoutInMinutes
+}
+
+func putTimerMobShRoom(timeoutInMinutes int, room string, user string, timerService string) error {
+	putBody, _ := json.Marshal(map[string]interface{}{
+		"timer": timeoutInMinutes,
+		"user":  user,
+	})
+	return sendRequest(putBody, "PUT", timerService+room)
+}
+
+func putBreakMobShRoom(timeoutInMinutes int, room string, user string, timerService string) error {
+	putBody, _ := json.Marshal(map[string]interface{}{
+		"break": timeoutInMinutes,
+		"user":  user,
+	})
+	return sendRequest(putBody, "PUT", timerService+room)
+}
+
+func sendRequest(requestBody []byte, requestMethod string, requestUrl string) error {
+	sayInfo(requestMethod + " " + requestUrl + " " + string(requestBody))
+
+	responseBody := bytes.NewBuffer(requestBody)
+	request, requestCreationError := http.NewRequest(requestMethod, requestUrl, responseBody)
 	if requestCreationError != nil {
 		return fmt.Errorf("failed to create the http request object: %w", requestCreationError)
 	}
@@ -1086,6 +1152,7 @@ Experimental Commands:
 Timer Commands:
   timer <minutes>    start a <minutes> timer
   start <minutes>    start session in wip branch and a timer
+  break <minutes>    start a <minutes> break timer
 
 Get more information:
   status             show the status of the current session
