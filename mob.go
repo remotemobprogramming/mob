@@ -17,7 +17,7 @@ import (
 )
 
 const (
-	versionNumber = "1.12.0"
+	versionNumber = "2.0.0"
 )
 
 var (
@@ -1151,7 +1151,7 @@ Experimental Commands:
 
 Timer Commands:
   timer <minutes>    start a <minutes> timer
-  start <minutes>    start session in wip branch and a timer
+  start <minutes>    start mob session in wip branch and a <minutes> timer
   break <minutes>    start a <minutes> break timer
 
 Get more information:

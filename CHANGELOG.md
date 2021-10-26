@@ -1,3 +1,6 @@
+# 2.0.0
+- **NEW** create a team room on https://timer.mob.sh to have a team timer. Set `MOB_TIMER_ROOM` to the name of your team room and mob will automatically send timer requests to your team room. Mob now even supports breaks with `mob break <minutes>`. 
+
 # 1.12.0
 - If you renamed the executable or use a symlink to use a different name, `mob` will detect the new name and use that in its console output.
 - Improves error handling when using `mob start -i`. When the working directory is a subdirectory that would be removed due to `git stash` the mob tool will tell the user about this and aborts with an error. 

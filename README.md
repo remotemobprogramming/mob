@@ -155,7 +155,8 @@ Experimental Commands:
 
 Timer Commands:
   timer <minutes>    start a <minutes> timer
-  start <minutes>    start mob session in wip branch and a timer
+  start <minutes>    start mob session in wip branch and a <minutes> timer
+  break <minutes>    start a <minutes> break timer
 
 Get more information:
   status             show the status of the current mob session
