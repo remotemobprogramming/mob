@@ -14,6 +14,8 @@
     <img alt="Stars" src="https://img.shields.io/github/stars/remotemobprogramming/mob" /></a>
 </p>
 
+BREAKING NEWS: [mob is on 'assess' in the latest Thoughtworks Technology Radar](https://twitter.com/simonharrer/status/1453372354097205253?s=20)
+
 Smooth [git handover](https://www.remotemobprogramming.org/#git-handover) for remote pair/mob programming.
 
 - **mob** is [an open source command line tool written in go](https://github.com/remotemobprogramming/mob)
