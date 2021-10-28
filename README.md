@@ -353,7 +353,7 @@ MOB_NEXT_STAY=true mob next
 cd $PROJECT_ROOT
 
 git version # >= 2.17
-go version # >= 1.14
+go version # >= 1.15
 
 go build # builds 'mob'
 
