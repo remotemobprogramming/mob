@@ -21,6 +21,7 @@ Smooth [git handover](https://www.remotemobprogramming.org/#git-handover) for re
 - **mob** is [an open source command line tool written in go](https://github.com/remotemobprogramming/mob)
 - **mob** is the fastest way to [hand over code via git](https://www.remotemobprogramming.org/#git-handover)
 - **mob** keeps your branches clean and only creates WIP commits on temporary branches
+- **mob** has a shared team timer [timer.mob.sh](https://timer.mob.sh)
 
 ## What people say about mob
 
