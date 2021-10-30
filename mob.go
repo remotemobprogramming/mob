@@ -980,13 +980,21 @@ func done(configuration Configuration) {
 		git("branch", "-D", currentWipBranch.Name)
 		git("push", "--no-verify", configuration.RemoteName, "--delete", currentWipBranch.Name)
 
-		sayInfoIndented(getCachedChanges())
+		cachedChanges := getCachedChanges()
+		hasCachedChanges := len(cachedChanges) > 0
+		if hasCachedChanges {
+			sayInfoIndented(cachedChanges)
+		}
 		err := appendCoauthorsToSquashMsg(gitDir())
 		if err != nil {
 			sayError(err.Error())
 		}
 		if configuration.MobDoneSquash {
-			sayTodo("To finish, use", "git commit")
+			if isNothingToCommit() {
+				sayInfo("nothing was done, so nothing to commit")
+			} else {
+				sayTodo("To finish, use", "git commit")
+			}
 		}
 
 	} else {
