@@ -918,6 +918,17 @@ func TestDoneMerge(t *testing.T) {
 	assertOutputContains(t, output, "  git commit")
 }
 
+func TestDoneSquashNoChanges(t *testing.T) {
+	output, configuration := setup(t)
+	setWorkingDir(tempDir + "/local")
+	checkoutBranch("feature-something")
+
+	start(configuration)
+	done(configuration)
+
+	assertOutputContains(t, output, "nothing to commit")
+}
+
 func TestStartAndNextInSubdir(t *testing.T) {
 	_, configuration := setup(t)
 
