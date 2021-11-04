@@ -25,6 +25,9 @@ Smooth [git handover](https://www.remotemobprogramming.org/#git-handover) for re
 
 ## What people say about mob
 
+> Sometimes you come across a tool that you didn't realize you needed until you do; mob is just such a tool. Living as we do in a world where remote pair programming has become the norm for many teams, having a tool that allows for seamless handover either between pairs or a wider group as part of a mob programming session is super useful. mob hides all the version control paraphernalia behind a command-line interface that makes participating in mob programming sessions simpler. It also provides specific advice around how to participate remotely, for example, to "steal the screenshare" in Zoom rather than ending a screenshare, ensuring the video layout doesn't change for participants. A useful tool and thoughtful advice, what's not to like? &mdash; [Technology Radar
+ Volumne 25, thoughtworks](https://www.thoughtworks.com/de-de/radar/tools?blipid=202110031)
+
 > "Mob has allowed us to run fast-paced, engaging, and effective sessions by enabling sub-10-second handover times and otherwise getting out of the way. A simple but great tool!" &mdash; [Jeff Langr, developer](https://twitter.com/jlangr)
 
 > "I love it, it is a quantum leap in our collaboration." &mdash; Vasiliy Sivovolov, Senior Software Engineer
