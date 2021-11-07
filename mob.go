@@ -618,7 +618,7 @@ func startTimer(timerInMinutes string, configuration Configuration) {
 		}
 		err := putTimerMobShRoom(timeoutInMinutes, configuration.MobTimerRoom, user, configuration.MobTimerUrl)
 		if err != nil {
-			sayError(fmt.Sprintf("remote timer couldn't be started"))
+			sayError("remote timer couldn't be started")
 			sayError(err.Error())
 		} else {
 			sayInfo("It's now " + currentTime() + ". " + fmt.Sprintf("%d min timer finishes at approx. %s", timeoutInMinutes, timeOfTimeout) + ". Happy collaborating!")
@@ -649,7 +649,7 @@ func startBreakTimer(timerInMinutes string, configuration Configuration) {
 		}
 		err := putBreakMobShRoom(timeoutInMinutes, configuration.MobTimerRoom, user, configuration.MobTimerUrl)
 		if err != nil {
-			sayError(fmt.Sprintf("remote break timer couldn't be started"))
+			sayError("remote break timer couldn't be started")
 			sayError(err.Error())
 		} else {
 			sayInfo("It's now " + currentTime() + ". " + fmt.Sprintf("%d min break timer finishes at approx. %s", timeoutInMinutes, timeOfTimeout) + ". Enjoy your break!")
