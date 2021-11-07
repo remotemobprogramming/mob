@@ -361,8 +361,6 @@ go version # >= 1.15
 
 go build # builds 'mob'
 
-./create-testbed    # creates test assets
-
 go test # runs all tests
 go test -run TestDetermineBranches # runs the single test named 'TestDetermineBranches'
 
