@@ -23,6 +23,8 @@ Smooth [git handover](https://www.remotemobprogramming.org/#git-handover) for re
 - **mob** keeps your branches clean and only creates WIP commits on temporary branches
 - **mob** has a shared team timer [timer.mob.sh](https://timer.mob.sh)
 
+![diagram how mob works](diagram.png)
+
 ## What people say about mob
 
 > Sometimes you come across a tool that you didn't realize you needed until you do; mob is just such a tool. Living as we do in a world where remote pair programming has become the norm for many teams, having a tool that allows for seamless handover either between pairs or a wider group as part of a mob programming session is super useful. mob hides all the version control paraphernalia behind a command-line interface that makes participating in mob programming sessions simpler. It also provides specific advice around how to participate remotely, for example, to "steal the screenshare" in Zoom rather than ending a screenshare, ensuring the video layout doesn't change for participants. A useful tool and thoughtful advice, what's not to like? &mdash; [Technology Radar
@@ -44,7 +46,7 @@ The recommended way to install mob is as a binary via the provided install scrip
 curl -sL install.mob.sh | sh
 ```
 
-On macOS via homebrew: 
+On macOS via homebrew:
 
 ```
 brew install remotemobprogramming/brew/mob
@@ -57,7 +59,7 @@ On Windows via [Scoop](https://scoop.sh/):
 
 ```
 scoop install mob
-``` 
+```
 
 On [Nix](http://nixos.org) through the [mob.nix](./mob.nix) expression like this `mob = callPackage ./mob.nix {};`. To install and configure espeak-ng for text-to-speech support, pass `withSpeech = true;`.
 
@@ -197,7 +199,7 @@ Examples:
 ## Best Practices
 
 - **Say out loud**
-  - Whenever you key in `mob next` at the end of your turn or `mob start` at the beginning of your turn say the command out loud. 
+  - Whenever you key in `mob next` at the end of your turn or `mob start` at the beginning of your turn say the command out loud.
   - *Why?* Everybody sees and also hears whose turn is ending and whose turn has started. But even more important, the person whose turn is about to start needs to know when the previous person entered `mob next` so they get the latest commit via their `mob start`.
 - **Steal the screenshare**
   - After your turn, don't disable the screenshare. Let the next person steal the screenshare. (Requires a setting in Zoom)
@@ -217,7 +219,7 @@ Examples:
 
 ### Complimentary Scripts
 
-`mob-start feature1` creates a new base branch `feature1` to immediately start a wip branch `mob/feature1` from there. 
+`mob-start feature1` creates a new base branch `feature1` to immediately start a wip branch `mob/feature1` from there.
 
 ```bash
 mob-start() { git checkout -b "$@" && git push origin "$@" --set-upstream && mob start --include-uncommitted-changes; }
@@ -277,11 +279,11 @@ yay -S mobsh-bin
 yay -S mobsh
 ```
 
-### Linux Timer 
+### Linux Timer
 
 (This is not needed when installing via snap.)
 
-To get the timer to play "mob next" on your speakers when your time is up, you'll need an installed speech engine. 
+To get the timer to play "mob next" on your speakers when your time is up, you'll need an installed speech engine.
 Install that on Debian/Ubuntu/Mint as follows:
 
 ```bash
@@ -376,7 +378,7 @@ go test -coverprofile=cover.out && go tool cover -html=cover.out
 - **mob** requires the user to do changes in non-wip branches.
 - **mob** provides a copy'n'paste solution if it encounters an error.
 - **mob** relies on information accessible via git.
-- **mob** provides only a few environment variables for configuration. 
+- **mob** provides only a few environment variables for configuration.
 - **mob** only uses the Go standard library and no 3rd party plugins.
 
 ## Who is using 'mob'?
