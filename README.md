@@ -23,7 +23,7 @@ Smooth [git handover](https://www.remotemobprogramming.org/#git-handover) for re
 - **mob** keeps your branches clean and only creates WIP commits on temporary branches
 - **mob** has a shared team timer [timer.mob.sh](https://timer.mob.sh)
 
-![diagram how mob works](diagram.png)
+![diagram how mob works](diagram.svg)
 
 ## What people say about mob
 
