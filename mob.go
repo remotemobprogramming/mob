@@ -614,6 +614,7 @@ func startTimer(timerInMinutes string, configuration Configuration) {
 	timeOfTimeout := time.Now().Add(time.Minute * time.Duration(timeoutInMinutes)).Format("15:04")
 	debugInfo(fmt.Sprintf("Starting timer at %s for %d minutes = %d seconds (parsed from user input %s)", timeOfTimeout, timeoutInMinutes, timeoutInSeconds, timerInMinutes))
 
+	timerSuccessful := false
 	if configuration.MobTimerRoom != "" {
 		user := configuration.MobTimerUser
 		if user == "" {
@@ -624,7 +625,7 @@ func startTimer(timerInMinutes string, configuration Configuration) {
 			sayError("remote timer couldn't be started")
 			sayError(err.Error())
 		} else {
-			sayInfo("It's now " + currentTime() + ". " + fmt.Sprintf("%d min timer finishes at approx. %s", timeoutInMinutes, timeOfTimeout) + ". Happy collaborating!")
+			timerSuccessful = true
 		}
 	}
 
@@ -635,8 +636,12 @@ func startTimer(timerInMinutes string, configuration Configuration) {
 			sayError(fmt.Sprintf("timer couldn't be started on your system (%s)", runtime.GOOS))
 			sayError(err.Error())
 		} else {
-			sayInfo("It's now " + currentTime() + ". " + fmt.Sprintf("%d min timer finishes at approx. %s", timeoutInMinutes, timeOfTimeout) + ". Happy collaborating!")
+			timerSuccessful = true
 		}
+	}
+
+	if timerSuccessful {
+		sayInfo("It's now " + currentTime() + ". " + fmt.Sprintf("%d min timer finishes at approx. %s", timeoutInMinutes, timeOfTimeout) + ". Happy collaborating!")
 	}
 }
 
