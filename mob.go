@@ -17,7 +17,7 @@ import (
 )
 
 const (
-	versionNumber = "2.0.0"
+	versionNumber = "2.1.0"
 )
 
 var (
@@ -43,6 +43,7 @@ type Configuration struct {
 	MobDoneSquash                     bool   // override with MOB_DONE_SQUASH environment variable
 	MobTimer                          string // override with MOB_TIMER environment variable
 	MobTimerRoom                      string // override with MOB_TIMER_ROOM environment variable
+	MobTimerLocal                     bool   // override with MOB_TIMER_LOCAL environment variable
 	MobTimerUser                      string // override with MOB_TIMER_USER environment variable
 	MobTimerUrl                       string // override with MOB_TIMER_URL environment variable
 	WipBranchPrefix                   string // override with MOB_WIP_BRANCH_PREFIX environment variable (experimental)
@@ -256,6 +257,7 @@ func getDefaultConfiguration() Configuration {
 		WipBranchQualifierSeparator:       "-",
 		MobDoneSquash:                     true,
 		MobTimer:                          "",
+		MobTimerLocal:                     true,
 		MobTimerRoom:                      "",
 		MobTimerUser:                      "",
 		MobTimerUrl:                       "https://timer.mob.sh/",
@@ -314,6 +316,7 @@ func parseEnvironmentVariables(configuration Configuration) Configuration {
 
 	setStringFromEnvVariable(&configuration.MobTimer, "MOB_TIMER")
 	setStringFromEnvVariable(&configuration.MobTimerRoom, "MOB_TIMER_ROOM")
+	setBoolFromEnvVariable(&configuration.MobTimerLocal, "MOB_TIMER_LOCAL")
 	setStringFromEnvVariable(&configuration.MobTimerUser, "MOB_TIMER_USER")
 	setStringFromEnvVariable(&configuration.MobTimerUrl, "MOB_TIMER_URL")
 
@@ -623,7 +626,9 @@ func startTimer(timerInMinutes string, configuration Configuration) {
 		} else {
 			sayInfo("It's now " + currentTime() + ". " + fmt.Sprintf("%d min timer finishes at approx. %s", timeoutInMinutes, timeOfTimeout) + ". Happy collaborating!")
 		}
-	} else {
+	}
+
+	if configuration.MobTimerLocal {
 		err := executeCommandsInBackgroundProcess(getSleepCommand(timeoutInSeconds), getVoiceCommand(configuration.VoiceMessage, configuration.VoiceCommand), getNotifyCommand(configuration.NotifyMessage, configuration.NotifyCommand))
 
 		if err != nil {

@@ -1,3 +1,6 @@
+# 2.1.0
+- When having set `MOB_TIMER_ROOM` the local timer keeps on working. To disable the local timer altogether, please disable it via `export MOB_TIMER_LOCAL=false`.
+
 # 2.0.0
 - **NEW** create a team room on https://timer.mob.sh to have a team timer. Set `MOB_TIMER_ROOM` to the name of your team room and mob will automatically send timer requests to your team room. Mob now even supports breaks with `mob break <minutes>`. 
 
