@@ -418,6 +418,7 @@ func config(c Configuration) {
 	say("MOB_DONE_SQUASH" + "=" + strconv.FormatBool(c.MobDoneSquash))
 	say("MOB_TIMER" + "=" + c.MobTimer)
 	say("MOB_TIMER_ROOM" + "=" + c.MobTimerRoom)
+	say("MOB_TIMER_LOCAL" + "=" + strconv.FormatBool(c.MobTimerLocal))
 	say("MOB_TIMER_USER" + "=" + c.MobTimerUser)
 	say("MOB_TIMER_URL" + "=" + c.MobTimerUrl)
 	say("MOB_STASH_NAME" + "=" + c.StashName)
