@@ -12,6 +12,8 @@ jobs:
       GOOS: ${{ matrix.os }}
     name: release
     runs-on: ubuntu-latest
+    outputs:
+      shasum: ${{ steps.shasum.outputs.sha }}
     steps:
       - uses: actions/checkout@main
       - name: Use Go 1.16 to test
@@ -54,3 +56,13 @@ jobs:
           --sha256=${{ steps.shasum.outputs.sha }} \
           --url="https://github.com/${{github.repository_owner}}/mob/releases/download/${{ github.event.release.tag_name }}/mob_${{ github.event.release.tag_name }}_darwin_amd64.tar.gz" \
           ${{github.repository_owner}}/homebrew-brew/mob
+
+  release-mobsh-bin:
+    needs: [release]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Test
+        uses: ./.github/actions/publish-mobsh-bin
+        with:
+          shasum: ${{ needs.release.outputs.shasum }}
