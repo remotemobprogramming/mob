@@ -59,11 +59,12 @@ jobs:
 
   publish-arch-linux-mobsh-bin:
     needs: [release]
+    name: Publish Arch Linux package
     runs-on: ubuntu-latest
     env:
       PACKAGE_NAME: mobsh-bin
     steps:
-      - name: Create PKGBUILD for ${{ env.PACKAGE_NAME }}
+      - name: Create PKGBUILD
         run: |
           # Create the output directory
           mkdir -p ./aur/${{ env.PACKAGE_NAME }}/
