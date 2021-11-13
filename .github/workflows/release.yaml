@@ -99,10 +99,11 @@ jobs:
 
           EOF
 
-      # this action is just meant for feedback (how does the file look like?)
-      - name: Publish PKGBUILD for ${{ env.PACKAGE_NAME }}
-        run: |
-          cat ./aur/${{ env.PACKAGE_NAME }}/PKGBUILD
+      - name: Store PKGBUILD as an artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: PKGBUILD
+          path: ./aur/${{ env.PACKAGE_NAME }}/PKGBUILD
 
       - name: Publish AUR package
         uses: KSXGitHub/github-actions-deploy-aur@v2.2.5
