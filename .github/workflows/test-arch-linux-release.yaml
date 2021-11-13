@@ -6,10 +6,9 @@ on:
         description: Release tag
         required: true
 jobs:
-  # There are three changes compared to release.yaml
+  # There are two changes compared to release.yaml
   #
   # - The sha256sum is calculated and set in env.SHA instead of needs.release.outputs.sha.
-  # - The sha256sum is calculated using the release artifacts from remotemobprogramming/mob instead of my repo.
   # - Replaced github.event.release.tag_name with github.event.inputs.tag_name
   #
   test_arch_linux_release:
@@ -22,7 +21,7 @@ jobs:
       # Calculate the sha256sum {
       - name: Create sha256
         run: |
-          wget "https://github.com/remotemobprogramming/mob/releases/download/${{ github.event.inputs.tag_name }}/mob_${{ github.event.inputs.tag_name }}_linux_amd64.tar.gz"
+          wget "https://github.com/${{ github.repository }}/releases/download/${{ github.event.inputs.tag_name }}/mob_${{ github.event.inputs.tag_name }}_linux_amd64.tar.gz"
           echo ::set-output name=sha::""
           echo "SHA=$(shasum -a 256 *.tar.gz | awk '{printf $1}')" >> $GITHUB_ENV
       # }
