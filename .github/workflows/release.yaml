@@ -45,7 +45,7 @@ jobs:
         run: |
           echo ::set-output name=sha::"$(shasum -a 256 *.tar.gz | awk '{printf $1}')"
       - name: Bump homebrew formula
-        if: matrix.os == 'darwin' && 1 == 2 # temporarily disabled
+        if: matrix.os == 'darwin'
         env:
           HOMEBREW_GITHUB_API_TOKEN: ${{ secrets.HOMEBREW }}
         run: |
@@ -57,7 +57,9 @@ jobs:
           --url="https://github.com/${{github.repository_owner}}/mob/releases/download/${{ github.event.release.tag_name }}/mob_${{ github.event.release.tag_name }}_darwin_amd64.tar.gz" \
           ${{github.repository_owner}}/homebrew-brew/mob
 
-  publish-arch-linux-mobsh-bin:
+  publish-arch-linux-package:
+    # Disabled until we manually test it
+    if: 1 == 2
     needs: [release]
     name: Publish Arch Linux package
     runs-on: ubuntu-latest
@@ -98,13 +100,11 @@ jobs:
           }
 
           EOF
-
       - name: Store PKGBUILD as an artifact
         uses: actions/upload-artifact@v2
         with:
           name: PKGBUILD
           path: ./aur/${{ env.PACKAGE_NAME }}/PKGBUILD
-
       - name: Publish AUR package
         uses: KSXGitHub/github-actions-deploy-aur@v2.2.5
         with:
