@@ -1,0 +1,77 @@
+name: Publish Arch Linux Release
+on:
+  workflow_dispatch:
+    inputs:
+      tag_name:
+        description: Release tag
+        required: true
+jobs:
+  # There are two changes compared to release.yaml
+  #
+  # - The sha256sum is calculated and set in env.SHA instead of needs.release.outputs.sha.
+  # - Replaced github.event.release.tag_name with github.event.inputs.tag_name
+  #
+  test_arch_linux_release:
+    name: Publish Arch Linux package
+    runs-on: ubuntu-latest
+    env:
+      PACKAGE_NAME: mobsh-bin
+    steps:
+
+      # Calculate the sha256sum {
+      - name: Create sha256
+        run: |
+          wget "https://github.com/${{ github.repository }}/releases/download/${{ github.event.inputs.tag_name }}/mob_${{ github.event.inputs.tag_name }}_linux_amd64.tar.gz"
+          echo ::set-output name=sha::""
+          echo "SHA=$(shasum -a 256 *.tar.gz | awk '{printf $1}')" >> $GITHUB_ENV
+      # }
+
+      - name: Create PKGBUILD
+        run: |
+          # Create the output directory
+          mkdir -p ./aur/${{ env.PACKAGE_NAME }}/
+
+          # Strip the leading "v" from the version
+          PACKAGE_VERSION="$(echo "${{ github.event.inputs.tag_name }}" | sed -e 's/^v//')"
+
+          # Output PKGBUILD
+          cat > ./aur/${{ env.PACKAGE_NAME }}/PKGBUILD << EOF
+          # Where to file issues: https://github.com/${{ github.repository }}/issues
+
+          pkgname=${{ env.PACKAGE_NAME }}
+          pkgver=$PACKAGE_VERSION
+          pkgrel=1
+          pkgdesc="Fast git handover with mob"
+          arch=('x86_64')
+          url="https://github.com/${{ github.repository }}"
+          license=('MIT')
+          depends=("git")
+          optdepends=('espeak-ng-espeak: Multi-lingual software speech synthesizer'
+                      'mbrola-voices-us1: An American English female voice for the MBROLA synthesizer')
+          provides=('mobsh')
+          conflicts=('mobsh' 'mob')
+
+          source_x86_64=("\$url/releases/download/${{ github.event.inputs.tag_name }}/mob_${{ github.event.inputs.tag_name }}_linux_amd64.tar.gz")
+          sha256sums_x86_64=("${{ env.SHA }}")
+
+          package() {
+              install -D -m644 "LICENSE" "\$pkgdir/usr/share/licenses/\$pkgname/LICENSE"
+              install -D -m755 "mob" "\$pkgdir/usr/bin/mob"
+          }
+
+          EOF
+      - name: Store PKGBUILD as an artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: PKGBUILD
+          path: ./aur/${{ env.PACKAGE_NAME }}/PKGBUILD
+      - name: Publish AUR package
+        uses: KSXGitHub/github-actions-deploy-aur@v2.2.5
+        with:
+          pkgname: ${{ env.PACKAGE_NAME }}
+          pkgbuild: ./aur/${{ env.PACKAGE_NAME }}/PKGBUILD
+          commit_username: ${{ secrets.AUR_USERNAME }}
+          commit_email: ${{ secrets.AUR_EMAIL }}
+          ssh_private_key: ${{ secrets.AUR_SSH_PRIVATE_KEY }}
+          commit_message: Update AUR package for ${{ github.event.inputs.tag_name }}
+          ssh_keyscan_types: rsa,dsa,ecdsa,ed25519
