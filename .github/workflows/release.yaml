@@ -58,8 +58,6 @@ jobs:
           ${{github.repository_owner}}/homebrew-brew/mob
 
   publish-arch-linux-package:
-    # Disabled until we manually test it
-    if: 1 == 2
     needs: [release]
     name: Publish Arch Linux package
     runs-on: ubuntu-latest
