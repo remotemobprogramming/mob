@@ -1,3 +1,7 @@
+# 2.2.0
+- When mob encounters unpushed commits in the base branch, the tool now provides help for the user to fix this immediately.
+- Improves console output when using `mob break 5` in combination with https://timer.mob.sh
+
 # 2.1.0
 - When having set `MOB_TIMER_ROOM` the local timer keeps on working. To disable the local timer altogether, please disable it via `export MOB_TIMER_LOCAL=false`.
 - Improved message when nothing to commit (Thanks to @seanpoulter for https://github.com/remotemobprogramming/mob/pull/202)

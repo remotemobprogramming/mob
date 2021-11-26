@@ -617,11 +617,8 @@ func startTimer(timerInMinutes string, configuration Configuration) {
 
 	timerSuccessful := false
 	if configuration.MobTimerRoom != "" {
-		user := configuration.MobTimerUser
-		if user == "" {
-			user = gitUserName()
-		}
-		err := putTimerMobShRoom(timeoutInMinutes, configuration.MobTimerRoom, user, configuration.MobTimerUrl)
+		user := getUserForMobTimer(configuration.MobTimerUser)
+		err := httpPutTimer(timeoutInMinutes, configuration.MobTimerRoom, user, configuration.MobTimerUrl)
 		if err != nil {
 			sayError("remote timer couldn't be started")
 			sayError(err.Error())
@@ -642,7 +639,7 @@ func startTimer(timerInMinutes string, configuration Configuration) {
 	}
 
 	if timerSuccessful {
-		sayInfo("It's now " + currentTime() + ". " + fmt.Sprintf("%d min timer finishes at approx. %s", timeoutInMinutes, timeOfTimeout) + ". Happy collaborating!")
+		sayInfo("It's now " + currentTime() + ". " + fmt.Sprintf("%d min timer ends at approx. %s", timeoutInMinutes, timeOfTimeout) + ". Happy collaborating!")
 	}
 }
 
@@ -653,28 +650,39 @@ func startBreakTimer(timerInMinutes string, configuration Configuration) {
 	timeOfTimeout := time.Now().Add(time.Minute * time.Duration(timeoutInMinutes)).Format("15:04")
 	debugInfo(fmt.Sprintf("Starting break timer at %s for %d minutes = %d seconds (parsed from user input %s)", timeOfTimeout, timeoutInMinutes, timeoutInSeconds, timerInMinutes))
 
+	timerSuccessful := false
 	if configuration.MobTimerRoom != "" {
-		user := configuration.MobTimerUser
-		if user == "" {
-			user = gitUserName()
-		}
-		err := putBreakMobShRoom(timeoutInMinutes, configuration.MobTimerRoom, user, configuration.MobTimerUrl)
+		user := getUserForMobTimer(configuration.MobTimerUser)
+		err := httpPutBreakTimer(timeoutInMinutes, configuration.MobTimerRoom, user, configuration.MobTimerUrl)
 		if err != nil {
 			sayError("remote break timer couldn't be started")
 			sayError(err.Error())
 		} else {
-			sayInfo("It's now " + currentTime() + ". " + fmt.Sprintf("%d min break timer finishes at approx. %s", timeoutInMinutes, timeOfTimeout) + ". Enjoy your break!")
+			timerSuccessful = true
 		}
-	} else {
+	}
+
+	if configuration.MobTimerLocal {
 		err := executeCommandsInBackgroundProcess(getSleepCommand(timeoutInSeconds), getVoiceCommand("mob start", configuration.VoiceCommand), getNotifyCommand("mob start", configuration.NotifyCommand))
 
 		if err != nil {
 			sayError(fmt.Sprintf("break timer couldn't be started on your system (%s)", runtime.GOOS))
 			sayError(err.Error())
 		} else {
-			sayInfo("It's now " + currentTime() + ". " + fmt.Sprintf("%d min break timer finishes at approx. %s", timeoutInMinutes, timeOfTimeout) + ". Enjoy your break!")
+			timerSuccessful = true
 		}
 	}
+
+	if timerSuccessful {
+		sayInfo("It's now " + currentTime() + ". " + fmt.Sprintf("%d min break timer ends at approx. %s", timeoutInMinutes, timeOfTimeout) + ". Happy collaborating!")
+	}
+}
+
+func getUserForMobTimer(userOverride string) string {
+	if userOverride == "" {
+		return gitUserName()
+	}
+	return userOverride
 }
 
 func toMinutes(timerInMinutes string) int {
@@ -685,7 +693,7 @@ func toMinutes(timerInMinutes string) int {
 	return timeoutInMinutes
 }
 
-func putTimerMobShRoom(timeoutInMinutes int, room string, user string, timerService string) error {
+func httpPutTimer(timeoutInMinutes int, room string, user string, timerService string) error {
 	putBody, _ := json.Marshal(map[string]interface{}{
 		"timer": timeoutInMinutes,
 		"user":  user,
@@ -693,7 +701,7 @@ func putTimerMobShRoom(timeoutInMinutes int, room string, user string, timerServ
 	return sendRequest(putBody, "PUT", timerService+room)
 }
 
-func putBreakMobShRoom(timeoutInMinutes int, room string, user string, timerService string) error {
+func httpPutBreakTimer(timeoutInMinutes int, room string, user string, timerService string) error {
 	putBody, _ := json.Marshal(map[string]interface{}{
 		"breaktimer": timeoutInMinutes,
 		"user":       user,
@@ -778,6 +786,7 @@ func start(configuration Configuration) error {
 
 	if currentBaseBranch.hasUnpushedCommits(configuration) {
 		sayError("cannot start; unpushed changes on base branch must be pushed upstream")
+		sayTodo("to fix this, push those commits and try again", "git push "+configuration.RemoteName+" "+currentBaseBranch.String())
 		return errors.New("cannot start; unpushed changes on base branch must be pushed upstream")
 	}
 
