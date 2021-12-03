@@ -21,8 +21,10 @@ const (
 )
 
 var (
-	workingDir = ""
-	Debug      = false // override with --debug parameter
+	workingDir   = ""
+	homeDir, _   = os.LookupEnv("HOME")
+	mobConfigDir = homeDir + "/.mob"
+	Debug        = false // override with --debug parameter
 )
 
 type Configuration struct {
@@ -229,11 +231,17 @@ func currentCliName(argZero string) string {
 
 func getDefaultConfiguration() Configuration {
 	voiceCommand := ""
+	voiceMessage := "mob next"
 	notifyCommand := ""
 	switch runtime.GOOS {
 	case "darwin":
-		voiceCommand = "say \"%s\""
-		notifyCommand = "/usr/bin/osascript -e 'display notification \"%s\"'"
+		if _, err := os.Stat(mobConfigDir + "/custom-next"); err == nil {
+			voiceCommand = "afplay \"%s\""
+			voiceMessage = mobConfigDir + "/custom-next"
+		} else {
+			voiceCommand = "say \"%s\""
+			notifyCommand = "/usr/bin/osascript -e 'display notification \"%s\"'"
+		}
 	case "linux":
 		voiceCommand = "say \"%s\""
 		notifyCommand = "notify-send \"%s\""
@@ -245,7 +253,7 @@ func getDefaultConfiguration() Configuration {
 		RemoteName:                        "origin",
 		WipCommitMessage:                  "mob next [ci-skip] [ci skip] [skip ci]",
 		VoiceCommand:                      voiceCommand,
-		VoiceMessage:                      "mob next",
+		VoiceMessage:                      voiceMessage,
 		NotifyCommand:                     notifyCommand,
 		NotifyMessage:                     "mob next",
 		MobNextStay:                       true,
@@ -522,6 +530,13 @@ func execute(command string, parameter []string, configuration Configuration) {
 		} else {
 			squashWip(configuration)
 		}
+	case "install-custom-next":
+		if len(parameter) > 0 {
+			soundUrl := parameter[0]
+			installCustomNext(soundUrl)
+		} else {
+			help(configuration)
+		}
 	case "version", "--version", "-v":
 		version()
 	case "help", "--help", "-h":
@@ -748,6 +763,38 @@ func moo(configuration Configuration) {
 	} else {
 		sayInfo(voiceMessage)
 	}
+}
+
+func installCustomNext(soundUrl string) {
+	if runtime.GOOS != "darwin" {
+		sayError("Custom timer sound is currently only available on Mac computers")
+		return
+	}
+
+	commandString, _, err := runCommand("mkdir", "-p", mobConfigDir)
+	if err != nil {
+		sayError(fmt.Sprintf("can't run command \"%s\"on your system (%s)", commandString, runtime.GOOS))
+		sayError(err.Error())
+		return
+	}
+
+	if strings.HasPrefix(soundUrl, "http") {
+		commandString, _, err := runCommand("curl", "-o", mobConfigDir+"/custom-next", soundUrl)
+		if err != nil {
+			sayError(fmt.Sprintf("can't run command \"%s\"on your system (%s)", commandString, runtime.GOOS))
+			sayError(err.Error())
+			return
+		}
+	} else {
+		commandString, _, err := runCommand("cp", soundUrl, mobConfigDir+"/custom-next")
+		if err != nil {
+			sayError(fmt.Sprintf("can't run command \"%s\"on your system (%s)", commandString, runtime.GOOS))
+			sayError(err.Error())
+			return
+		}
+	}
+
+	sayInfo("Installed custom next sound to " + mobConfigDir + "/custom-next")
 }
 
 func reset(configuration Configuration) {
@@ -1178,20 +1225,21 @@ Experimental Commands:
     [--git-sequence-editor]              Not intended for manual use. Used as a non-interactive sequence editor (GIT_SEQUENCE_EDITOR) for git.
 
 Timer Commands:
-  timer <minutes>    start a <minutes> timer
-  start <minutes>    start mob session in wip branch and a <minutes> timer
-  break <minutes>    start a <minutes> break timer
+  timer <minutes>                 start a <minutes> timer
+  start <minutes>                 start mob session in wip branch and a <minutes> timer
+  break <minutes>                 start a <minutes> break timer
 
 Get more information:
-  status             show the status of the current session
-  fetch              fetch remote state
-  branch             show remote wip branches
-  config             show all configuration options
-  version            show the version
-  help               show help
+  status                          show the status of the current session
+  fetch                           fetch remote state
+  branch                          show remote wip branches
+  config                          show all configuration options
+  version                         show the version
+  help                            show help
 
 Other
-  moo                moo!
+  moo                             moo!
+  install-custom-next <file|url>  use a custom sound when the timer is done (Mac only)
 
 Add --debug to any option to enable verbose logging
 `

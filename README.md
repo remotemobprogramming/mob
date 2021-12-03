@@ -162,18 +162,19 @@ Experimental Commands:
     [--git-sequence-editor]              Not intended for manual use. Used as a non-interactive sequence editor (GIT_SEQUENCE_EDITOR) for git.
 
 Timer Commands:
-  timer <minutes>    start a <minutes> timer
-  start <minutes>    start mob session in wip branch and a <minutes> timer
-  break <minutes>    start a <minutes> break timer
+  timer <minutes>                 start a <minutes> timer
+  start <minutes>                 start mob session in wip branch and a <minutes> timer
+  break <minutes>                 start a <minutes> break timer
 
 Get more information:
-  status             show the status of the current mob session
-  config             show all configuration options
-  version            show the version of mob
-  help               show help
+  status                          show the status of the current mob session
+  config                          show all configuration options
+  version                         show the version of mob
+  help                            show help
 
 Other
-  moo                moo!
+  moo                             moo!
+  install-custom-next <file|url>  use a custom sound when the timer is done (Mac only)
 
 
 Add --debug to any option to enable verbose logging
