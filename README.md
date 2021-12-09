@@ -14,7 +14,7 @@
     <img alt="Stars" src="https://img.shields.io/github/stars/remotemobprogramming/mob" /></a>
 </p>
 
-**BREAKING NEWS: [mob is on 'assess' in the latest Thoughtworks Technology Radar](https://twitter.com/simonharrer/status/1453372354097205253?s=20)**
+**NEW: Have you already tried the shared team timer [timer.mob.sh](https://timer.mob.sh)?**
 
 Smooth [git handover](https://www.remotemobprogramming.org/#git-handover) for remote pair/mob programming.
 
@@ -22,6 +22,7 @@ Smooth [git handover](https://www.remotemobprogramming.org/#git-handover) for re
 - **mob** is the fastest way to [hand over code via git](https://www.remotemobprogramming.org/#git-handover)
 - **mob** keeps your branches clean and only creates WIP commits on temporary branches
 - **mob** has a shared team timer [timer.mob.sh](https://timer.mob.sh)
+- **mob** is on 'assess' in the latest [Thoughtworks Technology Radar](https://twitter.com/simonharrer/status/1453372354097205253?s=20)
 
 ![diagram how mob works](diagram.svg)
 
