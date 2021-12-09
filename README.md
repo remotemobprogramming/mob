@@ -275,9 +275,6 @@ Example installation using AUR helper `yay`:
 
 ```bash
 yay -S mobsh-bin
-
-# OR
-yay -S mobsh
 ```
 
 ### Linux Timer
