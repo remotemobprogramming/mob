@@ -347,6 +347,17 @@ Override default value just for a single call:
 MOB_NEXT_STAY=true mob next
 ```
 
+## Uninstalling
+Mob can simply be uninstalled by removing the installed binary (at lest if it was installed via the http://install.mob.sh script). 
+
+### Linux
+    rm /usr/local/bin/mob
+### Windows (Git Bash)
+  
+    rm ~/bin/mob.exe
+### MacOS
+    brew uninstall remotemobprogramming/brew/mob
+
 ## How to contribute
 
 [Propose your change in an issue](https://github.com/remotemobprogramming/mob/issues) or [directly create a pull request with your improvements](https://github.com/remotemobprogramming/mob/pulls).
