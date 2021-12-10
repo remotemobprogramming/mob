@@ -353,7 +353,6 @@ Mob can simply be uninstalled by removing the installed binary (at lest if it wa
 ### Linux
     rm /usr/local/bin/mob
 ### Windows (Git Bash)
-  
     rm ~/bin/mob.exe
 ### MacOS
     brew uninstall remotemobprogramming/brew/mob
