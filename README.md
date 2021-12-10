@@ -347,7 +347,7 @@ Override default value just for a single call:
 MOB_NEXT_STAY=true mob next
 ```
 
-## Uninstalling
+## How to uninstall
 Mob can simply be uninstalled by removing the installed binary (at lest if it was installed via the http://install.mob.sh script). 
 
 ### Linux
