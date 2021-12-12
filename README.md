@@ -264,19 +264,6 @@ ensemble next
 
 ## More on Installation
 
-### Arch Linux
-
-There are two Arch packages in the AUR:
-
-- [mobsh-bin](https://aur.archlinux.org/packages/mobsh-bin/): uses the binary from the upstream release.
-- [mobsh](https://aur.archlinux.org/packages/mobsh/): compiles sources from scratch (and runs tests) locally.
-
-Example installation using AUR helper `yay`:
-
-```bash
-yay -S mobsh-bin
-```
-
 ### Linux Timer
 
 (This is not needed when installing via snap.)
