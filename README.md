@@ -62,7 +62,11 @@ On Windows via [Scoop](https://scoop.sh/):
 scoop install mob
 ```
 
-On [Nix](http://nixos.org) through the [mob.nix](./mob.nix) expression like this `mob = callPackage ./mob.nix {};`. To install and configure espeak-ng for text-to-speech support, pass `withSpeech = true;`.
+On [Nix](http://nixos.org) through the [mob.nix](./mob.nix) expression:
+
+```
+mob = callPackage ./mob.nix {withSpeech = true;};
+```
 
 On Arch Linux via yay:
 
