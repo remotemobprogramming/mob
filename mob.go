@@ -982,23 +982,23 @@ func done(configuration Configuration) {
 
 	git("fetch", configuration.RemoteName, "--prune")
 
-	currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), gitBranches(), configuration)
+	baseBranch, wipBranch := determineBranches(gitCurrentBranch(), gitBranches(), configuration)
 
-	if currentWipBranch.hasRemoteBranch(configuration) {
+	if wipBranch.hasRemoteBranch(configuration) {
 		if hasUncommittedChanges() {
 			makeWipCommit(configuration)
 		}
-		git("push", "--no-verify", configuration.RemoteName, currentWipBranch.Name)
+		git("push", "--no-verify", configuration.RemoteName, wipBranch.Name)
 
-		git("checkout", currentBaseBranch.Name)
-		git("merge", currentBaseBranch.remote(configuration).Name, "--ff-only")
-		mergeFailed := gitignorefailure("merge", squashOrNoCommit(configuration), "--ff", currentWipBranch.Name)
+		git("checkout", baseBranch.Name)
+		git("merge", baseBranch.remote(configuration).Name, "--ff-only")
+		mergeFailed := gitignorefailure("merge", squashOrNoCommit(configuration), "--ff", wipBranch.Name)
 		if mergeFailed != nil {
 			return
 		}
 
-		git("branch", "-D", currentWipBranch.Name)
-		git("push", "--no-verify", configuration.RemoteName, "--delete", currentWipBranch.Name)
+		git("branch", "-D", wipBranch.Name)
+		git("push", "--no-verify", configuration.RemoteName, "--delete", wipBranch.Name)
 
 		cachedChanges := getCachedChanges()
 		hasCachedChanges := len(cachedChanges) > 0
@@ -1018,8 +1018,8 @@ func done(configuration Configuration) {
 		}
 
 	} else {
-		git("checkout", currentBaseBranch.Name)
-		git("branch", "-D", currentWipBranch.Name)
+		git("checkout", baseBranch.Name)
+		git("branch", "-D", wipBranch.Name)
 		sayInfo("someone else already ended your session")
 	}
 }
