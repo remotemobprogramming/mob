@@ -18,6 +18,8 @@ var (
 	tempDir string
 )
 
+type GitStatus = map[string]string
+
 func TestCurrentCliName(t *testing.T) {
 	equals(t, "mob", currentCliName("mob"))
 	equals(t, "mob", currentCliName("mob.exe"))
@@ -698,7 +700,9 @@ func TestStartDoneSquashTheOneManualCommit(t *testing.T) {
 
 	done(configuration)
 
-	// MAYBE assertUnstagedChanges()
+	assertGitStatus(t, GitStatus{
+		"example.txt": "A",
+	})
 	assertOnBranch(t, "master")
 	assertCommitsOnBranch(t, 1, "master")
 	assertCommitsOnBranch(t, 1, "origin/master")
@@ -984,7 +988,7 @@ func TestGitStatusWithOneFile(t *testing.T) {
 
 	status := gitStatus()
 
-	equals(t, map[string]string{
+	equals(t, GitStatus{
 		"hello.txt": "??",
 	}, status)
 }
@@ -997,16 +1001,16 @@ func TestGitStatusWithManyFiles(t *testing.T) {
 
 	status := gitStatus()
 
-	equals(t, map[string]string{
+	equals(t, GitStatus{
 		"added.txt": "A",
 		"hello.txt": "??",
 	}, status)
 }
 
-func gitStatus() map[string]string {
+func gitStatus() GitStatus {
 	shortStatus := silentgit("status", "--short")
 	statusLines := strings.Split(shortStatus, "\n")
-	var statusMap = make(map[string]string)
+	var statusMap = make(GitStatus)
 	for _, line := range statusLines {
 		if len(line) == 0 {
 			continue
@@ -1157,6 +1161,10 @@ func assertNoMobSessionBranches(t *testing.T, configuration Configuration, branc
 	if hasLocalBranch(branch) {
 		failWithFailure(t, "none", branch)
 	}
+}
+
+func assertGitStatus(t *testing.T, expected map[string]string) {
+	equals(t, expected, gitStatus())
 }
 
 func equals(t *testing.T, exp, act interface{}) {
