@@ -970,6 +970,53 @@ func TestNotAGitRepoMessage(t *testing.T) {
 	assertOutputContains(t, output, "expecting the current working directory to be a git repository.")
 }
 
+func TestEmptyGitStatus(t *testing.T) {
+	setup(t)
+
+	status := gitStatus()
+
+	equals(t, 0, len(status))
+}
+
+func TestGitStatusWithOneFile(t *testing.T) {
+	setup(t)
+	createFile(t, "hello.txt", "")
+
+	status := gitStatus()
+
+	equals(t, map[string]string{
+		"hello.txt": "??",
+	}, status)
+}
+
+func TestGitStatusWithManyFiles(t *testing.T) {
+	setup(t)
+	createFile(t, "hello.txt", "")
+	createFile(t, "added.txt", "")
+	git("add", "added.txt")
+
+	status := gitStatus()
+
+	equals(t, map[string]string{
+		"added.txt": "A",
+		"hello.txt": "??",
+	}, status)
+}
+
+func gitStatus() map[string]string {
+	shortStatus := silentgit("status", "--short")
+	statusLines := strings.Split(shortStatus, "\n")
+	var statusMap = make(map[string]string)
+	for _, line := range statusLines {
+		if len(line) == 0 {
+			continue
+		}
+		file := strings.Fields(line)
+		statusMap[file[1]] = file[0]
+	}
+	return statusMap
+}
+
 func setup(t *testing.T) (output *string, configuration Configuration) {
 	configuration = getDefaultConfiguration()
 	configuration.MobNextStay = false
