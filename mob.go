@@ -931,7 +931,7 @@ func next(configuration Configuration) {
 		return
 	}
 
-	if !configuration.hasCustomCommitMessage() && configuration.RequireCommitMessage && !isNothingToCommit() {
+	if !configuration.hasCustomCommitMessage() && configuration.RequireCommitMessage && hasUncommittedChanges() {
 		sayError("commit message required")
 		return
 	}
@@ -985,7 +985,7 @@ func done(configuration Configuration) {
 	currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), gitBranches(), configuration)
 
 	if currentWipBranch.hasRemoteBranch(configuration) {
-		if !isNothingToCommit() {
+		if hasUncommittedChanges() {
 			makeWipCommit(configuration)
 		}
 		git("push", "--no-verify", configuration.RemoteName, currentWipBranch.Name)
