@@ -667,8 +667,7 @@ func TestStartDoneWithMobDoneSquashFalse(t *testing.T) {
 
 func TestStartDonePublishingOneManualCommit(t *testing.T) {
 	_, configuration := setup(t)
-	// REFACTOR Replace string with enum value
-	configuration.MobDoneSquash = false // default is probably true
+	configuration.MobDoneSquash = false // default is true
 
 	start(configuration)
 	assertOnBranch(t, "mob-session")
@@ -680,6 +679,7 @@ func TestStartDonePublishingOneManualCommit(t *testing.T) {
 	done(configuration) // without squash (configuration)
 
 	assertOnBranch(t, "master")
+	assertCleanGitStatus(t)
 	assertCommitsOnBranch(t, 2, "master")
 	assertCommitLogContainsMessage(t, "master", "[manual-commit-1] publish this commit to master")
 	assertCommitsOnBranch(t, 1, "origin/master")
@@ -688,7 +688,6 @@ func TestStartDonePublishingOneManualCommit(t *testing.T) {
 
 func TestStartDoneSquashTheOneManualCommit(t *testing.T) {
 	_, configuration := setup(t)
-	// REFACTOR Replace string with enum value
 	configuration.MobDoneSquash = true
 
 	start(configuration)
@@ -700,10 +699,10 @@ func TestStartDoneSquashTheOneManualCommit(t *testing.T) {
 
 	done(configuration)
 
+	assertOnBranch(t, "master")
 	assertGitStatus(t, GitStatus{
 		"example.txt": "A",
 	})
-	assertOnBranch(t, "master")
 	assertCommitsOnBranch(t, 1, "master")
 	assertCommitsOnBranch(t, 1, "origin/master")
 	assertNoMobSessionBranches(t, configuration, "mob-session")
@@ -980,6 +979,7 @@ func TestEmptyGitStatus(t *testing.T) {
 	status := gitStatus()
 
 	equals(t, 0, len(status))
+	assertCleanGitStatus(t)
 }
 
 func TestGitStatusWithOneFile(t *testing.T) {
@@ -1165,6 +1165,15 @@ func assertNoMobSessionBranches(t *testing.T, configuration Configuration, branc
 
 func assertGitStatus(t *testing.T, expected map[string]string) {
 	equals(t, expected, gitStatus())
+}
+
+func assertCleanGitStatus(t *testing.T) {
+	status := gitStatus()
+	if len(status) != 0 {
+		_, file, line, _ := runtime.Caller(1)
+		fmt.Printf("\033[31m%s:%d:\n\n\texpected a clean git status, but contained %s\"\n", filepath.Base(file), line, status)
+		t.FailNow()
+	}
 }
 
 func equals(t *testing.T, exp, act interface{}) {
