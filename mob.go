@@ -985,7 +985,8 @@ func done(configuration Configuration) {
 	baseBranch, wipBranch := determineBranches(gitCurrentBranch(), gitBranches(), configuration)
 
 	if wipBranch.hasRemoteBranch(configuration) {
-		if hasUncommittedChanges() {
+		uncommittedChanges := hasUncommittedChanges()
+		if uncommittedChanges {
 			makeWipCommit(configuration)
 		}
 		git("push", "--no-verify", configuration.RemoteName, wipBranch.Name)
@@ -998,6 +999,11 @@ func done(configuration Configuration) {
 		}
 
 		git("branch", "-D", wipBranch.Name)
+
+		if uncommittedChanges && !configuration.MobDoneSquash { // give the user the chance to name their final commit
+			silentgit("reset", "--soft", "HEAD^")
+		}
+
 		git("push", "--no-verify", configuration.RemoteName, "--delete", wipBranch.Name)
 
 		cachedChanges := getCachedChanges()

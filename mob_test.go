@@ -708,6 +708,41 @@ func TestStartDoneSquashTheOneManualCommit(t *testing.T) {
 	assertNoMobSessionBranches(t, configuration, "mob-session")
 }
 
+func TestStartDoneWithUncommittedChanges(t *testing.T) {
+	_, configuration := setup(t)
+
+	start(configuration) // should be 1 commit on mob-session so far
+	createFile(t, "example.txt", "content")
+
+	done(configuration)
+
+	assertOnBranch(t, "master")
+	assertGitStatus(t, GitStatus{
+		"example.txt": "A",
+	})
+	assertCommitsOnBranch(t, 1, "master")
+	assertCommitsOnBranch(t, 1, "origin/master")
+	assertNoMobSessionBranches(t, configuration, "mob-session")
+}
+
+func TestStartDoneNoSquashWithUncommittedChanges(t *testing.T) {
+	_, configuration := setup(t)
+	configuration.MobDoneSquash = false // default is true
+
+	start(configuration) // should be 1 commit on mob-session so far
+	createFile(t, "example.txt", "content")
+
+	done(configuration) // without squash (configuration)
+
+	assertOnBranch(t, "master")
+	assertGitStatus(t, GitStatus{
+		"example.txt": "A",
+	})
+	assertCommitsOnBranch(t, 1, "master")
+	assertCommitsOnBranch(t, 1, "origin/master")
+	assertNoMobSessionBranches(t, configuration, "mob-session")
+}
+
 func TestStartDoneFeatureBranch(t *testing.T) {
 	_, configuration := setup(t)
 	git("checkout", "-b", "feature1")
