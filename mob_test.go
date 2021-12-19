@@ -18,6 +18,8 @@ var (
 	tempDir string
 )
 
+type GitStatus = map[string]string
+
 func TestCurrentCliName(t *testing.T) {
 	equals(t, "mob", currentCliName("mob"))
 	equals(t, "mob", currentCliName("mob.exe"))
@@ -698,7 +700,9 @@ func TestStartDoneSquashTheOneManualCommit(t *testing.T) {
 
 	done(configuration)
 
-	// MAYBE assertUnstagedChanges()
+	assertGitStatus(t, GitStatus{
+		"example.txt": "A",
+	})
 	assertOnBranch(t, "master")
 	assertCommitsOnBranch(t, 1, "master")
 	assertCommitsOnBranch(t, 1, "origin/master")
@@ -970,6 +974,53 @@ func TestNotAGitRepoMessage(t *testing.T) {
 	assertOutputContains(t, output, "expecting the current working directory to be a git repository.")
 }
 
+func TestEmptyGitStatus(t *testing.T) {
+	setup(t)
+
+	status := gitStatus()
+
+	equals(t, 0, len(status))
+}
+
+func TestGitStatusWithOneFile(t *testing.T) {
+	setup(t)
+	createFile(t, "hello.txt", "")
+
+	status := gitStatus()
+
+	equals(t, GitStatus{
+		"hello.txt": "??",
+	}, status)
+}
+
+func TestGitStatusWithManyFiles(t *testing.T) {
+	setup(t)
+	createFile(t, "hello.txt", "")
+	createFile(t, "added.txt", "")
+	git("add", "added.txt")
+
+	status := gitStatus()
+
+	equals(t, GitStatus{
+		"added.txt": "A",
+		"hello.txt": "??",
+	}, status)
+}
+
+func gitStatus() GitStatus {
+	shortStatus := silentgit("status", "--short")
+	statusLines := strings.Split(shortStatus, "\n")
+	var statusMap = make(GitStatus)
+	for _, line := range statusLines {
+		if len(line) == 0 {
+			continue
+		}
+		file := strings.Fields(line)
+		statusMap[file[1]] = file[0]
+	}
+	return statusMap
+}
+
 func setup(t *testing.T) (output *string, configuration Configuration) {
 	configuration = getDefaultConfiguration()
 	configuration.MobNextStay = false
@@ -1110,6 +1161,10 @@ func assertNoMobSessionBranches(t *testing.T, configuration Configuration, branc
 	if hasLocalBranch(branch) {
 		failWithFailure(t, "none", branch)
 	}
+}
+
+func assertGitStatus(t *testing.T, expected map[string]string) {
+	equals(t, expected, gitStatus())
 }
 
 func equals(t *testing.T, exp, act interface{}) {
