@@ -1001,7 +1001,7 @@ func done(configuration Configuration) {
 		git("branch", "-D", wipBranch.Name)
 
 		if uncommittedChanges && !configuration.MobDoneSquash { // give the user the chance to name their final commit
-			silentgit("reset", "--soft", "HEAD^")
+			git("reset", "--soft", "HEAD^")
 		}
 
 		git("push", "--no-verify", configuration.RemoteName, "--delete", wipBranch.Name)
