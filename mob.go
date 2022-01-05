@@ -1015,12 +1015,11 @@ func done(configuration Configuration) {
 		if err != nil {
 			sayError(err.Error())
 		}
-		if configuration.MobDoneSquash {
-			if isNothingToCommit() {
-				sayInfo("nothing was done, so nothing to commit")
-			} else {
-				sayTodo("To finish, use", "git commit")
-			}
+
+		if isNothingToCommit() {
+			sayInfo("nothing was done, so nothing to commit")
+		} else {
+			sayTodo("To finish, use", "git commit")
 		}
 
 	} else {
