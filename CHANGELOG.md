@@ -1,3 +1,6 @@
+# 2.3.0
+- With `export MOB_TIMER_ROOM_USE_WIP_BRANCH_QUALIFIER=true` the room name is automatically derived from the value you passed in via the `mob start --branch <branch>` parameter.
+
 # 2.2.0
 - When mob encounters unpushed commits in the base branch, the tool now provides help for the user to fix this immediately.
 - Improves console output when using `mob break 5` in combination with https://timer.mob.sh

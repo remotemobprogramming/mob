@@ -17,7 +17,7 @@ import (
 )
 
 const (
-	versionNumber = "2.2.1"
+	versionNumber = "2.3.0"
 )
 
 var (
@@ -44,6 +44,7 @@ type Configuration struct {
 	MobTimer                          string // override with MOB_TIMER environment variable
 	MobTimerRoom                      string // override with MOB_TIMER_ROOM environment variable
 	MobTimerLocal                     bool   // override with MOB_TIMER_LOCAL environment variable
+	MobTimerRoomUseWipBranchQualifier bool   // override with MOB_TIMER_ROOM_USE_WIP_BRANCH_QUALIFIER environment variable
 	MobTimerUser                      string // override with MOB_TIMER_USER environment variable
 	MobTimerUrl                       string // override with MOB_TIMER_URL environment variable
 	WipBranchPrefix                   string // override with MOB_WIP_BRANCH_PREFIX environment variable (experimental)
@@ -123,7 +124,14 @@ func addSuffix(branch string, suffix string) string {
 }
 
 func (branch Branch) removeWipPrefix(configuration Configuration) Branch {
-	return newBranch(branch.Name[len(configuration.WipBranchPrefix):])
+	return newBranch(removePrefix(branch.Name, configuration.WipBranchPrefix))
+}
+
+func removePrefix(branch string, prefix string) string {
+	if !strings.HasPrefix(branch, prefix) {
+		return branch
+	}
+	return branch[len(prefix):]
 }
 
 func (branch Branch) removeWipQualifier(localBranches []string, configuration Configuration) Branch {
@@ -316,6 +324,7 @@ func parseEnvironmentVariables(configuration Configuration) Configuration {
 
 	setStringFromEnvVariable(&configuration.MobTimer, "MOB_TIMER")
 	setStringFromEnvVariable(&configuration.MobTimerRoom, "MOB_TIMER_ROOM")
+	setBoolFromEnvVariable(&configuration.MobTimerRoomUseWipBranchQualifier, "MOB_TIMER_ROOM_USE_WIP_BRANCH_QUALIFIER")
 	setBoolFromEnvVariable(&configuration.MobTimerLocal, "MOB_TIMER_LOCAL")
 	setStringFromEnvVariable(&configuration.MobTimerUser, "MOB_TIMER_USER")
 	setStringFromEnvVariable(&configuration.MobTimerUrl, "MOB_TIMER_URL")
@@ -418,6 +427,7 @@ func config(c Configuration) {
 	say("MOB_DONE_SQUASH" + "=" + strconv.FormatBool(c.MobDoneSquash))
 	say("MOB_TIMER" + "=" + c.MobTimer)
 	say("MOB_TIMER_ROOM" + "=" + c.MobTimerRoom)
+	say("MOB_TIMER_ROOM_USE_WIP_BRANCH_QUALIFIER" + "=" + strconv.FormatBool(c.MobTimerRoomUseWipBranchQualifier))
 	say("MOB_TIMER_LOCAL" + "=" + strconv.FormatBool(c.MobTimerLocal))
 	say("MOB_TIMER_USER" + "=" + c.MobTimerUser)
 	say("MOB_TIMER_URL" + "=" + c.MobTimerUrl)
@@ -616,9 +626,11 @@ func startTimer(timerInMinutes string, configuration Configuration) {
 	debugInfo(fmt.Sprintf("Starting timer at %s for %d minutes = %d seconds (parsed from user input %s)", timeOfTimeout, timeoutInMinutes, timeoutInSeconds, timerInMinutes))
 
 	timerSuccessful := false
-	if configuration.MobTimerRoom != "" {
+
+	room := getMobTimerRoom(configuration)
+	if room != "" {
 		user := getUserForMobTimer(configuration.MobTimerUser)
-		err := httpPutTimer(timeoutInMinutes, configuration.MobTimerRoom, user, configuration.MobTimerUrl)
+		err := httpPutTimer(timeoutInMinutes, room, user, configuration.MobTimerUrl)
 		if err != nil {
 			sayError("remote timer couldn't be started")
 			sayError(err.Error())
@@ -643,6 +655,25 @@ func startTimer(timerInMinutes string, configuration Configuration) {
 	}
 }
 
+func getMobTimerRoom(configuration Configuration) string {
+	currentWipBranchQualifier := configuration.WipBranchQualifier
+	if currentWipBranchQualifier == "" {
+		currentBranch := gitCurrentBranch()
+		currentBaseBranch, _ := determineBranches(currentBranch, gitBranches(), configuration)
+
+		if currentBranch.IsWipBranch(configuration) {
+			wipBranchWithouthWipPrefix := currentBranch.removeWipPrefix(configuration).Name
+			currentWipBranchQualifier = removePrefix(removePrefix(wipBranchWithouthWipPrefix, currentBaseBranch.Name), configuration.WipBranchQualifierSeparator)
+		}
+	}
+
+	if configuration.MobTimerRoomUseWipBranchQualifier && currentWipBranchQualifier != "" {
+		sayInfo("Using wip branch qualifier for room name")
+		return currentWipBranchQualifier
+	}
+	return configuration.MobTimerRoom
+}
+
 func startBreakTimer(timerInMinutes string, configuration Configuration) {
 	timeoutInMinutes := toMinutes(timerInMinutes)
 
@@ -651,9 +682,10 @@ func startBreakTimer(timerInMinutes string, configuration Configuration) {
 	debugInfo(fmt.Sprintf("Starting break timer at %s for %d minutes = %d seconds (parsed from user input %s)", timeOfTimeout, timeoutInMinutes, timeoutInSeconds, timerInMinutes))
 
 	timerSuccessful := false
-	if configuration.MobTimerRoom != "" {
+	room := getMobTimerRoom(configuration)
+	if room != "" {
 		user := getUserForMobTimer(configuration.MobTimerUser)
-		err := httpPutBreakTimer(timeoutInMinutes, configuration.MobTimerRoom, user, configuration.MobTimerUrl)
+		err := httpPutBreakTimer(timeoutInMinutes, room, user, configuration.MobTimerUrl)
 		if err != nil {
 			sayError("remote break timer couldn't be started")
 			sayError(err.Error())
@@ -872,7 +904,6 @@ func getWipBranchesForBaseBranch(currentBaseBranch Branch, configuration Configu
 	remoteBranches := gitRemoteBranches()
 	debugInfo("check on current base branch " + currentBaseBranch.String() + " with remote branches " + strings.Join(remoteBranches, ","))
 
-	// determineBranches(currentBaseBranch, gitBranches(), configuration)
 	remoteBranchWithQualifier := currentBaseBranch.addWipPrefix(configuration).addWipQualifier(configuration).remote(configuration).Name
 	remoteBranchNoQualifier := currentBaseBranch.addWipPrefix(configuration).remote(configuration).Name
 	if currentBaseBranch.Is("master") {

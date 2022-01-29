@@ -266,6 +266,26 @@ ensemble next
 #
 ```
 
+### Automatically set the timer room when using ticket numbers as branch modifiers
+
+Say you're a larger team and work on the same git repository using ticket numbers as branch modifiers.
+It's easy to forget exporting the room that enables the integration with timer.mob.sh.
+Here's a function that helps to do this:
+
+```bash
+# Automatically set the room based on the branch modifier
+#
+# example
+#
+# $ ms team-123 15
+ms() {
+ BRANCH=$1
+ MINUTES=$2
+ export MOB_TIMER_ROOM=$BRANCH
+ mob start --branch $BRANCH $MINUTES
+}
+```
+
 ## More on Installation
 
 ### Linux Timer
