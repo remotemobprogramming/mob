@@ -362,7 +362,7 @@ MOB_NEXT_STAY=true mob next
 ```
 
 ## How to uninstall
-Mob can simply be uninstalled by removing the installed binary (at lest if it was installed via the http://install.mob.sh script). 
+Mob can simply be uninstalled by removing the installed binary (at least if it was installed via the http://install.mob.sh script). 
 
 ### Linux
     rm /usr/local/bin/mob
