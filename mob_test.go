@@ -27,6 +27,11 @@ func TestCurrentCliName(t *testing.T) {
 	equals(t, "mob", currentCliName("folder/mob"))
 }
 
+func TestQuote(t *testing.T) {
+	equals(t, "\"mob\"", quote("mob"))
+	equals(t, "\"m\\\"ob\"", quote("m\"ob"))
+}
+
 func TestParseArgs(t *testing.T) {
 	configuration := getDefaultConfiguration()
 	equals(t, configuration.WipBranchQualifier, "")

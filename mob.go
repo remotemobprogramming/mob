@@ -412,26 +412,30 @@ func experimental(key string) {
 }
 
 func config(c Configuration) {
-	say("MOB_CLI_NAME" + "=" + c.cliName)
-	say("MOB_REMOTE_NAME" + "=" + c.RemoteName)
-	say("MOB_WIP_COMMIT_MESSAGE" + "=" + c.WipCommitMessage)
+	say("MOB_CLI_NAME" + "=" + quote(c.cliName))
+	say("MOB_REMOTE_NAME" + "=" + quote(c.RemoteName))
+	say("MOB_WIP_COMMIT_MESSAGE" + "=" + quote(c.WipCommitMessage))
 	say("MOB_REQUIRE_COMMIT_MESSAGE" + "=" + strconv.FormatBool(c.RequireCommitMessage))
-	say("MOB_VOICE_COMMAND" + "=" + c.VoiceCommand)
-	say("MOB_VOICE_MESSAGE" + "=" + c.VoiceMessage)
-	say("MOB_NOTIFY_COMMAND" + "=" + c.NotifyCommand)
-	say("MOB_NOTIFY_MESSAGE" + "=" + c.NotifyMessage)
+	say("MOB_VOICE_COMMAND" + "=" + quote(c.VoiceCommand))
+	say("MOB_VOICE_MESSAGE" + "=" + quote(c.VoiceMessage))
+	say("MOB_NOTIFY_COMMAND" + "=" + quote(c.NotifyCommand))
+	say("MOB_NOTIFY_MESSAGE" + "=" + quote(c.NotifyMessage))
 	say("MOB_NEXT_STAY" + "=" + strconv.FormatBool(c.MobNextStay))
 	say("MOB_START_INCLUDE_UNCOMMITTED_CHANGES" + "=" + strconv.FormatBool(c.MobStartIncludeUncommittedChanges))
-	say("MOB_WIP_BRANCH_QUALIFIER" + "=" + c.WipBranchQualifier)
-	say("MOB_WIP_BRANCH_QUALIFIER_SEPARATOR" + "=" + c.WipBranchQualifierSeparator)
+	say("MOB_WIP_BRANCH_QUALIFIER" + "=" + quote(c.WipBranchQualifier))
+	say("MOB_WIP_BRANCH_QUALIFIER_SEPARATOR" + "=" + quote(c.WipBranchQualifierSeparator))
 	say("MOB_DONE_SQUASH" + "=" + strconv.FormatBool(c.MobDoneSquash))
 	say("MOB_TIMER" + "=" + c.MobTimer)
-	say("MOB_TIMER_ROOM" + "=" + c.MobTimerRoom)
+	say("MOB_TIMER_ROOM" + "=" + quote(c.MobTimerRoom))
 	say("MOB_TIMER_ROOM_USE_WIP_BRANCH_QUALIFIER" + "=" + strconv.FormatBool(c.MobTimerRoomUseWipBranchQualifier))
 	say("MOB_TIMER_LOCAL" + "=" + strconv.FormatBool(c.MobTimerLocal))
-	say("MOB_TIMER_USER" + "=" + c.MobTimerUser)
-	say("MOB_TIMER_URL" + "=" + c.MobTimerUrl)
-	say("MOB_STASH_NAME" + "=" + c.StashName)
+	say("MOB_TIMER_USER" + "=" + quote(c.MobTimerUser))
+	say("MOB_TIMER_URL" + "=" + quote(c.MobTimerUrl))
+	say("MOB_STASH_NAME" + "=" + quote(c.StashName))
+}
+
+func quote(value string) string {
+	return strconv.Quote(value)
 }
 
 func parseArgs(args []string, configuration Configuration) (command string, parameters []string, newConfiguration Configuration) {
