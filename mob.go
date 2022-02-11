@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"bytes"
 	"encoding/json"
 	"errors"
@@ -17,38 +18,37 @@ import (
 )
 
 const (
-	versionNumber = "2.3.0"
+	versionNumber = "2.4.0"
 )
 
 var (
-	workingDir = ""
-	Debug      = false // override with --debug parameter
+	workingDir            = ""
+	Debug                 = false // override with --debug parameter
+	userConfigurationPath = "~/.mob"
 )
 
 type Configuration struct {
-	cliName                           string // override with MOB_CLI_NAME environment variable
-	RemoteName                        string // override with MOB_REMOTE_NAME environment variable
-	WipCommitMessage                  string // override with MOB_WIP_COMMIT_MESSAGE environment variable
-	RequireCommitMessage              bool   // override with MOB_REQUIRE_COMMIT_MESSAGE environment variable
-	VoiceCommand                      string // override with MOB_VOICE_COMMAND environment variable
-	VoiceMessage                      string // override with MOB_VOICE_MESSAGE environment variable
-	NotifyCommand                     string // override with MOB_NOTIFY_COMMAND environment variable
-	NotifyMessage                     string // override with MOB_NOTIFY_MESSAGE environment variable
-	MobNextStay                       bool   // override with MOB_NEXT_STAY environment variable
-	MobNextStaySet                    bool   // override with MOB_NEXT_STAY environment variable
-	MobStartIncludeUncommittedChanges bool   // override with MOB_START_INCLUDE_UNCOMMITTED_CHANGES variable
-	WipBranchQualifier                string // override with MOB_WIP_BRANCH_QUALIFIER environment variable
-	WipBranchQualifierSet             bool   // used to enforce a start on the default wip branch with `--branch ""` when other open wip branches had been detected
-	WipBranchQualifierSeparator       string // override with MOB_WIP_BRANCH_QUALIFIER_SEPARATOR environment variable
-	MobDoneSquash                     bool   // override with MOB_DONE_SQUASH environment variable
-	MobTimer                          string // override with MOB_TIMER environment variable
-	MobTimerRoom                      string // override with MOB_TIMER_ROOM environment variable
-	MobTimerLocal                     bool   // override with MOB_TIMER_LOCAL environment variable
-	MobTimerRoomUseWipBranchQualifier bool   // override with MOB_TIMER_ROOM_USE_WIP_BRANCH_QUALIFIER environment variable
-	MobTimerUser                      string // override with MOB_TIMER_USER environment variable
-	MobTimerUrl                       string // override with MOB_TIMER_URL environment variable
-	WipBranchPrefix                   string // override with MOB_WIP_BRANCH_PREFIX environment variable (experimental)
-	StashName                         string // override with MOB_STASH_NAME environment variable
+	CliName                        string // override with MOB_CLI_NAME environment variable
+	RemoteName                     string // override with MOB_REMOTE_NAME environment variable
+	WipCommitMessage               string // override with MOB_WIP_COMMIT_MESSAGE environment variable
+	RequireCommitMessage           bool   // override with MOB_REQUIRE_COMMIT_MESSAGE environment variable
+	VoiceCommand                   string // override with MOB_VOICE_COMMAND environment variable
+	VoiceMessage                   string // override with MOB_VOICE_MESSAGE environment variable
+	NotifyCommand                  string // override with MOB_NOTIFY_COMMAND environment variable
+	NotifyMessage                  string // override with MOB_NOTIFY_MESSAGE environment variable
+	NextStay                       bool   // override with MOB_NEXT_STAY environment variable
+	StartIncludeUncommittedChanges bool   // override with MOB_START_INCLUDE_UNCOMMITTED_CHANGES variable
+	WipBranchQualifier             string // override with MOB_WIP_BRANCH_QUALIFIER environment variable
+	WipBranchQualifierSeparator    string // override with MOB_WIP_BRANCH_QUALIFIER_SEPARATOR environment variable
+	DoneSquash                     bool   // override with MOB_DONE_SQUASH environment variable
+	Timer                          string // override with MOB_TIMER environment variable
+	TimerRoom                      string // override with MOB_TIMER_ROOM environment variable
+	TimerLocal                     bool   // override with MOB_TIMER_LOCAL environment variable
+	TimerRoomUseWipBranchQualifier bool   // override with MOB_TIMER_ROOM_USE_WIP_BRANCH_QUALIFIER environment variable
+	TimerUser                      string // override with MOB_TIMER_USER environment variable
+	TimerUrl                       string // override with MOB_TIMER_URL environment variable
+	WipBranchPrefix                string // override with MOB_WIP_BRANCH_PREFIX environment variable (experimental)
+	StashName                      string // override with MOB_STASH_NAME environment variable
 }
 
 func (c Configuration) wipBranchQualifierSuffix() string {
@@ -211,11 +211,12 @@ func main() {
 
 	configuration := getDefaultConfiguration()
 	configuration = parseEnvironmentVariables(configuration)
+	configuration = parseSettings(configuration, userConfigurationPath)
 	debugInfo("Args '" + strings.Join(os.Args, " ") + "'")
 	currentCliName := currentCliName(os.Args[0])
-	if currentCliName != configuration.cliName {
+	if currentCliName != configuration.CliName {
 		debugInfo("Updating cli name to " + currentCliName)
-		configuration.cliName = currentCliName
+		configuration.CliName = currentCliName
 	}
 
 	command, parameters, configuration := parseArgs(os.Args, configuration)
@@ -249,28 +250,26 @@ func getDefaultConfiguration() Configuration {
 		voiceCommand = "(New-Object -ComObject SAPI.SPVoice).Speak(\\\"%s\\\")"
 	}
 	return Configuration{
-		cliName:                           "mob",
-		RemoteName:                        "origin",
-		WipCommitMessage:                  "mob next [ci-skip] [ci skip] [skip ci]",
-		VoiceCommand:                      voiceCommand,
-		VoiceMessage:                      "mob next",
-		NotifyCommand:                     notifyCommand,
-		NotifyMessage:                     "mob next",
-		MobNextStay:                       true,
-		MobNextStaySet:                    false,
-		RequireCommitMessage:              false,
-		MobStartIncludeUncommittedChanges: false,
-		WipBranchQualifier:                "",
-		WipBranchQualifierSet:             false,
-		WipBranchQualifierSeparator:       "-",
-		MobDoneSquash:                     true,
-		MobTimer:                          "",
-		MobTimerLocal:                     true,
-		MobTimerRoom:                      "",
-		MobTimerUser:                      "",
-		MobTimerUrl:                       "https://timer.mob.sh/",
-		WipBranchPrefix:                   "mob/",
-		StashName:                         "mob-stash-name",
+		CliName:                        "mob",
+		RemoteName:                     "origin",
+		WipCommitMessage:               "mob next [ci-skip] [ci skip] [skip ci]",
+		VoiceCommand:                   voiceCommand,
+		VoiceMessage:                   "mob next",
+		NotifyCommand:                  notifyCommand,
+		NotifyMessage:                  "mob next",
+		NextStay:                       true,
+		RequireCommitMessage:           false,
+		StartIncludeUncommittedChanges: false,
+		WipBranchQualifier:             "",
+		WipBranchQualifierSeparator:    "-",
+		DoneSquash:                     true,
+		Timer:                          "",
+		TimerLocal:                     true,
+		TimerRoom:                      "",
+		TimerUser:                      "",
+		TimerUrl:                       "https://timer.mob.sh/",
+		WipBranchPrefix:                "mob/",
+		StashName:                      "mob-stash-name",
 	}
 }
 
@@ -285,15 +284,110 @@ func parseDebug(args []string) {
 }
 
 func (c Configuration) mob(command string) string {
-	return c.cliName + " " + command
+	return c.CliName + " " + command
+}
+
+func parseSettings(configuration Configuration, path string) Configuration {
+	file, err := os.Open(path)
+
+	if err != nil {
+		debugInfo(`No configuration file found.`)
+		return configuration
+	}
+
+	fileScanner := bufio.NewScanner(file)
+
+	for fileScanner.Scan() {
+		line := strings.TrimSpace(fileScanner.Text())
+		debugInfo(line)
+		if !strings.Contains(line, "=") {
+			debugInfo("Skip line because line contains no =. Line=" + line)
+			continue
+		}
+		key := line[0:strings.Index(line, "=")]
+		value := strings.TrimPrefix(line, key+"=")
+		debugInfo("Key is " + key)
+		debugInfo("Value is " + value)
+		switch key {
+		case "MOB_CLI_NAME":
+			setUnquotedString(&configuration.CliName, key, value)
+		case "MOB_REMOTE_NAME":
+			setUnquotedString(&configuration.RemoteName, key, value)
+		case "MOB_WIP_COMMIT_MESSAGE":
+			setUnquotedString(&configuration.WipCommitMessage, key, value)
+		case "MOB_REQUIRE_COMMIT_MESSAGE":
+			setBoolean(&configuration.RequireCommitMessage, key, value)
+		case "MOB_VOICE_COMMAND":
+			setUnquotedString(&configuration.VoiceCommand, key, value)
+		case "MOB_VOICE_MESSAGE":
+			setUnquotedString(&configuration.VoiceMessage, key, value)
+		case "MOB_NOTIFY_COMMAND":
+			setUnquotedString(&configuration.NotifyCommand, key, value)
+		case "MOB_NOTIFY_MESSAGE":
+			setUnquotedString(&configuration.NotifyMessage, key, value)
+		case "MOB_NEXT_STAY":
+			setBoolean(&configuration.NextStay, key, value)
+		case "MOB_START_INCLUDE_UNCOMMITTED_CHANGES":
+			setBoolean(&configuration.StartIncludeUncommittedChanges, key, value)
+		case "MOB_WIP_BRANCH_QUALIFIER":
+			setUnquotedString(&configuration.WipBranchQualifier, key, value)
+		case "MOB_WIP_BRANCH_QUALIFIER_SEPARATOR":
+			setUnquotedString(&configuration.WipBranchQualifierSeparator, key, value)
+		case "MOB_DONE_SQUASH":
+			setBoolean(&configuration.DoneSquash, key, value)
+		case "MOB_TIMER":
+			setUnquotedString(&configuration.Timer, key, value)
+		case "MOB_TIMER_ROOM":
+			setUnquotedString(&configuration.TimerRoom, key, value)
+		case "MOB_TIMER_ROOM_USE_WIP_BRANCH_QUALIFIER":
+			setBoolean(&configuration.TimerRoomUseWipBranchQualifier, key, value)
+		case "MOB_TIMER_LOCAL":
+			setBoolean(&configuration.TimerLocal, key, value)
+		case "MOB_TIMER_USER":
+			setUnquotedString(&configuration.TimerUser, key, value)
+		case "MOB_TIMER_URL":
+			setUnquotedString(&configuration.TimerUrl, key, value)
+		case "MOB_STASH_NAME":
+			setUnquotedString(&configuration.StashName, key, value)
+
+		default:
+			continue
+		}
+	}
+
+	if err := fileScanner.Err(); err != nil {
+		sayWarning("Configuration file exists, but could not be read. (" + path + ")")
+	}
+
+	return configuration
+}
+
+func setUnquotedString(s *string, key string, value string) {
+	unquotedValue, err := strconv.Unquote(value)
+	if err != nil {
+		sayWarning("Could not set key from configuration file because value is not parseable (" + key + "=" + value + ")")
+		return
+	}
+	*s = unquotedValue
+	debugInfo("Overwriting " + key + " =" + unquotedValue)
+}
+
+func setBoolean(s *bool, key string, value string) {
+	boolValue, err := strconv.ParseBool(value)
+	if err != nil {
+		sayWarning("Could not set key from configuration file because value is not parseable (" + key + "=" + value + ")")
+		return
+	}
+	*s = boolValue
+	debugInfo("Overwriting " + key + " =" + strconv.FormatBool(boolValue))
 }
 
 func parseEnvironmentVariables(configuration Configuration) Configuration {
-	setStringFromEnvVariable(&configuration.cliName, "MOB_CLI_NAME")
-	if configuration.cliName != getDefaultConfiguration().cliName {
-		configuration.WipCommitMessage = configuration.cliName + " next [ci-skip] [ci skip] [skip ci]"
-		configuration.VoiceMessage = configuration.cliName + " next"
-		configuration.NotifyMessage = configuration.cliName + " next"
+	setStringFromEnvVariable(&configuration.CliName, "MOB_CLI_NAME")
+	if configuration.CliName != getDefaultConfiguration().CliName {
+		configuration.WipCommitMessage = configuration.CliName + " next [ci-skip] [ci skip] [skip ci]"
+		configuration.VoiceMessage = configuration.CliName + " next"
+		configuration.NotifyMessage = configuration.CliName + " next"
 	}
 
 	removed("MOB_BASE_BRANCH", "Use '"+configuration.mob("start")+"' on your base branch instead.")
@@ -311,23 +405,20 @@ func parseEnvironmentVariables(configuration Configuration) Configuration {
 	setStringFromEnvVariable(&configuration.WipBranchQualifierSeparator, "MOB_WIP_BRANCH_QUALIFIER_SEPARATOR")
 
 	setStringFromEnvVariable(&configuration.WipBranchQualifier, "MOB_WIP_BRANCH_QUALIFIER")
-	if configuration.customWipBranchQualifierConfigured() {
-		configuration.WipBranchQualifierSet = true
-	}
 	setStringFromEnvVariable(&configuration.WipBranchPrefix, "MOB_WIP_BRANCH_PREFIX")
 
-	setBoolFromEnvVariableSet(&configuration.MobNextStay, &configuration.MobNextStaySet, "MOB_NEXT_STAY")
+	setBoolFromEnvVariable(&configuration.NextStay, "MOB_NEXT_STAY")
 
-	setBoolFromEnvVariable(&configuration.MobStartIncludeUncommittedChanges, "MOB_START_INCLUDE_UNCOMMITTED_CHANGES")
+	setBoolFromEnvVariable(&configuration.StartIncludeUncommittedChanges, "MOB_START_INCLUDE_UNCOMMITTED_CHANGES")
 
-	setBoolFromEnvVariable(&configuration.MobDoneSquash, "MOB_DONE_SQUASH")
+	setBoolFromEnvVariable(&configuration.DoneSquash, "MOB_DONE_SQUASH")
 
-	setStringFromEnvVariable(&configuration.MobTimer, "MOB_TIMER")
-	setStringFromEnvVariable(&configuration.MobTimerRoom, "MOB_TIMER_ROOM")
-	setBoolFromEnvVariable(&configuration.MobTimerRoomUseWipBranchQualifier, "MOB_TIMER_ROOM_USE_WIP_BRANCH_QUALIFIER")
-	setBoolFromEnvVariable(&configuration.MobTimerLocal, "MOB_TIMER_LOCAL")
-	setStringFromEnvVariable(&configuration.MobTimerUser, "MOB_TIMER_USER")
-	setStringFromEnvVariable(&configuration.MobTimerUrl, "MOB_TIMER_URL")
+	setStringFromEnvVariable(&configuration.Timer, "MOB_TIMER")
+	setStringFromEnvVariable(&configuration.TimerRoom, "MOB_TIMER_ROOM")
+	setBoolFromEnvVariable(&configuration.TimerRoomUseWipBranchQualifier, "MOB_TIMER_ROOM_USE_WIP_BRANCH_QUALIFIER")
+	setBoolFromEnvVariable(&configuration.TimerLocal, "MOB_TIMER_LOCAL")
+	setStringFromEnvVariable(&configuration.TimerUser, "MOB_TIMER_USER")
+	setStringFromEnvVariable(&configuration.TimerUrl, "MOB_TIMER_URL")
 
 	return configuration
 }
@@ -368,29 +459,6 @@ func setBoolFromEnvVariable(s *bool, key string) {
 	}
 }
 
-func setBoolFromEnvVariableSet(s *bool, overridden *bool, key string) {
-	value, set := os.LookupEnv(key)
-
-	if !set {
-		debugInfo("key " + key + " is not set")
-		return
-	}
-
-	debugInfo("found " + key + "=" + value)
-
-	if value == "true" {
-		*s = true
-		*overridden = true
-		debugInfo("overriding " + key + " =" + strconv.FormatBool(*s))
-	} else if value == "false" {
-		*s = false
-		*overridden = true
-		debugInfo("overriding " + key + " =" + strconv.FormatBool(*s))
-	} else {
-		sayError("ignoring " + key + " =" + value + " (not a boolean)")
-	}
-}
-
 func removed(key string, message string) {
 	if _, set := os.LookupEnv(key); set {
 		say("Configuration option '" + key + "' is no longer used.")
@@ -412,7 +480,7 @@ func experimental(key string) {
 }
 
 func config(c Configuration) {
-	say("MOB_CLI_NAME" + "=" + quote(c.cliName))
+	say("MOB_CLI_NAME" + "=" + quote(c.CliName))
 	say("MOB_REMOTE_NAME" + "=" + quote(c.RemoteName))
 	say("MOB_WIP_COMMIT_MESSAGE" + "=" + quote(c.WipCommitMessage))
 	say("MOB_REQUIRE_COMMIT_MESSAGE" + "=" + strconv.FormatBool(c.RequireCommitMessage))
@@ -420,17 +488,17 @@ func config(c Configuration) {
 	say("MOB_VOICE_MESSAGE" + "=" + quote(c.VoiceMessage))
 	say("MOB_NOTIFY_COMMAND" + "=" + quote(c.NotifyCommand))
 	say("MOB_NOTIFY_MESSAGE" + "=" + quote(c.NotifyMessage))
-	say("MOB_NEXT_STAY" + "=" + strconv.FormatBool(c.MobNextStay))
-	say("MOB_START_INCLUDE_UNCOMMITTED_CHANGES" + "=" + strconv.FormatBool(c.MobStartIncludeUncommittedChanges))
+	say("MOB_NEXT_STAY" + "=" + strconv.FormatBool(c.NextStay))
+	say("MOB_START_INCLUDE_UNCOMMITTED_CHANGES" + "=" + strconv.FormatBool(c.StartIncludeUncommittedChanges))
 	say("MOB_WIP_BRANCH_QUALIFIER" + "=" + quote(c.WipBranchQualifier))
 	say("MOB_WIP_BRANCH_QUALIFIER_SEPARATOR" + "=" + quote(c.WipBranchQualifierSeparator))
-	say("MOB_DONE_SQUASH" + "=" + strconv.FormatBool(c.MobDoneSquash))
-	say("MOB_TIMER" + "=" + c.MobTimer)
-	say("MOB_TIMER_ROOM" + "=" + quote(c.MobTimerRoom))
-	say("MOB_TIMER_ROOM_USE_WIP_BRANCH_QUALIFIER" + "=" + strconv.FormatBool(c.MobTimerRoomUseWipBranchQualifier))
-	say("MOB_TIMER_LOCAL" + "=" + strconv.FormatBool(c.MobTimerLocal))
-	say("MOB_TIMER_USER" + "=" + quote(c.MobTimerUser))
-	say("MOB_TIMER_URL" + "=" + quote(c.MobTimerUrl))
+	say("MOB_DONE_SQUASH" + "=" + strconv.FormatBool(c.DoneSquash))
+	say("MOB_TIMER" + "=" + c.Timer)
+	say("MOB_TIMER_ROOM" + "=" + quote(c.TimerRoom))
+	say("MOB_TIMER_ROOM_USE_WIP_BRANCH_QUALIFIER" + "=" + strconv.FormatBool(c.TimerRoomUseWipBranchQualifier))
+	say("MOB_TIMER_LOCAL" + "=" + strconv.FormatBool(c.TimerLocal))
+	say("MOB_TIMER_USER" + "=" + quote(c.TimerUser))
+	say("MOB_TIMER_URL" + "=" + quote(c.TimerUrl))
 	say("MOB_STASH_NAME" + "=" + quote(c.StashName))
 }
 
@@ -445,19 +513,16 @@ func parseArgs(args []string, configuration Configuration) (command string, para
 		arg := args[i]
 		switch arg {
 		case "--include-uncommitted-changes", "-i":
-			newConfiguration.MobStartIncludeUncommittedChanges = true
+			newConfiguration.StartIncludeUncommittedChanges = true
 		case "--debug":
 			// ignore this, already parsed
 		case "--stay", "-s":
-			newConfiguration.MobNextStay = true
-			newConfiguration.MobNextStaySet = true
+			newConfiguration.NextStay = true
 		case "--return-to-base-branch", "-r":
-			newConfiguration.MobNextStay = false
-			newConfiguration.MobNextStaySet = true
+			newConfiguration.NextStay = false
 		case "--branch", "-b":
 			if i+1 != len(args) {
 				newConfiguration.WipBranchQualifier = args[i+1]
-				newConfiguration.WipBranchQualifierSet = true
 			}
 			i++ // skip consumed parameter
 		case "--message", "-m":
@@ -466,9 +531,9 @@ func parseArgs(args []string, configuration Configuration) (command string, para
 			}
 			i++ // skip consumed parameter
 		case "--squash":
-			newConfiguration.MobDoneSquash = true
+			newConfiguration.DoneSquash = true
 		case "--no-squash":
-			newConfiguration.MobDoneSquash = false
+			newConfiguration.DoneSquash = false
 		default:
 			if i == 1 {
 				command = arg
@@ -492,8 +557,8 @@ func execute(command string, parameter []string, configuration Configuration) {
 		if len(parameter) > 0 {
 			timer := parameter[0]
 			startTimer(timer, configuration)
-		} else if configuration.MobTimer != "" {
-			startTimer(configuration.MobTimer, configuration)
+		} else if configuration.Timer != "" {
+			startTimer(configuration.Timer, configuration)
 		} else {
 			sayInfo("It's now " + currentTime() + ". Happy collaborating!")
 		}
@@ -515,8 +580,8 @@ func execute(command string, parameter []string, configuration Configuration) {
 		if len(parameter) > 0 {
 			timer := parameter[0]
 			startTimer(timer, configuration)
-		} else if configuration.MobTimer != "" {
-			startTimer(configuration.MobTimer, configuration)
+		} else if configuration.Timer != "" {
+			startTimer(configuration.Timer, configuration)
 		} else {
 			help(configuration)
 		}
@@ -633,8 +698,8 @@ func startTimer(timerInMinutes string, configuration Configuration) {
 
 	room := getMobTimerRoom(configuration)
 	if room != "" {
-		user := getUserForMobTimer(configuration.MobTimerUser)
-		err := httpPutTimer(timeoutInMinutes, room, user, configuration.MobTimerUrl)
+		user := getUserForMobTimer(configuration.TimerUser)
+		err := httpPutTimer(timeoutInMinutes, room, user, configuration.TimerUrl)
 		if err != nil {
 			sayError("remote timer couldn't be started")
 			sayError(err.Error())
@@ -643,7 +708,7 @@ func startTimer(timerInMinutes string, configuration Configuration) {
 		}
 	}
 
-	if configuration.MobTimerLocal {
+	if configuration.TimerLocal {
 		err := executeCommandsInBackgroundProcess(getSleepCommand(timeoutInSeconds), getVoiceCommand(configuration.VoiceMessage, configuration.VoiceCommand), getNotifyCommand(configuration.NotifyMessage, configuration.NotifyCommand))
 
 		if err != nil {
@@ -671,11 +736,11 @@ func getMobTimerRoom(configuration Configuration) string {
 		}
 	}
 
-	if configuration.MobTimerRoomUseWipBranchQualifier && currentWipBranchQualifier != "" {
+	if configuration.TimerRoomUseWipBranchQualifier && currentWipBranchQualifier != "" {
 		sayInfo("Using wip branch qualifier for room name")
 		return currentWipBranchQualifier
 	}
-	return configuration.MobTimerRoom
+	return configuration.TimerRoom
 }
 
 func startBreakTimer(timerInMinutes string, configuration Configuration) {
@@ -688,8 +753,8 @@ func startBreakTimer(timerInMinutes string, configuration Configuration) {
 	timerSuccessful := false
 	room := getMobTimerRoom(configuration)
 	if room != "" {
-		user := getUserForMobTimer(configuration.MobTimerUser)
-		err := httpPutBreakTimer(timeoutInMinutes, room, user, configuration.MobTimerUrl)
+		user := getUserForMobTimer(configuration.TimerUser)
+		err := httpPutBreakTimer(timeoutInMinutes, room, user, configuration.TimerUrl)
 		if err != nil {
 			sayError("remote break timer couldn't be started")
 			sayError(err.Error())
@@ -698,7 +763,7 @@ func startBreakTimer(timerInMinutes string, configuration Configuration) {
 		}
 	}
 
-	if configuration.MobTimerLocal {
+	if configuration.TimerLocal {
 		err := executeCommandsInBackgroundProcess(getSleepCommand(timeoutInSeconds), getVoiceCommand("mob start", configuration.VoiceCommand), getNotifyCommand("mob start", configuration.NotifyCommand))
 
 		if err != nil {
@@ -803,7 +868,7 @@ func reset(configuration Configuration) {
 
 func start(configuration Configuration) error {
 	uncommittedChanges := hasUncommittedChanges()
-	if uncommittedChanges && !configuration.MobStartIncludeUncommittedChanges {
+	if uncommittedChanges && !configuration.StartIncludeUncommittedChanges {
 		sayInfo("cannot start; clean working tree required")
 		sayUnstagedChangesInfo()
 		sayUntrackedFilesInfo()
@@ -849,7 +914,7 @@ func start(configuration Configuration) error {
 		startNewMobSession(configuration)
 	}
 
-	if uncommittedChanges && configuration.MobStartIncludeUncommittedChanges {
+	if uncommittedChanges && configuration.StartIncludeUncommittedChanges {
 		stashes := silentgit("stash", "list")
 		stash := findStashByName(stashes, configuration.StashName)
 		git("stash", "pop", stash)
@@ -868,7 +933,7 @@ func warnForActiveWipBranches(configuration Configuration, currentBaseBranch Bra
 
 	// TODO show all active wip branches, even non-qualified ones
 	existingWipBranches := getWipBranchesForBaseBranch(currentBaseBranch, configuration)
-	if len(existingWipBranches) > 0 && !configuration.WipBranchQualifierSet {
+	if len(existingWipBranches) > 0 && configuration.WipBranchQualifier == "" {
 		sayWarning("Creating a new wip branch even though preexisting wip branches have been detected.")
 		for _, wipBranch := range existingWipBranches {
 			sayWithPrefix(wipBranch, "  - ")
@@ -985,7 +1050,7 @@ func next(configuration Configuration) {
 	}
 	showNext(configuration)
 
-	if !configuration.MobNextStay {
+	if !configuration.NextStay {
 		git("checkout", currentBaseBranch.Name)
 	}
 }
@@ -1035,7 +1100,7 @@ func done(configuration Configuration) {
 
 		git("branch", "-D", wipBranch.Name)
 
-		if uncommittedChanges && !configuration.MobDoneSquash { // give the user the chance to name their final commit
+		if uncommittedChanges && !configuration.DoneSquash { // give the user the chance to name their final commit
 			git("reset", "--soft", "HEAD^")
 		}
 
@@ -1053,7 +1118,7 @@ func done(configuration Configuration) {
 
 		if hasUncommittedChanges() {
 			sayTodo("To finish, use", "git commit")
-		} else if configuration.MobDoneSquash {
+		} else if configuration.DoneSquash {
 			sayInfo("nothing was done, so nothing to commit")
 		}
 
@@ -1069,7 +1134,7 @@ func gitDir() string {
 }
 
 func squashOrNoCommit(configuration Configuration) string {
-	if configuration.MobDoneSquash {
+	if configuration.DoneSquash {
 		return "--squash"
 	} else {
 		return "--no-commit"
@@ -1189,7 +1254,7 @@ func showNext(configuration Configuration) {
 }
 
 func help(configuration Configuration) {
-	output := configuration.cliName + ` enables a smooth Git handover
+	output := configuration.CliName + ` enables a smooth Git handover
 
 Basic Commands:
   start              start session from base branch in wip branch

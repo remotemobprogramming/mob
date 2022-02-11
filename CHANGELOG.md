@@ -1,3 +1,6 @@
+# 2.4.0
+- As an alternative to the environment variables, you can configure the mob tool with a `.mob` file in your home directory. For an example have a look at `mob-configuration-example` file.  
+
 # 2.3.0
 - With `export MOB_TIMER_ROOM_USE_WIP_BRANCH_QUALIFIER=true` the room name is automatically derived from the value you passed in via the `mob start --branch <branch>` parameter.
 
