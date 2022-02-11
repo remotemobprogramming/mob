@@ -1,5 +1,7 @@
 # 2.4.0
-- As an alternative to the environment variables, you can configure the mob tool with a `.mob` file in your home directory. For an example have a look at `mob-configuration-example` file.  
+- As an alternative to the environment variables, you can configure the mob tool with a `.mob` file in your home directory. For an example have a look at `mob-configuration-example` file. 
+- As an alternative to the environment variables, you can configure the mob tool with a `.mob` file in your git project root directory. The configuration options `MOB_VOICE_COMMAND`, `MOB_VOICE_MESSAGE`, `MOB_NOTIFY_COMMAND`, and `MOB_NOTIFY_MESSAGE` are disabled for the project specific configuration to prevent bash injection attacks.
+Thanks to @vrpntngr & @hollesse making this release possible as part of the @INNOQ Hands-On Event, February 2022.
 
 # 2.3.0
 - With `export MOB_TIMER_ROOM_USE_WIP_BRANCH_QUALIFIER=true` the room name is automatically derived from the value you passed in via the `mob start --branch <branch>` parameter.

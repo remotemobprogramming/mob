@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"os/user"
 	"reflect"
 	"runtime"
 	"strconv"
@@ -211,7 +212,13 @@ func main() {
 
 	configuration := getDefaultConfiguration()
 	configuration = parseEnvironmentVariables(configuration)
-	configuration = parseSettings(configuration, userConfigurationPath)
+
+	currentUser, _ := user.Current()
+	userConfigurationPath = currentUser.HomeDir + "/.mob"
+	configuration = parseConfiguration(configuration, userConfigurationPath)
+	if isGit() {
+		configuration = parseProjectConfiguration(configuration, gitRootDir()+"/.mob")
+	}
 	debugInfo("Args '" + strings.Join(os.Args, " ") + "'")
 	currentCliName := currentCliName(os.Args[0])
 	if currentCliName != configuration.CliName {
@@ -287,12 +294,14 @@ func (c Configuration) mob(command string) string {
 	return c.CliName + " " + command
 }
 
-func parseSettings(configuration Configuration, path string) Configuration {
+func parseConfiguration(configuration Configuration, path string) Configuration {
 	file, err := os.Open(path)
 
 	if err != nil {
-		debugInfo(`No configuration file found.`)
+		debugInfo("No configuration file found. (" + path + ") Error: " + err.Error())
 		return configuration
+	} else {
+		debugInfo("Found configuration file at " + path)
 	}
 
 	fileScanner := bufio.NewScanner(file)
@@ -325,6 +334,77 @@ func parseSettings(configuration Configuration, path string) Configuration {
 			setUnquotedString(&configuration.NotifyCommand, key, value)
 		case "MOB_NOTIFY_MESSAGE":
 			setUnquotedString(&configuration.NotifyMessage, key, value)
+		case "MOB_NEXT_STAY":
+			setBoolean(&configuration.NextStay, key, value)
+		case "MOB_START_INCLUDE_UNCOMMITTED_CHANGES":
+			setBoolean(&configuration.StartIncludeUncommittedChanges, key, value)
+		case "MOB_WIP_BRANCH_QUALIFIER":
+			setUnquotedString(&configuration.WipBranchQualifier, key, value)
+		case "MOB_WIP_BRANCH_QUALIFIER_SEPARATOR":
+			setUnquotedString(&configuration.WipBranchQualifierSeparator, key, value)
+		case "MOB_DONE_SQUASH":
+			setBoolean(&configuration.DoneSquash, key, value)
+		case "MOB_TIMER":
+			setUnquotedString(&configuration.Timer, key, value)
+		case "MOB_TIMER_ROOM":
+			setUnquotedString(&configuration.TimerRoom, key, value)
+		case "MOB_TIMER_ROOM_USE_WIP_BRANCH_QUALIFIER":
+			setBoolean(&configuration.TimerRoomUseWipBranchQualifier, key, value)
+		case "MOB_TIMER_LOCAL":
+			setBoolean(&configuration.TimerLocal, key, value)
+		case "MOB_TIMER_USER":
+			setUnquotedString(&configuration.TimerUser, key, value)
+		case "MOB_TIMER_URL":
+			setUnquotedString(&configuration.TimerUrl, key, value)
+		case "MOB_STASH_NAME":
+			setUnquotedString(&configuration.StashName, key, value)
+
+		default:
+			continue
+		}
+	}
+
+	if err := fileScanner.Err(); err != nil {
+		sayWarning("Configuration file exists, but could not be read. (" + path + ")")
+	}
+
+	return configuration
+}
+
+func parseProjectConfiguration(configuration Configuration, path string) Configuration {
+	file, err := os.Open(path)
+
+	if err != nil {
+		debugInfo("No configuration file found. (" + path + ") Error: " + err.Error())
+		return configuration
+	} else {
+		debugInfo("Found configuration file at " + path)
+	}
+
+	fileScanner := bufio.NewScanner(file)
+
+	for fileScanner.Scan() {
+		line := strings.TrimSpace(fileScanner.Text())
+		debugInfo(line)
+		if !strings.Contains(line, "=") {
+			debugInfo("Skip line because line contains no =. Line=" + line)
+			continue
+		}
+		key := line[0:strings.Index(line, "=")]
+		value := strings.TrimPrefix(line, key+"=")
+		debugInfo("Key is " + key)
+		debugInfo("Value is " + value)
+		switch key {
+		case "MOB_VOICE_COMMAND", "MOB_VOICE_MESSAGE", "MOB_NOTIFY_COMMAND", "MOB_NOTIFY_MESSAGE":
+			sayWarning("Skipped overwriting key " + key + " from project/.mob file out of security reasons!")
+		case "MOB_CLI_NAME":
+			setUnquotedString(&configuration.CliName, key, value)
+		case "MOB_REMOTE_NAME":
+			setUnquotedString(&configuration.RemoteName, key, value)
+		case "MOB_WIP_COMMIT_MESSAGE":
+			setUnquotedString(&configuration.WipCommitMessage, key, value)
+		case "MOB_REQUIRE_COMMIT_MESSAGE":
+			setBoolean(&configuration.RequireCommitMessage, key, value)
 		case "MOB_NEXT_STAY":
 			setBoolean(&configuration.NextStay, key, value)
 		case "MOB_START_INCLUDE_UNCOMMITTED_CHANGES":
@@ -493,7 +573,7 @@ func config(c Configuration) {
 	say("MOB_WIP_BRANCH_QUALIFIER" + "=" + quote(c.WipBranchQualifier))
 	say("MOB_WIP_BRANCH_QUALIFIER_SEPARATOR" + "=" + quote(c.WipBranchQualifierSeparator))
 	say("MOB_DONE_SQUASH" + "=" + strconv.FormatBool(c.DoneSquash))
-	say("MOB_TIMER" + "=" + c.Timer)
+	say("MOB_TIMER" + "=" + quote(c.Timer))
 	say("MOB_TIMER_ROOM" + "=" + quote(c.TimerRoom))
 	say("MOB_TIMER_ROOM_USE_WIP_BRANCH_QUALIFIER" + "=" + strconv.FormatBool(c.TimerRoomUseWipBranchQualifier))
 	say("MOB_TIMER_LOCAL" + "=" + strconv.FormatBool(c.TimerLocal))
@@ -1131,6 +1211,10 @@ func done(configuration Configuration) {
 
 func gitDir() string {
 	return silentgit("rev-parse", "--absolute-git-dir")
+}
+
+func gitRootDir() string {
+	return strings.TrimSuffix(gitDir(), "/.git")
 }
 
 func squashOrNoCommit(configuration Configuration) string {
