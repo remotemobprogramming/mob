@@ -62,16 +62,23 @@ On Windows via [Scoop](https://scoop.sh/):
 scoop install mob
 ```
 
-On [Nix](http://nixos.org) through the [mob.nix](./mob.nix) expression:
-
-```
-mob = callPackage ./mob.nix {withSpeech = true;};
-```
-
 On Arch Linux via yay:
 
 ```bash
 yay -S mobsh-bin
+```
+
+On [Nix](http://nixos.org) through declarative installation
+
+```nix
+{ pkgs, ... }:
+{
+  # Either for all users
+  environment.systemPackages = with pkgs; [ mob ];
+
+  # Or for an explicit user
+  users.users."youruser".packages = with pkgs; [ mob ];
+}
 ```
 
 On Ubuntu there's an EXPERIMENTAL [snap](https://snapcraft.io/mob-sh) package with a known limitation (ssh-agent not working):
@@ -287,6 +294,10 @@ ms() {
 ```
 
 ## More on Installation
+
+### Known Issues
+
+- When you have an ssh key with a password and you running mob on windows in powershell, you will not be able to enter a password for your ssh key. You can circumvent this problem by using the git bash instead of powershell.
 
 ### Linux Timer
 
