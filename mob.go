@@ -3,10 +3,15 @@ package main
 import (
 	"bufio"
 	"bytes"
+	"embed"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/faiface/beep"
+	"github.com/faiface/beep/mp3"
+	"github.com/faiface/beep/speaker"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"os"
 	"os/exec"
@@ -33,8 +38,6 @@ type Configuration struct {
 	RemoteName                     string // override with MOB_REMOTE_NAME environment variable
 	WipCommitMessage               string // override with MOB_WIP_COMMIT_MESSAGE environment variable
 	RequireCommitMessage           bool   // override with MOB_REQUIRE_COMMIT_MESSAGE environment variable
-	VoiceCommand                   string // override with MOB_VOICE_COMMAND environment variable
-	VoiceMessage                   string // override with MOB_VOICE_MESSAGE environment variable
 	NotifyCommand                  string // override with MOB_NOTIFY_COMMAND environment variable
 	NotifyMessage                  string // override with MOB_NOTIFY_MESSAGE environment variable
 	NextStay                       bool   // override with MOB_NEXT_STAY environment variable
@@ -244,24 +247,18 @@ func currentCliName(argZero string) string {
 }
 
 func getDefaultConfiguration() Configuration {
-	voiceCommand := ""
 	notifyCommand := ""
 	switch runtime.GOOS {
 	case "darwin":
-		voiceCommand = "say \"%s\""
 		notifyCommand = "/usr/bin/osascript -e 'display notification \"%s\"'"
 	case "linux":
-		voiceCommand = "say \"%s\""
 		notifyCommand = "notify-send \"%s\""
 	case "windows":
-		voiceCommand = "(New-Object -ComObject SAPI.SPVoice).Speak(\\\"%s\\\")"
 	}
 	return Configuration{
 		CliName:                        "mob",
 		RemoteName:                     "origin",
 		WipCommitMessage:               "mob next [ci-skip] [ci skip] [skip ci]",
-		VoiceCommand:                   voiceCommand,
-		VoiceMessage:                   "mob next",
 		NotifyCommand:                  notifyCommand,
 		NotifyMessage:                  "mob next",
 		NextStay:                       true,
@@ -326,10 +323,6 @@ func parseConfiguration(configuration Configuration, path string) Configuration 
 			setUnquotedString(&configuration.WipCommitMessage, key, value)
 		case "MOB_REQUIRE_COMMIT_MESSAGE":
 			setBoolean(&configuration.RequireCommitMessage, key, value)
-		case "MOB_VOICE_COMMAND":
-			setUnquotedString(&configuration.VoiceCommand, key, value)
-		case "MOB_VOICE_MESSAGE":
-			setUnquotedString(&configuration.VoiceMessage, key, value)
 		case "MOB_NOTIFY_COMMAND":
 			setUnquotedString(&configuration.NotifyCommand, key, value)
 		case "MOB_NOTIFY_MESSAGE":
@@ -466,7 +459,6 @@ func parseEnvironmentVariables(configuration Configuration) Configuration {
 	setStringFromEnvVariable(&configuration.CliName, "MOB_CLI_NAME")
 	if configuration.CliName != getDefaultConfiguration().CliName {
 		configuration.WipCommitMessage = configuration.CliName + " next [ci-skip] [ci skip] [skip ci]"
-		configuration.VoiceMessage = configuration.CliName + " next"
 		configuration.NotifyMessage = configuration.CliName + " next"
 	}
 
@@ -478,8 +470,6 @@ func parseEnvironmentVariables(configuration Configuration) Configuration {
 	setStringFromEnvVariable(&configuration.RemoteName, "MOB_REMOTE_NAME")
 	setStringFromEnvVariable(&configuration.WipCommitMessage, "MOB_WIP_COMMIT_MESSAGE")
 	setBoolFromEnvVariable(&configuration.RequireCommitMessage, "MOB_REQUIRE_COMMIT_MESSAGE")
-	setOptionalStringFromEnvVariable(&configuration.VoiceCommand, "MOB_VOICE_COMMAND")
-	setStringFromEnvVariable(&configuration.VoiceMessage, "MOB_VOICE_MESSAGE")
 	setOptionalStringFromEnvVariable(&configuration.NotifyCommand, "MOB_NOTIFY_COMMAND")
 	setStringFromEnvVariable(&configuration.NotifyMessage, "MOB_NOTIFY_MESSAGE")
 	setStringFromEnvVariable(&configuration.WipBranchQualifierSeparator, "MOB_WIP_BRANCH_QUALIFIER_SEPARATOR")
@@ -564,8 +554,6 @@ func config(c Configuration) {
 	say("MOB_REMOTE_NAME" + "=" + quote(c.RemoteName))
 	say("MOB_WIP_COMMIT_MESSAGE" + "=" + quote(c.WipCommitMessage))
 	say("MOB_REQUIRE_COMMIT_MESSAGE" + "=" + strconv.FormatBool(c.RequireCommitMessage))
-	say("MOB_VOICE_COMMAND" + "=" + quote(c.VoiceCommand))
-	say("MOB_VOICE_MESSAGE" + "=" + quote(c.VoiceMessage))
 	say("MOB_NOTIFY_COMMAND" + "=" + quote(c.NotifyCommand))
 	say("MOB_NOTIFY_MESSAGE" + "=" + quote(c.NotifyMessage))
 	say("MOB_NEXT_STAY" + "=" + strconv.FormatBool(c.NextStay))
@@ -672,7 +660,13 @@ func execute(command string, parameter []string, configuration Configuration) {
 			help(configuration)
 		}
 	case "moo":
-		moo(configuration)
+		moo()
+	case "play":
+		if len(parameter) > 0 {
+			play(parameter[0])
+		} else {
+			say("Could not play any sound")
+		}
 	case "sw", "squash-wip":
 		if len(parameter) > 1 && parameter[0] == "--git-editor" {
 			squashWipGitEditor(parameter[1], configuration)
@@ -734,13 +728,6 @@ func injectCommandWithMessage(command string, message string) string {
 	return fmt.Sprintf(command, message)
 }
 
-func getVoiceCommand(message string, voiceCommand string) string {
-	if len(voiceCommand) == 0 {
-		return ""
-	}
-	return injectCommandWithMessage(voiceCommand, message)
-}
-
 func getNotifyCommand(message string, notifyCommand string) string {
 	if len(notifyCommand) == 0 {
 		return ""
@@ -789,7 +776,10 @@ func startTimer(timerInMinutes string, configuration Configuration) {
 	}
 
 	if configuration.TimerLocal {
-		err := executeCommandsInBackgroundProcess(getSleepCommand(timeoutInSeconds), getVoiceCommand(configuration.VoiceMessage, configuration.VoiceCommand), getNotifyCommand(configuration.NotifyMessage, configuration.NotifyCommand))
+		err := executeCommandsInBackgroundProcess(
+			getSleepCommand(timeoutInSeconds),
+			"mob play mobnext",
+			getNotifyCommand(configuration.NotifyMessage, configuration.NotifyCommand))
 
 		if err != nil {
 			sayError(fmt.Sprintf("timer couldn't be started on your system (%s)", runtime.GOOS))
@@ -844,7 +834,10 @@ func startBreakTimer(timerInMinutes string, configuration Configuration) {
 	}
 
 	if configuration.TimerLocal {
-		err := executeCommandsInBackgroundProcess(getSleepCommand(timeoutInSeconds), getVoiceCommand("mob start", configuration.VoiceCommand), getNotifyCommand("mob start", configuration.NotifyCommand))
+		err := executeCommandsInBackgroundProcess(
+			getSleepCommand(timeoutInSeconds),
+			"mob play mobstart",
+			getNotifyCommand("mob start", configuration.NotifyCommand))
 
 		if err != nil {
 			sayError(fmt.Sprintf("break timer couldn't be started on your system (%s)", runtime.GOOS))
@@ -919,16 +912,38 @@ func currentTime() string {
 	return time.Now().Format("15:04")
 }
 
-func moo(configuration Configuration) {
-	voiceMessage := "moo"
-	err := executeCommandsInBackgroundProcess(getVoiceCommand(voiceMessage, configuration.VoiceCommand))
+//go:embed *.mp3
+var mp3files embed.FS
 
+func moo() {
+	play("moo")
+}
+
+func play(arg string) {
+	playMP3(arg + ".mp3")
+	sayInfo(arg)
+}
+
+func playMP3(filename string) {
+	f, err := mp3files.Open(filename)
 	if err != nil {
-		sayError(fmt.Sprintf("can't run voice command on your system (%s)", runtime.GOOS))
-		sayError(err.Error())
-	} else {
-		sayInfo(voiceMessage)
+		log.Fatal(err)
 	}
+
+	streamer, format, err := mp3.Decode(f)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer streamer.Close()
+
+	speaker.Init(format.SampleRate, format.SampleRate.N(time.Second/10))
+
+	done := make(chan bool)
+	speaker.Play(beep.Seq(streamer, beep.Callback(func() {
+		done <- true
+	})))
+
+	<-done
 }
 
 func reset(configuration Configuration) {

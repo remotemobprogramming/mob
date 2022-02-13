@@ -344,8 +344,6 @@ func TestReadConfigurationFromFileOverrideEverything(t *testing.T) {
 	equals(t, "gitlab", actualConfiguration.RemoteName)
 	equals(t, "team next", actualConfiguration.WipCommitMessage)
 	equals(t, true, actualConfiguration.RequireCommitMessage)
-	equals(t, "whisper \"%s\"", actualConfiguration.VoiceCommand)
-	equals(t, "team next", actualConfiguration.VoiceMessage)
 	equals(t, "/usr/bin/osascript -e 'display notification \"%s!!!\"'", actualConfiguration.NotifyCommand)
 	equals(t, "team next", actualConfiguration.NotifyMessage)
 	equals(t, false, actualConfiguration.NextStay)
@@ -850,7 +848,7 @@ func TestStartDoneLocalFeatureBranch(t *testing.T) {
 func TestGitRootDir(t *testing.T) {
 	setup(t)
 	expectedPath, _ := filepath.EvalSymlinks(tempDir + "/local")
-	equals(t, expectedPath, gitRootDir());
+	equals(t, expectedPath, gitRootDir())
 }
 
 func TestBothCreateNonemptyCommitWithNext(t *testing.T) {
