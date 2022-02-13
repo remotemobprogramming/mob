@@ -1175,6 +1175,8 @@ func done(configuration Configuration) {
 		git("merge", baseBranch.remote(configuration).Name, "--ff-only")
 		mergeFailed := gitignorefailure("merge", squashOrNoCommit(configuration), "--ff", wipBranch.Name)
 		if mergeFailed != nil {
+			sayWarning("Skipped deleting " + wipBranch.Name + " because of merge conflicts.")
+			sayWarning("To fix this, solve the merge conflict manually, commit, push, and afterwards delete " + wipBranch.Name)
 			return
 		}
 
