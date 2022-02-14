@@ -338,27 +338,27 @@ You can avoid the long path by adding it to your windows path variable.
 Show your current configuration with `mob config`:
 
 ```
-MOB_CLI_NAME=mob
-MOB_REMOTE_NAME=origin
-MOB_WIP_COMMIT_MESSAGE=mob next [ci-skip] [ci skip] [skip ci]
+MOB_CLI_NAME="mob"
+MOB_REMOTE_NAME="origin"
+MOB_WIP_COMMIT_MESSAGE="mob next [ci-skip] [ci skip] [skip ci]"
 MOB_REQUIRE_COMMIT_MESSAGE=false
-MOB_VOICE_COMMAND=say "%s"
-MOB_VOICE_MESSAGE=mob next
-MOB_NOTIFY_COMMAND=/usr/bin/osascript -e 'display notification "%s"'
-MOB_NOTIFY_MESSAGE=mob next
+MOB_NOTIFY_COMMAND="/usr/bin/osascript -e 'display notification \"%s\"'"
+MOB_NOTIFY_MESSAGE="mob next"
 MOB_NEXT_STAY=true
 MOB_START_INCLUDE_UNCOMMITTED_CHANGES=false
-MOB_WIP_BRANCH_QUALIFIER=
-MOB_WIP_BRANCH_QUALIFIER_SEPARATOR=-
+MOB_WIP_BRANCH_QUALIFIER=""
+MOB_WIP_BRANCH_QUALIFIER_SEPARATOR="-"
 MOB_DONE_SQUASH=true
-MOB_TIMER=
-MOB_TIMER_ROOM=
+MOB_TIMER=""
+MOB_TIMER_ROOM=""
 MOB_TIMER_ROOM_USE_WIP_BRANCH_QUALIFIER=false
 MOB_TIMER_LOCAL=true
-MOB_TIMER_USER=
-MOB_TIMER_URL=https://timer.mob.sh/
-MOB_STASH_NAME=mob-stash-name
+MOB_TIMER_USER=""
+MOB_TIMER_URL="https://timer.mob.sh/"
+MOB_STASH_NAME="mob-stash-name"
 ```
+
+Override default value permanently via a `.mob` file in your user home or in your git project repository root. (recommended)
 
 Override default value permanently via environment variables:
 
