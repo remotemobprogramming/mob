@@ -67,7 +67,7 @@ func getEnvGitEditor() (gitEditor string, gitSequenceEditor string) {
 func mobExecutable() string {
 	if isTestEnvironment() {
 		wd, _ := os.Getwd()
-		return "go run $(ls -1 " + wd + "/*.go | grep -v _test.go)"
+		return "go run github.com/remotemobprogramming/mob/v2" + wd
 	} else {
 		return "mob"
 	}
