@@ -229,6 +229,17 @@ Examples:
   - Have your editor save your files on every keystroke automatically. IntelliJ products do this automatically. VS Code, however, needs to be configured via "File > Auto Save toggle".
   - *Why?* Sometimes people forget to save their files. With autosave, any change will be handed over via `mob next`.
 
+### The Perfect Git Handover
+
+The perfect git handover is quick, requires no talking, and allows the rest of the team to continue discussing how to best solve the current problem undisturbed by the handover. Here's how to achive that.
+
+- **Situation** Maria is typist sharing the screen, Mona is next
+- **Maria** runs `mob next`
+  - keeps sharing the screen with the terminal showing the successful run of `mob next`
+  - does nothing (i.e., no typing, no mouse cursor movement, no window switching)
+- **Mona** steals screenshare using keyboard shortcut, and, afterwards, runs `mob start`
+- **Maria** checks her twitter
+
 ### Complimentary Scripts
 
 `mob-start feature1` creates a new base branch `feature1` to immediately start a wip branch `mob/feature1` from there.
