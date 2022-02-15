@@ -231,7 +231,7 @@ Examples:
 
 ### The Perfect Git Handover
 
-The perfect git handover is quick, requires no talking, and allows the rest of the team to continue discussing how to best solve the current problem undisturbed by the handover. Here's how to achive that.
+The perfect git handover is quick, requires no talking, and allows the rest of the team to continue discussing how to best solve the current problem undisturbed by the handover. Here's how to achieve that.
 
 - **Situation** Maria is typist sharing the screen, Mona is next
 - **Maria** runs `mob next`
