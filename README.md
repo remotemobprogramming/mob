@@ -42,14 +42,15 @@ Smooth [git handover](https://www.remotemobprogramming.org/#git-handover) for re
 ## How to install
 
 The recommended way to install mob is as a binary via the provided install script:
-```
+
+```bash
 # works for macOS, linux, and even on windows in git bash
 curl -sL install.mob.sh | sh
 ```
 
 On macOS via homebrew:
 
-```
+```bash
 brew install remotemobprogramming/brew/mob
 
 # upgrade to latest version
@@ -58,7 +59,7 @@ brew upgrade remotemobprogramming/brew/mob
 
 On Windows via [Scoop](https://scoop.sh/):
 
-```
+```bash
 scoop install mob
 ```
 
@@ -94,18 +95,21 @@ sudo snap connect mob-sh:ssh-keys
 When you already have a working go environment with a defined GOPATH you can install latest via `go install`:
 
 With go &lt; 1.16
-```
+
+```bash
 go get github.com/remotemobprogramming/mob
 go install github.com/remotemobprogramming/mob
 ```
 
 go 1.16 introduced support for package@version syntax, so you can install directly with:
-```
+
+```bash
 go install github.com/remotemobprogramming/mob@latest
 ```
 
 or pick a specific version:
-```
+
+```bash
 go install github.com/remotemobprogramming/mob@v1.2.0
 ```
 
