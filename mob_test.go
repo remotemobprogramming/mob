@@ -339,7 +339,7 @@ func TestReadConfigurationFromFileOverrideEverything(t *testing.T) {
 		MOB_TIMER_URL="https://timer.innoq.io/"
 		MOB_STASH_NAME="team-stash-name"
 	`)
-	actualConfiguration := parseConfiguration(getDefaultConfiguration(), tempDir+"/.mob")
+	actualConfiguration := parseUserConfiguration(getDefaultConfiguration(), tempDir+"/.mob")
 	equals(t, "team", actualConfiguration.CliName)
 	equals(t, "gitlab", actualConfiguration.RemoteName)
 	equals(t, "team next", actualConfiguration.WipCommitMessage)
@@ -362,7 +362,7 @@ func TestReadConfigurationFromFileOverrideEverything(t *testing.T) {
 	equals(t, "team-stash-name", actualConfiguration.StashName)
 
 	createFile(t, ".mob", "\nMOB_TIMER_ROOM=\"Room\\\"\\\"_42\"\n")
-	actualConfiguration1 := parseConfiguration(getDefaultConfiguration(), tempDir+"/.mob")
+	actualConfiguration1 := parseUserConfiguration(getDefaultConfiguration(), tempDir+"/.mob")
 	equals(t, "Room\"\"_42", actualConfiguration1.TimerRoom)
 }
 
@@ -372,7 +372,7 @@ func TestReadConfigurationFromFileAndSkipBrokenLines(t *testing.T) {
 	setWorkingDir(tempDir)
 
 	createFile(t, ".mob", "\nMOB_TIMER_ROOM=\"Broken\" \"String\"")
-	actualConfiguration := parseConfiguration(getDefaultConfiguration(), tempDir+"/.mob")
+	actualConfiguration := parseUserConfiguration(getDefaultConfiguration(), tempDir+"/.mob")
 	equals(t, getDefaultConfiguration().TimerRoom, actualConfiguration.TimerRoom)
 }
 
@@ -381,7 +381,7 @@ func TestSkipIfConfigurationDoesNotExist(t *testing.T) {
 	tempDir = t.TempDir()
 	setWorkingDir(tempDir)
 
-	actualConfiguration := parseConfiguration(getDefaultConfiguration(), tempDir+"/.mob")
+	actualConfiguration := parseUserConfiguration(getDefaultConfiguration(), tempDir+"/.mob")
 	equals(t, getDefaultConfiguration(), actualConfiguration)
 }
 
@@ -850,7 +850,7 @@ func TestStartDoneLocalFeatureBranch(t *testing.T) {
 func TestGitRootDir(t *testing.T) {
 	setup(t)
 	expectedPath, _ := filepath.EvalSymlinks(tempDir + "/local")
-	equals(t, expectedPath, gitRootDir());
+	equals(t, expectedPath, gitRootDir())
 }
 
 func TestBothCreateNonemptyCommitWithNext(t *testing.T) {
@@ -1162,7 +1162,6 @@ func run(t *testing.T, name string, args ...string) *string {
 
 func createTestbed(t *testing.T, configuration Configuration) {
 	workingDir = ""
-	userConfigurationPath = ""
 
 	tempDir = t.TempDir()
 	say("Creating testbed in temporary directory " + tempDir)

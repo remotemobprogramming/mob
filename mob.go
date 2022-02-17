@@ -19,37 +19,37 @@ import (
 )
 
 const (
-	versionNumber = "2.4.0"
+	versionNumber = "2.5.0"
 )
 
 var (
-	workingDir            = ""
-	Debug                 = false // override with --debug parameter
-	userConfigurationPath = "~/.mob"
+	workingDir = ""
+	Debug      = false // override with --debug parameter
 )
 
 type Configuration struct {
-	CliName                        string // override with MOB_CLI_NAME environment variable
-	RemoteName                     string // override with MOB_REMOTE_NAME environment variable
-	WipCommitMessage               string // override with MOB_WIP_COMMIT_MESSAGE environment variable
-	RequireCommitMessage           bool   // override with MOB_REQUIRE_COMMIT_MESSAGE environment variable
-	VoiceCommand                   string // override with MOB_VOICE_COMMAND environment variable
-	VoiceMessage                   string // override with MOB_VOICE_MESSAGE environment variable
-	NotifyCommand                  string // override with MOB_NOTIFY_COMMAND environment variable
-	NotifyMessage                  string // override with MOB_NOTIFY_MESSAGE environment variable
-	NextStay                       bool   // override with MOB_NEXT_STAY environment variable
+	CliName                        string // override with MOB_CLI_NAME
+	RemoteName                     string // override with MOB_REMOTE_NAME
+	WipCommitMessage               string // override with MOB_WIP_COMMIT_MESSAGE
+	GitHooksEnabled                bool   // override with MOB_GIT_HOOKS_ENABLED
+	RequireCommitMessage           bool   // override with MOB_REQUIRE_COMMIT_MESSAGE
+	VoiceCommand                   string // override with MOB_VOICE_COMMAND
+	VoiceMessage                   string // override with MOB_VOICE_MESSAGE
+	NotifyCommand                  string // override with MOB_NOTIFY_COMMAND
+	NotifyMessage                  string // override with MOB_NOTIFY_MESSAGE
+	NextStay                       bool   // override with MOB_NEXT_STAY
 	StartIncludeUncommittedChanges bool   // override with MOB_START_INCLUDE_UNCOMMITTED_CHANGES variable
-	WipBranchQualifier             string // override with MOB_WIP_BRANCH_QUALIFIER environment variable
-	WipBranchQualifierSeparator    string // override with MOB_WIP_BRANCH_QUALIFIER_SEPARATOR environment variable
-	DoneSquash                     bool   // override with MOB_DONE_SQUASH environment variable
-	Timer                          string // override with MOB_TIMER environment variable
-	TimerRoom                      string // override with MOB_TIMER_ROOM environment variable
-	TimerLocal                     bool   // override with MOB_TIMER_LOCAL environment variable
-	TimerRoomUseWipBranchQualifier bool   // override with MOB_TIMER_ROOM_USE_WIP_BRANCH_QUALIFIER environment variable
-	TimerUser                      string // override with MOB_TIMER_USER environment variable
-	TimerUrl                       string // override with MOB_TIMER_URL environment variable
-	WipBranchPrefix                string // override with MOB_WIP_BRANCH_PREFIX environment variable (experimental)
-	StashName                      string // override with MOB_STASH_NAME environment variable
+	StashName                      string // override with MOB_STASH_NAME
+	WipBranchQualifier             string // override with MOB_WIP_BRANCH_QUALIFIER
+	WipBranchQualifierSeparator    string // override with MOB_WIP_BRANCH_QUALIFIER_SEPARATOR
+	WipBranchPrefix                string // override with MOB_WIP_BRANCH_PREFIX
+	DoneSquash                     bool   // override with MOB_DONE_SQUASH
+	Timer                          string // override with MOB_TIMER
+	TimerRoom                      string // override with MOB_TIMER_ROOM
+	TimerLocal                     bool   // override with MOB_TIMER_LOCAL
+	TimerRoomUseWipBranchQualifier bool   // override with MOB_TIMER_ROOM_USE_WIP_BRANCH_QUALIFIER
+	TimerUser                      string // override with MOB_TIMER_USER
+	TimerUrl                       string // override with MOB_TIMER_URL
 }
 
 func (c Configuration) wipBranchQualifierSuffix() string {
@@ -214,8 +214,8 @@ func main() {
 	configuration = parseEnvironmentVariables(configuration)
 
 	currentUser, _ := user.Current()
-	userConfigurationPath = currentUser.HomeDir + "/.mob"
-	configuration = parseConfiguration(configuration, userConfigurationPath)
+	userConfigurationPath := currentUser.HomeDir + "/.mob"
+	configuration = parseUserConfiguration(configuration, userConfigurationPath)
 	if isGit() {
 		configuration = parseProjectConfiguration(configuration, gitRootDir()+"/.mob")
 	}
@@ -260,6 +260,7 @@ func getDefaultConfiguration() Configuration {
 		CliName:                        "mob",
 		RemoteName:                     "origin",
 		WipCommitMessage:               "mob next [ci-skip] [ci skip] [skip ci]",
+		GitHooksEnabled:                false,
 		VoiceCommand:                   voiceCommand,
 		VoiceMessage:                   "mob next",
 		NotifyCommand:                  notifyCommand,
@@ -282,7 +283,7 @@ func getDefaultConfiguration() Configuration {
 
 func parseDebug(args []string) {
 	// debug needs to be parsed at the beginning to have DEBUG enabled as quickly as possible
-	// otherwise, parsing other environment variables or other parameters don't have debug enabled
+	// otherwise, parsing others or other parameters don't have debug enabled
 	for i := 0; i < len(args); i++ {
 		if args[i] == "--debug" {
 			Debug = true
@@ -294,14 +295,14 @@ func (c Configuration) mob(command string) string {
 	return c.CliName + " " + command
 }
 
-func parseConfiguration(configuration Configuration, path string) Configuration {
+func parseUserConfiguration(configuration Configuration, path string) Configuration {
 	file, err := os.Open(path)
 
 	if err != nil {
-		debugInfo("No configuration file found. (" + path + ") Error: " + err.Error())
+		debugInfo("No user configuration file found. (" + path + ") Error: " + err.Error())
 		return configuration
 	} else {
-		debugInfo("Found configuration file at " + path)
+		debugInfo("Found user configuration file at " + path)
 	}
 
 	fileScanner := bufio.NewScanner(file)
@@ -324,6 +325,8 @@ func parseConfiguration(configuration Configuration, path string) Configuration 
 			setUnquotedString(&configuration.RemoteName, key, value)
 		case "MOB_WIP_COMMIT_MESSAGE":
 			setUnquotedString(&configuration.WipCommitMessage, key, value)
+		case "MOB_GIT_HOOKS_ENABLED":
+			setBoolean(&configuration.GitHooksEnabled, key, value)
 		case "MOB_REQUIRE_COMMIT_MESSAGE":
 			setBoolean(&configuration.RequireCommitMessage, key, value)
 		case "MOB_VOICE_COMMAND":
@@ -365,7 +368,7 @@ func parseConfiguration(configuration Configuration, path string) Configuration 
 	}
 
 	if err := fileScanner.Err(); err != nil {
-		sayWarning("Configuration file exists, but could not be read. (" + path + ")")
+		sayWarning("User configuration file exists, but could not be read. (" + path + ")")
 	}
 
 	return configuration
@@ -375,10 +378,10 @@ func parseProjectConfiguration(configuration Configuration, path string) Configu
 	file, err := os.Open(path)
 
 	if err != nil {
-		debugInfo("No configuration file found. (" + path + ") Error: " + err.Error())
+		debugInfo("No project configuration file found. (" + path + ") Error: " + err.Error())
 		return configuration
 	} else {
-		debugInfo("Found configuration file at " + path)
+		debugInfo("Found project configuration file at " + path)
 	}
 
 	fileScanner := bufio.NewScanner(file)
@@ -403,6 +406,8 @@ func parseProjectConfiguration(configuration Configuration, path string) Configu
 			setUnquotedString(&configuration.RemoteName, key, value)
 		case "MOB_WIP_COMMIT_MESSAGE":
 			setUnquotedString(&configuration.WipCommitMessage, key, value)
+		case "MOB_GIT_HOOKS_ENABLED":
+			setBoolean(&configuration.GitHooksEnabled, key, value)
 		case "MOB_REQUIRE_COMMIT_MESSAGE":
 			setBoolean(&configuration.RequireCommitMessage, key, value)
 		case "MOB_NEXT_STAY":
@@ -436,7 +441,7 @@ func parseProjectConfiguration(configuration Configuration, path string) Configu
 	}
 
 	if err := fileScanner.Err(); err != nil {
-		sayWarning("Configuration file exists, but could not be read. (" + path + ")")
+		sayWarning("Project configuration file exists, but could not be read. (" + path + ")")
 	}
 
 	return configuration
@@ -477,6 +482,7 @@ func parseEnvironmentVariables(configuration Configuration) Configuration {
 
 	setStringFromEnvVariable(&configuration.RemoteName, "MOB_REMOTE_NAME")
 	setStringFromEnvVariable(&configuration.WipCommitMessage, "MOB_WIP_COMMIT_MESSAGE")
+	setBoolFromEnvVariable(&configuration.GitHooksEnabled, "MOB_GIT_HOOKS_ENABLED")
 	setBoolFromEnvVariable(&configuration.RequireCommitMessage, "MOB_REQUIRE_COMMIT_MESSAGE")
 	setOptionalStringFromEnvVariable(&configuration.VoiceCommand, "MOB_VOICE_COMMAND")
 	setStringFromEnvVariable(&configuration.VoiceMessage, "MOB_VOICE_MESSAGE")
@@ -563,6 +569,7 @@ func config(c Configuration) {
 	say("MOB_CLI_NAME" + "=" + quote(c.CliName))
 	say("MOB_REMOTE_NAME" + "=" + quote(c.RemoteName))
 	say("MOB_WIP_COMMIT_MESSAGE" + "=" + quote(c.WipCommitMessage))
+	say("MOB_GIT_HOOKS_ENABLED" + "=" + strconv.FormatBool(c.GitHooksEnabled))
 	say("MOB_REQUIRE_COMMIT_MESSAGE" + "=" + strconv.FormatBool(c.RequireCommitMessage))
 	say("MOB_VOICE_COMMAND" + "=" + quote(c.VoiceCommand))
 	say("MOB_VOICE_MESSAGE" + "=" + quote(c.VoiceMessage))
@@ -570,8 +577,10 @@ func config(c Configuration) {
 	say("MOB_NOTIFY_MESSAGE" + "=" + quote(c.NotifyMessage))
 	say("MOB_NEXT_STAY" + "=" + strconv.FormatBool(c.NextStay))
 	say("MOB_START_INCLUDE_UNCOMMITTED_CHANGES" + "=" + strconv.FormatBool(c.StartIncludeUncommittedChanges))
+	say("MOB_STASH_NAME" + "=" + quote(c.StashName))
 	say("MOB_WIP_BRANCH_QUALIFIER" + "=" + quote(c.WipBranchQualifier))
 	say("MOB_WIP_BRANCH_QUALIFIER_SEPARATOR" + "=" + quote(c.WipBranchQualifierSeparator))
+	say("MOB_WIP_BRANCH_PREFIX" + "=" + quote(c.WipBranchPrefix))
 	say("MOB_DONE_SQUASH" + "=" + strconv.FormatBool(c.DoneSquash))
 	say("MOB_TIMER" + "=" + quote(c.Timer))
 	say("MOB_TIMER_ROOM" + "=" + quote(c.TimerRoom))
@@ -579,7 +588,6 @@ func config(c Configuration) {
 	say("MOB_TIMER_LOCAL" + "=" + strconv.FormatBool(c.TimerLocal))
 	say("MOB_TIMER_USER" + "=" + quote(c.TimerUser))
 	say("MOB_TIMER_URL" + "=" + quote(c.TimerUrl))
-	say("MOB_STASH_NAME" + "=" + quote(c.StashName))
 }
 
 func quote(value string) string {
@@ -941,7 +949,7 @@ func reset(configuration Configuration) {
 		git("branch", "--delete", "--force", currentWipBranch.String())
 	}
 	if currentWipBranch.hasRemoteBranch(configuration) {
-		git("push", "--no-verify", configuration.RemoteName, "--delete", currentWipBranch.String())
+		git("push", configuration.gitHooksOption(), configuration.RemoteName, "--delete", currentWipBranch.String())
 	}
 	sayInfo("Branches " + currentWipBranch.String() + " and " + currentWipBranch.remote(configuration).String() + " deleted")
 }
@@ -1083,7 +1091,7 @@ func startNewMobSession(configuration Configuration) {
 
 	sayInfo("starting new session from " + currentBaseBranch.remote(configuration).String())
 	git("checkout", "-B", currentWipBranch.Name, currentBaseBranch.remote(configuration).Name)
-	git("push", "--no-verify", "--set-upstream", configuration.RemoteName, currentWipBranch.Name)
+	git("push", configuration.gitHooksOption(), "--set-upstream", configuration.RemoteName, currentWipBranch.Name)
 }
 
 func getUntrackedFiles() string {
@@ -1120,13 +1128,13 @@ func next(configuration Configuration) {
 
 	if isNothingToCommit() {
 		if currentWipBranch.hasLocalCommits(configuration) {
-			git("push", "--no-verify", configuration.RemoteName, currentWipBranch.Name)
+			git("push", configuration.gitHooksOption(), configuration.RemoteName, currentWipBranch.Name)
 		} else {
 			sayInfo("nothing was done, so nothing to commit")
 		}
 	} else {
 		makeWipCommit(configuration)
-		git("push", "--no-verify", configuration.RemoteName, currentWipBranch.Name)
+		git("push", configuration.gitHooksOption(), configuration.RemoteName, currentWipBranch.Name)
 	}
 	showNext(configuration)
 
@@ -1145,9 +1153,17 @@ func getCachedChanges() string {
 
 func makeWipCommit(configuration Configuration) {
 	git("add", "--all")
-	git("commit", "--message", configuration.WipCommitMessage, "--no-verify")
+	git("commit", "--message", configuration.WipCommitMessage, configuration.gitHooksOption())
 	sayInfoIndented(getChangesOfLastCommit())
 	sayInfoIndented(gitCommitHash())
+}
+
+func (c Configuration) gitHooksOption() string {
+	if c.GitHooksEnabled {
+		return ""
+	} else {
+		return "--no-verify"
+	}
 }
 
 func fetch(configuration Configuration) {
@@ -1169,7 +1185,7 @@ func done(configuration Configuration) {
 		if uncommittedChanges {
 			makeWipCommit(configuration)
 		}
-		git("push", "--no-verify", configuration.RemoteName, wipBranch.Name)
+		git("push", configuration.gitHooksOption(), configuration.RemoteName, wipBranch.Name)
 
 		git("checkout", baseBranch.Name)
 		git("merge", baseBranch.remote(configuration).Name, "--ff-only")
@@ -1186,7 +1202,7 @@ func done(configuration Configuration) {
 			git("reset", "--soft", "HEAD^")
 		}
 
-		git("push", "--no-verify", configuration.RemoteName, "--delete", wipBranch.Name)
+		git("push", configuration.gitHooksOption(), configuration.RemoteName, "--delete", wipBranch.Name)
 
 		cachedChanges := getCachedChanges()
 		hasCachedChanges := len(cachedChanges) > 0

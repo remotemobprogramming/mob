@@ -1,3 +1,6 @@
+# 2.5.0
+- Enable git hooks with `MOB_GIT_HOOKS_ENABLED=true`. By default, this option is false and no git hooks such as `pre-commit` or `pre-push` are triggered via mob itself.
+
 # 2.4.0
 - As an alternative to the environment variables, you can configure the mob tool with a `.mob` file in your home directory. For an example have a look at `mob-configuration-example` file. 
 - As an alternative to the environment variables, you can configure the mob tool with a `.mob` file in your git project root directory. The configuration options `MOB_VOICE_COMMAND`, `MOB_VOICE_MESSAGE`, `MOB_NOTIFY_COMMAND`, and `MOB_NOTIFY_MESSAGE` are disabled for the project specific configuration to prevent bash injection attacks.
