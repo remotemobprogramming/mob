@@ -949,7 +949,7 @@ func reset(configuration Configuration) {
 		git("branch", "--delete", "--force", currentWipBranch.String())
 	}
 	if currentWipBranch.hasRemoteBranch(configuration) {
-		git("push", configuration.gitHooksOption(), configuration.RemoteName, "--delete", currentWipBranch.String())
+		gitWithoutEmptyStrings("push", configuration.gitHooksOption(), configuration.RemoteName, "--delete", currentWipBranch.String())
 	}
 	sayInfo("Branches " + currentWipBranch.String() + " and " + currentWipBranch.remote(configuration).String() + " deleted")
 }
@@ -1091,7 +1091,7 @@ func startNewMobSession(configuration Configuration) {
 
 	sayInfo("starting new session from " + currentBaseBranch.remote(configuration).String())
 	git("checkout", "-B", currentWipBranch.Name, currentBaseBranch.remote(configuration).Name)
-	git("push", configuration.gitHooksOption(), "--set-upstream", configuration.RemoteName, currentWipBranch.Name)
+	gitWithoutEmptyStrings("push", configuration.gitHooksOption(), "--set-upstream", configuration.RemoteName, currentWipBranch.Name)
 }
 
 func getUntrackedFiles() string {
@@ -1128,13 +1128,13 @@ func next(configuration Configuration) {
 
 	if isNothingToCommit() {
 		if currentWipBranch.hasLocalCommits(configuration) {
-			git("push", configuration.gitHooksOption(), configuration.RemoteName, currentWipBranch.Name)
+			gitWithoutEmptyStrings("push", configuration.gitHooksOption(), configuration.RemoteName, currentWipBranch.Name)
 		} else {
 			sayInfo("nothing was done, so nothing to commit")
 		}
 	} else {
 		makeWipCommit(configuration)
-		git("push", configuration.gitHooksOption(), configuration.RemoteName, currentWipBranch.Name)
+		gitWithoutEmptyStrings("push", configuration.gitHooksOption(), configuration.RemoteName, currentWipBranch.Name)
 	}
 	showNext(configuration)
 
@@ -1153,7 +1153,7 @@ func getCachedChanges() string {
 
 func makeWipCommit(configuration Configuration) {
 	git("add", "--all")
-	git("commit", "--message", configuration.WipCommitMessage, configuration.gitHooksOption())
+	gitWithoutEmptyStrings("commit", "--message", configuration.WipCommitMessage, configuration.gitHooksOption())
 	sayInfoIndented(getChangesOfLastCommit())
 	sayInfoIndented(gitCommitHash())
 }
@@ -1185,7 +1185,7 @@ func done(configuration Configuration) {
 		if uncommittedChanges {
 			makeWipCommit(configuration)
 		}
-		git("push", configuration.gitHooksOption(), configuration.RemoteName, wipBranch.Name)
+		gitWithoutEmptyStrings("push", configuration.gitHooksOption(), configuration.RemoteName, wipBranch.Name)
 
 		git("checkout", baseBranch.Name)
 		git("merge", baseBranch.remote(configuration).Name, "--ff-only")
@@ -1202,7 +1202,7 @@ func done(configuration Configuration) {
 			git("reset", "--soft", "HEAD^")
 		}
 
-		git("push", configuration.gitHooksOption(), configuration.RemoteName, "--delete", wipBranch.Name)
+		gitWithoutEmptyStrings("push", configuration.gitHooksOption(), configuration.RemoteName, "--delete", wipBranch.Name)
 
 		cachedChanges := getCachedChanges()
 		hasCachedChanges := len(cachedChanges) > 0
@@ -1428,8 +1428,24 @@ func silentgitignorefailure(args ...string) string {
 	return strings.TrimSpace(output)
 }
 
+func deleteEmptyStrings(s []string) []string {
+	var r []string
+	for _, str := range s {
+		if str != "" {
+			r = append(r, str)
+		}
+	}
+	return r
+}
+
+func gitWithoutEmptyStrings(args ...string) {
+	argsWithoutEmptyStrings := deleteEmptyStrings(args)
+	git(argsWithoutEmptyStrings...)
+}
+
 func git(args ...string) {
-	commandString, output, err := runCommand("git", args...)
+	argsWithoutEmptyStrings := deleteEmptyStrings(args)
+	commandString, output, err := runCommand("git", argsWithoutEmptyStrings...)
 
 	if err != nil {
 		sayGitError(commandString, output, err)
