@@ -1444,8 +1444,7 @@ func gitWithoutEmptyStrings(args ...string) {
 }
 
 func git(args ...string) {
-	argsWithoutEmptyStrings := deleteEmptyStrings(args)
-	commandString, output, err := runCommand("git", argsWithoutEmptyStrings...)
+	commandString, output, err := runCommand("git", args...)
 
 	if err != nil {
 		sayGitError(commandString, output, err)
