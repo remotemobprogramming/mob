@@ -13,7 +13,7 @@ jobs:
     name: release
     runs-on: ubuntu-latest
     outputs:
-      sha: ${{ steps.shasum.outputs.sha }}
+      sha_linux: ${{ steps.shasum.outputs.sha_linux }}
     steps:
       - uses: actions/checkout@main
       - name: Use Go 1.16.x
@@ -40,10 +40,10 @@ jobs:
           tag: ${{ github.event.release.tag_name }}
           file_glob: true
       - name: Set SHA
-        if: matrix.os == 'darwin'
+        if: matrix.os == 'darwin' || matrix.os == 'linux'
         id: shasum
         run: |
-          echo ::set-output name=sha::"$(shasum -a 256 *.tar.gz | awk '{printf $1}')"
+          echo ::set-output name=sha_${{matrix.os}}::"$(shasum -a 256 *.tar.gz | awk '{printf $1}')"
       - name: Bump homebrew formula
         if: matrix.os == 'darwin'
         env:
@@ -53,7 +53,7 @@ jobs:
           git config --global user.name "CI"
           brew tap ${{github.repository_owner}}/homebrew-brew
           brew bump-formula-pr -f --version=${{ github.event.release.tag_name }} --no-browse --no-audit \
-          --sha256=${{ steps.shasum.outputs.sha }} \
+          --sha256=${{ steps.shasum.outputs.sha_darwin }} \
           --url="https://github.com/${{github.repository_owner}}/mob/releases/download/${{ github.event.release.tag_name }}/mob_${{ github.event.release.tag_name }}_darwin_amd64.tar.gz" \
           ${{github.repository_owner}}/homebrew-brew/mob
 
@@ -90,7 +90,7 @@ jobs:
           conflicts=('mobsh' 'mob')
 
           source_x86_64=("\$url/releases/download/${{ github.event.release.tag_name }}/mob_${{ github.event.release.tag_name }}_linux_amd64.tar.gz")
-          sha256sums_x86_64=("${{ needs.release.outputs.sha }}")
+          sha256sums_x86_64=("${{ needs.release.outputs.sha_linux }}")
 
           package() {
               install -D -m644 "LICENSE" "\$pkgdir/usr/share/licenses/\$pkgname/LICENSE"

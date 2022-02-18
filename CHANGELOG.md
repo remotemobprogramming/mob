@@ -1,6 +1,18 @@
+# 2.5.0
+- Enable git hooks with `MOB_GIT_HOOKS_ENABLED=true`. By default, this option is false and no git hooks such as `pre-commit` or `pre-push` are triggered via mob itself.
+
+# 2.4.0
+- As an alternative to the environment variables, you can configure the mob tool with a `.mob` file in your home directory. For an example have a look at `mob-configuration-example` file. 
+- As an alternative to the environment variables, you can configure the mob tool with a `.mob` file in your git project root directory. The configuration options `MOB_VOICE_COMMAND`, `MOB_VOICE_MESSAGE`, `MOB_NOTIFY_COMMAND`, and `MOB_NOTIFY_MESSAGE` are disabled for the project specific configuration to prevent bash injection attacks.
+Thanks to @vrpntngr & @hollesse making this release possible as part of the @INNOQ Hands-On Event, February 2022.
+
+# 2.3.0
+- With `export MOB_TIMER_ROOM_USE_WIP_BRANCH_QUALIFIER=true` the room name is automatically derived from the value you passed in via the `mob start --branch <branch>` parameter.
+
 # 2.2.0
 - When mob encounters unpushed commits in the base branch, the tool now provides help for the user to fix this immediately.
 - Improves console output when using `mob break 5` in combination with https://timer.mob.sh
+- Gives the user the chance to name their final commit after `mob done --no-squash`
 
 # 2.1.0
 - When having set `MOB_TIMER_ROOM` the local timer keeps on working. To disable the local timer altogether, please disable it via `export MOB_TIMER_LOCAL=false`.

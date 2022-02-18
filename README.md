@@ -14,7 +14,7 @@
     <img alt="Stars" src="https://img.shields.io/github/stars/remotemobprogramming/mob" /></a>
 </p>
 
-**BREAKING NEWS: [mob is on 'assess' in the latest Thoughtworks Technology Radar](https://twitter.com/simonharrer/status/1453372354097205253?s=20)**
+**NEW: Have you already tried the shared team timer [timer.mob.sh](https://timer.mob.sh)?**
 
 Smooth [git handover](https://www.remotemobprogramming.org/#git-handover) for remote pair/mob programming.
 
@@ -22,6 +22,7 @@ Smooth [git handover](https://www.remotemobprogramming.org/#git-handover) for re
 - **mob** is the fastest way to [hand over code via git](https://www.remotemobprogramming.org/#git-handover)
 - **mob** keeps your branches clean and only creates WIP commits on temporary branches
 - **mob** has a shared team timer [timer.mob.sh](https://timer.mob.sh)
+- **mob** is on 'assess' in the latest [Thoughtworks Technology Radar](https://twitter.com/simonharrer/status/1453372354097205253?s=20)
 
 ![diagram how mob works](diagram.svg)
 
@@ -41,14 +42,15 @@ Smooth [git handover](https://www.remotemobprogramming.org/#git-handover) for re
 ## How to install
 
 The recommended way to install mob is as a binary via the provided install script:
-```
+
+```bash
 # works for macOS, linux, and even on windows in git bash
 curl -sL install.mob.sh | sh
 ```
 
 On macOS via homebrew:
 
-```
+```bash
 brew install remotemobprogramming/brew/mob
 
 # upgrade to latest version
@@ -57,16 +59,27 @@ brew upgrade remotemobprogramming/brew/mob
 
 On Windows via [Scoop](https://scoop.sh/):
 
-```
+```bash
 scoop install mob
 ```
-
-On [Nix](http://nixos.org) through the [mob.nix](./mob.nix) expression like this `mob = callPackage ./mob.nix {};`. To install and configure espeak-ng for text-to-speech support, pass `withSpeech = true;`.
 
 On Arch Linux via yay:
 
 ```bash
 yay -S mobsh-bin
+```
+
+On [Nix](http://nixos.org) through declarative installation
+
+```nix
+{ pkgs, ... }:
+{
+  # Either for all users
+  environment.systemPackages = with pkgs; [ mob ];
+
+  # Or for an explicit user
+  users.users."youruser".packages = with pkgs; [ mob ];
+}
 ```
 
 On Ubuntu there's an EXPERIMENTAL [snap](https://snapcraft.io/mob-sh) package with a known limitation (ssh-agent not working):
@@ -82,18 +95,21 @@ sudo snap connect mob-sh:ssh-keys
 When you already have a working go environment with a defined GOPATH you can install latest via `go install`:
 
 With go &lt; 1.16
-```
+
+```bash
 go get github.com/remotemobprogramming/mob
 go install github.com/remotemobprogramming/mob
 ```
 
 go 1.16 introduced support for package@version syntax, so you can install directly with:
-```
+
+```bash
 go install github.com/remotemobprogramming/mob@latest
 ```
 
 or pick a specific version:
-```
+
+```bash
 go install github.com/remotemobprogramming/mob@v1.2.0
 ```
 
@@ -218,6 +234,17 @@ Examples:
   - Have your editor save your files on every keystroke automatically. IntelliJ products do this automatically. VS Code, however, needs to be configured via "File > Auto Save toggle".
   - *Why?* Sometimes people forget to save their files. With autosave, any change will be handed over via `mob next`.
 
+### The Perfect Git Handover
+
+The perfect git handover is quick, requires no talking, and allows the rest of the team to continue discussing how to best solve the current problem undisturbed by the handover. Here's how to achieve that.
+
+- **Situation** Maria is typist sharing the screen, Mona is next
+- **Maria** runs `mob next`
+  - keeps sharing the screen with the terminal showing the successful run of `mob next`
+  - does nothing (i.e., no typing, no mouse cursor movement, no window switching)
+- **Mona** steals screenshare using keyboard shortcut, and, afterwards, runs `mob start`
+- **Maria** checks her twitter
+
 ### Complimentary Scripts
 
 `mob-start feature1` creates a new base branch `feature1` to immediately start a wip branch `mob/feature1` from there.
@@ -262,23 +289,17 @@ ensemble next
 #
 ```
 
+### Automatically set the timer room when using ticket numbers as branch modifiers
+
+Say you're a larger team and work on the same git repository using ticket numbers as branch modifiers.
+It's easy to forget exporting the room that enables the integration with timer.mob.sh.
+Just set the configuration option `MOB_TIMER_ROOM_USE_WIP_BRANCH_QUALIFIER=true` in `~/.mob` for that.
+
 ## More on Installation
 
-### Arch Linux
+### Known Issues
 
-There are two Arch packages in the AUR:
-
-- [mobsh-bin](https://aur.archlinux.org/packages/mobsh-bin/): uses the binary from the upstream release.
-- [mobsh](https://aur.archlinux.org/packages/mobsh/): compiles sources from scratch (and runs tests) locally.
-
-Example installation using AUR helper `yay`:
-
-```bash
-yay -S mobsh-bin
-
-# OR
-yay -S mobsh
-```
+- When you have an ssh key with a password and you running mob on windows in powershell, you will not be able to enter a password for your ssh key. You can circumvent this problem by using the git bash instead of powershell.
 
 ### Linux Timer
 
@@ -318,25 +339,32 @@ You can avoid the long path by adding it to your windows path variable.
 
 Show your current configuration with `mob config`:
 
-```
-MOB_CLI_NAME=mob
-MOB_REMOTE_NAME=origin
-MOB_WIP_COMMIT_MESSAGE=mob next [ci-skip] [ci skip] [skip ci]
+```toml
+MOB_CLI_NAME="mob"
+MOB_REMOTE_NAME="origin"
+MOB_WIP_COMMIT_MESSAGE="mob next [ci-skip] [ci skip] [skip ci]"
+MOB_GIT_HOOKS_ENABLED=false
 MOB_REQUIRE_COMMIT_MESSAGE=false
-MOB_VOICE_COMMAND=say "%s"
-MOB_VOICE_MESSAGE=mob next
-MOB_NOTIFY_COMMAND=/usr/bin/osascript -e 'display notification "%s"'
-MOB_NOTIFY_MESSAGE=mob next
+MOB_VOICE_COMMAND="say \"%s\""
+MOB_VOICE_MESSAGE="mob next"
+MOB_NOTIFY_COMMAND="/usr/bin/osascript -e 'display notification \"%s\"'"
+MOB_NOTIFY_MESSAGE="mob next"
 MOB_NEXT_STAY=true
 MOB_START_INCLUDE_UNCOMMITTED_CHANGES=false
-MOB_WIP_BRANCH_QUALIFIER=
-MOB_WIP_BRANCH_QUALIFIER_SEPARATOR=-
+MOB_STASH_NAME="mob-stash-name"
+MOB_WIP_BRANCH_QUALIFIER=""
+MOB_WIP_BRANCH_QUALIFIER_SEPARATOR="-"
+MOB_WIP_BRANCH_PREFIX="mob/"
 MOB_DONE_SQUASH=true
-MOB_TIMER=
-MOB_TIMER_ROOM=
-MOB_TIMER_USER=
-MOB_STASH_NAME=mob-stash-name
+MOB_TIMER=""
+MOB_TIMER_ROOM="mob"
+MOB_TIMER_ROOM_USE_WIP_BRANCH_QUALIFIER=false
+MOB_TIMER_LOCAL=true
+MOB_TIMER_USER="sh"
+MOB_TIMER_URL="https://timer.mob.sh/"
 ```
+
+Override default value permanently via a `.mob` file in your user home or in your git project repository root. (recommended)
 
 Override default value permanently via environment variables:
 
@@ -349,6 +377,16 @@ Override default value just for a single call:
 ```bash
 MOB_NEXT_STAY=true mob next
 ```
+
+## How to uninstall
+Mob can simply be uninstalled by removing the installed binary (at least if it was installed via the http://install.mob.sh script). 
+
+### Linux
+    rm /usr/local/bin/mob
+### Windows (Git Bash)
+    rm ~/bin/mob.exe
+### MacOS
+    brew uninstall remotemobprogramming/brew/mob
 
 ## How to contribute
 

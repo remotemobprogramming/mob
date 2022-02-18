@@ -18,11 +18,18 @@ var (
 	tempDir string
 )
 
+type GitStatus = map[string]string
+
 func TestCurrentCliName(t *testing.T) {
 	equals(t, "mob", currentCliName("mob"))
 	equals(t, "mob", currentCliName("mob.exe"))
 	equals(t, "mob", currentCliName("./mob"))
 	equals(t, "mob", currentCliName("folder/mob"))
+}
+
+func TestQuote(t *testing.T) {
+	equals(t, "\"mob\"", quote("mob"))
+	equals(t, "\"m\\\"ob\"", quote("m\"ob"))
 }
 
 func TestParseArgs(t *testing.T) {
@@ -38,24 +45,24 @@ func TestParseArgs(t *testing.T) {
 
 func TestParseArgsDoneNoSquash(t *testing.T) {
 	configuration := getDefaultConfiguration()
-	equals(t, true, configuration.MobDoneSquash)
+	equals(t, true, configuration.DoneSquash)
 
 	command, parameters, configuration := parseArgs([]string{"mob", "done", "--no-squash"}, configuration)
 
 	equals(t, "done", command)
 	equals(t, "", strings.Join(parameters, ""))
-	equals(t, false, configuration.MobDoneSquash)
+	equals(t, false, configuration.DoneSquash)
 }
 
 func TestParseArgsDoneSquash(t *testing.T) {
 	configuration := getDefaultConfiguration()
-	configuration.MobDoneSquash = false
+	configuration.DoneSquash = false
 
 	command, parameters, configuration := parseArgs([]string{"mob", "done", "--squash"}, configuration)
 
 	equals(t, "done", command)
 	equals(t, "", strings.Join(parameters, ""))
-	equals(t, true, configuration.MobDoneSquash)
+	equals(t, true, configuration.DoneSquash)
 }
 
 func TestParseArgsMessage(t *testing.T) {
@@ -115,37 +122,30 @@ func TestRemoveWipBranchQualifier(t *testing.T) {
 
 	configuration.WipBranchQualifierSeparator = "-"
 	configuration.WipBranchQualifier = "green"
-	configuration.WipBranchQualifierSet = true
 	equals(t, "master", newBranch("master-green").removeWipQualifier([]string{}, configuration).Name)
 
 	configuration.WipBranchQualifierSeparator = "-"
 	configuration.WipBranchQualifier = "test-branch"
-	configuration.WipBranchQualifierSet = true
 	equals(t, "master", newBranch("master-test-branch").removeWipQualifier([]string{}, configuration).Name)
 
 	configuration.WipBranchQualifierSeparator = "-"
 	configuration.WipBranchQualifier = "branch"
-	configuration.WipBranchQualifierSet = true
 	equals(t, "master-test", newBranch("master-test-branch").removeWipQualifier([]string{}, configuration).Name)
 
 	configuration.WipBranchQualifierSeparator = "-"
 	configuration.WipBranchQualifier = "branch"
-	configuration.WipBranchQualifierSet = true
 	equals(t, "master-test", newBranch("master-test-branch").removeWipQualifier([]string{"master-test"}, configuration).Name)
 
 	configuration.WipBranchQualifierSeparator = "/-/"
 	configuration.WipBranchQualifier = "branch-qualifier"
-	configuration.WipBranchQualifierSet = true
 	equals(t, "main", newBranch("main/-/branch-qualifier").removeWipQualifier([]string{}, configuration).Name)
 
 	configuration.WipBranchQualifierSeparator = "-"
 	configuration.WipBranchQualifier = "branchqualifier"
-	configuration.WipBranchQualifierSet = true
 	equals(t, "main/branchqualifier", newBranch("main/branchqualifier").removeWipQualifier([]string{}, configuration).Name)
 
 	configuration.WipBranchQualifierSeparator = ""
 	configuration.WipBranchQualifier = "branchqualifier"
-	configuration.WipBranchQualifierSet = true
 	equals(t, "main", newBranch("mainbranchqualifier").removeWipQualifier([]string{}, configuration).Name)
 }
 
@@ -154,12 +154,10 @@ func TestRemoveWipBranchQualifierWithoutBranchQualifierSet(t *testing.T) {
 
 	configuration.WipBranchQualifierSeparator = "-"
 	configuration.WipBranchQualifier = ""
-	configuration.WipBranchQualifierSet = false
 	equals(t, "main", newBranch("main").removeWipQualifier([]string{}, configuration).Name)
 
 	configuration.WipBranchQualifierSeparator = "-"
 	configuration.WipBranchQualifier = ""
-	configuration.WipBranchQualifierSet = false
 	equals(t, "master", newBranch("master-test-branch").removeWipQualifier([]string{}, configuration).Name)
 }
 
@@ -212,15 +210,15 @@ func boolToInterface(actual func(Configuration) bool) func(c Configuration) inte
 }
 
 func (c Configuration) GetMobDoneSquash() bool {
-	return c.MobDoneSquash
+	return c.DoneSquash
 }
 
 func (c Configuration) GetMobStartIncludeUncommittedChanges() bool {
-	return c.MobStartIncludeUncommittedChanges
+	return c.StartIncludeUncommittedChanges
 }
 
 func (c Configuration) GetMobNextStay() bool {
-	return c.MobNextStay
+	return c.NextStay
 }
 
 func (c Configuration) GetRequireCommitMessage() bool {
@@ -294,7 +292,7 @@ func TestStatusMobProgramming(t *testing.T) {
 
 func TestStatusWithMoreThan5LinesOfLog(t *testing.T) {
 	output, configuration := setup(t)
-	configuration.MobNextStay = true
+	configuration.NextStay = true
 	start(configuration)
 
 	for i := 0; i < 6; i++ {
@@ -312,6 +310,79 @@ func TestExecuteKicksOffStatus(t *testing.T) {
 	execute("status", []string{}, getDefaultConfiguration())
 
 	assertOutputContains(t, output, "you are on base branch 'master'")
+}
+
+func TestReadConfigurationFromFileOverrideEverything(t *testing.T) {
+	Debug = true
+	tempDir = t.TempDir()
+	setWorkingDir(tempDir)
+
+	createFile(t, ".mob", `
+		MOB_CLI_NAME="team"
+		MOB_REMOTE_NAME="gitlab"
+		MOB_WIP_COMMIT_MESSAGE="team next"
+		MOB_REQUIRE_COMMIT_MESSAGE=true
+		MOB_VOICE_COMMAND="whisper \"%s\""
+		MOB_VOICE_MESSAGE="team next"
+		MOB_NOTIFY_COMMAND="/usr/bin/osascript -e 'display notification \"%s!!!\"'"
+		MOB_NOTIFY_MESSAGE="team next"
+		MOB_NEXT_STAY=false
+		MOB_START_INCLUDE_UNCOMMITTED_CHANGES=true
+		MOB_WIP_BRANCH_QUALIFIER="green"
+		MOB_WIP_BRANCH_QUALIFIER_SEPARATOR="---"
+		MOB_DONE_SQUASH=false
+		MOB_TIMER="123"
+		MOB_TIMER_ROOM="Room_42"
+		MOB_TIMER_ROOM_USE_WIP_BRANCH_QUALIFIER=true
+		MOB_TIMER_LOCAL=false
+		MOB_TIMER_USER="Mona"
+		MOB_TIMER_URL="https://timer.innoq.io/"
+		MOB_STASH_NAME="team-stash-name"
+	`)
+	actualConfiguration := parseUserConfiguration(getDefaultConfiguration(), tempDir+"/.mob")
+	equals(t, "team", actualConfiguration.CliName)
+	equals(t, "gitlab", actualConfiguration.RemoteName)
+	equals(t, "team next", actualConfiguration.WipCommitMessage)
+	equals(t, true, actualConfiguration.RequireCommitMessage)
+	equals(t, "whisper \"%s\"", actualConfiguration.VoiceCommand)
+	equals(t, "team next", actualConfiguration.VoiceMessage)
+	equals(t, "/usr/bin/osascript -e 'display notification \"%s!!!\"'", actualConfiguration.NotifyCommand)
+	equals(t, "team next", actualConfiguration.NotifyMessage)
+	equals(t, false, actualConfiguration.NextStay)
+	equals(t, true, actualConfiguration.StartIncludeUncommittedChanges)
+	equals(t, "green", actualConfiguration.WipBranchQualifier)
+	equals(t, "---", actualConfiguration.WipBranchQualifierSeparator)
+	equals(t, false, actualConfiguration.DoneSquash)
+	equals(t, "123", actualConfiguration.Timer)
+	equals(t, "Room_42", actualConfiguration.TimerRoom)
+	equals(t, true, actualConfiguration.TimerRoomUseWipBranchQualifier)
+	equals(t, false, actualConfiguration.TimerLocal)
+	equals(t, "Mona", actualConfiguration.TimerUser)
+	equals(t, "https://timer.innoq.io/", actualConfiguration.TimerUrl)
+	equals(t, "team-stash-name", actualConfiguration.StashName)
+
+	createFile(t, ".mob", "\nMOB_TIMER_ROOM=\"Room\\\"\\\"_42\"\n")
+	actualConfiguration1 := parseUserConfiguration(getDefaultConfiguration(), tempDir+"/.mob")
+	equals(t, "Room\"\"_42", actualConfiguration1.TimerRoom)
+}
+
+func TestReadConfigurationFromFileAndSkipBrokenLines(t *testing.T) {
+	Debug = true
+	tempDir = t.TempDir()
+	setWorkingDir(tempDir)
+
+	createFile(t, ".mob", "\nMOB_TIMER_ROOM=\"Broken\" \"String\"")
+	actualConfiguration := parseUserConfiguration(getDefaultConfiguration(), tempDir+"/.mob")
+	equals(t, getDefaultConfiguration().TimerRoom, actualConfiguration.TimerRoom)
+}
+
+func TestSkipIfConfigurationDoesNotExist(t *testing.T) {
+	Debug = true
+	tempDir = t.TempDir()
+	setWorkingDir(tempDir)
+
+	actualConfiguration := parseUserConfiguration(getDefaultConfiguration(), tempDir+"/.mob")
+	equals(t, getDefaultConfiguration(), actualConfiguration)
 }
 
 func TestExecuteInvalidCommandKicksOffHelp(t *testing.T) {
@@ -355,7 +426,6 @@ func TestStartWithMultipleExistingBranchesAndEmptyWipBranchQualifier(t *testing.
 	next(configuration)
 
 	configuration.WipBranchQualifier = ""
-	configuration.WipBranchQualifierSet = true
 	start(configuration)
 	assertOnBranch(t, "mob-session")
 	assertOutputNotContains(t, output, "qualified mob branches detected")
@@ -363,7 +433,7 @@ func TestStartWithMultipleExistingBranchesAndEmptyWipBranchQualifier(t *testing.
 
 func TestStartWithMultipleExistingBranchesWithStay(t *testing.T) {
 	output, configuration := setup(t)
-	configuration.MobNextStay = true
+	configuration.NextStay = true
 
 	configuration.WipBranchQualifier = "green"
 	assertOnBranch(t, "master")
@@ -399,7 +469,7 @@ func TestStartNextWithBranch(t *testing.T) {
 func TestStartNextStartWithBranch(t *testing.T) {
 	_, configuration := setup(t)
 	configuration.WipBranchQualifier = "green"
-	configuration.MobNextStay = true
+	configuration.NextStay = true
 	assertOnBranch(t, "master")
 
 	start(configuration)
@@ -461,13 +531,11 @@ func TestStartNextOnFeatureWithBranch(t *testing.T) {
 func TestStartNextWithBranchContainingHyphen(t *testing.T) {
 	_, configuration := setup(t)
 	configuration.WipBranchQualifier = "test-branch"
-	configuration.WipBranchQualifierSet = true
 	start(configuration)
 	assertOnBranch(t, "mob/master-test-branch")
 	assertMobSessionBranches(t, configuration, "mob/master-test-branch")
 
 	configuration.WipBranchQualifier = ""
-	configuration.WipBranchQualifierSet = false
 	next(configuration)
 }
 
@@ -495,7 +563,7 @@ func TestResetCommit(t *testing.T) {
 
 func TestStartUnstagedChanges(t *testing.T) {
 	output, configuration := setup(t)
-	configuration.MobStartIncludeUncommittedChanges = false
+	configuration.StartIncludeUncommittedChanges = false
 	createFile(t, "test.txt", "content")
 
 	start(configuration)
@@ -507,7 +575,7 @@ func TestStartUnstagedChanges(t *testing.T) {
 
 func TestStartIncludeUnstagedChanges(t *testing.T) {
 	_, configuration := setup(t)
-	configuration.MobStartIncludeUncommittedChanges = true
+	configuration.StartIncludeUncommittedChanges = true
 	createFile(t, "test.txt", "content")
 
 	start(configuration)
@@ -518,7 +586,7 @@ func TestStartIncludeUnstagedChanges(t *testing.T) {
 
 func TestStartIncludeUnstagedChangesInNewWorkingDirectory(t *testing.T) {
 	output, configuration := setup(t)
-	configuration.MobStartIncludeUncommittedChanges = true
+	configuration.StartIncludeUncommittedChanges = true
 	Debug = true
 	createDirectory(t, "subdirnew")
 	setWorkingDir(tempDir + "/local/subdirnew")
@@ -551,7 +619,7 @@ func TestBranch(t *testing.T) {
 
 func TestStartIncludeUntrackedFiles(t *testing.T) {
 	_, configuration := setup(t)
-	configuration.MobStartIncludeUncommittedChanges = true
+	configuration.StartIncludeUncommittedChanges = true
 	createFile(t, "example.txt", "content")
 
 	start(configuration)
@@ -561,7 +629,7 @@ func TestStartIncludeUntrackedFiles(t *testing.T) {
 
 func TestStartUntrackedFiles(t *testing.T) {
 	_, configuration := setup(t)
-	configuration.MobStartIncludeUncommittedChanges = false
+	configuration.StartIncludeUncommittedChanges = false
 	createFile(t, "example.txt", "content")
 
 	start(configuration)
@@ -583,7 +651,7 @@ func TestStartNextBackToMaster(t *testing.T) {
 
 func TestStartNextStay(t *testing.T) {
 	_, configuration := setup(t)
-	configuration.MobNextStay = true
+	configuration.NextStay = true
 	start(configuration)
 	createFile(t, "file1.txt", "asdf")
 	assertOnBranch(t, "mob-session")
@@ -596,7 +664,7 @@ func TestStartNextStay(t *testing.T) {
 
 func TestStartDoneWithMobDoneSquashTrue(t *testing.T) {
 	_, configuration := setup(t)
-	configuration.MobDoneSquash = true
+	configuration.DoneSquash = true
 
 	start(configuration)
 	assertOnBranch(t, "mob-session")
@@ -652,7 +720,7 @@ func TestTestbed(t *testing.T) {
 
 func TestStartDoneWithMobDoneSquashFalse(t *testing.T) {
 	_, configuration := setup(t)
-	configuration.MobDoneSquash = false
+	configuration.DoneSquash = false
 
 	start(configuration)
 	assertOnBranch(t, "mob-session")
@@ -665,8 +733,7 @@ func TestStartDoneWithMobDoneSquashFalse(t *testing.T) {
 
 func TestStartDonePublishingOneManualCommit(t *testing.T) {
 	_, configuration := setup(t)
-	// REFACTOR Replace string with enum value
-	configuration.MobDoneSquash = false // default is probably true
+	configuration.DoneSquash = false // default is true
 
 	start(configuration)
 	assertOnBranch(t, "mob-session")
@@ -678,6 +745,7 @@ func TestStartDonePublishingOneManualCommit(t *testing.T) {
 	done(configuration) // without squash (configuration)
 
 	assertOnBranch(t, "master")
+	assertCleanGitStatus(t)
 	assertCommitsOnBranch(t, 2, "master")
 	assertCommitLogContainsMessage(t, "master", "[manual-commit-1] publish this commit to master")
 	assertCommitsOnBranch(t, 1, "origin/master")
@@ -686,8 +754,7 @@ func TestStartDonePublishingOneManualCommit(t *testing.T) {
 
 func TestStartDoneSquashTheOneManualCommit(t *testing.T) {
 	_, configuration := setup(t)
-	// REFACTOR Replace string with enum value
-	configuration.MobDoneSquash = true
+	configuration.DoneSquash = true
 
 	start(configuration)
 	assertOnBranch(t, "mob-session")
@@ -698,8 +765,45 @@ func TestStartDoneSquashTheOneManualCommit(t *testing.T) {
 
 	done(configuration)
 
-	// MAYBE assertUnstagedChanges()
 	assertOnBranch(t, "master")
+	assertGitStatus(t, GitStatus{
+		"example.txt": "A",
+	})
+	assertCommitsOnBranch(t, 1, "master")
+	assertCommitsOnBranch(t, 1, "origin/master")
+	assertNoMobSessionBranches(t, configuration, "mob-session")
+}
+
+func TestStartDoneWithUncommittedChanges(t *testing.T) {
+	_, configuration := setup(t)
+
+	start(configuration) // should be 1 commit on mob-session so far
+	createFile(t, "example.txt", "content")
+
+	done(configuration)
+
+	assertOnBranch(t, "master")
+	assertGitStatus(t, GitStatus{
+		"example.txt": "A",
+	})
+	assertCommitsOnBranch(t, 1, "master")
+	assertCommitsOnBranch(t, 1, "origin/master")
+	assertNoMobSessionBranches(t, configuration, "mob-session")
+}
+
+func TestStartDoneNoSquashWithUncommittedChanges(t *testing.T) {
+	_, configuration := setup(t)
+	configuration.DoneSquash = false // default is true
+
+	start(configuration) // should be 1 commit on mob-session so far
+	createFile(t, "example.txt", "content")
+
+	done(configuration) // without squash (configuration)
+
+	assertOnBranch(t, "master")
+	assertGitStatus(t, GitStatus{
+		"example.txt": "A",
+	})
 	assertCommitsOnBranch(t, 1, "master")
 	assertCommitsOnBranch(t, 1, "origin/master")
 	assertNoMobSessionBranches(t, configuration, "mob-session")
@@ -741,6 +845,12 @@ func TestStartDoneLocalFeatureBranch(t *testing.T) {
 
 	assertOnBranch(t, "feature1")
 	assertOutputContains(t, output, "git push origin feature1 --set-upstream")
+}
+
+func TestGitRootDir(t *testing.T) {
+	setup(t)
+	expectedPath, _ := filepath.EvalSymlinks(tempDir + "/local")
+	equals(t, expectedPath, gitRootDir())
 }
 
 func TestBothCreateNonemptyCommitWithNext(t *testing.T) {
@@ -862,7 +972,7 @@ func TestConflictingMobSessions(t *testing.T) {
 
 func TestConflictingMobSessionsNextStay(t *testing.T) {
 	_, configuration := setup(t)
-	configuration.MobNextStay = true
+	configuration.NextStay = true
 
 	setWorkingDir(tempDir + "/local")
 	start(configuration)
@@ -970,9 +1080,57 @@ func TestNotAGitRepoMessage(t *testing.T) {
 	assertOutputContains(t, output, "expecting the current working directory to be a git repository.")
 }
 
+func TestEmptyGitStatus(t *testing.T) {
+	setup(t)
+
+	status := gitStatus()
+
+	equals(t, 0, len(status))
+	assertCleanGitStatus(t)
+}
+
+func TestGitStatusWithOneFile(t *testing.T) {
+	setup(t)
+	createFile(t, "hello.txt", "")
+
+	status := gitStatus()
+
+	equals(t, GitStatus{
+		"hello.txt": "??",
+	}, status)
+}
+
+func TestGitStatusWithManyFiles(t *testing.T) {
+	setup(t)
+	createFile(t, "hello.txt", "")
+	createFile(t, "added.txt", "")
+	git("add", "added.txt")
+
+	status := gitStatus()
+
+	equals(t, GitStatus{
+		"added.txt": "A",
+		"hello.txt": "??",
+	}, status)
+}
+
+func gitStatus() GitStatus {
+	shortStatus := silentgit("status", "--short")
+	statusLines := strings.Split(shortStatus, "\n")
+	var statusMap = make(GitStatus)
+	for _, line := range statusLines {
+		if len(line) == 0 {
+			continue
+		}
+		file := strings.Fields(line)
+		statusMap[file[1]] = file[0]
+	}
+	return statusMap
+}
+
 func setup(t *testing.T) (output *string, configuration Configuration) {
 	configuration = getDefaultConfiguration()
-	configuration.MobNextStay = false
+	configuration.NextStay = false
 	output = captureOutput(t)
 	createTestbed(t, configuration)
 	assertOnBranch(t, "master")
@@ -1109,6 +1267,19 @@ func assertNoMobSessionBranches(t *testing.T, configuration Configuration, branc
 	}
 	if hasLocalBranch(branch) {
 		failWithFailure(t, "none", branch)
+	}
+}
+
+func assertGitStatus(t *testing.T, expected map[string]string) {
+	equals(t, expected, gitStatus())
+}
+
+func assertCleanGitStatus(t *testing.T) {
+	status := gitStatus()
+	if len(status) != 0 {
+		_, file, line, _ := runtime.Caller(1)
+		fmt.Printf("\033[31m%s:%d:\n\n\texpected a clean git status, but contained %s\"\n", filepath.Base(file), line, status)
+		t.FailNow()
 	}
 }
 
