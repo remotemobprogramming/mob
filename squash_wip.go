@@ -26,7 +26,7 @@ func squashWip(configuration Configuration) {
 	)
 	silentgit("rebase", "-i", "--keep-empty", mergeBase)
 	setEnvGitEditor(originalGitEditor, originalGitSequenceEditor)
-	silentgit("push", "--force")
+	git("push", "--force")
 
 	sayInfo("the history of your '" + currentWipBranch.String() + "' branch has been rewritten to combine all wip commits with their following manual commits:")
 	sayEmptyLine()
