@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"strings"
 	"testing"
 )
 
@@ -38,6 +39,7 @@ func TestSquashWipCommits_acceptance(t *testing.T) {
 		"second manual commit",
 		"first manual commit",
 	}, commitsOnCurrentBranch(configuration))
+	equals(t, commitsOnCurrentBranch(configuration), commitsOnRemoteBranch(configuration))
 }
 
 func TestSquashWipCommits_withFinalWipCommit(t *testing.T) {
@@ -271,4 +273,20 @@ squash c51a56d manual commit
 
 	result, _ := ioutil.ReadFile(input)
 	equals(t, expected, string(result))
+}
+
+func commitsOnCurrentBranch(configuration Configuration) []string {
+	currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), gitBranches(), configuration)
+	commitsBaseWipBranch := currentBaseBranch.String() + ".." + currentWipBranch.String()
+	log := silentgit("--no-pager", "log", commitsBaseWipBranch, "--pretty=format:%s")
+	lines := strings.Split(log, "\n")
+	return lines
+}
+
+func commitsOnRemoteBranch(configuration Configuration) []string {
+	currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), gitBranches(), configuration)
+	commitsBaseWipBranch := currentBaseBranch.String() + ".." + configuration.RemoteName + "/" + currentWipBranch.String()
+	log := silentgit("--no-pager", "log", commitsBaseWipBranch, "--pretty=format:%s")
+	lines := strings.Split(log, "\n")
+	return lines
 }

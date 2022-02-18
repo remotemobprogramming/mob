@@ -26,6 +26,8 @@ func squashWip(configuration Configuration) {
 	)
 	silentgit("rebase", "-i", "--keep-empty", mergeBase)
 	setEnvGitEditor(originalGitEditor, originalGitSequenceEditor)
+	silentgit("push", "--force")
+
 	sayInfo("the history of your '" + currentWipBranch.String() + "' branch has been rewritten to combine all wip commits with their following manual commits:")
 	sayEmptyLine()
 	sayLastCommitsWithMessage(currentBaseBranch.String(), currentWipBranch.String())
@@ -110,14 +112,6 @@ func commentWipCommits(input string, configuration Configuration) string {
 		}
 	}
 	return strings.Join(result, "\n")
-}
-
-func commitsOnCurrentBranch(configuration Configuration) []string {
-	currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), gitBranches(), configuration)
-	commitsBaseWipBranch := currentBaseBranch.String() + ".." + currentWipBranch.String()
-	log := silentgit("--no-pager", "log", commitsBaseWipBranch, "--pretty=format:%s")
-	lines := strings.Split(log, "\n")
-	return lines
 }
 
 func markPostWipCommitsForSquashing(input string, configuration Configuration) string {
