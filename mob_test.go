@@ -178,6 +178,9 @@ func TestMobDoneSquashEnvironmentVariable(t *testing.T) {
 	assertMobDoneSquashValue(t, "true", Squash)
 	assertMobDoneSquashValue(t, "false", NoSquash)
 	assertMobDoneSquashValue(t, "garbage", Squash)
+	assertMobDoneSquashValue(t, "squash", Squash)
+	assertMobDoneSquashValue(t, "no-squash", NoSquash)
+	assertMobDoneSquashValue(t, "squash-wip", SquashWip)
 }
 
 func assertMobDoneSquashValue(t *testing.T, value string, expected DoneSquash) {

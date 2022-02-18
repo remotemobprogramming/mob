@@ -30,8 +30,9 @@ var (
 type DoneSquash string
 
 const (
-	Squash   DoneSquash = "--squash"
-	NoSquash DoneSquash = "--no-squash"
+	Squash    DoneSquash = "squash"
+	NoSquash  DoneSquash = "no-squash"
+	SquashWip DoneSquash = "squash-wip"
 )
 
 type Configuration struct {
@@ -575,12 +576,15 @@ func setDoneSquashFromEnvVariable(configuration *Configuration, key string) {
 		debugInfo("ignoring " + key + "=" + value + " (empty string)")
 	}
 
-	if value == "true" {
+	if value == "true" || value == string(Squash) {
 		configuration.DoneSquash = Squash
 		debugInfo("overriding " + key + "=" + string(Squash))
-	} else if value == "false" {
+	} else if value == "false" || value == string(NoSquash) {
 		configuration.DoneSquash = NoSquash
 		debugInfo("overriding " + key + "=" + string(NoSquash))
+	} else if value == string(SquashWip) {
+		configuration.DoneSquash = SquashWip
+		debugInfo("overriding " + key + "=" + string(SquashWip))
 	} else {
 		sayError("ignoring " + key + "=" + value + " (not a boolean)")
 	}
@@ -1214,6 +1218,11 @@ func fetch(configuration Configuration) {
 func done(configuration Configuration) {
 	if !isMobProgramming(configuration) {
 		sayTodo("to start working together, use", configuration.mob("start"))
+		return
+	}
+
+	if configuration.DoneSquash == SquashWip {
+		sayError("`mob done --squash-wip` not yet supported") // TODO
 		return
 	}
 
