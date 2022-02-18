@@ -823,6 +823,145 @@ func TestStartDoneNoSquashWithUncommittedChanges(t *testing.T) {
 	assertNoMobSessionBranches(t, configuration, "mob-session")
 }
 
+func TestStartDoneSquashWipPublishingOneManualCommit(t *testing.T) {
+	_, configuration := setup(t)
+	configuration.DoneSquash = SquashWip
+
+	start(configuration)
+	createFile(t, "some.txt", "irrelevant")
+	next(configuration) // this wip commit will be squashed
+
+	start(configuration)
+	createFileAndCommitIt(t, "example.txt", "content", "[manual-commit-1] publish this commit to master")
+
+	done(configuration)
+
+	assertOnBranch(t, "master")
+	assertCleanGitStatus(t)
+	assertCommitsOnBranch(t, 2, "master")
+	assertCommitLogContainsMessage(t, "master", "[manual-commit-1] publish this commit to master")
+	assertCommitsOnBranch(t, 1, "origin/master")
+	assertNoMobSessionBranches(t, configuration, "mob-session")
+}
+
+func TestStartDoneSquashWipWithUncommittedChanges(t *testing.T) {
+	_, configuration := setup(t)
+
+	start(configuration) // should be 1 commit on mob-session so far
+	createFile(t, "example.txt", "content")
+
+	configuration.DoneSquash = SquashWip
+	done(configuration)
+
+	assertOnBranch(t, "master")
+	assertGitStatus(t, GitStatus{
+		"example.txt": "A",
+	})
+	assertCommitsOnBranch(t, 1, "master")
+	assertCommitsOnBranch(t, 1, "origin/master")
+	assertNoMobSessionBranches(t, configuration, "mob-session")
+}
+
+func TestStartDoneSquashWipOneWipCommitAfterManualCommit(t *testing.T) {
+	_, configuration := setup(t)
+
+	start(configuration)
+	createFileAndCommitIt(t, "example.txt", "content", "[manual-commit-1] publish this commit to master")
+	next(configuration)
+
+	start(configuration)
+	createFile(t, "file.txt", "irrelevant") // the user should see these changes staged after done
+	next(configuration)
+
+	start(configuration)
+	configuration.DoneSquash = SquashWip
+	done(configuration)
+
+	assertOnBranch(t, "master")
+	assertGitStatus(t, GitStatus{
+		"file.txt": "A",
+	})
+	assertCommitsOnBranch(t, 2, "master")
+	assertCommitLogContainsMessage(t, "master", "[manual-commit-1] publish this commit to master")
+	assertNoMobSessionBranches(t, configuration, "mob-session")
+}
+
+func TestStartDoneSquashWipManyWipCommitsAfterManualCommit(t *testing.T) {
+	_, configuration := setup(t)
+
+	start(configuration)
+	createFileAndCommitIt(t, "example.txt", "content", "[manual-commit-1] publish this commit to master")
+	next(configuration)
+
+	start(configuration)
+	createFile(t, "file1.txt", "irrelevant") // the user should see these changes staged after done
+	next(configuration)
+
+	start(configuration)
+	createFile(t, "file2.txt", "irrelevant") // the user should see these changes staged after done
+	next(configuration)
+
+	start(configuration)
+	configuration.DoneSquash = SquashWip
+	done(configuration)
+
+	assertOnBranch(t, "master")
+	assertGitStatus(t, GitStatus{
+		"file1.txt": "A",
+		"file2.txt": "A",
+	})
+	assertCommitsOnBranch(t, 2, "master")
+	assertCommitLogContainsMessage(t, "master", "[manual-commit-1] publish this commit to master")
+	assertNoMobSessionBranches(t, configuration, "mob-session")
+}
+
+func TestStartDoneSquashWipOnlyWipCommits(t *testing.T) {
+	_, configuration := setup(t)
+
+	start(configuration)
+	createFile(t, "file1.txt", "irrelevant") // the user should see these changes staged after done
+	next(configuration)
+
+	start(configuration)
+	createFile(t, "file2.txt", "irrelevant") // the user should see these changes staged after done
+	next(configuration)
+
+	start(configuration)
+	configuration.DoneSquash = SquashWip
+	done(configuration)
+
+	assertOnBranch(t, "master")
+	assertGitStatus(t, GitStatus{
+		"file1.txt": "A",
+		"file2.txt": "A",
+	})
+	assertCommitsOnBranch(t, 1, "master")
+	assertNoMobSessionBranches(t, configuration, "mob-session")
+}
+
+func TestStartDoneSquashWipOnlyManualCommits(t *testing.T) {
+	_, configuration := setup(t)
+
+	start(configuration)
+	createFileAndCommitIt(t, "example.txt", "content", "[manual-commit-1] publish this commit to master")
+	next(configuration)
+
+	start(configuration)
+	createFileAndCommitIt(t, "example2.txt", "content", "[manual-commit-2] publish this commit to master")
+	next(configuration)
+
+	start(configuration)
+	configuration.DoneSquash = SquashWip
+	done(configuration)
+
+	assertOnBranch(t, "master")
+	assertCleanGitStatus(t)
+	assertCommitsOnBranch(t, 3, "master")
+	assertCommitLogContainsMessage(t, "master", "[manual-commit-1] publish this commit to master")
+	assertCommitLogContainsMessage(t, "master", "[manual-commit-2] publish this commit to master")
+	assertNoMobSessionBranches(t, configuration, "mob-session")
+}
+
 func TestStartDoneFeatureBranch(t *testing.T) {
 	_, configuration := setup(t)
 	git("checkout", "-b", "feature1")

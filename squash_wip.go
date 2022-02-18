@@ -26,13 +26,21 @@ func squashWip(configuration Configuration) {
 	)
 	silentgit("rebase", "-i", "--keep-empty", mergeBase)
 	setEnvGitEditor(originalGitEditor, originalGitSequenceEditor)
-	git("push", "--force")
-
 	sayInfo("the history of your '" + currentWipBranch.String() + "' branch has been rewritten to combine all wip commits with their following manual commits:")
+	if lastCommitIsWipCommit(configuration) { // last commit is wip commit
+		git("reset", "--soft", "HEAD^")
+	}
+	git("push", "--force")
 	sayEmptyLine()
 	sayLastCommitsWithMessage(currentBaseBranch.String(), currentWipBranch.String())
-	sayEmptyLine()
-	sayTodo("to finally put the changes into the base branch preserving the resulting commits, call:", configuration.mob("done --no-squash"))
+}
+
+func lastCommitIsWipCommit(configuration Configuration) bool {
+	return lastCommitMessage() == configuration.WipCommitMessage
+}
+
+func lastCommitMessage() string {
+	return silentgit("log", "-1", "--pretty=format:%s")
 }
 
 func sayLastCommitsWithMessage(currentBaseBranch string, currentWipBranch string) {
@@ -118,13 +126,29 @@ func markPostWipCommitsForSquashing(input string, configuration Configuration) s
 	var result []string
 
 	var squashNext = false
-	for _, line := range strings.Split(input, "\n") {
+	var fixup = true
+
+	inputLines := strings.Split(input, "\n")
+	for i, line := range inputLines {
+
 		if squashNext && isPick(line) {
-			result = append(result, markSquash(line))
+			if fixup {
+				result = append(result, markFixup(line))
+			} else {
+				result = append(result, markSquash(line))
+			}
 		} else {
+			fixup = true
 			result = append(result, line)
 		}
+
 		squashNext = isRebaseWipCommitLine(line, configuration)
+		forthComingLines := inputLines[i+1:]
+		for _, f := range forthComingLines {
+			if isPick(f) && !strings.HasSuffix(f, configuration.WipCommitMessage) {
+				fixup = false
+			}
+		}
 	}
 
 	return strings.Join(result, "\n")
@@ -132,6 +156,10 @@ func markPostWipCommitsForSquashing(input string, configuration Configuration) s
 
 func markSquash(line string) string {
 	return strings.Replace(line, "pick ", "squash ", 1)
+}
+
+func markFixup(line string) string {
+	return strings.Replace(line, "pick ", "fixup ", 1)
 }
 
 func isRebaseWipCommitLine(line string, configuration Configuration) bool {

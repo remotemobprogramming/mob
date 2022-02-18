@@ -64,10 +64,75 @@ func TestSquashWipCommits_withFinalWipCommit(t *testing.T) {
 	squashWip(configuration)
 
 	assertOnBranch(t, "mob-session")
+	assertGitStatus(t, GitStatus{
+		"file3.txt": "A",
+	})
 	equals(t, []string{
-		configuration.WipCommitMessage,
 		"first manual commit",
 	}, commitsOnCurrentBranch(configuration))
+}
+
+func TestSquashWipCommits_withManyFinalWipCommits(t *testing.T) {
+	_, configuration := setup(t)
+
+	// wip commit
+	start(configuration)
+	createFile(t, "file1.txt", "irrelevant")
+	next(configuration)
+
+	// manual commit
+	start(configuration)
+	createFileAndCommitIt(t, "file2.txt", "irrelevant", "first manual commit")
+	next(configuration)
+
+	// wip commit
+	start(configuration)
+	createFile(t, "file3.txt", "irrelevant")
+	next(configuration)
+
+	// wip commit
+	start(configuration)
+	createFile(t, "file4.txt", "irrelevant")
+	next(configuration)
+
+	start(configuration)
+	squashWip(configuration)
+
+	assertOnBranch(t, "mob-session")
+	assertGitStatus(t, GitStatus{
+		"file3.txt": "A",
+		"file4.txt": "A",
+	})
+	equals(t, []string{
+		"first manual commit",
+	}, commitsOnCurrentBranch(configuration))
+}
+
+func TestSquashWipCommits_onlyWipCommits(t *testing.T) {
+	_, configuration := setup(t)
+
+	start(configuration)
+	createFile(t, "file1.txt", "irrelevant")
+	next(configuration)
+
+	start(configuration)
+	createFile(t, "file2.txt", "irrelevant")
+	next(configuration)
+
+	start(configuration)
+	createFile(t, "file3.txt", "irrelevant")
+	next(configuration)
+
+	start(configuration)
+	squashWip(configuration)
+
+	assertOnBranch(t, "mob-session")
+	assertGitStatus(t, GitStatus{
+		"file1.txt": "A",
+		"file2.txt": "A",
+		"file3.txt": "A",
+	})
+	equals(t, []string{""}, commitsOnCurrentBranch(configuration))
 }
 
 func TestSquashWipCommits_resetsEnv(t *testing.T) {
@@ -181,6 +246,62 @@ pick c51a56d manual commit
 squash 01a9a32 %[1]s
 squash 01a9a33 %[1]s
 squash c51a56d manual commit
+
+# Rebase ...`, configuration.WipCommitMessage)
+
+	result := markPostWipCommitsForSquashing(input, configuration)
+
+	equals(t, expected, result)
+}
+
+func TestMarkSquashWip_manualCommitFollowedByWipCommit(t *testing.T) {
+	configuration := getDefaultConfiguration()
+	input := fmt.Sprintf(`pick c51a56d manual commit
+pick 01a9a31 %[1]s
+
+# Rebase ...`, configuration.WipCommitMessage)
+	expected := fmt.Sprintf(`pick c51a56d manual commit
+pick 01a9a31 %[1]s
+
+# Rebase ...`, configuration.WipCommitMessage)
+
+	result := markPostWipCommitsForSquashing(input, configuration)
+
+	equals(t, expected, result)
+}
+
+func TestMarkSquashWip_manualCommitFollowedByManyWipCommits(t *testing.T) {
+	configuration := getDefaultConfiguration()
+	input := fmt.Sprintf(`pick c51a56d manual commit
+pick 01a9a31 %[1]s
+pick 01a9a32 %[1]s
+pick 01a9a33 %[1]s
+
+# Rebase ...`, configuration.WipCommitMessage)
+	expected := fmt.Sprintf(`pick c51a56d manual commit
+pick 01a9a31 %[1]s
+fixup 01a9a32 %[1]s
+fixup 01a9a33 %[1]s
+
+# Rebase ...`, configuration.WipCommitMessage)
+
+	result := markPostWipCommitsForSquashing(input, configuration)
+
+	equals(t, expected, result)
+}
+
+func TestMarkSquashWip_wipThenManualCommitFollowedByManyWipCommits(t *testing.T) {
+	configuration := getDefaultConfiguration()
+	input := fmt.Sprintf(`pick 01a9a31 %[1]s
+pick c51a56d manual commit
+pick 01a9a32 %[1]s
+pick 01a9a33 %[1]s
+
+# Rebase ...`, configuration.WipCommitMessage)
+	expected := fmt.Sprintf(`pick 01a9a31 %[1]s
+squash c51a56d manual commit
+pick 01a9a32 %[1]s
+fixup 01a9a33 %[1]s
 
 # Rebase ...`, configuration.WipCommitMessage)
 

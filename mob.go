@@ -1222,8 +1222,7 @@ func done(configuration Configuration) {
 	}
 
 	if configuration.DoneSquash == SquashWip {
-		sayError("`mob done --squash-wip` not yet supported") // TODO
-		return
+		squashWip(configuration)
 	}
 
 	git("fetch", configuration.RemoteName, "--prune")
@@ -1248,7 +1247,7 @@ func done(configuration Configuration) {
 
 		git("branch", "-D", wipBranch.Name)
 
-		if uncommittedChanges && configuration.DoneSquash == NoSquash { // give the user the chance to name their final commit
+		if uncommittedChanges && configuration.DoneSquash != Squash { // give the user the chance to name their final commit
 			git("reset", "--soft", "HEAD^")
 		}
 
