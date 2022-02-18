@@ -40,6 +40,34 @@ func TestSquashWipCommits_acceptance(t *testing.T) {
 	}, commitsOnCurrentBranch(configuration))
 }
 
+func TestSquashWipCommits_withFinalWipCommit(t *testing.T) {
+	_, configuration := setup(t)
+
+	// change without manual commit
+	start(configuration)
+	createFile(t, "file1.txt", "irrelevant")
+	next(configuration)
+
+	// change with a manual commit
+	start(configuration)
+	createFileAndCommitIt(t, "file2.txt", "irrelevant", "first manual commit")
+	next(configuration)
+
+	// change without manual commit
+	start(configuration)
+	createFile(t, "file3.txt", "irrelevant")
+	next(configuration)
+
+	start(configuration)
+	squashWip(configuration)
+
+	assertOnBranch(t, "mob-session")
+	equals(t, []string{
+		configuration.WipCommitMessage,
+		"first manual commit",
+	}, commitsOnCurrentBranch(configuration))
+}
+
 func TestSquashWipCommits_resetsEnv(t *testing.T) {
 	_, configuration := setup(t)
 	start(configuration)
@@ -53,19 +81,6 @@ func TestSquashWipCommits_resetsEnv(t *testing.T) {
 
 	equals(t, originalGitEditor, os.Getenv("GIT_EDITOR"))
 	equals(t, originalGitSequenceEditor, os.Getenv("GIT_SEQUENCE_EDITOR"))
-}
-
-func TestSquashWipCommits_failsOnFinalWipCommit(t *testing.T) {
-	output, configuration := setup(t)
-	start(configuration)
-	createFile(t, "file2.txt", "irrelevant")
-	next(configuration)
-	start(configuration)
-
-	squashWip(configuration)
-
-	assertCommitLogContainsMessage(t, gitCurrentBranch().Name, configuration.WipCommitMessage)
-	assertOutputContains(t, output, "failed to squash wip commits")
 }
 
 func TestSquashWipCommits_failsOnMainBranch(t *testing.T) {
@@ -111,46 +126,6 @@ func TestCommitsOnCurrentBranch(t *testing.T) {
 		configuration.WipCommitMessage,
 		"on branch",
 	}, commits)
-}
-
-func TestEndsWithWipCommit_finalManualCommit(t *testing.T) {
-	_, configuration := setup(t)
-	start(configuration)
-	createFileAndCommitIt(t, "file1.txt", "irrelevant", "new file")
-
-	equals(t, false, endsWithWipCommit(configuration))
-}
-
-func TestEndsWithWipCommit_finalWipCommit(t *testing.T) {
-	_, configuration := setup(t)
-	start(configuration)
-	createFile(t, "file1.txt", "irrelevant")
-	next(configuration)
-	start(configuration)
-
-	equals(t, true, endsWithWipCommit(configuration))
-}
-
-func TestEndsWithWipCommit_manualThenWipCommit(t *testing.T) {
-	_, configuration := setup(t)
-	start(configuration)
-	createFileAndCommitIt(t, "file1.txt", "irrelevant", "new file")
-	createFile(t, "file2.txt", "irrelevant")
-	next(configuration)
-	start(configuration)
-
-	equals(t, true, endsWithWipCommit(configuration))
-}
-
-func TestEndsWithWipCommit_wipThenManualCommit(t *testing.T) {
-	_, configuration := setup(t)
-	start(configuration)
-	createFile(t, "file2.txt", "irrelevant")
-	next(configuration)
-	start(configuration)
-	createFileAndCommitIt(t, "file1.txt", "irrelevant", "new file")
-
-	equals(t, false, endsWithWipCommit(configuration))
 }
 
 func TestMarkSquashWip_singleManualCommit(t *testing.T) {

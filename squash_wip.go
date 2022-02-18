@@ -16,14 +16,6 @@ func squashWip(configuration Configuration) {
 		return
 	}
 
-	if endsWithWipCommit(configuration) {
-		sayError(`failed to squash wip commits
-last commit must be a manual commit`)
-		sayEmptyLine()
-		sayTodo("create a manual commit with a commit message to fix this:", "git commit --allow-empty -m \"your message goes here\"")
-		return
-	}
-
 	currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), gitBranches(), configuration)
 	mergeBase := silentgit("merge-base", currentWipBranch.String(), currentBaseBranch.String())
 
@@ -118,10 +110,6 @@ func commentWipCommits(input string, configuration Configuration) string {
 		}
 	}
 	return strings.Join(result, "\n")
-}
-
-func endsWithWipCommit(configuration Configuration) bool {
-	return configuration.isWipCommitMessage(commitsOnCurrentBranch(configuration)[0])
 }
 
 func commitsOnCurrentBranch(configuration Configuration) []string {
