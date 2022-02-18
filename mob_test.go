@@ -45,24 +45,24 @@ func TestParseArgs(t *testing.T) {
 
 func TestParseArgsDoneNoSquash(t *testing.T) {
 	configuration := getDefaultConfiguration()
-	equals(t, true, configuration.DoneSquash)
+	equals(t, Squash, configuration.DoneSquash)
 
 	command, parameters, configuration := parseArgs([]string{"mob", "done", "--no-squash"}, configuration)
 
 	equals(t, "done", command)
 	equals(t, "", strings.Join(parameters, ""))
-	equals(t, false, configuration.DoneSquash)
+	equals(t, NoSquash, configuration.DoneSquash)
 }
 
 func TestParseArgsDoneSquash(t *testing.T) {
 	configuration := getDefaultConfiguration()
-	configuration.DoneSquash = false
+	configuration.DoneSquash = NoSquash
 
 	command, parameters, configuration := parseArgs([]string{"mob", "done", "--squash"}, configuration)
 
 	equals(t, "done", command)
 	equals(t, "", strings.Join(parameters, ""))
-	equals(t, true, configuration.DoneSquash)
+	equals(t, Squash, configuration.DoneSquash)
 }
 
 func TestParseArgsMessage(t *testing.T) {
@@ -173,8 +173,19 @@ func TestMobRemoteNameEnvironmentVariableEmptyString(t *testing.T) {
 	equals(t, "origin", configuration.RemoteName)
 }
 
+func TestMobDoneSquashEnvironmentVariable(t *testing.T) {
+	assertMobDoneSquashValue(t, "", Squash)
+	assertMobDoneSquashValue(t, "true", Squash)
+	assertMobDoneSquashValue(t, "false", NoSquash)
+	assertMobDoneSquashValue(t, "garbage", Squash)
+}
+
+func assertMobDoneSquashValue(t *testing.T, value string, expected DoneSquash) {
+	configuration := setEnvVarAndParse("MOB_DONE_SQUASH", value)
+	equals(t, expected, configuration.DoneSquash)
+}
+
 func TestBooleanEnvironmentVariables(t *testing.T) {
-	assertBoolEnvVarParsed(t, "MOB_DONE_SQUASH", true, Configuration.GetMobDoneSquash)
 	assertBoolEnvVarParsed(t, "MOB_START_INCLUDE_UNCOMMITTED_CHANGES", false, Configuration.GetMobStartIncludeUncommittedChanges)
 	assertBoolEnvVarParsed(t, "MOB_NEXT_STAY", true, Configuration.GetMobNextStay)
 	assertBoolEnvVarParsed(t, "MOB_REQUIRE_COMMIT_MESSAGE", false, Configuration.GetRequireCommitMessage)
@@ -209,7 +220,7 @@ func boolToInterface(actual func(Configuration) bool) func(c Configuration) inte
 	}
 }
 
-func (c Configuration) GetMobDoneSquash() bool {
+func (c Configuration) GetMobDoneSquash() DoneSquash {
 	return c.DoneSquash
 }
 
@@ -352,7 +363,7 @@ func TestReadConfigurationFromFileOverrideEverything(t *testing.T) {
 	equals(t, true, actualConfiguration.StartIncludeUncommittedChanges)
 	equals(t, "green", actualConfiguration.WipBranchQualifier)
 	equals(t, "---", actualConfiguration.WipBranchQualifierSeparator)
-	equals(t, false, actualConfiguration.DoneSquash)
+	equals(t, NoSquash, actualConfiguration.DoneSquash)
 	equals(t, "123", actualConfiguration.Timer)
 	equals(t, "Room_42", actualConfiguration.TimerRoom)
 	equals(t, true, actualConfiguration.TimerRoomUseWipBranchQualifier)
@@ -662,9 +673,9 @@ func TestStartNextStay(t *testing.T) {
 	assertOnBranch(t, "mob-session")
 }
 
-func TestStartDoneWithMobDoneSquashTrue(t *testing.T) {
+func TestStartDoneWithMobDoneSquash(t *testing.T) {
 	_, configuration := setup(t)
-	configuration.DoneSquash = true
+	configuration.DoneSquash = Squash
 
 	start(configuration)
 	assertOnBranch(t, "mob-session")
@@ -718,9 +729,9 @@ func TestTestbed(t *testing.T) {
 	assertOutputContains(t, &output, "bob")
 }
 
-func TestStartDoneWithMobDoneSquashFalse(t *testing.T) {
+func TestStartDoneWithMobDoneNoSquash(t *testing.T) {
 	_, configuration := setup(t)
-	configuration.DoneSquash = false
+	configuration.DoneSquash = NoSquash
 
 	start(configuration)
 	assertOnBranch(t, "mob-session")
@@ -733,7 +744,7 @@ func TestStartDoneWithMobDoneSquashFalse(t *testing.T) {
 
 func TestStartDonePublishingOneManualCommit(t *testing.T) {
 	_, configuration := setup(t)
-	configuration.DoneSquash = false // default is true
+	configuration.DoneSquash = NoSquash
 
 	start(configuration)
 	assertOnBranch(t, "mob-session")
@@ -754,7 +765,7 @@ func TestStartDonePublishingOneManualCommit(t *testing.T) {
 
 func TestStartDoneSquashTheOneManualCommit(t *testing.T) {
 	_, configuration := setup(t)
-	configuration.DoneSquash = true
+	configuration.DoneSquash = Squash
 
 	start(configuration)
 	assertOnBranch(t, "mob-session")
@@ -793,7 +804,7 @@ func TestStartDoneWithUncommittedChanges(t *testing.T) {
 
 func TestStartDoneNoSquashWithUncommittedChanges(t *testing.T) {
 	_, configuration := setup(t)
-	configuration.DoneSquash = false // default is true
+	configuration.DoneSquash = NoSquash
 
 	start(configuration) // should be 1 commit on mob-session so far
 	createFile(t, "example.txt", "content")
