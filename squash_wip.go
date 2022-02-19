@@ -125,30 +125,32 @@ func commentWipCommits(input string, configuration Configuration) string {
 func markPostWipCommitsForSquashing(input string, configuration Configuration) string {
 	var result []string
 
-	var shouldChange = false
-	var fixup = true
-
 	inputLines := strings.Split(input, "\n")
 	for i, line := range inputLines {
+		previousLine := previousLine(inputLines, i)
 
-		if shouldChange {
-			if fixup {
+		if isWipCommitLine(previousLine, configuration) {
+			forthComingLines := inputLines[i:]
+
+			if hasOnlyWipCommits(forthComingLines, configuration) {
 				result = append(result, markFixup(line))
 			} else {
 				result = append(result, markSquash(line))
 			}
 		} else {
 			result = append(result, line) // remains pick
-			fixup = true
 		}
-
-		shouldChange = isRebaseWipCommitLine(line, configuration)
-
-		forthComingLines := inputLines[i+1:]
-		fixup = hasOnlyWipCommits(forthComingLines, configuration)
 	}
 
 	return strings.Join(result, "\n")
+}
+
+func previousLine(inputLines []string, currentIndex int) string {
+	var previousLine = ""
+	if currentIndex > 0 {
+		previousLine = inputLines[currentIndex-1]
+	}
+	return previousLine
 }
 
 func hasOnlyWipCommits(forthComingLines []string, configuration Configuration) bool {
@@ -169,7 +171,7 @@ func markFixup(line string) string {
 	return strings.Replace(line, "pick ", "fixup ", 1)
 }
 
-func isRebaseWipCommitLine(line string, configuration Configuration) bool {
+func isWipCommitLine(line string, configuration Configuration) bool {
 	return isPick(line) && isWipCommit(line, configuration)
 }
 
