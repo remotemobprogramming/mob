@@ -24,15 +24,17 @@ func squashWip(configuration Configuration) {
 		mobExecutable()+" squash-wip --git-editor",
 		mobExecutable()+" squash-wip --git-sequence-editor",
 	)
-	silentgit("rebase", "-i", "--keep-empty", mergeBase)
+	git("rebase", "-i", "--keep-empty", mergeBase)
 	setEnvGitEditor(originalGitEditor, originalGitSequenceEditor)
-	sayInfo("the history of your '" + currentWipBranch.String() + "' branch has been rewritten to combine all wip commits with their following manual commits:")
+	sayInfo("the history of your '" + currentWipBranch.String() + "' branch has been rewritten to combine all wip commits, if possible with their following manual commits:")
+	sayEmptyLine()
+	sayLastCommitsWithMessage(currentBaseBranch.String(), currentWipBranch.String())
 	if lastCommitIsWipCommit(configuration) { // last commit is wip commit
+		sayInfo("undoing the final wip commit and staging its changes:")
 		git("reset", "--soft", "HEAD^")
 	}
 	git("push", "--force")
-	sayEmptyLine()
-	sayLastCommitsWithMessage(currentBaseBranch.String(), currentWipBranch.String())
+
 }
 
 func lastCommitIsWipCommit(configuration Configuration) bool {
