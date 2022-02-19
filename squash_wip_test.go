@@ -11,11 +11,7 @@ import (
 func TestSquashWipCommits_acceptance(t *testing.T) {
 	_, configuration := setup(t)
 	wipCommit(t, configuration, "file1.txt")
-
-	// manual commit
-	start(configuration)
-	createFileAndCommitIt(t, "file2.txt", "irrelevant", "first manual commit")
-	next(configuration)
+	manualCommit(t, configuration, "file2.txt", "first manual commit")
 
 	// manual commit followed by a wip commit
 	start(configuration)
@@ -40,17 +36,11 @@ func TestSquashWipCommits_acceptance(t *testing.T) {
 
 func TestSquashWipCommits_withFinalWipCommit(t *testing.T) {
 	_, configuration := setup(t)
-
 	wipCommit(t, configuration, "file1.txt")
-
-	// manual commit
-	start(configuration)
-	createFileAndCommitIt(t, "file2.txt", "irrelevant", "first manual commit")
-	next(configuration)
-
+	manualCommit(t, configuration, "file2.txt", "first manual commit")
 	wipCommit(t, configuration, "file3.txt")
-
 	start(configuration)
+
 	squashWip(configuration)
 
 	assertOnBranch(t, "mob-session")
@@ -64,19 +54,12 @@ func TestSquashWipCommits_withFinalWipCommit(t *testing.T) {
 
 func TestSquashWipCommits_withManyFinalWipCommits(t *testing.T) {
 	_, configuration := setup(t)
-
 	wipCommit(t, configuration, "file1.txt")
-
-	// manual commit
-	start(configuration)
-	createFileAndCommitIt(t, "file2.txt", "irrelevant", "first manual commit")
-	next(configuration)
-
+	manualCommit(t, configuration, "file2.txt", "first manual commit")
 	wipCommit(t, configuration, "file3.txt")
-
 	wipCommit(t, configuration, "file4.txt")
-
 	start(configuration)
+
 	squashWip(configuration)
 
 	assertOnBranch(t, "mob-session")
@@ -95,6 +78,7 @@ func TestSquashWipCommits_onlyWipCommits(t *testing.T) {
 	wipCommit(t, configuration, "file2.txt")
 	wipCommit(t, configuration, "file3.txt")
 	start(configuration)
+
 	squashWip(configuration)
 
 	assertOnBranch(t, "mob-session")
@@ -366,6 +350,12 @@ squash c51a56d manual commit
 func wipCommit(t *testing.T, configuration Configuration, filename string) {
 	start(configuration)
 	createFile(t, filename, "irrelevant")
+	next(configuration)
+}
+
+func manualCommit(t *testing.T, configuration Configuration, filename string, message string) {
+	start(configuration)
+	createFileAndCommitIt(t, filename, "irrelevant", message)
 	next(configuration)
 }
 
