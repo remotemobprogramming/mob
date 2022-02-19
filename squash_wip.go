@@ -34,7 +34,6 @@ func squashWip(configuration Configuration) {
 		git("reset", "--soft", "HEAD^")
 	}
 	git("push", "--force")
-
 }
 
 func lastCommitIsWipCommit(configuration Configuration) bool {

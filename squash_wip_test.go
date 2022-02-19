@@ -10,24 +10,20 @@ import (
 
 func TestSquashWipCommits_acceptance(t *testing.T) {
 	_, configuration := setup(t)
+	wipCommit(t, configuration, "file1.txt")
 
-	// change without manual commit
-	start(configuration)
-	createFile(t, "file1.txt", "irrelevant")
-	next(configuration)
-
-	// change with a manual commit
+	// manual commit
 	start(configuration)
 	createFileAndCommitIt(t, "file2.txt", "irrelevant", "first manual commit")
 	next(configuration)
 
-	// change with a manual commit followed by an uncommited change
+	// manual commit followed by a wip commit
 	start(configuration)
 	createFileAndCommitIt(t, "file3.txt", "irrelevant", "second manual commit")
 	createFile(t, "file4.txt", "irrelevant")
 	next(configuration)
 
-	// change with a final manual commit
+	// final manual commit
 	start(configuration)
 	createFileAndCommitIt(t, "file5.txt", "irrelevant", "third manual commit")
 
@@ -45,20 +41,14 @@ func TestSquashWipCommits_acceptance(t *testing.T) {
 func TestSquashWipCommits_withFinalWipCommit(t *testing.T) {
 	_, configuration := setup(t)
 
-	// change without manual commit
-	start(configuration)
-	createFile(t, "file1.txt", "irrelevant")
-	next(configuration)
+	wipCommit(t, configuration, "file1.txt")
 
-	// change with a manual commit
+	// manual commit
 	start(configuration)
 	createFileAndCommitIt(t, "file2.txt", "irrelevant", "first manual commit")
 	next(configuration)
 
-	// change without manual commit
-	start(configuration)
-	createFile(t, "file3.txt", "irrelevant")
-	next(configuration)
+	wipCommit(t, configuration, "file3.txt")
 
 	start(configuration)
 	squashWip(configuration)
@@ -75,25 +65,16 @@ func TestSquashWipCommits_withFinalWipCommit(t *testing.T) {
 func TestSquashWipCommits_withManyFinalWipCommits(t *testing.T) {
 	_, configuration := setup(t)
 
-	// wip commit
-	start(configuration)
-	createFile(t, "file1.txt", "irrelevant")
-	next(configuration)
+	wipCommit(t, configuration, "file1.txt")
 
 	// manual commit
 	start(configuration)
 	createFileAndCommitIt(t, "file2.txt", "irrelevant", "first manual commit")
 	next(configuration)
 
-	// wip commit
-	start(configuration)
-	createFile(t, "file3.txt", "irrelevant")
-	next(configuration)
+	wipCommit(t, configuration, "file3.txt")
 
-	// wip commit
-	start(configuration)
-	createFile(t, "file4.txt", "irrelevant")
-	next(configuration)
+	wipCommit(t, configuration, "file4.txt")
 
 	start(configuration)
 	squashWip(configuration)
@@ -110,19 +91,9 @@ func TestSquashWipCommits_withManyFinalWipCommits(t *testing.T) {
 
 func TestSquashWipCommits_onlyWipCommits(t *testing.T) {
 	_, configuration := setup(t)
-
-	start(configuration)
-	createFile(t, "file1.txt", "irrelevant")
-	next(configuration)
-
-	start(configuration)
-	createFile(t, "file2.txt", "irrelevant")
-	next(configuration)
-
-	start(configuration)
-	createFile(t, "file3.txt", "irrelevant")
-	next(configuration)
-
+	wipCommit(t, configuration, "file1.txt")
+	wipCommit(t, configuration, "file2.txt")
+	wipCommit(t, configuration, "file3.txt")
 	start(configuration)
 	squashWip(configuration)
 
@@ -160,11 +131,7 @@ func TestSquashWipCommits_failsOnMainBranch(t *testing.T) {
 
 func TestSquashWipCommits_worksWithEmptyCommits(t *testing.T) {
 	_, configuration := setup(t)
-
-	// change without manual commit
-	start(configuration)
-	createFile(t, "file1.txt", "irrelevant")
-	next(configuration)
+	wipCommit(t, configuration, "file1.txt")
 
 	start(configuration)
 	silentgit("commit", "--allow-empty", "-m ok")
@@ -394,6 +361,12 @@ squash c51a56d manual commit
 
 	result, _ := ioutil.ReadFile(input)
 	equals(t, expected, string(result))
+}
+
+func wipCommit(t *testing.T, configuration Configuration, filename string) {
+	start(configuration)
+	createFile(t, filename, "irrelevant")
+	next(configuration)
 }
 
 func commitsOnCurrentBranch(configuration Configuration) []string {
