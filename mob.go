@@ -667,6 +667,8 @@ func parseArgs(args []string, configuration Configuration) (command string, para
 			newConfiguration.DoneSquash = Squash
 		case "--no-squash":
 			newConfiguration.DoneSquash = NoSquash
+		case "--squash-wip":
+			newConfiguration.DoneSquash = SquashWip
 		default:
 			if i == 1 {
 				command = arg
@@ -1424,6 +1426,7 @@ Basic Commands(Options):
   done
     [--no-squash]                        Do not squash commits from wip branch
     [--squash]                           Squash commits from wip branch
+    [--squash-wip]                       Squash wip commits from wip branch, maintaining manual commits
   reset
     [--branch|-b <branch-postfix>]       Set wip branch to 'mob/<base-branch>/<branch-postfix>'
 

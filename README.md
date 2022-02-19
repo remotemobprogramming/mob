@@ -168,6 +168,7 @@ Basic Commands(Options):
   done
     [--no-squash]                        Do not squash commits from wip branch
     [--squash]                           Squash commits from wip branch
+    [--squash-wip]                       Squash wip commits from wip branch, maintaining manual commits
   reset
     [--branch|-b <branch-postfix>]       Set wip branch to 'mob/<base-branch>-<branch-postfix>'
 
