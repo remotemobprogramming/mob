@@ -126,23 +126,27 @@ func markPostWipCommitsForSquashing(input string, configuration Configuration) s
 	var result []string
 
 	inputLines := strings.Split(input, "\n")
-	for i, line := range inputLines {
-		previousLine := previousLine(inputLines, i)
-
-		if isWipCommitLine(previousLine, configuration) {
-			forthComingLines := inputLines[i:]
-
-			if hasOnlyWipCommits(forthComingLines, configuration) {
-				result = append(result, markFixup(line))
-			} else {
-				result = append(result, markSquash(line))
-			}
-		} else {
-			result = append(result, line) // remains pick
-		}
+	for index := range inputLines {
+		markedLine := markLine(inputLines, index, configuration)
+		result = append(result, markedLine)
 	}
 
 	return strings.Join(result, "\n")
+}
+
+func markLine(inputLines []string, i int, configuration Configuration) string {
+	var resultLine = inputLines[i]
+	previousLine := previousLine(inputLines, i)
+	if isWipCommitLine(previousLine, configuration) {
+		forthComingLines := inputLines[i:]
+
+		if hasOnlyWipCommits(forthComingLines, configuration) {
+			resultLine = markFixup(inputLines[i])
+		} else {
+			resultLine = markSquash(inputLines[i])
+		}
+	}
+	return resultLine
 }
 
 func previousLine(inputLines []string, currentIndex int) string {
