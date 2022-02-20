@@ -31,9 +31,21 @@ type DoneSquash string
 
 const (
 	Squash    DoneSquash = "squash"
-	NoSquash  DoneSquash = "no-squash"
-	SquashWip DoneSquash = "squash-wip"
+	NoSquash             = "no-squash"
+	SquashWip            = "squash-wip"
 )
+
+func doneSquash(value string) DoneSquash {
+	switch value {
+	case "false":
+		fallthrough
+	case NoSquash:
+		return NoSquash
+	case SquashWip:
+		return SquashWip
+	}
+	return Squash
+}
 
 type Configuration struct {
 	CliName                        string     // override with MOB_CLI_NAME
@@ -572,22 +584,15 @@ func setDoneSquashFromEnvVariable(configuration *Configuration, key string) {
 	if !set {
 		return
 	}
+
+	configuration.DoneSquash = doneSquash(value)
+
 	if value == "" {
 		debugInfo("ignoring " + key + "=" + value + " (empty string)")
+		return
 	}
 
-	if value == "true" || value == string(Squash) {
-		configuration.DoneSquash = Squash
-		debugInfo("overriding " + key + "=" + string(Squash))
-	} else if value == "false" || value == string(NoSquash) {
-		configuration.DoneSquash = NoSquash
-		debugInfo("overriding " + key + "=" + string(NoSquash))
-	} else if value == string(SquashWip) {
-		configuration.DoneSquash = SquashWip
-		debugInfo("overriding " + key + "=" + string(SquashWip))
-	} else {
-		sayError("ignoring " + key + "=" + value + " (not a boolean)")
-	}
+	debugInfo("overriding " + key + "=" + string(configuration.DoneSquash))
 }
 
 func removed(key string, message string) {
