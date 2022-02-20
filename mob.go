@@ -866,8 +866,8 @@ func getMobTimerRoom(configuration Configuration) string {
 		currentBaseBranch, _ := determineBranches(currentBranch, gitBranches(), configuration)
 
 		if currentBranch.IsWipBranch(configuration) {
-			wipBranchWithouthWipPrefix := currentBranch.removeWipPrefix(configuration).Name
-			currentWipBranchQualifier = removePrefix(removePrefix(wipBranchWithouthWipPrefix, currentBaseBranch.Name), configuration.WipBranchQualifierSeparator)
+			wipBranchWithoutWipPrefix := currentBranch.removeWipPrefix(configuration).Name
+			currentWipBranchQualifier = removePrefix(removePrefix(wipBranchWithoutWipPrefix, currentBaseBranch.Name), configuration.WipBranchQualifierSeparator)
 		}
 	}
 
