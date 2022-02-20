@@ -279,7 +279,7 @@ func TestRequireCommitMessage(t *testing.T) {
 	// https://github.com/remotemobprogramming/mob/pull/107#issuecomment-761298861
 	assertOutputContains(t, output, "nothing to commit")
 
-	createFile(t, "example.txt", "content")
+	createFile(t, "example.txt", "contentIrrelevant")
 	next(configuration)
 	// failure message should make sense regardless of whether we
 	// provided commit message via `-m` or MOB_WIP_COMMIT_MESSAGE
@@ -310,7 +310,7 @@ func TestStatusWithMoreThan5LinesOfLog(t *testing.T) {
 	start(configuration)
 
 	for i := 0; i < 6; i++ {
-		createFile(t, "test"+strconv.Itoa(i)+".txt", "test")
+		createFile(t, "test"+strconv.Itoa(i)+".txt", "contentIrrelevant")
 		next(configuration)
 	}
 
@@ -565,7 +565,7 @@ func TestReset(t *testing.T) {
 func TestResetCommit(t *testing.T) {
 	_, configuration := setup(t)
 	start(configuration)
-	createFile(t, "example.txt", "content")
+	createFile(t, "example.txt", "contentIrrelevant")
 	next(configuration)
 	assertMobSessionBranches(t, configuration, "mob-session")
 
@@ -578,7 +578,7 @@ func TestResetCommit(t *testing.T) {
 func TestStartUnstagedChanges(t *testing.T) {
 	output, configuration := setup(t)
 	configuration.StartIncludeUncommittedChanges = false
-	createFile(t, "test.txt", "content")
+	createFile(t, "test.txt", "contentIrrelevant")
 
 	start(configuration)
 
@@ -590,7 +590,7 @@ func TestStartUnstagedChanges(t *testing.T) {
 func TestStartIncludeUnstagedChanges(t *testing.T) {
 	_, configuration := setup(t)
 	configuration.StartIncludeUncommittedChanges = true
-	createFile(t, "test.txt", "content")
+	createFile(t, "test.txt", "contentIrrelevant")
 
 	start(configuration)
 
@@ -604,7 +604,7 @@ func TestStartIncludeUnstagedChangesInNewWorkingDirectory(t *testing.T) {
 	Debug = true
 	createDirectory(t, "subdirnew")
 	setWorkingDir(tempDir + "/local/subdirnew")
-	createFile(t, "test.txt", "content")
+	createFile(t, "test.txt", "contentIrrelevant")
 	assertFileExist(t, tempDir+"/local/subdirnew/test.txt")
 
 	start(configuration)
@@ -614,7 +614,7 @@ func TestStartIncludeUnstagedChangesInNewWorkingDirectory(t *testing.T) {
 
 func TestStartHasUnpushedCommits(t *testing.T) {
 	output, configuration := setup(t)
-	createFileAndCommitIt(t, "test.txt", "content", "unpushed change")
+	createFileAndCommitIt(t, "test.txt", "contentIrrelevant", "unpushed change")
 
 	start(configuration)
 
@@ -634,7 +634,7 @@ func TestBranch(t *testing.T) {
 func TestStartIncludeUntrackedFiles(t *testing.T) {
 	_, configuration := setup(t)
 	configuration.StartIncludeUncommittedChanges = true
-	createFile(t, "example.txt", "content")
+	createFile(t, "example.txt", "contentIrrelevant")
 
 	start(configuration)
 
@@ -644,7 +644,7 @@ func TestStartIncludeUntrackedFiles(t *testing.T) {
 func TestStartUntrackedFiles(t *testing.T) {
 	_, configuration := setup(t)
 	configuration.StartIncludeUncommittedChanges = false
-	createFile(t, "example.txt", "content")
+	createFile(t, "example.txt", "contentIrrelevant")
 
 	start(configuration)
 
@@ -654,7 +654,7 @@ func TestStartUntrackedFiles(t *testing.T) {
 func TestStartNextBackToMaster(t *testing.T) {
 	_, configuration := setup(t)
 	start(configuration)
-	createFile(t, "example.txt", "content")
+	createFile(t, "example.txt", "contentIrrelevant")
 	assertOnBranch(t, "mob-session")
 
 	next(configuration)
@@ -667,7 +667,7 @@ func TestStartNextStay(t *testing.T) {
 	_, configuration := setup(t)
 	configuration.NextStay = true
 	start(configuration)
-	createFile(t, "file1.txt", "asdf")
+	createFile(t, "file1.txt", "contentIrrelevant")
 	assertOnBranch(t, "mob-session")
 
 	next(configuration)
@@ -753,7 +753,7 @@ func TestStartDonePublishingOneManualCommit(t *testing.T) {
 	assertOnBranch(t, "mob-session")
 	// should be 1 commit on mob-session so far
 
-	createFileAndCommitIt(t, "example.txt", "content", "[manual-commit-1] publish this commit to master")
+	createFileAndCommitIt(t, "example.txt", "contentIrrelevant", "[manual-commit-1] publish this commit to master")
 	assertCommits(t, 2)
 
 	done(configuration) // without squash (configuration)
@@ -774,7 +774,7 @@ func TestStartDoneSquashTheOneManualCommit(t *testing.T) {
 	assertOnBranch(t, "mob-session")
 	// should be 1 commit on mob-session so far
 
-	createFileAndCommitIt(t, "example.txt", "content", "[manual-commit-1] publish this commit to master")
+	createFileAndCommitIt(t, "example.txt", "contentIrrelevant", "[manual-commit-1] publish this commit to master")
 	assertCommits(t, 2)
 
 	done(configuration)
@@ -792,7 +792,7 @@ func TestStartDoneWithUncommittedChanges(t *testing.T) {
 	_, configuration := setup(t)
 
 	start(configuration) // should be 1 commit on mob-session so far
-	createFile(t, "example.txt", "content")
+	createFile(t, "example.txt", "contentIrrelevant")
 
 	done(configuration)
 
@@ -828,11 +828,11 @@ func TestStartDoneSquashWipPublishingOneManualCommit(t *testing.T) {
 	configuration.DoneSquash = SquashWip
 
 	start(configuration)
-	createFile(t, "some.txt", "irrelevant")
+	createFile(t, "some.txt", "contentIrrelevant")
 	next(configuration) // this wip commit will be squashed
 
 	start(configuration)
-	createFileAndCommitIt(t, "example.txt", "content", "[manual-commit-1] publish this commit to master")
+	createFileAndCommitIt(t, "example.txt", "contentIrrelevant", "[manual-commit-1] publish this commit to master")
 
 	done(configuration)
 
@@ -848,7 +848,7 @@ func TestStartDoneSquashWipWithUncommittedChanges(t *testing.T) {
 	_, configuration := setup(t)
 
 	start(configuration) // should be 1 commit on mob-session so far
-	createFile(t, "example.txt", "content")
+	createFile(t, "example.txt", "contentIrrelevant")
 
 	configuration.DoneSquash = SquashWip
 	done(configuration)
@@ -866,11 +866,11 @@ func TestStartDoneSquashWipOneWipCommitAfterManualCommit(t *testing.T) {
 	_, configuration := setup(t)
 
 	start(configuration)
-	createFileAndCommitIt(t, "example.txt", "content", "[manual-commit-1] publish this commit to master")
+	createFileAndCommitIt(t, "example.txt", "contentIrrelevant", "[manual-commit-1] publish this commit to master")
 	next(configuration)
 
 	start(configuration)
-	createFile(t, "file.txt", "irrelevant") // the user should see these changes staged after done
+	createFile(t, "file.txt", "contentIrrelevant") // the user should see these changes staged after done
 	next(configuration)
 
 	start(configuration)
@@ -890,15 +890,15 @@ func TestStartDoneSquashWipManyWipCommitsAfterManualCommit(t *testing.T) {
 	_, configuration := setup(t)
 
 	start(configuration)
-	createFileAndCommitIt(t, "example.txt", "content", "[manual-commit-1] publish this commit to master")
+	createFileAndCommitIt(t, "example.txt", "contentIrrelevant", "[manual-commit-1] publish this commit to master")
 	next(configuration)
 
 	start(configuration)
-	createFile(t, "file1.txt", "irrelevant") // the user should see these changes staged after done
+	createFile(t, "file1.txt", "contentIrrelevant") // the user should see these changes staged after done
 	next(configuration)
 
 	start(configuration)
-	createFile(t, "file2.txt", "irrelevant") // the user should see these changes staged after done
+	createFile(t, "file2.txt", "contentIrrelevant") // the user should see these changes staged after done
 	next(configuration)
 
 	start(configuration)
@@ -919,11 +919,11 @@ func TestStartDoneSquashWipOnlyWipCommits(t *testing.T) {
 	_, configuration := setup(t)
 
 	start(configuration)
-	createFile(t, "file1.txt", "irrelevant") // the user should see these changes staged after done
+	createFile(t, "file1.txt", "contentIrrelevant") // the user should see these changes staged after done
 	next(configuration)
 
 	start(configuration)
-	createFile(t, "file2.txt", "irrelevant") // the user should see these changes staged after done
+	createFile(t, "file2.txt", "contentIrrelevant") // the user should see these changes staged after done
 	next(configuration)
 
 	start(configuration)
@@ -943,11 +943,11 @@ func TestStartDoneSquashWipOnlyManualCommits(t *testing.T) {
 	_, configuration := setup(t)
 
 	start(configuration)
-	createFileAndCommitIt(t, "example.txt", "content", "[manual-commit-1] publish this commit to master")
+	createFileAndCommitIt(t, "example.txt", "contentIrrelevant", "[manual-commit-1] publish this commit to master")
 	next(configuration)
 
 	start(configuration)
-	createFileAndCommitIt(t, "example2.txt", "content", "[manual-commit-2] publish this commit to master")
+	createFileAndCommitIt(t, "example2.txt", "contentIrrelevant", "[manual-commit-2] publish this commit to master")
 	next(configuration)
 
 	start(configuration)
@@ -1011,11 +1011,11 @@ func TestBothCreateNonemptyCommitWithNext(t *testing.T) {
 
 	setWorkingDir(tempDir + "/local")
 	start(configuration)
-	createFile(t, "file1.txt", "asdf")
+	createFile(t, "file1.txt", "contentIrrelevant")
 
 	setWorkingDir(tempDir + "/localother")
 	start(configuration)
-	createFile(t, "file2.txt", "asdf")
+	createFile(t, "file2.txt", "contentIrrelevant")
 
 	setWorkingDir(tempDir + "/local")
 	next(configuration)
@@ -1068,7 +1068,7 @@ func TestStartNextPushManualCommits(t *testing.T) {
 	setWorkingDir(tempDir + "/local")
 
 	start(configuration)
-	createFileAndCommitIt(t, "example.txt", "content", "asdf")
+	createFileAndCommitIt(t, "example.txt", "contentIrrelevant", "asdf")
 	next(configuration)
 
 	setWorkingDir(tempDir + "/localother")
@@ -1087,7 +1087,7 @@ func TestStartNextPushManualCommitsFeatureBranch(t *testing.T) {
 	start(configuration)
 	assertOnBranch(t, "mob/feature1")
 
-	createFileAndCommitIt(t, "example.txt", "content", "asdf")
+	createFileAndCommitIt(t, "example.txt", "contentIrrelevant", "asdf")
 	next(configuration)
 
 	setWorkingDir(tempDir + "/localother")
@@ -1102,7 +1102,7 @@ func TestConflictingMobSessions(t *testing.T) {
 
 	setWorkingDir(tempDir + "/local")
 	start(configuration)
-	createFile(t, "example.txt", "content")
+	createFile(t, "example.txt", "contentIrrelevant")
 	next(configuration)
 
 	setWorkingDir(tempDir + "/localother")
@@ -1116,7 +1116,7 @@ func TestConflictingMobSessions(t *testing.T) {
 
 	setWorkingDir(tempDir + "/local")
 	start(configuration)
-	createFile(t, "example2.txt", "content")
+	createFile(t, "example2.txt", "contentIrrelevant")
 	next(configuration)
 
 	setWorkingDir(tempDir + "/localother")
@@ -1129,7 +1129,7 @@ func TestConflictingMobSessionsNextStay(t *testing.T) {
 
 	setWorkingDir(tempDir + "/local")
 	start(configuration)
-	createFile(t, "example.txt", "content")
+	createFile(t, "example.txt", "contentIrrelevant")
 	next(configuration)
 
 	setWorkingDir(tempDir + "/localother")
@@ -1168,11 +1168,11 @@ func TestDoneMerge(t *testing.T) {
 
 	setWorkingDir(tempDir + "/local")
 	start(configuration)
-	createFile(t, "example.txt", "content")
+	createFile(t, "example.txt", "contentIrrelevant")
 	next(configuration)
 
 	setWorkingDir(tempDir + "/localother")
-	createFileAndCommitIt(t, "example2.txt", "asdf", "asdf")
+	createFileAndCommitIt(t, "example2.txt", "contentIrrelevant", "asdf")
 	git("push")
 
 	setWorkingDir(tempDir + "/local")
@@ -1197,13 +1197,13 @@ func TestStartAndNextInSubdir(t *testing.T) {
 
 	setWorkingDir(tempDir + "/local/subdir")
 	start(configuration)
-	createFile(t, "example.txt", "content")
+	createFile(t, "example.txt", "contentIrrelevant")
 	next(configuration)
 
 	setWorkingDir(tempDir + "/localother/subdir")
 	start(configuration)
-	createFile(t, "example2.txt", "content")
-	createFile(t, "../example3.txt", "content")
+	createFile(t, "example2.txt", "contentIrrelevant")
+	createFile(t, "../example3.txt", "contentIrrelevant")
 	next(configuration)
 
 	setWorkingDir(tempDir + "/local/subdir")
@@ -1244,7 +1244,7 @@ func TestEmptyGitStatus(t *testing.T) {
 
 func TestGitStatusWithOneFile(t *testing.T) {
 	setup(t)
-	createFile(t, "hello.txt", "")
+	createFile(t, "hello.txt", "contentIrrelevant")
 
 	status := gitStatus()
 
@@ -1255,8 +1255,8 @@ func TestGitStatusWithOneFile(t *testing.T) {
 
 func TestGitStatusWithManyFiles(t *testing.T) {
 	setup(t)
-	createFile(t, "hello.txt", "")
-	createFile(t, "added.txt", "")
+	createFile(t, "hello.txt", "contentIrrelevant")
+	createFile(t, "added.txt", "contentIrrelevant")
 	git("add", "added.txt")
 
 	status := gitStatus()

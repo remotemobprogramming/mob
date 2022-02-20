@@ -15,13 +15,13 @@ func TestSquashWipCommits_acceptance(t *testing.T) {
 
 	// manual commit followed by a wip commit
 	start(configuration)
-	createFileAndCommitIt(t, "file3.txt", "irrelevant", "second manual commit")
-	createFile(t, "file4.txt", "irrelevant")
+	createFileAndCommitIt(t, "file3.txt", "contentIrrelevant", "second manual commit")
+	createFile(t, "file4.txt", "contentIrrelevant")
 	next(configuration)
 
 	// final manual commit
 	start(configuration)
-	createFileAndCommitIt(t, "file5.txt", "irrelevant", "third manual commit")
+	createFileAndCommitIt(t, "file5.txt", "contentIrrelevant", "third manual commit")
 
 	squashWip(configuration)
 
@@ -93,7 +93,7 @@ func TestSquashWipCommits_onlyWipCommits(t *testing.T) {
 func TestSquashWipCommits_resetsEnv(t *testing.T) {
 	_, configuration := setup(t)
 	start(configuration)
-	createFileAndCommitIt(t, "file1.txt", "irrelevant", "new file")
+	createFileAndCommitIt(t, "file1.txt", "contentIrrelevant", "new file")
 	originalGitEditor := "irrelevant"
 	originalGitSequenceEditor := "irrelevant, too"
 	os.Setenv("GIT_EDITOR", originalGitEditor)
@@ -130,11 +130,11 @@ func TestSquashWipCommits_worksWithEmptyCommits(t *testing.T) {
 
 func TestCommitsOnCurrentBranch(t *testing.T) {
 	_, configuration := setup(t)
-	createFileAndCommitIt(t, "file1.txt", "irrelevant", "not on branch")
+	createFileAndCommitIt(t, "file1.txt", "contentIrrelevant", "not on branch")
 	silentgit("push")
 	start(configuration)
-	createFileAndCommitIt(t, "file2.txt", "irrelevant", "on branch")
-	createFile(t, "file3.txt", "irrelevant")
+	createFileAndCommitIt(t, "file2.txt", "contentIrrelevant", "on branch")
+	createFile(t, "file3.txt", "contentIrrelevant")
 	next(configuration)
 	start(configuration)
 
@@ -349,13 +349,13 @@ squash c51a56d manual commit
 
 func wipCommit(t *testing.T, configuration Configuration, filename string) {
 	start(configuration)
-	createFile(t, filename, "irrelevant")
+	createFile(t, filename, "contentIrrelevant")
 	next(configuration)
 }
 
 func manualCommit(t *testing.T, configuration Configuration, filename string, message string) {
 	start(configuration)
-	createFileAndCommitIt(t, filename, "irrelevant", message)
+	createFileAndCommitIt(t, filename, "contentIrrelevant", message)
 	next(configuration)
 }
 
