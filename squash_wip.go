@@ -33,7 +33,8 @@ func squashWip(configuration Configuration) {
 		sayInfo("undoing the final wip commit and staging its changes:")
 		git("reset", "--soft", "HEAD^")
 	}
-	git("push", "--force", "--no-verify")
+
+	git("push", "--force", configuration.gitHooksOption())
 }
 
 func lastCommitIsWipCommit(configuration Configuration) bool {
