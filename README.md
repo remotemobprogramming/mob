@@ -174,7 +174,8 @@ Basic Commands(Options):
 
 Experimental Commands:
   squash-wip                             Combines wip commits in wip branch with subsequent manual commits to leave only manual commits.
-                                         ! Works only if all wip commits have the same wip commit message !
+                                         !Deprecated! As of version 2.6.0 this command is obsolete as the behaviour is added to 'done --squash-wip' which is more convenient.
+                                         
     [--git-editor]                       Not intended for manual use. Used as a non-interactive editor (GIT_EDITOR) for git.
     [--git-sequence-editor]              Not intended for manual use. Used as a non-interactive sequence editor (GIT_SEQUENCE_EDITOR) for git.
 
