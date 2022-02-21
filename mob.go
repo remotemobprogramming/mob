@@ -37,9 +37,7 @@ const (
 
 func doneSquash(value string) DoneSquash {
 	switch value {
-	case "false":
-		fallthrough
-	case NoSquash:
+	case "false", NoSquash:
 		return NoSquash
 	case SquashWip:
 		return SquashWip
