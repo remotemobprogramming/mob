@@ -149,10 +149,10 @@ main $ git push
 And here's the man page of the tool:
 
 ```
-mob enables a fast Git handover
+mob enables a smooth Git handover
 
 Basic Commands:
-  start              start mob session from base branch in wip branch
+  start              start session from base branch in wip branch
   next               handover changes in wip branch to next person
   done               squashes all changes in wip branch to index in base branch
   reset              removes local and remote wip branch
@@ -160,17 +160,17 @@ Basic Commands:
 Basic Commands(Options):
   start [<minutes>]                      Start a <minutes> timer
     [--include-uncommitted-changes|-i]   Move uncommitted changes to wip branch
-    [--branch|-b <branch-postfix>]       Set wip branch to 'mob/<base-branch>-<branch-postfix>'
+    [--branch|-b <branch-postfix>]       Set wip branch to 'mob/<base-branch>/<branch-postfix>'
   next
     [--stay|-s]                          Stay on wip branch (default)
     [--return-to-base-branch|-r]         Return to base branch
     [--message|-m <commit-message>]      Override commit message
   done
-    [--no-squash]                        Do not squash commits from wip branch
-    [--squash]                           Squash commits from wip branch
+    [--no-squash]                        Squash no commits from wip branch, only merge wip branch
+    [--squash]                           Squash all commits from wip branch
     [--squash-wip]                       Squash wip commits from wip branch, maintaining manual commits
   reset
-    [--branch|-b <branch-postfix>]       Set wip branch to 'mob/<base-branch>-<branch-postfix>'
+    [--branch|-b <branch-postfix>]       Set wip branch to 'mob/<base-branch>/<branch-postfix>'
 
 Timer Commands:
   timer <minutes>    start a <minutes> timer
@@ -178,14 +178,15 @@ Timer Commands:
   break <minutes>    start a <minutes> break timer
 
 Get more information:
-  status             show the status of the current mob session
+  status             show the status of the current session
+  fetch              fetch remote state
+  branch             show remote wip branches
   config             show all configuration options
-  version            show the version of mob
+  version            show the version
   help               show help
 
 Other
   moo                moo!
-
 
 Add --debug to any option to enable verbose logging
 

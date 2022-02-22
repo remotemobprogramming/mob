@@ -1424,8 +1424,8 @@ Basic Commands(Options):
     [--return-to-base-branch|-r]         Return to base branch
     [--message|-m <commit-message>]      Override commit message
   done
-    [--no-squash]                        Do not squash commits from wip branch
-    [--squash]                           Squash commits from wip branch
+    [--no-squash]                        Squash no commits from wip branch, only merge wip branch
+    [--squash]                           Squash all commits from wip branch
     [--squash-wip]                       Squash wip commits from wip branch, maintaining manual commits
   reset
     [--branch|-b <branch-postfix>]       Set wip branch to 'mob/<base-branch>/<branch-postfix>'
