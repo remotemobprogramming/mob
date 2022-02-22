@@ -172,13 +172,6 @@ Basic Commands(Options):
   reset
     [--branch|-b <branch-postfix>]       Set wip branch to 'mob/<base-branch>-<branch-postfix>'
 
-Experimental Commands:
-  squash-wip                             Combines wip commits in wip branch with subsequent manual commits to leave only manual commits.
-                                         !Deprecated! As of version 2.6.0 this command is obsolete as the behaviour is added to 'done --squash-wip' which is more convenient.
-                                         
-    [--git-editor]                       Not intended for manual use. Used as a non-interactive editor (GIT_EDITOR) for git.
-    [--git-sequence-editor]              Not intended for manual use. Used as a non-interactive sequence editor (GIT_SEQUENCE_EDITOR) for git.
-
 Timer Commands:
   timer <minutes>    start a <minutes> timer
   start <minutes>    start mob session in wip branch and a <minutes> timer

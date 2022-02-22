@@ -736,8 +736,6 @@ func execute(command string, parameter []string, configuration Configuration) {
 			squashWipGitEditor(parameter[1], configuration)
 		} else if len(parameter) > 1 && parameter[0] == "--git-sequence-editor" {
 			squashWipGitSequenceEditor(parameter[1], configuration)
-		} else {
-			squashWip(configuration)
 		}
 	case "version", "--version", "-v":
 		version()
@@ -1432,12 +1430,6 @@ Basic Commands(Options):
     [--squash-wip]                       Squash wip commits from wip branch, maintaining manual commits
   reset
     [--branch|-b <branch-postfix>]       Set wip branch to 'mob/<base-branch>/<branch-postfix>'
-
-Experimental Commands:
-  squash-wip                             Combines wip commits in wip branch with subsequent manual commits to leave only manual commits.
-                                         !Deprecated! As of version 2.6.0 this command is obsolete as the behaviour is added to 'done --squash-wip' which is more convenient.
-    [--git-editor]                       Not intended for manual use. Used as a non-interactive editor (GIT_EDITOR) for git.
-    [--git-sequence-editor]              Not intended for manual use. Used as a non-interactive sequence editor (GIT_SEQUENCE_EDITOR) for git.
 
 Timer Commands:
   timer <minutes>    start a <minutes> timer
