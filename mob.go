@@ -27,47 +27,46 @@ var (
 	Debug      = false // override with --debug parameter
 )
 
-type DoneSquash string
-
 const (
-	Squash    DoneSquash = "squash"
-	NoSquash             = "no-squash"
-	SquashWip            = "squash-wip"
+	Squash    = "squash"
+	NoSquash  = "no-squash"
+	SquashWip = "squash-wip"
 )
 
-func doneSquash(value string) DoneSquash {
+func doneSquash(value string) string {
 	switch value {
 	case "false", NoSquash:
 		return NoSquash
 	case SquashWip:
 		return SquashWip
+	default:
+		return Squash
 	}
-	return Squash
 }
 
 type Configuration struct {
-	CliName                        string     // override with MOB_CLI_NAME
-	RemoteName                     string     // override with MOB_REMOTE_NAME
-	WipCommitMessage               string     // override with MOB_WIP_COMMIT_MESSAGE
-	GitHooksEnabled                bool       // override with MOB_GIT_HOOKS_ENABLED
-	RequireCommitMessage           bool       // override with MOB_REQUIRE_COMMIT_MESSAGE
-	VoiceCommand                   string     // override with MOB_VOICE_COMMAND
-	VoiceMessage                   string     // override with MOB_VOICE_MESSAGE
-	NotifyCommand                  string     // override with MOB_NOTIFY_COMMAND
-	NotifyMessage                  string     // override with MOB_NOTIFY_MESSAGE
-	NextStay                       bool       // override with MOB_NEXT_STAY
-	StartIncludeUncommittedChanges bool       // override with MOB_START_INCLUDE_UNCOMMITTED_CHANGES variable
-	StashName                      string     // override with MOB_STASH_NAME
-	WipBranchQualifier             string     // override with MOB_WIP_BRANCH_QUALIFIER
-	WipBranchQualifierSeparator    string     // override with MOB_WIP_BRANCH_QUALIFIER_SEPARATOR
-	WipBranchPrefix                string     // override with MOB_WIP_BRANCH_PREFIX
-	DoneSquash                     DoneSquash // override with MOB_DONE_SQUASH
-	Timer                          string     // override with MOB_TIMER
-	TimerRoom                      string     // override with MOB_TIMER_ROOM
-	TimerLocal                     bool       // override with MOB_TIMER_LOCAL
-	TimerRoomUseWipBranchQualifier bool       // override with MOB_TIMER_ROOM_USE_WIP_BRANCH_QUALIFIER
-	TimerUser                      string     // override with MOB_TIMER_USER
-	TimerUrl                       string     // override with MOB_TIMER_URL
+	CliName                        string // override with MOB_CLI_NAME
+	RemoteName                     string // override with MOB_REMOTE_NAME
+	WipCommitMessage               string // override with MOB_WIP_COMMIT_MESSAGE
+	GitHooksEnabled                bool   // override with MOB_GIT_HOOKS_ENABLED
+	RequireCommitMessage           bool   // override with MOB_REQUIRE_COMMIT_MESSAGE
+	VoiceCommand                   string // override with MOB_VOICE_COMMAND
+	VoiceMessage                   string // override with MOB_VOICE_MESSAGE
+	NotifyCommand                  string // override with MOB_NOTIFY_COMMAND
+	NotifyMessage                  string // override with MOB_NOTIFY_MESSAGE
+	NextStay                       bool   // override with MOB_NEXT_STAY
+	StartIncludeUncommittedChanges bool   // override with MOB_START_INCLUDE_UNCOMMITTED_CHANGES variable
+	StashName                      string // override with MOB_STASH_NAME
+	WipBranchQualifier             string // override with MOB_WIP_BRANCH_QUALIFIER
+	WipBranchQualifierSeparator    string // override with MOB_WIP_BRANCH_QUALIFIER_SEPARATOR
+	WipBranchPrefix                string // override with MOB_WIP_BRANCH_PREFIX
+	DoneSquash                     string // override with MOB_DONE_SQUASH
+	Timer                          string // override with MOB_TIMER
+	TimerRoom                      string // override with MOB_TIMER_ROOM
+	TimerLocal                     bool   // override with MOB_TIMER_LOCAL
+	TimerRoomUseWipBranchQualifier bool   // override with MOB_TIMER_ROOM_USE_WIP_BRANCH_QUALIFIER
+	TimerUser                      string // override with MOB_TIMER_USER
+	TimerUrl                       string // override with MOB_TIMER_URL
 }
 
 func (c Configuration) wipBranchQualifierSuffix() string {
@@ -834,8 +833,8 @@ func startTimer(timerInMinutes string, configuration Configuration) {
 
 	room := getMobTimerRoom(configuration)
 	if room != "" {
-		user := getUserForMobTimer(configuration.TimerUser)
-		err := httpPutTimer(timeoutInMinutes, room, user, configuration.TimerUrl)
+		timerUser := getUserForMobTimer(configuration.TimerUser)
+		err := httpPutTimer(timeoutInMinutes, room, timerUser, configuration.TimerUrl)
 		if err != nil {
 			sayError("remote timer couldn't be started")
 			sayError(err.Error())
@@ -889,8 +888,8 @@ func startBreakTimer(timerInMinutes string, configuration Configuration) {
 	timerSuccessful := false
 	room := getMobTimerRoom(configuration)
 	if room != "" {
-		user := getUserForMobTimer(configuration.TimerUser)
-		err := httpPutBreakTimer(timeoutInMinutes, room, user, configuration.TimerUrl)
+		timerUser := getUserForMobTimer(configuration.TimerUser)
+		err := httpPutBreakTimer(timeoutInMinutes, room, timerUser, configuration.TimerUrl)
 		if err != nil {
 			sayError("remote break timer couldn't be started")
 			sayError(err.Error())

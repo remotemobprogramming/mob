@@ -51,7 +51,7 @@ func TestParseArgsDoneNoSquash(t *testing.T) {
 
 	equals(t, "done", command)
 	equals(t, "", strings.Join(parameters, ""))
-	equals(t, NoSquash, string(configuration.DoneSquash))
+	equals(t, NoSquash, configuration.DoneSquash)
 }
 
 func TestParseArgsDoneSquash(t *testing.T) {
@@ -183,9 +183,9 @@ func TestMobDoneSquashEnvironmentVariable(t *testing.T) {
 	assertMobDoneSquashValue(t, "squash-wip", SquashWip)
 }
 
-func assertMobDoneSquashValue(t *testing.T, value string, expected DoneSquash) {
+func assertMobDoneSquashValue(t *testing.T, value string, expected string) {
 	configuration := setEnvVarAndParse("MOB_DONE_SQUASH", value)
-	equals(t, string(expected), string(configuration.DoneSquash))
+	equals(t, expected, configuration.DoneSquash)
 }
 
 func TestBooleanEnvironmentVariables(t *testing.T) {
@@ -223,7 +223,7 @@ func boolToInterface(actual func(Configuration) bool) func(c Configuration) inte
 	}
 }
 
-func (c Configuration) GetMobDoneSquash() DoneSquash {
+func (c Configuration) GetMobDoneSquash() string {
 	return c.DoneSquash
 }
 
@@ -366,7 +366,7 @@ func TestReadConfigurationFromFileOverrideEverything(t *testing.T) {
 	equals(t, true, actualConfiguration.StartIncludeUncommittedChanges)
 	equals(t, "green", actualConfiguration.WipBranchQualifier)
 	equals(t, "---", actualConfiguration.WipBranchQualifierSeparator)
-	equals(t, NoSquash, string(actualConfiguration.DoneSquash))
+	equals(t, NoSquash, actualConfiguration.DoneSquash)
 	equals(t, "123", actualConfiguration.Timer)
 	equals(t, "Room_42", actualConfiguration.TimerRoom)
 	equals(t, true, actualConfiguration.TimerRoomUseWipBranchQualifier)
