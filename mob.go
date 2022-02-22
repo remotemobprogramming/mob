@@ -226,6 +226,7 @@ func stringContains(list []string, element string) bool {
 
 func main() {
 	parseDebug(os.Args)
+	debugInfo(runtime.Version())
 
 	configuration := getDefaultConfiguration()
 	configuration = parseEnvironmentVariables(configuration)
