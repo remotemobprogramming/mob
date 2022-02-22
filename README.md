@@ -168,14 +168,9 @@ Basic Commands(Options):
   done
     [--no-squash]                        Do not squash commits from wip branch
     [--squash]                           Squash commits from wip branch
+    [--squash-wip]                       Squash wip commits from wip branch, maintaining manual commits
   reset
     [--branch|-b <branch-postfix>]       Set wip branch to 'mob/<base-branch>-<branch-postfix>'
-
-Experimental Commands:
-  squash-wip                             Combines wip commits in wip branch with subsequent manual commits to leave only manual commits.
-                                         ! Works only if all wip commits have the same wip commit message !
-    [--git-editor]                       Not intended for manual use. Used as a non-interactive editor (GIT_EDITOR) for git.
-    [--git-sequence-editor]              Not intended for manual use. Used as a non-interactive sequence editor (GIT_SEQUENCE_EDITOR) for git.
 
 Timer Commands:
   timer <minutes>    start a <minutes> timer

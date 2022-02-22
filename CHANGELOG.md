@@ -1,3 +1,7 @@
+# 2.6.0
+- **NEW** Allow keeping manual commits while squashing all wip commits by finishing a mob-session with `mob done --squash-wip`.
+- Removed experimental command `mob squash-wip` in favor of new `mob done --squash-wip`.  
+
 # 2.5.0
 - Enable git hooks with `MOB_GIT_HOOKS_ENABLED=true`. By default, this option is false and no git hooks such as `pre-commit` or `pre-push` are triggered via mob itself.
 
