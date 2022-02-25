@@ -344,6 +344,7 @@ func TestReadConfigurationFromFileOverrideEverything(t *testing.T) {
 		MOB_START_INCLUDE_UNCOMMITTED_CHANGES=true
 		MOB_WIP_BRANCH_QUALIFIER="green"
 		MOB_WIP_BRANCH_QUALIFIER_SEPARATOR="---"
+		MOB_WIP_BRANCH_PREFIX="ensemble/"
 		MOB_DONE_SQUASH=false
 		MOB_TIMER="123"
 		MOB_TIMER_ROOM="Room_42"
@@ -366,6 +367,7 @@ func TestReadConfigurationFromFileOverrideEverything(t *testing.T) {
 	equals(t, true, actualConfiguration.StartIncludeUncommittedChanges)
 	equals(t, "green", actualConfiguration.WipBranchQualifier)
 	equals(t, "---", actualConfiguration.WipBranchQualifierSeparator)
+	equals(t, "ensemble/", actualConfiguration.WipBranchPrefix)
 	equals(t, NoSquash, actualConfiguration.DoneSquash)
 	equals(t, "123", actualConfiguration.Timer)
 	equals(t, "Room_42", actualConfiguration.TimerRoom)

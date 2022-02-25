@@ -363,6 +363,8 @@ func parseUserConfiguration(configuration Configuration, path string) Configurat
 			setUnquotedString(&configuration.WipBranchQualifier, key, value)
 		case "MOB_WIP_BRANCH_QUALIFIER_SEPARATOR":
 			setUnquotedString(&configuration.WipBranchQualifierSeparator, key, value)
+		case "MOB_WIP_BRANCH_PREFIX":
+			setUnquotedString(&configuration.WipBranchPrefix, key, value)
 		case "MOB_DONE_SQUASH":
 			setMobDoneSquash(&configuration, key, value)
 		case "MOB_TIMER":
@@ -436,6 +438,8 @@ func parseProjectConfiguration(configuration Configuration, path string) Configu
 			setUnquotedString(&configuration.WipBranchQualifier, key, value)
 		case "MOB_WIP_BRANCH_QUALIFIER_SEPARATOR":
 			setUnquotedString(&configuration.WipBranchQualifierSeparator, key, value)
+		case "MOB_WIP_BRANCH_PREFIX":
+			setUnquotedString(&configuration.WipBranchPrefix, key, value)
 		case "MOB_DONE_SQUASH":
 			setMobDoneSquash(&configuration, key, value)
 		case "MOB_TIMER":
