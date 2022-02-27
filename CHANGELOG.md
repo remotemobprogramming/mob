@@ -3,6 +3,8 @@
 - Removed experimental command `mob squash-wip` in favor of new `mob done --squash-wip`.  
 - Added missing configuration option `MOB_WIP_BRANCH_PREFIX` for `.mob` file.
 
+Thanks to @gregorriegler and @hollesse making this release possible!
+
 # 2.5.0
 - Enable git hooks with `MOB_GIT_HOOKS_ENABLED=true`. By default, this option is false and no git hooks such as `pre-commit` or `pre-push` are triggered via mob itself.
 
