@@ -702,7 +702,7 @@ func execute(command string, parameter []string, configuration Configuration) {
 		} else if configuration.Timer != "" {
 			startTimer(configuration.Timer, configuration)
 		} else {
-			sayInfo("It's now " + currentTime() + ". Happy collaborating!")
+			sayInfo("It's now " + currentTime() + ". Happy collaborating! :)")
 		}
 	case "b", "branch":
 		branch(configuration)
@@ -860,7 +860,7 @@ func startTimer(timerInMinutes string, configuration Configuration) {
 	}
 
 	if timerSuccessful {
-		sayInfo("It's now " + currentTime() + ". " + fmt.Sprintf("%d min timer ends at approx. %s", timeoutInMinutes, timeOfTimeout) + ". Happy collaborating!")
+		sayInfo("It's now " + currentTime() + ". " + fmt.Sprintf("%d min timer ends at approx. %s", timeoutInMinutes, timeOfTimeout) + ". Happy collaborating! :)")
 	}
 }
 
@@ -915,7 +915,7 @@ func startBreakTimer(timerInMinutes string, configuration Configuration) {
 	}
 
 	if timerSuccessful {
-		sayInfo("It's now " + currentTime() + ". " + fmt.Sprintf("%d min break timer ends at approx. %s", timeoutInMinutes, timeOfTimeout) + ". Happy collaborating!")
+		sayInfo("It's now " + currentTime() + ". " + fmt.Sprintf("%d min break timer ends at approx. %s", timeoutInMinutes, timeOfTimeout) + ". Happy collaborating! :)")
 	}
 }
 
