@@ -1,3 +1,6 @@
+# 2.7.0
+- Add a Smiley face to Happy Collaborating message to make your day :)
+
 # 2.6.0
 - **NEW** Allow keeping manual commits while squashing all wip commits by finishing a mob-session with `mob done --squash-wip`.
 - Removed experimental command `mob squash-wip` in favor of new `mob done --squash-wip`.  
