@@ -14,7 +14,7 @@
     <img alt="Stars" src="https://img.shields.io/github/stars/remotemobprogramming/mob" /></a>
 </p>
 
-**NEW: Have you already tried the shared team timer [timer.mob.sh](https://timer.mob.sh)?**
+** #StandWithUkraine https://www.savethechildren.org.uk/where-we-work/europe/ukraine #StandWithUkraine **
 
 Smooth [git handover](https://www.remotemobprogramming.org/#git-handover) for remote pair/mob programming.
 
