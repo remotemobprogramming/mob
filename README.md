@@ -14,7 +14,7 @@
     <img alt="Stars" src="https://img.shields.io/github/stars/remotemobprogramming/mob" /></a>
 </p>
 
-** #StandWithUkraine https://www.savethechildren.org.uk/where-we-work/europe/ukraine #StandWithUkraine **
+**#StandWithUkraine https://www.savethechildren.org.uk/where-we-work/europe/ukraine #StandWithUkraine**
 
 Smooth [git handover](https://www.remotemobprogramming.org/#git-handover) for remote pair/mob programming.
 
