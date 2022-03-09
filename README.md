@@ -14,9 +14,9 @@
     <img alt="Stars" src="https://img.shields.io/github/stars/remotemobprogramming/mob" /></a>
 </p>
 
-**#StandWithUkraine https://www.savethechildren.org.uk/where-we-work/europe/ukraine #StandWithUkraine**
+**#StandWithUkraine [donate here](https://www.savethechildren.org.uk/where-we-work/europe/ukraine) #StandWithUkraine**
 
-Smooth [git handover](https://www.remotemobprogramming.org/#git-handover) for remote pair/mob programming.
+Fast [git handover](https://www.remotemobprogramming.org/#git-handover) for remote pair/mob programming.
 
 - **mob** is [an open source command line tool written in go](https://github.com/remotemobprogramming/mob)
 - **mob** is the fastest way to [hand over code via git](https://www.remotemobprogramming.org/#git-handover)
