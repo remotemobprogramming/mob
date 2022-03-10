@@ -19,7 +19,7 @@ import (
 )
 
 const (
-	versionNumber = "2.5.0"
+	versionNumber = "2.6.0"
 )
 
 var (
@@ -28,6 +28,23 @@ var (
 	userConfigurationPath = currentUser.HomeDir + "/.mob"
 	Debug                 = false // override with --debug parameter
 )
+
+const (
+	Squash    = "squash"
+	NoSquash  = "no-squash"
+	SquashWip = "squash-wip"
+)
+
+func doneSquash(value string) string {
+	switch value {
+	case "false", NoSquash:
+		return NoSquash
+	case SquashWip:
+		return SquashWip
+	default:
+		return Squash
+	}
+}
 
 type Configuration struct {
 	CliName                        string // override with MOB_CLI_NAME
@@ -45,7 +62,7 @@ type Configuration struct {
 	WipBranchQualifier             string // override with MOB_WIP_BRANCH_QUALIFIER
 	WipBranchQualifierSeparator    string // override with MOB_WIP_BRANCH_QUALIFIER_SEPARATOR
 	WipBranchPrefix                string // override with MOB_WIP_BRANCH_PREFIX
-	DoneSquash                     bool   // override with MOB_DONE_SQUASH
+	DoneSquash                     string // override with MOB_DONE_SQUASH
 	Timer                          string // override with MOB_TIMER
 	TimerRoom                      string // override with MOB_TIMER_ROOM
 	TimerLocal                     bool   // override with MOB_TIMER_LOCAL
@@ -211,6 +228,7 @@ func stringContains(list []string, element string) bool {
 
 func main() {
 	parseDebug(os.Args)
+	debugInfo(runtime.Version())
 
 	configuration := getDefaultConfiguration()
 	configuration = parseEnvironmentVariables(configuration)
@@ -276,7 +294,7 @@ func getDefaultConfiguration() Configuration {
 		StartIncludeUncommittedChanges: false,
 		WipBranchQualifier:             "",
 		WipBranchQualifierSeparator:    "-",
-		DoneSquash:                     true,
+		DoneSquash:                     Squash,
 		Timer:                          "",
 		TimerLocal:                     true,
 		TimerRoom:                      "",
@@ -351,8 +369,10 @@ func parseUserConfiguration(configuration Configuration, path string) Configurat
 			setUnquotedString(&configuration.WipBranchQualifier, key, value)
 		case "MOB_WIP_BRANCH_QUALIFIER_SEPARATOR":
 			setUnquotedString(&configuration.WipBranchQualifierSeparator, key, value)
+		case "MOB_WIP_BRANCH_PREFIX":
+			setUnquotedString(&configuration.WipBranchPrefix, key, value)
 		case "MOB_DONE_SQUASH":
-			setBoolean(&configuration.DoneSquash, key, value)
+			setMobDoneSquash(&configuration, key, value)
 		case "MOB_TIMER":
 			setUnquotedString(&configuration.Timer, key, value)
 		case "MOB_TIMER_ROOM":
@@ -424,8 +444,10 @@ func parseProjectConfiguration(configuration Configuration, path string) Configu
 			setUnquotedString(&configuration.WipBranchQualifier, key, value)
 		case "MOB_WIP_BRANCH_QUALIFIER_SEPARATOR":
 			setUnquotedString(&configuration.WipBranchQualifierSeparator, key, value)
+		case "MOB_WIP_BRANCH_PREFIX":
+			setUnquotedString(&configuration.WipBranchPrefix, key, value)
 		case "MOB_DONE_SQUASH":
-			setBoolean(&configuration.DoneSquash, key, value)
+			setMobDoneSquash(&configuration, key, value)
 		case "MOB_TIMER":
 			setUnquotedString(&configuration.Timer, key, value)
 		case "MOB_TIMER_ROOM":
@@ -473,6 +495,20 @@ func setBoolean(s *bool, key string, value string) {
 	debugInfo("Overwriting " + key + " =" + strconv.FormatBool(boolValue))
 }
 
+func setMobDoneSquash(configuration *Configuration, key string, value string) {
+	boolValue, err := strconv.ParseBool(value)
+	if err != nil {
+		sayWarning("Could not set key from configuration file because value is not parseable (" + key + "=" + value + ")")
+		return
+	}
+	if boolValue {
+		configuration.DoneSquash = Squash
+	} else {
+		configuration.DoneSquash = NoSquash
+	}
+	debugInfo("Overwriting " + key + " =" + strconv.FormatBool(boolValue))
+}
+
 func parseEnvironmentVariables(configuration Configuration) Configuration {
 	setStringFromEnvVariable(&configuration.CliName, "MOB_CLI_NAME")
 	if configuration.CliName != getDefaultConfiguration().CliName {
@@ -503,7 +539,7 @@ func parseEnvironmentVariables(configuration Configuration) Configuration {
 
 	setBoolFromEnvVariable(&configuration.StartIncludeUncommittedChanges, "MOB_START_INCLUDE_UNCOMMITTED_CHANGES")
 
-	setBoolFromEnvVariable(&configuration.DoneSquash, "MOB_DONE_SQUASH")
+	setDoneSquashFromEnvVariable(&configuration, "MOB_DONE_SQUASH")
 
 	setStringFromEnvVariable(&configuration.Timer, "MOB_TIMER")
 	setStringFromEnvVariable(&configuration.TimerRoom, "MOB_TIMER_ROOM")
@@ -551,6 +587,22 @@ func setBoolFromEnvVariable(s *bool, key string) {
 	}
 }
 
+func setDoneSquashFromEnvVariable(configuration *Configuration, key string) {
+	value, set := os.LookupEnv(key)
+	if !set {
+		return
+	}
+
+	configuration.DoneSquash = doneSquash(value)
+
+	if value == "" {
+		debugInfo("ignoring " + key + "=" + value + " (empty string)")
+		return
+	}
+
+	debugInfo("overriding " + key + "=" + string(configuration.DoneSquash))
+}
+
 func removed(key string, message string) {
 	if _, set := os.LookupEnv(key); set {
 		say("Configuration option '" + key + "' is no longer used.")
@@ -587,7 +639,7 @@ func config(c Configuration) {
 	say("MOB_WIP_BRANCH_QUALIFIER" + "=" + quote(c.WipBranchQualifier))
 	say("MOB_WIP_BRANCH_QUALIFIER_SEPARATOR" + "=" + quote(c.WipBranchQualifierSeparator))
 	say("MOB_WIP_BRANCH_PREFIX" + "=" + quote(c.WipBranchPrefix))
-	say("MOB_DONE_SQUASH" + "=" + strconv.FormatBool(c.DoneSquash))
+	say("MOB_DONE_SQUASH" + "=" + string(c.DoneSquash))
 	say("MOB_TIMER" + "=" + quote(c.Timer))
 	say("MOB_TIMER_ROOM" + "=" + quote(c.TimerRoom))
 	say("MOB_TIMER_ROOM_USE_WIP_BRANCH_QUALIFIER" + "=" + strconv.FormatBool(c.TimerRoomUseWipBranchQualifier))
@@ -625,9 +677,11 @@ func parseArgs(args []string, configuration Configuration) (command string, para
 			}
 			i++ // skip consumed parameter
 		case "--squash":
-			newConfiguration.DoneSquash = true
+			newConfiguration.DoneSquash = Squash
 		case "--no-squash":
-			newConfiguration.DoneSquash = false
+			newConfiguration.DoneSquash = NoSquash
+		case "--squash-wip":
+			newConfiguration.DoneSquash = SquashWip
 		default:
 			if i == 1 {
 				command = arg
@@ -654,7 +708,7 @@ func execute(command string, parameter []string, configuration Configuration) {
 		} else if configuration.Timer != "" {
 			startTimer(configuration.Timer, configuration)
 		} else {
-			sayInfo("It's now " + currentTime() + ". Happy collaborating!")
+			sayInfo("It's now " + currentTime() + ". Happy collaborating! :)")
 		}
 	case "b", "branch":
 		branch(configuration)
@@ -692,8 +746,6 @@ func execute(command string, parameter []string, configuration Configuration) {
 			squashWipGitEditor(parameter[1], configuration)
 		} else if len(parameter) > 1 && parameter[0] == "--git-sequence-editor" {
 			squashWipGitSequenceEditor(parameter[1], configuration)
-		} else {
-			squashWip(configuration)
 		}
 	case "install-custom-next":
 		if len(parameter) > 0 {
@@ -799,8 +851,8 @@ func startTimer(timerInMinutes string, configuration Configuration) {
 
 	room := getMobTimerRoom(configuration)
 	if room != "" {
-		user := getUserForMobTimer(configuration.TimerUser)
-		err := httpPutTimer(timeoutInMinutes, room, user, configuration.TimerUrl)
+		timerUser := getUserForMobTimer(configuration.TimerUser)
+		err := httpPutTimer(timeoutInMinutes, room, timerUser, configuration.TimerUrl)
 		if err != nil {
 			sayError("remote timer couldn't be started")
 			sayError(err.Error())
@@ -821,7 +873,7 @@ func startTimer(timerInMinutes string, configuration Configuration) {
 	}
 
 	if timerSuccessful {
-		sayInfo("It's now " + currentTime() + ". " + fmt.Sprintf("%d min timer ends at approx. %s", timeoutInMinutes, timeOfTimeout) + ". Happy collaborating!")
+		sayInfo("It's now " + currentTime() + ". " + fmt.Sprintf("%d min timer ends at approx. %s", timeoutInMinutes, timeOfTimeout) + ". Happy collaborating! :)")
 	}
 }
 
@@ -832,8 +884,8 @@ func getMobTimerRoom(configuration Configuration) string {
 		currentBaseBranch, _ := determineBranches(currentBranch, gitBranches(), configuration)
 
 		if currentBranch.IsWipBranch(configuration) {
-			wipBranchWithouthWipPrefix := currentBranch.removeWipPrefix(configuration).Name
-			currentWipBranchQualifier = removePrefix(removePrefix(wipBranchWithouthWipPrefix, currentBaseBranch.Name), configuration.WipBranchQualifierSeparator)
+			wipBranchWithoutWipPrefix := currentBranch.removeWipPrefix(configuration).Name
+			currentWipBranchQualifier = removePrefix(removePrefix(wipBranchWithoutWipPrefix, currentBaseBranch.Name), configuration.WipBranchQualifierSeparator)
 		}
 	}
 
@@ -854,8 +906,8 @@ func startBreakTimer(timerInMinutes string, configuration Configuration) {
 	timerSuccessful := false
 	room := getMobTimerRoom(configuration)
 	if room != "" {
-		user := getUserForMobTimer(configuration.TimerUser)
-		err := httpPutBreakTimer(timeoutInMinutes, room, user, configuration.TimerUrl)
+		timerUser := getUserForMobTimer(configuration.TimerUser)
+		err := httpPutBreakTimer(timeoutInMinutes, room, timerUser, configuration.TimerUrl)
 		if err != nil {
 			sayError("remote break timer couldn't be started")
 			sayError(err.Error())
@@ -876,7 +928,7 @@ func startBreakTimer(timerInMinutes string, configuration Configuration) {
 	}
 
 	if timerSuccessful {
-		sayInfo("It's now " + currentTime() + ". " + fmt.Sprintf("%d min break timer ends at approx. %s", timeoutInMinutes, timeOfTimeout) + ". Happy collaborating!")
+		sayInfo("It's now " + currentTime() + ". " + fmt.Sprintf("%d min break timer ends at approx. %s", timeoutInMinutes, timeOfTimeout) + ". Happy collaborating! :)")
 	}
 }
 
@@ -1214,6 +1266,10 @@ func done(configuration Configuration) {
 		return
 	}
 
+	if configuration.DoneSquash == SquashWip {
+		squashWip(configuration)
+	}
+
 	git("fetch", configuration.RemoteName, "--prune")
 
 	baseBranch, wipBranch := determineBranches(gitCurrentBranch(), gitBranches(), configuration)
@@ -1236,7 +1292,7 @@ func done(configuration Configuration) {
 
 		git("branch", "-D", wipBranch.Name)
 
-		if uncommittedChanges && !configuration.DoneSquash { // give the user the chance to name their final commit
+		if uncommittedChanges && configuration.DoneSquash != Squash { // give the user the chance to name their final commit
 			git("reset", "--soft", "HEAD^")
 		}
 
@@ -1254,7 +1310,7 @@ func done(configuration Configuration) {
 
 		if hasUncommittedChanges() {
 			sayTodo("To finish, use", "git commit")
-		} else if configuration.DoneSquash {
+		} else if configuration.DoneSquash == Squash {
 			sayInfo("nothing was done, so nothing to commit")
 		}
 
@@ -1274,7 +1330,7 @@ func gitRootDir() string {
 }
 
 func squashOrNoCommit(configuration Configuration) string {
-	if configuration.DoneSquash {
+	if configuration.DoneSquash == Squash {
 		return "--squash"
 	} else {
 		return "--no-commit"
@@ -1411,16 +1467,11 @@ Basic Commands(Options):
     [--return-to-base-branch|-r]         Return to base branch
     [--message|-m <commit-message>]      Override commit message
   done
-    [--no-squash]                        Do not squash commits from wip branch
-    [--squash]                           Squash commits from wip branch
+    [--no-squash]                        Squash no commits from wip branch, only merge wip branch
+    [--squash]                           Squash all commits from wip branch
+    [--squash-wip]                       Squash wip commits from wip branch, maintaining manual commits
   reset
     [--branch|-b <branch-postfix>]       Set wip branch to 'mob/<base-branch>/<branch-postfix>'
-
-Experimental Commands:
-  squash-wip                             Combines wip commits in wip branch with subsequent manual commits to leave only manual commits.
-                                         ! Works only if all wip commits have the same wip commit message !
-    [--git-editor]                       Not intended for manual use. Used as a non-interactive editor (GIT_EDITOR) for git.
-    [--git-sequence-editor]              Not intended for manual use. Used as a non-interactive sequence editor (GIT_SEQUENCE_EDITOR) for git.
 
 Timer Commands:
   timer <minutes>                 start a <minutes> timer

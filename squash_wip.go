@@ -16,14 +16,6 @@ func squashWip(configuration Configuration) {
 		return
 	}
 
-	if endsWithWipCommit(configuration) {
-		sayError(`failed to squash wip commits
-last commit must be a manual commit`)
-		sayEmptyLine()
-		sayTodo("create a manual commit with a commit message to fix this:", "git commit --allow-empty -m \"your message goes here\"")
-		return
-	}
-
 	currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), gitBranches(), configuration)
 	mergeBase := silentgit("merge-base", currentWipBranch.String(), currentBaseBranch.String())
 
@@ -32,13 +24,25 @@ last commit must be a manual commit`)
 		mobExecutable()+" squash-wip --git-editor",
 		mobExecutable()+" squash-wip --git-sequence-editor",
 	)
-	silentgit("rebase", "-i", "--keep-empty", mergeBase)
+	sayInfo("rewriting history of '" + currentWipBranch.String() + "': squashing wip commits while keeping manual commits.")
+	git("rebase", "--interactive", "--keep-empty", mergeBase)
 	setEnvGitEditor(originalGitEditor, originalGitSequenceEditor)
-	sayInfo("the history of your '" + currentWipBranch.String() + "' branch has been rewritten to combine all wip commits with their following manual commits:")
-	sayEmptyLine()
+	sayInfo("resulting history is:")
 	sayLastCommitsWithMessage(currentBaseBranch.String(), currentWipBranch.String())
-	sayEmptyLine()
-	sayTodo("to finally put the changes into the base branch preserving the resulting commits, call:", configuration.mob("done --no-squash"))
+	if lastCommitIsWipCommit(configuration) { // last commit is wip commit
+		sayInfo("undoing the final wip commit and staging its changes:")
+		git("reset", "--soft", "HEAD^")
+	}
+
+	git("push", "--force", configuration.gitHooksOption())
+}
+
+func lastCommitIsWipCommit(configuration Configuration) bool {
+	return lastCommitMessage() == configuration.WipCommitMessage
+}
+
+func lastCommitMessage() string {
+	return silentgit("log", "-1", "--pretty=format:%s")
 }
 
 func sayLastCommitsWithMessage(currentBaseBranch string, currentWipBranch string) {
@@ -120,40 +124,69 @@ func commentWipCommits(input string, configuration Configuration) string {
 	return strings.Join(result, "\n")
 }
 
-func endsWithWipCommit(configuration Configuration) bool {
-	return configuration.isWipCommitMessage(commitsOnCurrentBranch(configuration)[0])
-}
-
-func commitsOnCurrentBranch(configuration Configuration) []string {
-	currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), gitBranches(), configuration)
-	commitsBaseWipBranch := currentBaseBranch.String() + ".." + currentWipBranch.String()
-	log := silentgit("--no-pager", "log", commitsBaseWipBranch, "--pretty=format:%s")
-	lines := strings.Split(log, "\n")
-	return lines
-}
-
 func markPostWipCommitsForSquashing(input string, configuration Configuration) string {
 	var result []string
 
-	var squashNext = false
-	for _, line := range strings.Split(input, "\n") {
-		if squashNext && isPick(line) {
-			result = append(result, markSquash(line))
-		} else {
-			result = append(result, line)
-		}
-		squashNext = isRebaseWipCommitLine(line, configuration)
+	inputLines := strings.Split(input, "\n")
+	for index := range inputLines {
+		markedLine := markLine(inputLines, index, configuration)
+		result = append(result, markedLine)
 	}
 
 	return strings.Join(result, "\n")
+}
+
+func markLine(inputLines []string, i int, configuration Configuration) string {
+	var resultLine = inputLines[i]
+	previousLine := previousLine(inputLines, i)
+	if isWipCommitLine(previousLine, configuration) {
+		forthComingLines := inputLines[i:]
+
+		if hasOnlyWipCommits(forthComingLines, configuration) {
+			resultLine = markFixup(inputLines[i])
+		} else {
+			resultLine = markSquash(inputLines[i])
+		}
+	}
+	return resultLine
+}
+
+func previousLine(inputLines []string, currentIndex int) string {
+	var previousLine = ""
+	if currentIndex > 0 {
+		previousLine = inputLines[currentIndex-1]
+	}
+	return previousLine
+}
+
+func hasOnlyWipCommits(forthComingLines []string, configuration Configuration) bool {
+	var onlyWipCommits = true
+	for _, forthComingLine := range forthComingLines {
+		if isPick(forthComingLine) && isManualCommit(forthComingLine, configuration) {
+			onlyWipCommits = false
+		}
+	}
+	return onlyWipCommits
 }
 
 func markSquash(line string) string {
 	return strings.Replace(line, "pick ", "squash ", 1)
 }
 
-func isRebaseWipCommitLine(line string, configuration Configuration) bool {
-	return isPick(line) && strings.HasSuffix(line, configuration.WipCommitMessage)
+func markFixup(line string) string {
+	return strings.Replace(line, "pick ", "fixup ", 1)
+}
+
+func isWipCommitLine(line string, configuration Configuration) bool {
+	return isPick(line) && isWipCommit(line, configuration)
+}
+
+func isManualCommit(line string, configuration Configuration) bool {
+	return !isWipCommit(line, configuration)
+}
+
+func isWipCommit(line string, configuration Configuration) bool {
+	return strings.HasSuffix(line, configuration.WipCommitMessage)
 }
 
 func isPick(line string) bool {

@@ -4,31 +4,24 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"strings"
 	"testing"
 )
 
 func TestSquashWipCommits_acceptance(t *testing.T) {
 	_, configuration := setup(t)
+	wipCommit(t, configuration, "file1.txt")
+	manualCommit(t, configuration, "file2.txt", "first manual commit")
 
-	// change without manual commit
+	// manual commit followed by a wip commit
 	start(configuration)
-	createFile(t, "file1.txt", "irrelevant")
+	createFileAndCommitIt(t, "file3.txt", "contentIrrelevant", "second manual commit")
+	createFile(t, "file4.txt", "contentIrrelevant")
 	next(configuration)
 
-	// change with a manual commit
+	// final manual commit
 	start(configuration)
-	createFileAndCommitIt(t, "file2.txt", "irrelevant", "first manual commit")
-	next(configuration)
-
-	// change with a manual commit followed by an uncommited change
-	start(configuration)
-	createFileAndCommitIt(t, "file3.txt", "irrelevant", "second manual commit")
-	createFile(t, "file4.txt", "irrelevant")
-	next(configuration)
-
-	// change with a final manual commit
-	start(configuration)
-	createFileAndCommitIt(t, "file5.txt", "irrelevant", "third manual commit")
+	createFileAndCommitIt(t, "file5.txt", "contentIrrelevant", "third manual commit")
 
 	squashWip(configuration)
 
@@ -38,12 +31,69 @@ func TestSquashWipCommits_acceptance(t *testing.T) {
 		"second manual commit",
 		"first manual commit",
 	}, commitsOnCurrentBranch(configuration))
+	equals(t, commitsOnCurrentBranch(configuration), commitsOnRemoteBranch(configuration))
+}
+
+func TestSquashWipCommits_withFinalWipCommit(t *testing.T) {
+	_, configuration := setup(t)
+	wipCommit(t, configuration, "file1.txt")
+	manualCommit(t, configuration, "file2.txt", "first manual commit")
+	wipCommit(t, configuration, "file3.txt")
+	start(configuration)
+
+	squashWip(configuration)
+
+	assertOnBranch(t, "mob-session")
+	assertGitStatus(t, GitStatus{
+		"file3.txt": "A",
+	})
+	equals(t, []string{
+		"first manual commit",
+	}, commitsOnCurrentBranch(configuration))
+}
+
+func TestSquashWipCommits_withManyFinalWipCommits(t *testing.T) {
+	_, configuration := setup(t)
+	wipCommit(t, configuration, "file1.txt")
+	manualCommit(t, configuration, "file2.txt", "first manual commit")
+	wipCommit(t, configuration, "file3.txt")
+	wipCommit(t, configuration, "file4.txt")
+	start(configuration)
+
+	squashWip(configuration)
+
+	assertOnBranch(t, "mob-session")
+	assertGitStatus(t, GitStatus{
+		"file3.txt": "A",
+		"file4.txt": "A",
+	})
+	equals(t, []string{
+		"first manual commit",
+	}, commitsOnCurrentBranch(configuration))
+}
+
+func TestSquashWipCommits_onlyWipCommits(t *testing.T) {
+	_, configuration := setup(t)
+	wipCommit(t, configuration, "file1.txt")
+	wipCommit(t, configuration, "file2.txt")
+	wipCommit(t, configuration, "file3.txt")
+	start(configuration)
+
+	squashWip(configuration)
+
+	assertOnBranch(t, "mob-session")
+	assertGitStatus(t, GitStatus{
+		"file1.txt": "A",
+		"file2.txt": "A",
+		"file3.txt": "A",
+	})
+	equals(t, []string{""}, commitsOnCurrentBranch(configuration))
 }
 
 func TestSquashWipCommits_resetsEnv(t *testing.T) {
 	_, configuration := setup(t)
 	start(configuration)
-	createFileAndCommitIt(t, "file1.txt", "irrelevant", "new file")
+	createFileAndCommitIt(t, "file1.txt", "contentIrrelevant", "new file")
 	originalGitEditor := "irrelevant"
 	originalGitSequenceEditor := "irrelevant, too"
 	os.Setenv("GIT_EDITOR", originalGitEditor)
@@ -53,19 +103,6 @@ func TestSquashWipCommits_resetsEnv(t *testing.T) {
 
 	equals(t, originalGitEditor, os.Getenv("GIT_EDITOR"))
 	equals(t, originalGitSequenceEditor, os.Getenv("GIT_SEQUENCE_EDITOR"))
-}
-
-func TestSquashWipCommits_failsOnFinalWipCommit(t *testing.T) {
-	output, configuration := setup(t)
-	start(configuration)
-	createFile(t, "file2.txt", "irrelevant")
-	next(configuration)
-	start(configuration)
-
-	squashWip(configuration)
-
-	assertCommitLogContainsMessage(t, gitCurrentBranch().Name, configuration.WipCommitMessage)
-	assertOutputContains(t, output, "failed to squash wip commits")
 }
 
 func TestSquashWipCommits_failsOnMainBranch(t *testing.T) {
@@ -78,11 +115,7 @@ func TestSquashWipCommits_failsOnMainBranch(t *testing.T) {
 
 func TestSquashWipCommits_worksWithEmptyCommits(t *testing.T) {
 	_, configuration := setup(t)
-
-	// change without manual commit
-	start(configuration)
-	createFile(t, "file1.txt", "irrelevant")
-	next(configuration)
+	wipCommit(t, configuration, "file1.txt")
 
 	start(configuration)
 	silentgit("commit", "--allow-empty", "-m ok")
@@ -97,11 +130,11 @@ func TestSquashWipCommits_worksWithEmptyCommits(t *testing.T) {
 
 func TestCommitsOnCurrentBranch(t *testing.T) {
 	_, configuration := setup(t)
-	createFileAndCommitIt(t, "file1.txt", "irrelevant", "not on branch")
+	createFileAndCommitIt(t, "file1.txt", "contentIrrelevant", "not on branch")
 	silentgit("push")
 	start(configuration)
-	createFileAndCommitIt(t, "file2.txt", "irrelevant", "on branch")
-	createFile(t, "file3.txt", "irrelevant")
+	createFileAndCommitIt(t, "file2.txt", "contentIrrelevant", "on branch")
+	createFile(t, "file3.txt", "contentIrrelevant")
 	next(configuration)
 	start(configuration)
 
@@ -111,46 +144,6 @@ func TestCommitsOnCurrentBranch(t *testing.T) {
 		configuration.WipCommitMessage,
 		"on branch",
 	}, commits)
-}
-
-func TestEndsWithWipCommit_finalManualCommit(t *testing.T) {
-	_, configuration := setup(t)
-	start(configuration)
-	createFileAndCommitIt(t, "file1.txt", "irrelevant", "new file")
-
-	equals(t, false, endsWithWipCommit(configuration))
-}
-
-func TestEndsWithWipCommit_finalWipCommit(t *testing.T) {
-	_, configuration := setup(t)
-	start(configuration)
-	createFile(t, "file1.txt", "irrelevant")
-	next(configuration)
-	start(configuration)
-
-	equals(t, true, endsWithWipCommit(configuration))
-}
-
-func TestEndsWithWipCommit_manualThenWipCommit(t *testing.T) {
-	_, configuration := setup(t)
-	start(configuration)
-	createFileAndCommitIt(t, "file1.txt", "irrelevant", "new file")
-	createFile(t, "file2.txt", "irrelevant")
-	next(configuration)
-	start(configuration)
-
-	equals(t, true, endsWithWipCommit(configuration))
-}
-
-func TestEndsWithWipCommit_wipThenManualCommit(t *testing.T) {
-	_, configuration := setup(t)
-	start(configuration)
-	createFile(t, "file2.txt", "irrelevant")
-	next(configuration)
-	start(configuration)
-	createFileAndCommitIt(t, "file1.txt", "irrelevant", "new file")
-
-	equals(t, false, endsWithWipCommit(configuration))
 }
 
 func TestMarkSquashWip_singleManualCommit(t *testing.T) {
@@ -204,6 +197,62 @@ pick c51a56d manual commit
 squash 01a9a32 %[1]s
 squash 01a9a33 %[1]s
 squash c51a56d manual commit
+
+# Rebase ...`, configuration.WipCommitMessage)
+
+	result := markPostWipCommitsForSquashing(input, configuration)
+
+	equals(t, expected, result)
+}
+
+func TestMarkSquashWip_manualCommitFollowedByWipCommit(t *testing.T) {
+	configuration := getDefaultConfiguration()
+	input := fmt.Sprintf(`pick c51a56d manual commit
+pick 01a9a31 %[1]s
+
+# Rebase ...`, configuration.WipCommitMessage)
+	expected := fmt.Sprintf(`pick c51a56d manual commit
+pick 01a9a31 %[1]s
+
+# Rebase ...`, configuration.WipCommitMessage)
+
+	result := markPostWipCommitsForSquashing(input, configuration)
+
+	equals(t, expected, result)
+}
+
+func TestMarkSquashWip_manualCommitFollowedByManyWipCommits(t *testing.T) {
+	configuration := getDefaultConfiguration()
+	input := fmt.Sprintf(`pick c51a56d manual commit
+pick 01a9a31 %[1]s
+pick 01a9a32 %[1]s
+pick 01a9a33 %[1]s
+
+# Rebase ...`, configuration.WipCommitMessage)
+	expected := fmt.Sprintf(`pick c51a56d manual commit
+pick 01a9a31 %[1]s
+fixup 01a9a32 %[1]s
+fixup 01a9a33 %[1]s
+
+# Rebase ...`, configuration.WipCommitMessage)
+
+	result := markPostWipCommitsForSquashing(input, configuration)
+
+	equals(t, expected, result)
+}
+
+func TestMarkSquashWip_wipThenManualCommitFollowedByManyWipCommits(t *testing.T) {
+	configuration := getDefaultConfiguration()
+	input := fmt.Sprintf(`pick 01a9a31 %[1]s
+pick c51a56d manual commit
+pick 01a9a32 %[1]s
+pick 01a9a33 %[1]s
+
+# Rebase ...`, configuration.WipCommitMessage)
+	expected := fmt.Sprintf(`pick 01a9a31 %[1]s
+squash c51a56d manual commit
+pick 01a9a32 %[1]s
+fixup 01a9a33 %[1]s
 
 # Rebase ...`, configuration.WipCommitMessage)
 
@@ -296,4 +345,32 @@ squash c51a56d manual commit
 
 	result, _ := ioutil.ReadFile(input)
 	equals(t, expected, string(result))
+}
+
+func wipCommit(t *testing.T, configuration Configuration, filename string) {
+	start(configuration)
+	createFile(t, filename, "contentIrrelevant")
+	next(configuration)
+}
+
+func manualCommit(t *testing.T, configuration Configuration, filename string, message string) {
+	start(configuration)
+	createFileAndCommitIt(t, filename, "contentIrrelevant", message)
+	next(configuration)
+}
+
+func commitsOnCurrentBranch(configuration Configuration) []string {
+	currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), gitBranches(), configuration)
+	commitsBaseWipBranch := currentBaseBranch.String() + ".." + currentWipBranch.String()
+	log := silentgit("--no-pager", "log", commitsBaseWipBranch, "--pretty=format:%s")
+	lines := strings.Split(log, "\n")
+	return lines
+}
+
+func commitsOnRemoteBranch(configuration Configuration) []string {
+	currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), gitBranches(), configuration)
+	commitsBaseWipBranch := currentBaseBranch.String() + ".." + configuration.RemoteName + "/" + currentWipBranch.String()
+	log := silentgit("--no-pager", "log", commitsBaseWipBranch, "--pretty=format:%s")
+	lines := strings.Split(log, "\n")
+	return lines
 }

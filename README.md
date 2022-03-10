@@ -14,9 +14,9 @@
     <img alt="Stars" src="https://img.shields.io/github/stars/remotemobprogramming/mob" /></a>
 </p>
 
-**NEW: Have you already tried the shared team timer [timer.mob.sh](https://timer.mob.sh)?**
+**#StandWithUkraine [donate here](https://www.savethechildren.org.uk/where-we-work/europe/ukraine) #StandWithUkraine**
 
-Smooth [git handover](https://www.remotemobprogramming.org/#git-handover) for remote pair/mob programming.
+Fast [git handover](https://www.remotemobprogramming.org/#git-handover) for remote pair/mob programming.
 
 - **mob** is [an open source command line tool written in go](https://github.com/remotemobprogramming/mob)
 - **mob** is the fastest way to [hand over code via git](https://www.remotemobprogramming.org/#git-handover)
@@ -92,25 +92,22 @@ sudo snap connect mob-sh:ssh-keys
 
 ### Using go tools
 
-When you already have a working go environment with a defined GOPATH you can install latest via `go install`:
-
-With go &lt; 1.16
+If you have go 1.16+ you can install and build directly from source:
 
 ```bash
-go get github.com/remotemobprogramming/mob
-go install github.com/remotemobprogramming/mob
-```
-
-go 1.16 introduced support for package@version syntax, so you can install directly with:
-
-```bash
-go install github.com/remotemobprogramming/mob@latest
+go install github.com/remotemobprogramming/mob/v2@latest
 ```
 
 or pick a specific version:
 
 ```bash
-go install github.com/remotemobprogramming/mob@v1.2.0
+go install github.com/remotemobprogramming/mob/v2@v2.5.0
+```
+
+or to install latest unreleased changes:
+
+```bash
+go install github.com/remotemobprogramming/mob/v2@main
 ```
 
 ## How to use
@@ -149,10 +146,10 @@ main $ git push
 And here's the man page of the tool:
 
 ```
-mob enables a fast Git handover
+mob enables a smooth Git handover
 
 Basic Commands:
-  start              start mob session from base branch in wip branch
+  start              start session from base branch in wip branch
   next               handover changes in wip branch to next person
   done               squashes all changes in wip branch to index in base branch
   reset              removes local and remote wip branch
@@ -160,22 +157,17 @@ Basic Commands:
 Basic Commands(Options):
   start [<minutes>]                      Start a <minutes> timer
     [--include-uncommitted-changes|-i]   Move uncommitted changes to wip branch
-    [--branch|-b <branch-postfix>]       Set wip branch to 'mob/<base-branch>-<branch-postfix>'
+    [--branch|-b <branch-postfix>]       Set wip branch to 'mob/<base-branch>/<branch-postfix>'
   next
     [--stay|-s]                          Stay on wip branch (default)
     [--return-to-base-branch|-r]         Return to base branch
     [--message|-m <commit-message>]      Override commit message
   done
-    [--no-squash]                        Do not squash commits from wip branch
-    [--squash]                           Squash commits from wip branch
+    [--no-squash]                        Squash no commits from wip branch, only merge wip branch
+    [--squash]                           Squash all commits from wip branch
+    [--squash-wip]                       Squash wip commits from wip branch, maintaining manual commits
   reset
-    [--branch|-b <branch-postfix>]       Set wip branch to 'mob/<base-branch>-<branch-postfix>'
-
-Experimental Commands:
-  squash-wip                             Combines wip commits in wip branch with subsequent manual commits to leave only manual commits.
-                                         ! Works only if all wip commits have the same wip commit message !
-    [--git-editor]                       Not intended for manual use. Used as a non-interactive editor (GIT_EDITOR) for git.
-    [--git-sequence-editor]              Not intended for manual use. Used as a non-interactive sequence editor (GIT_SEQUENCE_EDITOR) for git.
+    [--branch|-b <branch-postfix>]       Set wip branch to 'mob/<base-branch>/<branch-postfix>'
 
 Timer Commands:
   timer <minutes>                 start a <minutes> timer
@@ -183,15 +175,16 @@ Timer Commands:
   break <minutes>                 start a <minutes> break timer
 
 Get more information:
-  status                          show the status of the current mob session
+  status                          show the status of the current session
+  fetch                           fetch remote state
+  branch                          show remote wip branches
   config                          show all configuration options
-  version                         show the version of mob
+  version                         show the version
   help                            show help
 
 Other
   moo                             moo!
   install-custom-next <file|url>  use a custom sound when the timer is done (Mac only)
-
 
 Add --debug to any option to enable verbose logging
 
