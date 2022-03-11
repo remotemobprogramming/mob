@@ -1162,7 +1162,7 @@ func TestDoneMergeConflict(t *testing.T) {
 	setWorkingDir(tempDir + "/local")
 	start(configuration)
 	done(configuration)
-	assertOutputContains(t, output, "Automatic merge failed; fix conflicts and then commit the result.")
+	assertOutputContains(t, output, "To fix this, solve the merge conflict manually, commit, push, and afterwards delete mob-session")
 }
 
 func TestDoneMerge(t *testing.T) {
