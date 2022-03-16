@@ -11,4 +11,4 @@ if [ $GOOS == 'windows' ]; then
 fi
 
 tar cvfz ${NAME}.tar.gz "${PROJECT_NAME}${EXT}" LICENSE
-md5sum ${NAME}.tar.gz | cut -d ' ' -f 1 > ${NAME}_checksum.txt
+shasum -a 256 ${NAME}.tar.gz | cut -d ' ' -f 1 > ${NAME}_sha256_checksum.txt
