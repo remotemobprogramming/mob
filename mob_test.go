@@ -192,6 +192,8 @@ func TestBooleanEnvironmentVariables(t *testing.T) {
 	assertBoolEnvVarParsed(t, "MOB_START_INCLUDE_UNCOMMITTED_CHANGES", false, Configuration.GetMobStartIncludeUncommittedChanges)
 	assertBoolEnvVarParsed(t, "MOB_NEXT_STAY", true, Configuration.GetMobNextStay)
 	assertBoolEnvVarParsed(t, "MOB_REQUIRE_COMMIT_MESSAGE", false, Configuration.GetRequireCommitMessage)
+	assertBoolEnvVarParsed(t, "MOB_WRITE_LAST_MODIFIED_FILE_IN_COMMIT_MESSAGE", false, Configuration.GetWriteLastFileInCommitMessage)
+	assertBoolEnvVarParsed(t, "MOB_OPEN_LAST_MODIFIED_FILE", false, Configuration.GetOpenLastModifiedFile)
 }
 
 func assertBoolEnvVarParsed(t *testing.T, envVar string, defaultValue bool, actual func(Configuration) bool) {
@@ -237,6 +239,14 @@ func (c Configuration) GetMobNextStay() bool {
 
 func (c Configuration) GetRequireCommitMessage() bool {
 	return c.RequireCommitMessage
+}
+
+func (c Configuration) GetWriteLastFileInCommitMessage() bool {
+	return c.WriteLastModifiedFileInCommitMessage
+}
+
+func (c Configuration) GetOpenLastModifiedFile() bool {
+	return c.OpenLastModifiedFile
 }
 
 func TestVersion(t *testing.T) {
@@ -346,6 +356,9 @@ func TestReadConfigurationFromFileOverrideEverything(t *testing.T) {
 		MOB_WIP_BRANCH_QUALIFIER_SEPARATOR="---"
 		MOB_WIP_BRANCH_PREFIX="ensemble/"
 		MOB_DONE_SQUASH=false
+		MOB_WRITE_LAST_MODIFIED_FILE_IN_COMMIT_MESSAGE=true
+		MOB_OPEN_LAST_MODIFIED_FILE=true
+		MOB_OPEN_COMMAND="idea %s"
 		MOB_TIMER="123"
 		MOB_TIMER_ROOM="Room_42"
 		MOB_TIMER_ROOM_USE_WIP_BRANCH_QUALIFIER=true
@@ -369,6 +382,9 @@ func TestReadConfigurationFromFileOverrideEverything(t *testing.T) {
 	equals(t, "---", actualConfiguration.WipBranchQualifierSeparator)
 	equals(t, "ensemble/", actualConfiguration.WipBranchPrefix)
 	equals(t, NoSquash, actualConfiguration.DoneSquash)
+	equals(t, true, actualConfiguration.WriteLastModifiedFileInCommitMessage)
+	equals(t, true, actualConfiguration.OpenLastModifiedFile)
+	equals(t, "idea %s", actualConfiguration.OpenCommand)
 	equals(t, "123", actualConfiguration.Timer)
 	equals(t, "Room_42", actualConfiguration.TimerRoom)
 	equals(t, true, actualConfiguration.TimerRoomUseWipBranchQualifier)
@@ -676,6 +692,92 @@ func TestStartNextStay(t *testing.T) {
 
 	equals(t, silentgit("log", "--format=%B", "-n", "1", "HEAD"), configuration.WipCommitMessage)
 	assertOnBranch(t, "mob-session")
+}
+
+func TestStartNextStay_WriteLastModifiedFileInCommit_WhenFileIsAdded(t *testing.T) {
+	_, configuration := setup(t)
+	configuration.NextStay = true
+	configuration.WriteLastModifiedFileInCommitMessage = true
+
+	start(configuration)
+	createFile(t, "olderFile.txt", "contentIrrelevant")
+	createFile(t, "newerFile.txt", "contentIrrelevant")
+	next(configuration)
+
+	equals(t, silentgit("log", "--format=%B", "-n", "1", "HEAD"), configuration.WipCommitMessage + " lastFile:newerFile.txt")
+}
+
+func TestStartNextStay_WriteLastModifiedFileInCommit_WhenFileIsModified(t *testing.T) {
+	_, configuration := setup(t)
+	configuration.NextStay = true
+	configuration.WriteLastModifiedFileInCommitMessage = true
+
+	start(configuration)
+	createFile(t, "file1.txt", "contentIrrelevant")
+	createFile(t, "file2.txt", "contentIrrelevant")
+	next(configuration)
+
+	start(configuration)
+	createFile(t, "file1.txt", "contentIrrelevantButModified")
+	next(configuration)
+
+	assertOnBranch(t, "mob-session")
+	equals(t, silentgit("log", "--format=%B", "-n", "1", "HEAD"), configuration.WipCommitMessage + " lastFile:file1.txt")
+}
+
+func TestStartNextStay_DoNotWriteLastModifiedFileInCommit_WhenFileIsDeleted(t *testing.T) {
+	_, configuration := setup(t)
+	configuration.NextStay = true
+
+	start(configuration)
+	createFile(t, "file1.txt", "contentIrrelevant")
+	createFile(t, "file2.txt", "contentIrrelevant")
+	next(configuration)
+
+	configuration.WriteLastModifiedFileInCommitMessage = true
+	start(configuration)
+	run(t, "rm", workingDir + "/file1.txt")
+	next(configuration)
+
+	assertOnBranch(t, "mob-session")
+	equals(t, silentgit("log", "--format=%B", "-n", "1", "HEAD"), configuration.WipCommitMessage)
+}
+
+func TestStartNextStay_DoNotWriteLastModifiedFileInCommit_WhenFileIsMoved(t *testing.T) {
+	_, configuration := setup(t)
+	configuration.NextStay = true
+
+	start(configuration)
+	createFile(t, "file1.txt", "contentIrrelevant")
+	next(configuration)
+
+	configuration.WriteLastModifiedFileInCommitMessage = true
+	start(configuration)
+	createDirectory(t, "dir")
+	run(t, "mv", workingDir + "/" + "file1.txt", workingDir + "/dir/" + "file1.txt")
+	next(configuration)
+
+	assertOnBranch(t, "mob-session")
+	equals(t, silentgit("log", "--format=%B", "-n", "1", "HEAD"), configuration.WipCommitMessage)
+}
+
+func TestStartNextStay_OpenLastModifiedFile(t *testing.T) {
+	_, configuration := setup(t)
+	configuration.NextStay = true
+	configuration.WriteLastModifiedFileInCommitMessage = true
+	configuration.OpenLastModifiedFile = true
+	configuration.OpenCommand = "touch %s-1"
+
+	start(configuration)
+	createFile(t, "file.txt", "contentIrrelevant")
+	assertOnBranch(t, "mob-session")
+	next(configuration)
+
+	start(configuration)
+
+	assertGitStatus(t, GitStatus{
+		"file.txt-1": "??",
+	})
 }
 
 func TestStartDoneWithMobDoneSquash(t *testing.T) {

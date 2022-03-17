@@ -38,7 +38,7 @@ func squashWip(configuration Configuration) {
 }
 
 func lastCommitIsWipCommit(configuration Configuration) bool {
-	return lastCommitMessage() == configuration.WipCommitMessage
+	return strings.HasPrefix(lastCommitMessage(), configuration.WipCommitMessage)
 }
 
 func lastCommitMessage() string {
@@ -186,7 +186,7 @@ func isManualCommit(line string, configuration Configuration) bool {
 }
 
 func isWipCommit(line string, configuration Configuration) bool {
-	return strings.HasSuffix(line, configuration.WipCommitMessage)
+	return strings.Contains(line, configuration.WipCommitMessage)
 }
 
 func isPick(line string) bool {

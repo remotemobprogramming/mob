@@ -45,28 +45,31 @@ func doneSquash(value string) string {
 }
 
 type Configuration struct {
-	CliName                        string // override with MOB_CLI_NAME
-	RemoteName                     string // override with MOB_REMOTE_NAME
-	WipCommitMessage               string // override with MOB_WIP_COMMIT_MESSAGE
-	GitHooksEnabled                bool   // override with MOB_GIT_HOOKS_ENABLED
-	RequireCommitMessage           bool   // override with MOB_REQUIRE_COMMIT_MESSAGE
-	VoiceCommand                   string // override with MOB_VOICE_COMMAND
-	VoiceMessage                   string // override with MOB_VOICE_MESSAGE
-	NotifyCommand                  string // override with MOB_NOTIFY_COMMAND
-	NotifyMessage                  string // override with MOB_NOTIFY_MESSAGE
-	NextStay                       bool   // override with MOB_NEXT_STAY
-	StartIncludeUncommittedChanges bool   // override with MOB_START_INCLUDE_UNCOMMITTED_CHANGES variable
-	StashName                      string // override with MOB_STASH_NAME
-	WipBranchQualifier             string // override with MOB_WIP_BRANCH_QUALIFIER
-	WipBranchQualifierSeparator    string // override with MOB_WIP_BRANCH_QUALIFIER_SEPARATOR
-	WipBranchPrefix                string // override with MOB_WIP_BRANCH_PREFIX
-	DoneSquash                     string // override with MOB_DONE_SQUASH
-	Timer                          string // override with MOB_TIMER
-	TimerRoom                      string // override with MOB_TIMER_ROOM
-	TimerLocal                     bool   // override with MOB_TIMER_LOCAL
-	TimerRoomUseWipBranchQualifier bool   // override with MOB_TIMER_ROOM_USE_WIP_BRANCH_QUALIFIER
-	TimerUser                      string // override with MOB_TIMER_USER
-	TimerUrl                       string // override with MOB_TIMER_URL
+	CliName                        string       // override with MOB_CLI_NAME
+	RemoteName                     string       // override with MOB_REMOTE_NAME
+	WipCommitMessage               string       // override with MOB_WIP_COMMIT_MESSAGE
+	GitHooksEnabled                bool         // override with MOB_GIT_HOOKS_ENABLED
+	RequireCommitMessage           bool         // override with MOB_REQUIRE_COMMIT_MESSAGE
+	VoiceCommand                   string       // override with MOB_VOICE_COMMAND
+	VoiceMessage                         string // override with MOB_VOICE_MESSAGE
+	NotifyCommand                        string // override with MOB_NOTIFY_COMMAND
+	NotifyMessage                        string // override with MOB_NOTIFY_MESSAGE
+	NextStay                             bool   // override with MOB_NEXT_STAY
+	StartIncludeUncommittedChanges       bool   // override with MOB_START_INCLUDE_UNCOMMITTED_CHANGES variable
+	StashName                            string // override with MOB_STASH_NAME
+	WipBranchQualifier                   string // override with MOB_WIP_BRANCH_QUALIFIER
+	WipBranchQualifierSeparator          string // override with MOB_WIP_BRANCH_QUALIFIER_SEPARATOR
+	WipBranchPrefix                      string // override with MOB_WIP_BRANCH_PREFIX
+	DoneSquash                           string // override with MOB_DONE_SQUASH
+	WriteLastModifiedFileInCommitMessage bool   // override with MOB_WRITE_LAST_MODIFIED_FILE_IN_COMMIT_MESSAGE
+	OpenLastModifiedFile                 bool   // override with MOB_OPEN_LAST_MODIFIED_FILE
+	OpenCommand                          string // override with MOB_OPEN_COMMAND
+	Timer                                string // override with MOB_TIMER
+	TimerRoom                            string // override with MOB_TIMER_ROOM
+	TimerLocal                           bool   // override with MOB_TIMER_LOCAL
+	TimerRoomUseWipBranchQualifier       bool   // override with MOB_TIMER_ROOM_USE_WIP_BRANCH_QUALIFIER
+	TimerUser                            string // override with MOB_TIMER_USER
+	TimerUrl                             string // override with MOB_TIMER_URL
 }
 
 func (c Configuration) wipBranchQualifierSuffix() string {
@@ -82,7 +85,7 @@ func (c Configuration) hasCustomCommitMessage() bool {
 }
 
 func (c Configuration) isWipCommitMessage(line string) bool {
-	return line == c.WipCommitMessage
+	return strings.HasPrefix(line, c.WipCommitMessage)
 }
 
 type Branch struct {
@@ -264,38 +267,46 @@ func currentCliName(argZero string) string {
 func getDefaultConfiguration() Configuration {
 	voiceCommand := ""
 	notifyCommand := ""
+	openCommand := ""
 	switch runtime.GOOS {
 	case "darwin":
 		voiceCommand = "say \"%s\""
 		notifyCommand = "/usr/bin/osascript -e 'display notification \"%s\"'"
+		openCommand = "open -e %s"
 	case "linux":
 		voiceCommand = "say \"%s\""
 		notifyCommand = "notify-send \"%s\""
+		openCommand = "editor %s"
 	case "windows":
 		voiceCommand = "(New-Object -ComObject SAPI.SPVoice).Speak(\\\"%s\\\")"
+		openCommand = "Notepad \"%s\""
+
 	}
 	return Configuration{
 		CliName:                        "mob",
 		RemoteName:                     "origin",
 		WipCommitMessage:               "mob next [ci-skip] [ci skip] [skip ci]",
 		GitHooksEnabled:                false,
-		VoiceCommand:                   voiceCommand,
-		VoiceMessage:                   "mob next",
-		NotifyCommand:                  notifyCommand,
-		NotifyMessage:                  "mob next",
-		NextStay:                       true,
-		RequireCommitMessage:           false,
-		StartIncludeUncommittedChanges: false,
-		WipBranchQualifier:             "",
-		WipBranchQualifierSeparator:    "-",
-		DoneSquash:                     Squash,
-		Timer:                          "",
-		TimerLocal:                     true,
-		TimerRoom:                      "",
-		TimerUser:                      "",
-		TimerUrl:                       "https://timer.mob.sh/",
-		WipBranchPrefix:                "mob/",
-		StashName:                      "mob-stash-name",
+		VoiceCommand:                         voiceCommand,
+		VoiceMessage:                         "mob next",
+		NotifyCommand:                        notifyCommand,
+		NotifyMessage:                        "mob next",
+		NextStay:                             true,
+		RequireCommitMessage:                 false,
+		StartIncludeUncommittedChanges:       false,
+		WipBranchQualifier:                   "",
+		WipBranchQualifierSeparator:          "-",
+		DoneSquash:                           Squash,
+		WriteLastModifiedFileInCommitMessage: false,
+		OpenLastModifiedFile:                 false,
+		OpenCommand:                          openCommand,
+		Timer:                                "",
+		TimerLocal:                           true,
+		TimerRoom:                            "",
+		TimerUser:                            "",
+		TimerUrl:                             "https://timer.mob.sh/",
+		WipBranchPrefix:                      "mob/",
+		StashName:                            "mob-stash-name",
 	}
 }
 
@@ -367,6 +378,12 @@ func parseUserConfiguration(configuration Configuration, path string) Configurat
 			setUnquotedString(&configuration.WipBranchPrefix, key, value)
 		case "MOB_DONE_SQUASH":
 			setMobDoneSquash(&configuration, key, value)
+		case "MOB_WRITE_LAST_MODIFIED_FILE_IN_COMMIT_MESSAGE":
+			setBoolean(&configuration.WriteLastModifiedFileInCommitMessage, key, value)
+		case "MOB_OPEN_LAST_MODIFIED_FILE":
+			setBoolean(&configuration.OpenLastModifiedFile, key, value)
+		case "MOB_OPEN_COMMAND":
+			setUnquotedString(&configuration.OpenCommand, key, value)
 		case "MOB_TIMER":
 			setUnquotedString(&configuration.Timer, key, value)
 		case "MOB_TIMER_ROOM":
@@ -418,7 +435,7 @@ func parseProjectConfiguration(configuration Configuration, path string) Configu
 		debugInfo("Key is " + key)
 		debugInfo("Value is " + value)
 		switch key {
-		case "MOB_VOICE_COMMAND", "MOB_VOICE_MESSAGE", "MOB_NOTIFY_COMMAND", "MOB_NOTIFY_MESSAGE":
+		case "MOB_VOICE_COMMAND", "MOB_VOICE_MESSAGE", "MOB_NOTIFY_COMMAND", "MOB_NOTIFY_MESSAGE", "MOB_OPEN_COMMAND":
 			sayWarning("Skipped overwriting key " + key + " from project/.mob file out of security reasons!")
 		case "MOB_CLI_NAME":
 			setUnquotedString(&configuration.CliName, key, value)
@@ -442,6 +459,10 @@ func parseProjectConfiguration(configuration Configuration, path string) Configu
 			setUnquotedString(&configuration.WipBranchPrefix, key, value)
 		case "MOB_DONE_SQUASH":
 			setMobDoneSquash(&configuration, key, value)
+		case "MOB_WRITE_LAST__MODIFIED_FILE_IN_COMMIT_MESSAGE":
+			setBoolean(&configuration.WriteLastModifiedFileInCommitMessage, key, value)
+		case "MOB_OPEN_LAST_MODIFIED_FILE":
+			setBoolean(&configuration.OpenLastModifiedFile, key, value)
 		case "MOB_TIMER":
 			setUnquotedString(&configuration.Timer, key, value)
 		case "MOB_TIMER_ROOM":
@@ -534,6 +555,10 @@ func parseEnvironmentVariables(configuration Configuration) Configuration {
 	setBoolFromEnvVariable(&configuration.StartIncludeUncommittedChanges, "MOB_START_INCLUDE_UNCOMMITTED_CHANGES")
 
 	setDoneSquashFromEnvVariable(&configuration, "MOB_DONE_SQUASH")
+
+	setBoolFromEnvVariable(&configuration.WriteLastModifiedFileInCommitMessage, "MOB_WRITE_LAST_MODIFIED_FILE_IN_COMMIT_MESSAGE")
+	setBoolFromEnvVariable(&configuration.OpenLastModifiedFile, "MOB_OPEN_LAST_MODIFIED_FILE")
+	setStringFromEnvVariable(&configuration.OpenCommand, "MOB_OPEN_COMMAND")
 
 	setStringFromEnvVariable(&configuration.Timer, "MOB_TIMER")
 	setStringFromEnvVariable(&configuration.TimerRoom, "MOB_TIMER_ROOM")
@@ -634,6 +659,9 @@ func config(c Configuration) {
 	say("MOB_WIP_BRANCH_QUALIFIER_SEPARATOR" + "=" + quote(c.WipBranchQualifierSeparator))
 	say("MOB_WIP_BRANCH_PREFIX" + "=" + quote(c.WipBranchPrefix))
 	say("MOB_DONE_SQUASH" + "=" + string(c.DoneSquash))
+	say("MOB_WRITE_LAST_FILE_IN_COMMIT_MESSAGE" + "=" + strconv.FormatBool(c.WriteLastModifiedFileInCommitMessage))
+	say("MOB_OPEN_LAST_MODIFIED_FILE" + "=" + strconv.FormatBool(c.OpenLastModifiedFile))
+	say("MOB_OPEN_COMMAND" + "=" + quote(c.OpenCommand))
 	say("MOB_TIMER" + "=" + quote(c.Timer))
 	say("MOB_TIMER_ROOM" + "=" + quote(c.TimerRoom))
 	say("MOB_TIMER_ROOM_USE_WIP_BRANCH_QUALIFIER" + "=" + strconv.FormatBool(c.TimerRoomUseWipBranchQualifier))
@@ -806,6 +834,13 @@ func getNotifyCommand(message string, notifyCommand string) string {
 		return ""
 	}
 	return injectCommandWithMessage(notifyCommand, message)
+}
+
+func getOpenCommand(filepath string, openCommand string) string {
+	if len(openCommand) == 0 {
+		return ""
+	}
+	return injectCommandWithMessage(openCommand, filepath)
 }
 
 func executeCommandsInBackgroundProcess(commands ...string) (err error) {
@@ -1063,7 +1098,47 @@ func start(configuration Configuration) error {
 	sayInfo("you are on wip branch '" + currentWipBranch.String() + "' (base branch '" + currentBaseBranch.String() + "')")
 	sayLastCommitsList(currentBaseBranch.String(), currentWipBranch.String())
 
+	if configuration.OpenLastModifiedFile{
+		openLastModifiedFileIfPresent(configuration)
+	}
+
 	return nil // no error
+}
+
+func openLastModifiedFileIfPresent(configuration Configuration) {
+	debugInfo("OpenLastModifiedFile1")
+	if !lastCommitIsWipCommit(configuration){
+		return;
+	}
+	lastCommitMessage := lastCommitMessage()
+	split := strings.Split(lastCommitMessage, "lastFile:")
+	debugInfo("OpenLastModifiedFile2")
+	if len(split) == 1 {
+		sayWarning("Couldn't find last modified file in commit message!")
+		return;
+	}
+	if len(split) > 2 {
+		sayWarning("Could not determine last modified file from commit message, separator was used multiple times!")
+		return;
+	}
+	debugInfo("OpenLastModifiedFile3")
+	lastModifiedFile := gitRootDir() + "/" + split[1]
+	debugInfo("Last modified file: "+lastModifiedFile)
+	if lastModifiedFile == ""{
+		return;
+	}
+	if configuration.OpenCommand == ""{
+		sayWarning("Can not open last modified file, because the open command is not configured!")
+		return;
+	}
+	debugInfo("OpenLastModifiedFile4")
+
+	err := executeCommandsInBackgroundProcess(getOpenCommand(lastModifiedFile, configuration.OpenCommand))
+
+	if err != nil {
+		sayError(fmt.Sprintf("Couldn't open last modified file on your system (%s)", runtime.GOOS))
+		sayError(err.Error())
+	}
 }
 
 func warnForActiveWipBranches(configuration Configuration, currentBaseBranch Branch) {
@@ -1205,9 +1280,60 @@ func getCachedChanges() string {
 
 func makeWipCommit(configuration Configuration) {
 	git("add", "--all")
-	gitWithoutEmptyStrings("commit", "--message", configuration.WipCommitMessage, configuration.gitHooksOption())
+	commitMessage := configuration.WipCommitMessage
+	if configuration.WriteLastModifiedFileInCommitMessage && areFilesModified() {
+		commitMessage += " lastFile:" + getPathOfLastModifiedFile()
+	}
+	gitWithoutEmptyStrings("commit", "--message", commitMessage, configuration.gitHooksOption())
 	sayInfoIndented(getChangesOfLastCommit())
 	sayInfoIndented(gitCommitHash())
+}
+
+// uses git status --short. To work properly files have to be staged.
+func getPathOfLastModifiedFile() string {
+	gitstatus := silentgit("status", "--short")
+	lines := strings.Split(gitstatus,"\n")
+	lastModifiedFilePath := ""
+	lastModifiedTime := time.Time{}
+	rootDir := gitRootDir()
+
+	debugInfo("Find Filepaths")
+	for _, line := range lines {
+		if strings.HasPrefix(line, "D") || strings.HasPrefix(line, "R"){
+			continue
+		}
+		filepath := ""
+		if strings.HasPrefix(line, "M")  {
+			filepath = strings.TrimPrefix(line, "M")
+		} else if strings.HasPrefix(line, "A") {
+			filepath = strings.TrimPrefix(line, "A")
+		}
+		filepath = strings.TrimSpace(filepath)
+		debugInfo(filepath)
+		info, err := os.Stat(rootDir + "/" + filepath)
+		if err != nil {
+			panic(err)
+		}
+		if info.ModTime().After(lastModifiedTime){
+			lastModifiedTime = info.ModTime()
+			lastModifiedFilePath = filepath
+		}
+		debugInfo(info.ModTime().String())
+	}
+	return lastModifiedFilePath
+}
+
+// uses git status --short. To work properly files have to be staged.
+func areFilesModified() bool {
+	gitstatus := silentgit("status", "--short")
+	for _, line := range strings.Split(gitstatus, "\n") {
+		if !strings.Contains(line, "D ") && !strings.Contains(line, "R "){
+			debugInfo("Found modified files")
+			return true
+		}
+	}
+	debugInfo("Did not find modified files")
+	return false
 }
 
 func (c Configuration) gitHooksOption() string {
