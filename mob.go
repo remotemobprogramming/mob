@@ -459,7 +459,7 @@ func parseProjectConfiguration(configuration Configuration, path string) Configu
 			setUnquotedString(&configuration.WipBranchPrefix, key, value)
 		case "MOB_DONE_SQUASH":
 			setMobDoneSquash(&configuration, key, value)
-		case "MOB_WRITE_LAST__MODIFIED_FILE_IN_COMMIT_MESSAGE":
+		case "MOB_WRITE_LAST_MODIFIED_FILE_IN_COMMIT_MESSAGE":
 			setBoolean(&configuration.WriteLastModifiedFileInCommitMessage, key, value)
 		case "MOB_OPEN_LAST_MODIFIED_FILE":
 			setBoolean(&configuration.OpenLastModifiedFile, key, value)
