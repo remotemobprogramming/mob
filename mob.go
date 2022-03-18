@@ -95,7 +95,7 @@ func (c Configuration) openCommandFor(filepath string) string {
 }
 
 func (c Configuration) isOpenCommandGiven() bool {
-	return c.OpenCommand != ""
+	return strings.TrimSpace(c.OpenCommand) != ""
 }
 
 type Branch struct {
