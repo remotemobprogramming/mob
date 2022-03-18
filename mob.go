@@ -835,13 +835,6 @@ func getNotifyCommand(message string, notifyCommand string) string {
 	return injectCommandWithMessage(notifyCommand, message)
 }
 
-func getOpenCommand(filepath string, openCommand string) string {
-	if len(openCommand) == 0 {
-		return ""
-	}
-	return injectCommandWithMessage(openCommand, filepath)
-}
-
 func executeCommandsInBackgroundProcess(commands ...string) (err error) {
 	cmds := make([]string, 0)
 	for _, c := range commands {
