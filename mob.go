@@ -1094,13 +1094,13 @@ func start(configuration Configuration) error {
 }
 
 func openLastModifiedFileIfPresent(configuration Configuration) {
-	debugInfo("OpenLastModifiedFile1")
+	debugInfo("Try to open last modified File")
 	if !lastCommitIsWipCommit(configuration) {
+		debugInfo("Last commit isn't a WIP commit.")
 		return
 	}
 	lastCommitMessage := lastCommitMessage()
 	split := strings.Split(lastCommitMessage, "lastFile:")
-	debugInfo("OpenLastModifiedFile2")
 	if len(split) == 1 {
 		sayWarning("Couldn't find last modified file in commit message!")
 		return
@@ -1109,24 +1109,18 @@ func openLastModifiedFileIfPresent(configuration Configuration) {
 		sayWarning("Could not determine last modified file from commit message, separator was used multiple times!")
 		return
 	}
-	debugInfo("OpenLastModifiedFile3")
-	lastModifiedFile := gitRootDir() + "/" + split[1]
-	debugInfo("Last modified file: " + lastModifiedFile)
+	lastModifiedFile := split[1]
 	if lastModifiedFile == "" {
+		debugInfo("Could not find last modified file in commit message")
 		return
 	}
-	if configuration.OpenCommand == "" {
-		sayWarning("Can not open last modified file, because the open command is not configured!")
-		return
-	}
-	debugInfo("OpenLastModifiedFile4")
-
-	err := executeCommandsInBackgroundProcess(getOpenCommand(lastModifiedFile, configuration.OpenCommand))
-
+	lastModifiedFilePath := gitRootDir() + "/" + lastModifiedFile
+	err := executeCommandsInBackgroundProcess(getOpenCommand(lastModifiedFilePath, configuration.OpenCommand))
 	if err != nil {
 		sayError(fmt.Sprintf("Couldn't open last modified file on your system (%s)", runtime.GOOS))
 		sayError(err.Error())
 	}
+	debugInfo("Open last modified file: " + lastModifiedFilePath)
 }
 
 func warnForActiveWipBranches(configuration Configuration, currentBaseBranch Branch) {
@@ -1285,28 +1279,32 @@ func getPathOfLastModifiedFile() string {
 	lastModifiedTime := time.Time{}
 	rootDir := gitRootDir()
 
-	debugInfo("Find Filepaths")
+	debugInfo("Find relativ filepaths")
 	for _, line := range lines {
 		if strings.HasPrefix(line, "D") || strings.HasPrefix(line, "R") {
 			continue
 		}
-		filepath := ""
+		relativeFilepath := ""
 		if strings.HasPrefix(line, "M") {
-			filepath = strings.TrimPrefix(line, "M")
+			relativeFilepath = strings.TrimPrefix(line, "M")
 		} else if strings.HasPrefix(line, "A") {
-			filepath = strings.TrimPrefix(line, "A")
+			relativeFilepath = strings.TrimPrefix(line, "A")
 		}
-		filepath = strings.TrimSpace(filepath)
-		debugInfo(filepath)
-		info, err := os.Stat(rootDir + "/" + filepath)
+		relativeFilepath = strings.TrimSpace(relativeFilepath)
+		absoluteFilepath := rootDir + "/" + relativeFilepath
+		debugInfo(absoluteFilepath)
+		info, err := os.Stat(absoluteFilepath)
 		if err != nil {
-			panic(err)
+			sayError("Could not get statistics about file: " + absoluteFilepath)
+			sayError(err.Error())
+			continue
 		}
-		if info.ModTime().After(lastModifiedTime) {
-			lastModifiedTime = info.ModTime()
-			lastModifiedFilePath = filepath
+		modTime := info.ModTime()
+		if modTime.After(lastModifiedTime) {
+			lastModifiedTime = modTime
+			lastModifiedFilePath = relativeFilepath
 		}
-		debugInfo(info.ModTime().String())
+		debugInfo(modTime.String())
 	}
 	return lastModifiedFilePath
 }
