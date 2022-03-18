@@ -1262,13 +1262,21 @@ func getCachedChanges() string {
 
 func makeWipCommit(configuration Configuration) {
 	git("add", "--all")
-	commitMessage := configuration.WipCommitMessage
-	if configuration.WriteLastModifiedFileInCommitMessage && areFilesModified() {
-		commitMessage += " lastFile:" + getPathOfLastModifiedFile()
-	}
+	commitMessage := createWipCommitMessage(configuration)
 	gitWithoutEmptyStrings("commit", "--message", commitMessage, configuration.gitHooksOption())
 	sayInfoIndented(getChangesOfLastCommit())
 	sayInfoIndented(gitCommitHash())
+}
+
+func createWipCommitMessage(configuration Configuration) string {
+	commitMessage := configuration.WipCommitMessage
+	if configuration.WriteLastModifiedFileInCommitMessage {
+		lastModifiedFilePath := getPathOfLastModifiedFile()
+		if lastModifiedFilePath != "" {
+			commitMessage += " lastFile:" + lastModifiedFilePath
+		}
+	}
+	return commitMessage
 }
 
 // uses git status --short. To work properly files have to be staged.
@@ -1307,19 +1315,6 @@ func getPathOfLastModifiedFile() string {
 		debugInfo(modTime.String())
 	}
 	return lastModifiedFilePath
-}
-
-// uses git status --short. To work properly files have to be staged.
-func areFilesModified() bool {
-	gitstatus := silentgit("status", "--short")
-	for _, line := range strings.Split(gitstatus, "\n") {
-		if !strings.Contains(line, "D ") && !strings.Contains(line, "R ") {
-			debugInfo("Found modified files")
-			return true
-		}
-	}
-	debugInfo("Did not find modified files")
-	return false
 }
 
 func (c Configuration) gitHooksOption() string {
