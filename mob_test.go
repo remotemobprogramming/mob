@@ -12,6 +12,7 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+	"time"
 )
 
 var (
@@ -766,6 +767,9 @@ func TestStartNextStay_OpenLastModifiedFile(t *testing.T) {
 	next(configuration)
 
 	start(configuration)
+
+	// wait for touch to finish
+	time.Sleep(5 * time.Millisecond)
 
 	assertGitStatus(t, GitStatus{
 		"file.txt-1": "??",
