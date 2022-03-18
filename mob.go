@@ -87,6 +87,10 @@ func (c Configuration) isWipCommitMessage(line string) bool {
 	return strings.HasPrefix(line, c.WipCommitMessage)
 }
 
+func (c Configuration) isOpenCommandGiven() bool {
+	return c.OpenCommand != ""
+}
+
 type Branch struct {
 	Name string
 }
@@ -1086,14 +1090,16 @@ func start(configuration Configuration) error {
 	sayInfo("you are on wip branch '" + currentWipBranch.String() + "' (base branch '" + currentBaseBranch.String() + "')")
 	sayLastCommitsList(currentBaseBranch.String(), currentWipBranch.String())
 
-	if configuration.OpenCommand != "" {
-		openLastModifiedFileIfPresent(configuration)
-	}
+	openLastModifiedFileIfPresent(configuration)
 
 	return nil // no error
 }
 
 func openLastModifiedFileIfPresent(configuration Configuration) {
+	if !configuration.isOpenCommandGiven() {
+		return
+	}
+
 	debugInfo("Try to open last modified File")
 	if !lastCommitIsWipCommit(configuration) {
 		debugInfo("Last commit isn't a WIP commit.")
