@@ -87,6 +87,13 @@ func (c Configuration) isWipCommitMessage(line string) bool {
 	return strings.HasPrefix(line, c.WipCommitMessage)
 }
 
+func (c Configuration) openCommandFor(filepath string) string {
+	if !c.isOpenCommandGiven() {
+		return ""
+	}
+	return injectCommandWithMessage(c.OpenCommand, filepath)
+}
+
 func (c Configuration) isOpenCommandGiven() bool {
 	return c.OpenCommand != ""
 }
@@ -1121,7 +1128,7 @@ func openLastModifiedFileIfPresent(configuration Configuration) {
 		return
 	}
 	lastModifiedFilePath := gitRootDir() + "/" + lastModifiedFile
-	err := executeCommandsInBackgroundProcess(getOpenCommand(lastModifiedFilePath, configuration.OpenCommand))
+	err := executeCommandsInBackgroundProcess(configuration.openCommandFor(lastModifiedFilePath))
 	if err != nil {
 		sayError(fmt.Sprintf("Couldn't open last modified file on your system (%s)", runtime.GOOS))
 		sayError(err.Error())
