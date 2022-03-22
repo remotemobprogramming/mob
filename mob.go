@@ -1097,10 +1097,11 @@ func start(configuration Configuration) error {
 
 func openLastModifiedFileIfPresent(configuration Configuration) {
 	if !configuration.isOpenCommandGiven() {
+		debugInfo("No open command given")
 		return
 	}
 
-	debugInfo("Try to open last modified File")
+	debugInfo("Try to open last modified file")
 	if !lastCommitIsWipCommit(configuration) {
 		debugInfo("Last commit isn't a WIP commit.")
 		return
