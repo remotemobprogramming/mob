@@ -1287,40 +1287,57 @@ func createWipCommitMessage(configuration Configuration) string {
 
 // uses git status --short. To work properly files have to be staged.
 func getPathOfLastModifiedFile() string {
-	gitstatus := silentgit("status", "--short")
-	lines := strings.Split(gitstatus, "\n")
+	files := getModifiedFiles()
 	lastModifiedFilePath := ""
 	lastModifiedTime := time.Time{}
 	rootDir := gitRootDir()
 
-	debugInfo("Find relativ filepaths")
-	for _, line := range lines {
-		if strings.HasPrefix(line, "D") || strings.HasPrefix(line, "R") {
-			continue
-		}
-		relativeFilepath := ""
-		if strings.HasPrefix(line, "M") {
-			relativeFilepath = strings.TrimPrefix(line, "M")
-		} else if strings.HasPrefix(line, "A") {
-			relativeFilepath = strings.TrimPrefix(line, "A")
-		}
-		relativeFilepath = strings.TrimSpace(relativeFilepath)
-		absoluteFilepath := rootDir + "/" + relativeFilepath
+	debugInfo("Find last modified file")
+	if len(files) == 1 {
+		lastModifiedFilePath = files[0]
+		debugInfo("Just one modified file: " + lastModifiedFilePath)
+		return lastModifiedFilePath
+	}
+
+	for _, file := range files {
+		absoluteFilepath := rootDir + "/" + file
 		debugInfo(absoluteFilepath)
 		info, err := os.Stat(absoluteFilepath)
 		if err != nil {
-			sayError("Could not get statistics about file: " + absoluteFilepath)
+			sayError("Could not get statistics of file: " + absoluteFilepath)
 			sayError(err.Error())
 			continue
 		}
 		modTime := info.ModTime()
 		if modTime.After(lastModifiedTime) {
 			lastModifiedTime = modTime
-			lastModifiedFilePath = relativeFilepath
+			lastModifiedFilePath = file
 		}
 		debugInfo(modTime.String())
 	}
 	return lastModifiedFilePath
+}
+
+// uses git status --short. To work properly files have to be staged.
+func getModifiedFiles() []string {
+	debugInfo("Find modified files")
+	gitstatus := silentgit("status", "--short")
+	lines := strings.Split(gitstatus, "\n")
+	files := []string{}
+	for _, line := range lines {
+		relativeFilepath := ""
+		if strings.HasPrefix(line, "M") {
+			relativeFilepath = strings.TrimPrefix(line, "M")
+		} else if strings.HasPrefix(line, "A") {
+			relativeFilepath = strings.TrimPrefix(line, "A")
+		} else {
+			continue
+		}
+		relativeFilepath = strings.TrimSpace(relativeFilepath)
+		debugInfo(relativeFilepath)
+		files = append(files, relativeFilepath)
+	}
+	return files
 }
 
 func (c Configuration) gitHooksOption() string {
