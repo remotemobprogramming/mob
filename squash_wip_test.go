@@ -34,33 +34,6 @@ func TestSquashWipCommits_acceptance(t *testing.T) {
 	equals(t, commitsOnCurrentBranch(configuration), commitsOnRemoteBranch(configuration))
 }
 
-func TestSquashWipCommits_acceptance_WriteLastFileInCommitMessage(t *testing.T) {
-	_, configuration := setup(t)
-	configuration.WriteLastModifiedFileInCommitMessage = true;
-	wipCommit(t, configuration, "file1.txt")
-	manualCommit(t, configuration, "file2.txt", "first manual commit")
-
-	// manual commit followed by a wip commit
-	start(configuration)
-	createFileAndCommitIt(t, "file3.txt", "contentIrrelevant", "second manual commit")
-	createFile(t, "file4.txt", "contentIrrelevant")
-	next(configuration)
-
-	// final manual commit
-	start(configuration)
-	createFileAndCommitIt(t, "file5.txt", "contentIrrelevant", "third manual commit")
-
-	squashWip(configuration)
-
-	assertOnBranch(t, "mob-session")
-	equals(t, []string{
-		"third manual commit",
-		"second manual commit",
-		"first manual commit",
-	}, commitsOnCurrentBranch(configuration))
-	equals(t, commitsOnCurrentBranch(configuration), commitsOnRemoteBranch(configuration))
-}
-
 func TestSquashWipCommits_withFinalWipCommit(t *testing.T) {
 	_, configuration := setup(t)
 	wipCommit(t, configuration, "file1.txt")
@@ -168,7 +141,7 @@ func TestCommitsOnCurrentBranch(t *testing.T) {
 	commits := commitsOnCurrentBranch(configuration)
 
 	equals(t, []string{
-		configuration.WipCommitMessage,
+		configuration.WipCommitMessage + " lastFile:file3.txt",
 		"on branch",
 	}, commits)
 }
