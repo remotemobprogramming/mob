@@ -12,6 +12,7 @@ import (
 	"os/exec"
 	"os/user"
 	"reflect"
+	"regexp"
 	"runtime"
 	"strconv"
 	"strings"
@@ -1113,6 +1114,10 @@ func openLastModifiedFileIfPresent(configuration Configuration) {
 		debugInfo("Could not find last modified file in commit message")
 		return
 	}
+	if !isAllowed(lastModifiedFile) {
+		sayWarning("Won't open last modified file, because of security reasons. The file name uses other characters than a-z, A-Z, 0-9, ., -, _, /")
+		return
+	}
 	lastModifiedFilePath := gitRootDir() + "/" + lastModifiedFile
 	err := executeCommandsInBackgroundProcess(configuration.openCommandFor(lastModifiedFilePath))
 	if err != nil {
@@ -1120,6 +1125,11 @@ func openLastModifiedFileIfPresent(configuration Configuration) {
 		sayError(err.Error())
 	}
 	debugInfo("Open last modified file: " + lastModifiedFilePath)
+}
+
+func isAllowed(filepath string) bool {
+	matched, _ := regexp.MatchString(`^[a-zA-Z0-9._\-\\/\s]*$`, filepath)
+	return matched
 }
 
 func warnForActiveWipBranches(configuration Configuration, currentBaseBranch Branch) {
