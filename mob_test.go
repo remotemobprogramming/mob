@@ -677,7 +677,7 @@ func TestStartNextStay(t *testing.T) {
 
 	next(configuration)
 
-	equals(t, silentgit("log", "--format=%B", "-n", "1", "HEAD"), configuration.WipCommitMessage+" lastFile:file1.txt")
+	equals(t, silentgit("log", "--format=%B", "-n", "1", "HEAD"), configuration.WipCommitMessage+"\nlastFile:file1.txt")
 	assertOnBranch(t, "mob-session")
 }
 
@@ -690,7 +690,7 @@ func TestStartNextStay_WriteLastModifiedFileInCommit_WhenFileIsAdded(t *testing.
 	createFile(t, "newerFile.txt", "contentIrrelevant")
 	next(configuration)
 
-	equals(t, silentgit("log", "--format=%B", "-n", "1", "HEAD"), configuration.WipCommitMessage+" lastFile:newerFile.txt")
+	equals(t, silentgit("log", "--format=%B", "-n", "1", "HEAD"), configuration.WipCommitMessage+"\nlastFile:newerFile.txt")
 }
 
 func TestStartNextStay_WriteLastModifiedFileInCommit_WhenFileIsModified(t *testing.T) {
@@ -707,7 +707,7 @@ func TestStartNextStay_WriteLastModifiedFileInCommit_WhenFileIsModified(t *testi
 	next(configuration)
 
 	assertOnBranch(t, "mob-session")
-	equals(t, silentgit("log", "--format=%B", "-n", "1", "HEAD"), configuration.WipCommitMessage+" lastFile:file1.txt")
+	equals(t, silentgit("log", "--format=%B", "-n", "1", "HEAD"), configuration.WipCommitMessage+"\nlastFile:file1.txt")
 }
 
 func TestStartNextStay_DoNotWriteLastModifiedFileInCommit_WhenFileIsDeleted(t *testing.T) {

@@ -114,8 +114,15 @@ func replaceFileContents(fileName string, replacer Replacer) {
 
 func commentWipCommits(input string, configuration Configuration) string {
 	var result []string
+	isWipCommitBlock := false
 	for _, line := range strings.Split(input, "\n") {
 		if configuration.isWipCommitMessage(line) {
+			isWipCommitBlock = true
+		} else if line == "" {
+			isWipCommitBlock = false
+		}
+
+		if isWipCommitBlock {
 			result = append(result, "# "+line)
 		} else {
 			result = append(result, line)

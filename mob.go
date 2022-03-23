@@ -1272,7 +1272,7 @@ func createWipCommitMessage(configuration Configuration) string {
 
 	lastModifiedFilePath := getPathOfLastModifiedFile()
 	if lastModifiedFilePath != "" {
-		commitMessage += " lastFile:" + lastModifiedFilePath
+		commitMessage += "\nlastFile:" + lastModifiedFilePath
 	}
 
 	return commitMessage
