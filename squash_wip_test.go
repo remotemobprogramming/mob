@@ -141,7 +141,7 @@ func TestCommitsOnCurrentBranch(t *testing.T) {
 	commits := commitsOnCurrentBranch(configuration)
 
 	equals(t, []string{
-		configuration.WipCommitMessage + " lastFile:file3.txt",
+		configuration.WipCommitMessage,
 		"on branch",
 	}, commits)
 }

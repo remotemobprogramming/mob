@@ -290,12 +290,9 @@ Just set the configuration option `MOB_TIMER_ROOM_USE_WIP_BRANCH_QUALIFIER=true`
 ### Automatically open the last modified file of the previous typist
 
 When you are rotating the typist, you often need to open the file, which the previous typist has modified last.
-Mob supports you and can automate this step. Therefore, you need to set the following configuration options.
-1. `MOB_WRITE_LAST_MODIFIED_FILE_IN_COMMIT_MESSAGE=true` mob will write the last modified file in the WIP commit message, so mob knows which was the last modified file
-2. `MOB_OPEN_LAST_MODIFIED_FILE=true` mob will then look for the last modified file within the WIP commit message.
-3. `MOB_OPEN_COMMAND=idea %s` mob uses this open command to open the last modified file. In this example IntelliJ is used as an IDE. 
+Mob supports you and can automate this step. You just need the configuration option `MOB_OPEN_COMMAND` with the command to open a file in your preferred IDE. 
 
-Please have in mind, that every member in the mob needs to have the `MOB_WRITE_LAST_MODIFIED_FILE_IN_COMMIT_MESSAGE` configuration option enable, to make the automatic opening work. The easiest way is to just set this configuration option in the `.mob` configuration file within the project root. 
+For example if you want use IntelliJ the configuration option would look like this: `MOB_OPEN_COMMAND=idea %s`
 
 ## More on Installation
 

@@ -42,7 +42,7 @@ func lastCommitIsWipCommit(configuration Configuration) bool {
 }
 
 func lastCommitMessage() string {
-	return silentgit("log", "-1", "--pretty=format:%s")
+	return silentgit("log", "-1", "--pretty=format:%B")
 }
 
 func sayLastCommitsWithMessage(currentBaseBranch string, currentWipBranch string) {
@@ -114,15 +114,16 @@ func replaceFileContents(fileName string, replacer Replacer) {
 
 func commentWipCommits(input string, configuration Configuration) string {
 	var result []string
-	isWipCommitBlock := false
-	for _, line := range strings.Split(input, "\n") {
+	ignoreBlock := false
+	lines := strings.Split(input, "\n")
+	for idx, line := range lines {
 		if configuration.isWipCommitMessage(line) {
-			isWipCommitBlock = true
-		} else if line == "" {
-			isWipCommitBlock = false
+			ignoreBlock = true
+		} else if line == "" && len(lines) > idx+1 && strings.HasPrefix(lines[idx+1], "#") {
+			ignoreBlock = false
 		}
 
-		if isWipCommitBlock {
+		if ignoreBlock {
 			result = append(result, "# "+line)
 		} else {
 			result = append(result, line)
