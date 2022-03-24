@@ -12,7 +12,6 @@ import (
 	"os/exec"
 	"os/user"
 	"reflect"
-	"regexp"
 	"runtime"
 	"strconv"
 	"strings"
@@ -87,11 +86,12 @@ func (c Configuration) isWipCommitMessage(line string) bool {
 	return strings.HasPrefix(line, c.WipCommitMessage)
 }
 
-func (c Configuration) openCommandFor(filepath string) string {
+func (c Configuration) openCommandFor(filepath string) (string, []string) {
 	if !c.isOpenCommandGiven() {
-		return ""
+		return "", []string{}
 	}
-	return injectCommandWithMessage(c.OpenCommand, filepath)
+	split := strings.Split(injectCommandWithMessage(c.OpenCommand, filepath), " ")
+	return split[0], split[1:]
 }
 
 func (c Configuration) isOpenCommandGiven() bool {
@@ -1114,22 +1114,14 @@ func openLastModifiedFileIfPresent(configuration Configuration) {
 		debugInfo("Could not find last modified file in commit message")
 		return
 	}
-	if !isAllowed(lastModifiedFile) {
-		sayWarning("Won't open last modified file, because of security reasons. The file name uses other characters than a-z, A-Z, 0-9, ., -, _, /")
-		return
-	}
 	lastModifiedFilePath := gitRootDir() + "/" + lastModifiedFile
-	err := executeCommandsInBackgroundProcess(configuration.openCommandFor(lastModifiedFilePath))
+	commandname, args := configuration.openCommandFor(lastModifiedFilePath)
+	_, err := startCommand(commandname, args...)
 	if err != nil {
 		sayError(fmt.Sprintf("Couldn't open last modified file on your system (%s)", runtime.GOOS))
 		sayError(err.Error())
 	}
 	debugInfo("Open last modified file: " + lastModifiedFilePath)
-}
-
-func isAllowed(filepath string) bool {
-	matched, _ := regexp.MatchString(`^[a-zA-Z0-9._\-\\/\s]*$`, filepath)
-	return matched
 }
 
 func warnForActiveWipBranches(configuration Configuration, currentBaseBranch Branch) {
