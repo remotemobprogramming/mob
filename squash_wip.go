@@ -119,7 +119,7 @@ func commentWipCommits(input string, configuration Configuration) string {
 	for idx, line := range lines {
 		if configuration.isWipCommitMessage(line) {
 			ignoreBlock = true
-		} else if line == "" && len(lines) > idx+1 && strings.HasPrefix(lines[idx+1], "#") {
+		} else if line == "" && isNextLineComment(lines, idx) {
 			ignoreBlock = false
 		}
 
@@ -130,6 +130,10 @@ func commentWipCommits(input string, configuration Configuration) string {
 		}
 	}
 	return strings.Join(result, "\n")
+}
+
+func isNextLineComment(lines []string, currentLineIndex int) bool {
+	return len(lines) > currentLineIndex+1 && strings.HasPrefix(lines[currentLineIndex+1], "#")
 }
 
 func markPostWipCommitsForSquashing(input string, configuration Configuration) string {
