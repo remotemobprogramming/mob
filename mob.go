@@ -61,6 +61,7 @@ type Configuration struct {
 	WipBranchQualifierSeparator    string // override with MOB_WIP_BRANCH_QUALIFIER_SEPARATOR
 	WipBranchPrefix                string // override with MOB_WIP_BRANCH_PREFIX
 	DoneSquash                     string // override with MOB_DONE_SQUASH
+	OpenCommand                    string // override with MOB_OPEN_COMMAND
 	Timer                          string // override with MOB_TIMER
 	TimerRoom                      string // override with MOB_TIMER_ROOM
 	TimerLocal                     bool   // override with MOB_TIMER_LOCAL
@@ -82,7 +83,19 @@ func (c Configuration) hasCustomCommitMessage() bool {
 }
 
 func (c Configuration) isWipCommitMessage(line string) bool {
-	return line == c.WipCommitMessage
+	return strings.HasPrefix(line, c.WipCommitMessage)
+}
+
+func (c Configuration) openCommandFor(filepath string) (string, []string) {
+	if !c.isOpenCommandGiven() {
+		return "", []string{}
+	}
+	split := strings.Split(injectCommandWithMessage(c.OpenCommand, filepath), " ")
+	return split[0], split[1:]
+}
+
+func (c Configuration) isOpenCommandGiven() bool {
+	return strings.TrimSpace(c.OpenCommand) != ""
 }
 
 type Branch struct {
@@ -273,6 +286,7 @@ func getDefaultConfiguration() Configuration {
 		notifyCommand = "notify-send \"%s\""
 	case "windows":
 		voiceCommand = "(New-Object -ComObject SAPI.SPVoice).Speak(\\\"%s\\\")"
+
 	}
 	return Configuration{
 		CliName:                        "mob",
@@ -289,6 +303,7 @@ func getDefaultConfiguration() Configuration {
 		WipBranchQualifier:             "",
 		WipBranchQualifierSeparator:    "-",
 		DoneSquash:                     Squash,
+		OpenCommand:                    "",
 		Timer:                          "",
 		TimerLocal:                     true,
 		TimerRoom:                      "",
@@ -367,6 +382,8 @@ func parseUserConfiguration(configuration Configuration, path string) Configurat
 			setUnquotedString(&configuration.WipBranchPrefix, key, value)
 		case "MOB_DONE_SQUASH":
 			setMobDoneSquash(&configuration, key, value)
+		case "MOB_OPEN_COMMAND":
+			setUnquotedString(&configuration.OpenCommand, key, value)
 		case "MOB_TIMER":
 			setUnquotedString(&configuration.Timer, key, value)
 		case "MOB_TIMER_ROOM":
@@ -418,7 +435,7 @@ func parseProjectConfiguration(configuration Configuration, path string) Configu
 		debugInfo("Key is " + key)
 		debugInfo("Value is " + value)
 		switch key {
-		case "MOB_VOICE_COMMAND", "MOB_VOICE_MESSAGE", "MOB_NOTIFY_COMMAND", "MOB_NOTIFY_MESSAGE":
+		case "MOB_VOICE_COMMAND", "MOB_VOICE_MESSAGE", "MOB_NOTIFY_COMMAND", "MOB_NOTIFY_MESSAGE", "MOB_OPEN_COMMAND":
 			sayWarning("Skipped overwriting key " + key + " from project/.mob file out of security reasons!")
 		case "MOB_CLI_NAME":
 			setUnquotedString(&configuration.CliName, key, value)
@@ -535,6 +552,8 @@ func parseEnvironmentVariables(configuration Configuration) Configuration {
 
 	setDoneSquashFromEnvVariable(&configuration, "MOB_DONE_SQUASH")
 
+	setStringFromEnvVariable(&configuration.OpenCommand, "MOB_OPEN_COMMAND")
+
 	setStringFromEnvVariable(&configuration.Timer, "MOB_TIMER")
 	setStringFromEnvVariable(&configuration.TimerRoom, "MOB_TIMER_ROOM")
 	setBoolFromEnvVariable(&configuration.TimerRoomUseWipBranchQualifier, "MOB_TIMER_ROOM_USE_WIP_BRANCH_QUALIFIER")
@@ -634,6 +653,7 @@ func config(c Configuration) {
 	say("MOB_WIP_BRANCH_QUALIFIER_SEPARATOR" + "=" + quote(c.WipBranchQualifierSeparator))
 	say("MOB_WIP_BRANCH_PREFIX" + "=" + quote(c.WipBranchPrefix))
 	say("MOB_DONE_SQUASH" + "=" + string(c.DoneSquash))
+	say("MOB_OPEN_COMMAND" + "=" + quote(c.OpenCommand))
 	say("MOB_TIMER" + "=" + quote(c.Timer))
 	say("MOB_TIMER_ROOM" + "=" + quote(c.TimerRoom))
 	say("MOB_TIMER_ROOM_USE_WIP_BRANCH_QUALIFIER" + "=" + strconv.FormatBool(c.TimerRoomUseWipBranchQualifier))
@@ -1063,7 +1083,45 @@ func start(configuration Configuration) error {
 	sayInfo("you are on wip branch '" + currentWipBranch.String() + "' (base branch '" + currentBaseBranch.String() + "')")
 	sayLastCommitsList(currentBaseBranch.String(), currentWipBranch.String())
 
+	openLastModifiedFileIfPresent(configuration)
+
 	return nil // no error
+}
+
+func openLastModifiedFileIfPresent(configuration Configuration) {
+	if !configuration.isOpenCommandGiven() {
+		debugInfo("No open command given")
+		return
+	}
+
+	debugInfo("Try to open last modified file")
+	if !lastCommitIsWipCommit(configuration) {
+		debugInfo("Last commit isn't a WIP commit.")
+		return
+	}
+	lastCommitMessage := lastCommitMessage()
+	split := strings.Split(lastCommitMessage, "lastFile:")
+	if len(split) == 1 {
+		sayWarning("Couldn't find last modified file in commit message!")
+		return
+	}
+	if len(split) > 2 {
+		sayWarning("Could not determine last modified file from commit message, separator was used multiple times!")
+		return
+	}
+	lastModifiedFile := split[1]
+	if lastModifiedFile == "" {
+		debugInfo("Could not find last modified file in commit message")
+		return
+	}
+	lastModifiedFilePath := gitRootDir() + "/" + lastModifiedFile
+	commandname, args := configuration.openCommandFor(lastModifiedFilePath)
+	_, err := startCommand(commandname, args...)
+	if err != nil {
+		sayError(fmt.Sprintf("Couldn't open last modified file on your system (%s)", runtime.GOOS))
+		sayError(err.Error())
+	}
+	debugInfo("Open last modified file: " + lastModifiedFilePath)
 }
 
 func warnForActiveWipBranches(configuration Configuration, currentBaseBranch Branch) {
@@ -1205,9 +1263,76 @@ func getCachedChanges() string {
 
 func makeWipCommit(configuration Configuration) {
 	git("add", "--all")
-	gitWithoutEmptyStrings("commit", "--message", configuration.WipCommitMessage, configuration.gitHooksOption())
+	commitMessage := createWipCommitMessage(configuration)
+	gitWithoutEmptyStrings("commit", "--message", commitMessage, configuration.gitHooksOption())
 	sayInfoIndented(getChangesOfLastCommit())
 	sayInfoIndented(gitCommitHash())
+}
+
+func createWipCommitMessage(configuration Configuration) string {
+	commitMessage := configuration.WipCommitMessage
+
+	lastModifiedFilePath := getPathOfLastModifiedFile()
+	if lastModifiedFilePath != "" {
+		commitMessage += "\n\nlastFile:" + lastModifiedFilePath
+	}
+
+	return commitMessage
+}
+
+// uses git status --short. To work properly files have to be staged.
+func getPathOfLastModifiedFile() string {
+	files := getModifiedFiles()
+	lastModifiedFilePath := ""
+	lastModifiedTime := time.Time{}
+	rootDir := gitRootDir()
+
+	debugInfo("Find last modified file")
+	if len(files) == 1 {
+		lastModifiedFilePath = files[0]
+		debugInfo("Just one modified file: " + lastModifiedFilePath)
+		return lastModifiedFilePath
+	}
+
+	for _, file := range files {
+		absoluteFilepath := rootDir + "/" + file
+		debugInfo(absoluteFilepath)
+		info, err := os.Stat(absoluteFilepath)
+		if err != nil {
+			sayError("Could not get statistics of file: " + absoluteFilepath)
+			sayError(err.Error())
+			continue
+		}
+		modTime := info.ModTime()
+		if modTime.After(lastModifiedTime) {
+			lastModifiedTime = modTime
+			lastModifiedFilePath = file
+		}
+		debugInfo(modTime.String())
+	}
+	return lastModifiedFilePath
+}
+
+// uses git status --short. To work properly files have to be staged.
+func getModifiedFiles() []string {
+	debugInfo("Find modified files")
+	gitstatus := silentgit("status", "--short")
+	lines := strings.Split(gitstatus, "\n")
+	files := []string{}
+	for _, line := range lines {
+		relativeFilepath := ""
+		if strings.HasPrefix(line, "M") {
+			relativeFilepath = strings.TrimPrefix(line, "M")
+		} else if strings.HasPrefix(line, "A") {
+			relativeFilepath = strings.TrimPrefix(line, "A")
+		} else {
+			continue
+		}
+		relativeFilepath = strings.TrimSpace(relativeFilepath)
+		debugInfo(relativeFilepath)
+		files = append(files, relativeFilepath)
+	}
+	return files
 }
 
 func (c Configuration) gitHooksOption() string {

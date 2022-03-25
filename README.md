@@ -287,6 +287,13 @@ Say you're a larger team and work on the same git repository using ticket number
 It's easy to forget exporting the room that enables the integration with timer.mob.sh.
 Just set the configuration option `MOB_TIMER_ROOM_USE_WIP_BRANCH_QUALIFIER=true` in `~/.mob` for that.
 
+### Automatically open the last modified file of the previous typist
+
+When you are rotating the typist, you often need to open the file, which the previous typist has modified last.
+Mob supports you and can automate this step. You just need the configuration option `MOB_OPEN_COMMAND` with the command to open a file in your preferred IDE. 
+
+For example if you want use IntelliJ the configuration option would look like this: `MOB_OPEN_COMMAND=idea %s`
+
 ## More on Installation
 
 ### Known Issues
@@ -348,6 +355,7 @@ MOB_WIP_BRANCH_QUALIFIER=""
 MOB_WIP_BRANCH_QUALIFIER_SEPARATOR="-"
 MOB_WIP_BRANCH_PREFIX="mob/"
 MOB_DONE_SQUASH=true
+MOB_OPEN_COMMAND="idea %s"
 MOB_TIMER=""
 MOB_TIMER_ROOM="mob"
 MOB_TIMER_ROOM_USE_WIP_BRANCH_QUALIFIER=false

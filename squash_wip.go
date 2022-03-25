@@ -38,11 +38,11 @@ func squashWip(configuration Configuration) {
 }
 
 func lastCommitIsWipCommit(configuration Configuration) bool {
-	return lastCommitMessage() == configuration.WipCommitMessage
+	return strings.HasPrefix(lastCommitMessage(), configuration.WipCommitMessage)
 }
 
 func lastCommitMessage() string {
-	return silentgit("log", "-1", "--pretty=format:%s")
+	return silentgit("log", "-1", "--pretty=format:%B")
 }
 
 func sayLastCommitsWithMessage(currentBaseBranch string, currentWipBranch string) {
@@ -114,14 +114,26 @@ func replaceFileContents(fileName string, replacer Replacer) {
 
 func commentWipCommits(input string, configuration Configuration) string {
 	var result []string
-	for _, line := range strings.Split(input, "\n") {
+	ignoreBlock := false
+	lines := strings.Split(input, "\n")
+	for idx, line := range lines {
 		if configuration.isWipCommitMessage(line) {
+			ignoreBlock = true
+		} else if line == "" && isNextLineComment(lines, idx) {
+			ignoreBlock = false
+		}
+
+		if ignoreBlock {
 			result = append(result, "# "+line)
 		} else {
 			result = append(result, line)
 		}
 	}
 	return strings.Join(result, "\n")
+}
+
+func isNextLineComment(lines []string, currentLineIndex int) bool {
+	return len(lines) > currentLineIndex+1 && strings.HasPrefix(lines[currentLineIndex+1], "#")
 }
 
 func markPostWipCommitsForSquashing(input string, configuration Configuration) string {
@@ -186,7 +198,7 @@ func isManualCommit(line string, configuration Configuration) bool {
 }
 
 func isWipCommit(line string, configuration Configuration) bool {
-	return strings.HasSuffix(line, configuration.WipCommitMessage)
+	return strings.Contains(line, configuration.WipCommitMessage)
 }
 
 func isPick(line string) bool {
