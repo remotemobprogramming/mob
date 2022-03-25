@@ -2,7 +2,7 @@
 - **NEW** Mob will automatically open the last modified file of the previous typist in your preferred IDE. Therefore, you need to set the configuration option `MOB_OPEN_COMMAND` to a command which opens your IDE. For example, the open command for IntelliJ is `idea %s`
 - Add a Smiley face to Happy Collaborating message to make your day :)
 
-Thanks to @hollesse making this release possible!
+Thanks to @hollesse and @aryanfaghihi making this release possible!
 
 # 2.6.0
 - **NEW** Allow keeping manual commits while squashing all wip commits by finishing a mob-session with `mob done --squash-wip`.
