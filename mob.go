@@ -734,6 +734,8 @@ func execute(command string, parameter []string, configuration Configuration) {
 		fetch(configuration)
 	case "reset":
 		reset(configuration)
+	case "clean":
+		clean(configuration)
 	case "config":
 		config(configuration)
 	case "status":
@@ -768,6 +770,32 @@ func execute(command string, parameter []string, configuration Configuration) {
 	default:
 		help(configuration)
 	}
+}
+
+func clean(configuration Configuration) {
+	git("fetch", configuration.RemoteName)
+
+	currentBranch := gitCurrentBranch()
+	localBranches := gitBranches()
+
+	if currentBranch.isStale(configuration) {
+		currentBaseBranch, currentWipBranch := determineBranches(currentBranch, localBranches, configuration)
+		sayInfo("Switching to base branch " + currentBaseBranch.Name + " because wip branch " + currentWipBranch.Name + " is stale")
+		git("checkout", currentBaseBranch.Name)
+	}
+
+	for _, branch := range localBranches {
+		b := newBranch(branch)
+		if b.isStale(configuration) {
+			sayInfo("Removing stale wip branch " + b.Name)
+			git("branch", "-d", b.Name)
+		}
+	}
+
+}
+
+func (branch Branch) isStale(configuration Configuration) bool {
+	return branch.IsWipBranch(configuration) && !branch.hasRemoteBranch(configuration)
 }
 
 func branch(configuration Configuration) {
