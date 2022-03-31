@@ -778,23 +778,30 @@ func clean(configuration Configuration) {
 	currentBranch := gitCurrentBranch()
 	localBranches := gitBranches()
 
-	if currentBranch.isStale(configuration) {
-		currentBaseBranch, currentWipBranch := determineBranches(currentBranch, localBranches, configuration)
-		sayInfo("Switching to base branch " + currentBaseBranch.Name + " because wip branch " + currentWipBranch.Name + " is stale")
-		git("checkout", currentBaseBranch.Name)
+	if currentBranch.isOrphanWipBranch(configuration) {
+		currentBaseBranch, _ := determineBranches(currentBranch, localBranches, configuration)
+
+		sayInfo("Current branch " + currentBranch.Name + " is an orphan")
+		if currentBaseBranch.exists(localBranches) {
+			git("checkout", currentBaseBranch.Name)
+		} else if newBranch("main").exists(localBranches) {
+			git("checkout", newBranch("main").Name)
+		} else {
+			git("checkout", newBranch("master").Name)
+		}
 	}
 
 	for _, branch := range localBranches {
 		b := newBranch(branch)
-		if b.isStale(configuration) {
-			sayInfo("Removing stale wip branch " + b.Name)
+		if b.isOrphanWipBranch(configuration) {
+			sayInfo("Removing orphan wip branch " + b.Name)
 			git("branch", "-d", b.Name)
 		}
 	}
 
 }
 
-func (branch Branch) isStale(configuration Configuration) bool {
+func (branch Branch) isOrphanWipBranch(configuration Configuration) bool {
 	return branch.IsWipBranch(configuration) && !branch.hasRemoteBranch(configuration)
 }
 
