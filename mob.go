@@ -785,9 +785,9 @@ func clean(configuration Configuration) {
 		if currentBaseBranch.exists(localBranches) {
 			git("checkout", currentBaseBranch.Name)
 		} else if newBranch("main").exists(localBranches) {
-			git("checkout", newBranch("main").Name)
+			git("checkout", "main")
 		} else {
-			git("checkout", newBranch("master").Name)
+			git("checkout", "master")
 		}
 	}
 
