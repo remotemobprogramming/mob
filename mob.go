@@ -136,6 +136,10 @@ func (branch Branch) hasRemoteBranch(configuration Configuration) bool {
 }
 
 func (branch Branch) IsWipBranch(configuration Configuration) bool {
+	if branch.Name == "mob-session" {
+		return true
+	}
+
 	return strings.Index(branch.Name, configuration.WipBranchPrefix) == 0
 }
 
@@ -734,6 +738,8 @@ func execute(command string, parameter []string, configuration Configuration) {
 		fetch(configuration)
 	case "reset":
 		reset(configuration)
+	case "clean":
+		clean(configuration)
 	case "config":
 		config(configuration)
 	case "status":
@@ -768,6 +774,39 @@ func execute(command string, parameter []string, configuration Configuration) {
 	default:
 		help(configuration)
 	}
+}
+
+func clean(configuration Configuration) {
+	git("fetch", configuration.RemoteName)
+
+	currentBranch := gitCurrentBranch()
+	localBranches := gitBranches()
+
+	if currentBranch.isOrphanWipBranch(configuration) {
+		currentBaseBranch, _ := determineBranches(currentBranch, localBranches, configuration)
+
+		sayInfo("Current branch " + currentBranch.Name + " is an orphan")
+		if currentBaseBranch.exists(localBranches) {
+			git("checkout", currentBaseBranch.Name)
+		} else if newBranch("main").exists(localBranches) {
+			git("checkout", "main")
+		} else {
+			git("checkout", "master")
+		}
+	}
+
+	for _, branch := range localBranches {
+		b := newBranch(branch)
+		if b.isOrphanWipBranch(configuration) {
+			sayInfo("Removing orphan wip branch " + b.Name)
+			git("branch", "-d", b.Name)
+		}
+	}
+
+}
+
+func (branch Branch) isOrphanWipBranch(configuration Configuration) bool {
+	return branch.IsWipBranch(configuration) && !branch.hasRemoteBranch(configuration)
 }
 
 func branch(configuration Configuration) {
@@ -1559,6 +1598,7 @@ Basic Commands(Options):
     [--squash-wip]                       Squash wip commits from wip branch, maintaining manual commits
   reset
     [--branch|-b <branch-postfix>]       Set wip branch to 'mob/<base-branch>/<branch-postfix>'
+  clean                                  Removes all orphan wip branches
 
 Timer Commands:
   timer <minutes>    start a <minutes> timer
