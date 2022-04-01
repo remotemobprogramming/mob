@@ -136,6 +136,10 @@ func (branch Branch) hasRemoteBranch(configuration Configuration) bool {
 }
 
 func (branch Branch) IsWipBranch(configuration Configuration) bool {
+	if branch.Name == "mob-session" {
+		return true
+	}
+
 	return strings.Index(branch.Name, configuration.WipBranchPrefix) == 0
 }
 

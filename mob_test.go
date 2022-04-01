@@ -579,6 +579,26 @@ func TestResetCommit(t *testing.T) {
 	assertNoMobSessionBranches(t, configuration, "mob-session")
 }
 
+func TestClean(t *testing.T) {
+	_, configuration := setup(t)
+	git("checkout", "-b", "mob-session")
+
+	clean(configuration)
+
+	assertOnBranch(t, "master")
+	assertNoLocalBranch(t, "mob-session")
+}
+
+func TestCleanMissingBaseBranch(t *testing.T) {
+	_, configuration := setup(t)
+	git("checkout", "-b", "mob/feature1")
+
+	clean(configuration)
+
+	assertOnBranch(t, "master")
+	assertNoLocalBranch(t, "mob/feature1")
+}
+
 func TestStartUnstagedChanges(t *testing.T) {
 	output, configuration := setup(t)
 	configuration.StartIncludeUncommittedChanges = false
@@ -1494,6 +1514,18 @@ func assertMobSessionBranches(t *testing.T, configuration Configuration, branch 
 		failWithFailure(t, newBranch(branch).remote(configuration).Name, "none")
 	}
 	if !hasLocalBranch(branch) {
+		failWithFailure(t, branch, "none")
+	}
+}
+
+func assertLocalBranch(t *testing.T, branch string) {
+	if !hasLocalBranch(branch) {
+		failWithFailure(t, branch, "none")
+	}
+}
+
+func assertNoLocalBranch(t *testing.T, branch string) {
+	if hasLocalBranch(branch) {
 		failWithFailure(t, branch, "none")
 	}
 }
