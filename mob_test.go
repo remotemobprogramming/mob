@@ -502,8 +502,8 @@ func TestStartNextStartWithBranch(t *testing.T) {
 
 func TestStartFromDivergingBranches(t *testing.T) {
 	output, configuration := setup(t)
-	checkoutBranch("feature-something")
-	checkoutBranch("feature-something-2")
+	checkoutBranchAndCreateRemoteBranch("feature-something")
+	checkoutBranchAndCreateRemoteBranch("feature-something-2")
 
 	assertOnBranch(t, "feature-something-2")
 	start(configuration)
@@ -519,10 +519,10 @@ func TestStartFromDivergingBranches(t *testing.T) {
 
 func TestStartFromDivergingBranches_noWarning(t *testing.T) {
 	output, configuration := setup(t)
-	checkoutBranch("mob/feature-something")
-	checkoutBranch("feature-something")
-	checkoutBranch("mob/feature-something-2")
-	checkoutBranch("feature-something-2")
+	checkoutBranchAndCreateRemoteBranch("mob/feature-something")
+	checkoutBranchAndCreateRemoteBranch("feature-something")
+	checkoutBranchAndCreateRemoteBranch("mob/feature-something-2")
+	checkoutBranchAndCreateRemoteBranch("feature-something-2")
 
 	assertOnBranch(t, "feature-something-2")
 	start(configuration)
@@ -695,6 +695,16 @@ func TestStartUntrackedFiles(t *testing.T) {
 	start(configuration)
 
 	assertOnBranch(t, "master")
+}
+
+func TestStartOnUnpushedFeatureBranch(t *testing.T) {
+	output, configuration := setup(t)
+	git("checkout", "-b", "feature1")
+
+	start(configuration)
+
+	assertOnBranch(t, "feature1")
+	assertOutputContains(t, output, "Remote branch origin/feature1 is missing")
 }
 
 func TestStartNextBackToMaster(t *testing.T) {
@@ -1310,7 +1320,7 @@ func TestDoneMerge(t *testing.T) {
 func TestDoneSquashNoChanges(t *testing.T) {
 	output, configuration := setup(t)
 	setWorkingDir(tempDir + "/local")
-	checkoutBranch("feature-something")
+	checkoutBranchAndCreateRemoteBranch("feature-something")
 
 	start(configuration)
 	done(configuration)
@@ -1587,7 +1597,7 @@ func failWithFailure(t *testing.T, exp interface{}, act interface{}) {
 	t.FailNow()
 }
 
-func checkoutBranch(datBranch string) {
-	git("checkout", "-b", datBranch)
-	git("push", "origin", datBranch, "--set-upstream")
+func checkoutBranchAndCreateRemoteBranch(branch string) {
+	git("checkout", "-b", branch)
+	git("push", "origin", branch, "--set-upstream")
 }
