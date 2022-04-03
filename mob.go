@@ -1071,7 +1071,7 @@ func start(configuration Configuration) error {
 		sayInfo("cannot start; clean working tree required")
 		sayUnstagedChangesInfo()
 		sayUntrackedFilesInfo()
-		sayTodo("To start, including uncommitted changes, use", configuration.mob("start --include-uncommitted-changes"))
+		sayFix("To start, including uncommitted changes, use", configuration.mob("start --include-uncommitted-changes"))
 		return errors.New("cannot start; clean working tree required")
 	}
 
@@ -1080,19 +1080,19 @@ func start(configuration Configuration) error {
 
 	if !currentBaseBranch.hasRemoteBranch(configuration) {
 		sayError("Remote branch " + currentBaseBranch.remote(configuration).String() + " is missing")
-		sayTodo("To set the upstream branch, use", "git push "+configuration.RemoteName+" "+currentBaseBranch.String()+" --set-upstream")
+		sayFix("To set the upstream branch, use", "git push "+configuration.RemoteName+" "+currentBaseBranch.String()+" --set-upstream")
 		return errors.New("remote branch is missing")
 	}
 
 	if currentBaseBranch.hasUnpushedCommits(configuration) {
 		sayError("cannot start; unpushed changes on base branch must be pushed upstream")
-		sayTodo("to fix this, push those commits and try again", "git push "+configuration.RemoteName+" "+currentBaseBranch.String())
+		sayFix("to fix this, push those commits and try again", "git push "+configuration.RemoteName+" "+currentBaseBranch.String())
 		return errors.New("cannot start; unpushed changes on base branch must be pushed upstream")
 	}
 
 	if uncommittedChanges && silentgit("ls-tree", "-r", "HEAD", "--full-name", "--name-only", ".") == "" {
 		sayError("cannot start; current working dir is an uncommitted subdir")
-		sayTodo("to fix this, go to the parent directory and try again", "cd ..")
+		sayFix("to fix this, go to the parent directory and try again", "cd ..")
 		return errors.New("cannot start; current working dir is an uncommitted subdir")
 	}
 
@@ -1264,7 +1264,7 @@ func findStashByName(stashes string, stash string) string {
 
 func next(configuration Configuration) {
 	if !isMobProgramming(configuration) {
-		sayTodo("to start working together, use", configuration.mob("start"))
+		sayFix("to start working together, use", configuration.mob("start"))
 		return
 	}
 
@@ -1388,7 +1388,7 @@ func fetch(configuration Configuration) {
 
 func done(configuration Configuration) {
 	if !isMobProgramming(configuration) {
-		sayTodo("to start working together, use", configuration.mob("start"))
+		sayFix("to start working together, use", configuration.mob("start"))
 		return
 	}
 
@@ -1435,7 +1435,7 @@ func done(configuration Configuration) {
 		}
 
 		if hasUncommittedChanges() {
-			sayTodo("To finish, use", "git commit")
+			sayNext("To finish, use", "git commit")
 		} else if configuration.DoneSquash == Squash {
 			sayInfo("nothing was done, so nothing to commit")
 		}
@@ -1553,7 +1553,7 @@ func showNext(configuration Configuration) {
 	gitUserName := gitUserName()
 	if gitUserName == "" {
 		sayWarning("failed to detect who's next because you haven't set your git user name")
-		sayTodo("To fix, use", "git config --global user.name \"Your Name Here\"")
+		sayFix("To fix, use", "git config --global user.name \"Your Name Here\"")
 		return
 	}
 
@@ -1742,8 +1742,15 @@ func sayIndented(text string) {
 	sayWithPrefix(text, "  ")
 }
 
-func sayTodo(text string, command string) {
-	sayWithPrefix(text, "👉 ")
+func sayFix(instruction string, command string) {
+	sayWithPrefix(instruction, "👉 ")
+	sayEmptyLine()
+	sayIndented(command)
+	sayEmptyLine()
+}
+
+func sayNext(instruction string, command string) {
+	sayWithPrefix(instruction, "👉 ")
 	sayEmptyLine()
 	sayIndented(command)
 	sayEmptyLine()
