@@ -11,11 +11,6 @@ import (
 type Replacer func(string) string
 
 func squashWip(configuration Configuration) {
-	if !isMobProgramming(configuration) {
-		sayFix("to start working together, use", configuration.mob("start"))
-		return
-	}
-
 	currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), gitBranches(), configuration)
 	mergeBase := silentgit("merge-base", currentWipBranch.String(), currentBaseBranch.String())
 
