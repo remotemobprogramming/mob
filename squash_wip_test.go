@@ -105,14 +105,6 @@ func TestSquashWipCommits_resetsEnv(t *testing.T) {
 	equals(t, originalGitSequenceEditor, os.Getenv("GIT_SEQUENCE_EDITOR"))
 }
 
-func TestSquashWipCommits_failsOnMainBranch(t *testing.T) {
-	output, configuration := setup(t)
-
-	squashWip(configuration)
-
-	assertOutputContains(t, output, "to start working together")
-}
-
 func TestSquashWipCommits_worksWithEmptyCommits(t *testing.T) {
 	_, configuration := setup(t)
 	wipCommit(t, configuration, "file1.txt")
