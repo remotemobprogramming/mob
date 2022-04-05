@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"bytes"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -716,10 +715,8 @@ func execute(command string, parameter []string, configuration Configuration) {
 
 	switch command {
 	case "s", "start":
-		err := start(configuration)
-		if !isMobProgramming(configuration) || err != nil {
-			return
-		}
+		start(configuration)
+
 		if len(parameter) > 0 {
 			timer := parameter[0]
 			startTimer(timer, configuration)
@@ -1072,14 +1069,15 @@ func reset(configuration Configuration) {
 	sayInfo("Branches " + currentWipBranch.String() + " and " + currentWipBranch.remote(configuration).String() + " deleted")
 }
 
-func start(configuration Configuration) error {
+func start(configuration Configuration) {
 	uncommittedChanges := hasUncommittedChanges()
 	if uncommittedChanges && !configuration.StartIncludeUncommittedChanges {
-		sayInfo("cannot start; clean working tree required")
-		sayUnstagedChangesInfo()
+		sayError("cannot start; clean working tree required")
+		sayUnstagedChangesInfo() // TODO perhaps add them to error?
 		sayUntrackedFilesInfo()
 		sayFix("To start, including uncommitted changes, use", configuration.mob("start --include-uncommitted-changes"))
-		return errors.New("cannot start; clean working tree required")
+		exit(1)
+		return
 	}
 
 	git("fetch", configuration.RemoteName, "--prune")
@@ -1088,19 +1086,22 @@ func start(configuration Configuration) error {
 	if !currentBaseBranch.hasRemoteBranch(configuration) {
 		sayError("Remote branch " + currentBaseBranch.remote(configuration).String() + " is missing")
 		sayFix("To set the upstream branch, use", "git push "+configuration.RemoteName+" "+currentBaseBranch.String()+" --set-upstream")
-		return errors.New("remote branch is missing")
+		exit(1)
+		return
 	}
 
 	if currentBaseBranch.hasUnpushedCommits(configuration) {
 		sayError("cannot start; unpushed changes on base branch must be pushed upstream")
 		sayFix("to fix this, push those commits and try again", "git push "+configuration.RemoteName+" "+currentBaseBranch.String())
-		return errors.New("cannot start; unpushed changes on base branch must be pushed upstream")
+		exit(1)
+		return
 	}
 
 	if uncommittedChanges && silentgit("ls-tree", "-r", "HEAD", "--full-name", "--name-only", ".") == "" {
 		sayError("cannot start; current working dir is an uncommitted subdir")
 		sayFix("to fix this, go to the parent directory and try again", "cd ..")
-		return errors.New("cannot start; current working dir is an uncommitted subdir")
+		exit(1)
+		return
 	}
 
 	if uncommittedChanges {
@@ -1130,8 +1131,6 @@ func start(configuration Configuration) error {
 	sayLastCommitsList(currentBaseBranch.String(), currentWipBranch.String())
 
 	openLastModifiedFileIfPresent(configuration)
-
-	return nil // no error
 }
 
 func openLastModifiedFileIfPresent(configuration Configuration) {
@@ -1278,7 +1277,7 @@ func next(configuration Configuration) {
 
 	if !configuration.hasCustomCommitMessage() && configuration.RequireCommitMessage && hasUncommittedChanges() {
 		sayError("commit message required")
-		return
+		exit(1)
 	}
 
 	currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), gitBranches(), configuration)
@@ -1641,6 +1640,7 @@ func silentgit(args ...string) string {
 		sayGitError(commandString, output, err)
 		exit(1)
 	}
+
 	return strings.TrimSpace(output)
 }
 
@@ -1674,9 +1674,9 @@ func git(args ...string) {
 	if err != nil {
 		sayGitError(commandString, output, err)
 		exit(1)
-	} else {
-		sayIndented(commandString)
 	}
+
+	sayIndented(commandString)
 }
 
 func gitCommitHash() string {
