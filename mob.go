@@ -57,6 +57,7 @@ type Configuration struct {
 	NextStay                       bool   // override with MOB_NEXT_STAY
 	StartIncludeUncommittedChanges bool   // override with MOB_START_INCLUDE_UNCOMMITTED_CHANGES variable
 	StashName                      string // override with MOB_STASH_NAME
+	FixedBaseBranch                string // override with MOB_FIXED_BASE_BRANCH
 	WipBranchQualifier             string // override with MOB_WIP_BRANCH_QUALIFIER
 	WipBranchQualifierSeparator    string // override with MOB_WIP_BRANCH_QUALIFIER_SEPARATOR
 	WipBranchPrefix                string // override with MOB_WIP_BRANCH_PREFIX
@@ -76,6 +77,10 @@ func (c Configuration) wipBranchQualifierSuffix() string {
 
 func (c Configuration) customWipBranchQualifierConfigured() bool {
 	return c.WipBranchQualifier != ""
+}
+
+func (c Configuration) customFixedBaseBranchConfigured() bool {
+	return c.FixedBaseBranch != ""
 }
 
 func (c Configuration) hasCustomCommitMessage() bool {
@@ -149,6 +154,9 @@ func (branch Branch) addWipPrefix(configuration Configuration) Branch {
 
 func (branch Branch) addWipQualifier(configuration Configuration) Branch {
 	if configuration.customWipBranchQualifierConfigured() {
+		if branch.Name == configuration.WipBranchPrefix {
+			return newBranch(addSuffix(branch.Name, configuration.WipBranchQualifier))
+		}
 		return newBranch(addSuffix(branch.Name, configuration.wipBranchQualifierSuffix()))
 	}
 	return branch
@@ -304,6 +312,7 @@ func getDefaultConfiguration() Configuration {
 		NextStay:                       true,
 		RequireCommitMessage:           false,
 		StartIncludeUncommittedChanges: false,
+		FixedBaseBranch:                "",
 		WipBranchQualifier:             "",
 		WipBranchQualifierSeparator:    "-",
 		DoneSquash:                     Squash,
@@ -378,6 +387,8 @@ func parseUserConfiguration(configuration Configuration, path string) Configurat
 			setBoolean(&configuration.NextStay, key, value)
 		case "MOB_START_INCLUDE_UNCOMMITTED_CHANGES":
 			setBoolean(&configuration.StartIncludeUncommittedChanges, key, value)
+		case "MOB_FIXED_BASE_BRANCH":
+			setUnquotedString(&configuration.FixedBaseBranch, key, value)
 		case "MOB_WIP_BRANCH_QUALIFIER":
 			setUnquotedString(&configuration.WipBranchQualifier, key, value)
 		case "MOB_WIP_BRANCH_QUALIFIER_SEPARATOR":
@@ -455,6 +466,8 @@ func parseProjectConfiguration(configuration Configuration, path string) Configu
 			setBoolean(&configuration.NextStay, key, value)
 		case "MOB_START_INCLUDE_UNCOMMITTED_CHANGES":
 			setBoolean(&configuration.StartIncludeUncommittedChanges, key, value)
+		case "MOB_FIXED_BASE_BRANCH":
+			setUnquotedString(&configuration.FixedBaseBranch, key, value)
 		case "MOB_WIP_BRANCH_QUALIFIER":
 			setUnquotedString(&configuration.WipBranchQualifier, key, value)
 		case "MOB_WIP_BRANCH_QUALIFIER_SEPARATOR":
@@ -545,6 +558,7 @@ func parseEnvironmentVariables(configuration Configuration) Configuration {
 	setStringFromEnvVariable(&configuration.VoiceMessage, "MOB_VOICE_MESSAGE")
 	setOptionalStringFromEnvVariable(&configuration.NotifyCommand, "MOB_NOTIFY_COMMAND")
 	setStringFromEnvVariable(&configuration.NotifyMessage, "MOB_NOTIFY_MESSAGE")
+	setStringFromEnvVariable(&configuration.FixedBaseBranch, "MOB_FIXED_BASE_BRANCH")
 	setStringFromEnvVariable(&configuration.WipBranchQualifierSeparator, "MOB_WIP_BRANCH_QUALIFIER_SEPARATOR")
 
 	setStringFromEnvVariable(&configuration.WipBranchQualifier, "MOB_WIP_BRANCH_QUALIFIER")
@@ -653,6 +667,7 @@ func config(c Configuration) {
 	say("MOB_NEXT_STAY" + "=" + strconv.FormatBool(c.NextStay))
 	say("MOB_START_INCLUDE_UNCOMMITTED_CHANGES" + "=" + strconv.FormatBool(c.StartIncludeUncommittedChanges))
 	say("MOB_STASH_NAME" + "=" + quote(c.StashName))
+	say("MOB_FIXED_BASE_BRANCH" + "=" + quote(c.FixedBaseBranch))
 	say("MOB_WIP_BRANCH_QUALIFIER" + "=" + quote(c.WipBranchQualifier))
 	say("MOB_WIP_BRANCH_QUALIFIER_SEPARATOR" + "=" + quote(c.WipBranchQualifierSeparator))
 	say("MOB_WIP_BRANCH_PREFIX" + "=" + quote(c.WipBranchPrefix))
@@ -821,20 +836,40 @@ func determineBranches(currentBranch Branch, localBranches []string, configurati
 		// DEPRECATED
 		baseBranch = newBranch("master")
 		wipBranch = newBranch("mob-session")
-	} else if currentBranch.IsWipBranch(configuration) {
-		baseBranch = currentBranch.removeWipPrefix(configuration).removeWipQualifier(localBranches, configuration)
-		wipBranch = currentBranch
 	} else {
-		baseBranch = currentBranch
-		wipBranch = currentBranch.addWipPrefix(configuration).addWipQualifier(configuration)
+		baseBranch = getBaseBranch(currentBranch, localBranches, configuration)
+		wipBranch = getWipBranch(currentBranch, configuration)
 	}
 
 	debugInfo("on currentBranch " + currentBranch.String() + " => BASE " + baseBranch.String() + " WIP " + wipBranch.String() + " with allLocalBranches " + strings.Join(localBranches, ","))
-	if currentBranch != baseBranch && currentBranch != wipBranch {
+	if currentBranch != baseBranch && currentBranch != wipBranch && !configuration.customFixedBaseBranchConfigured() {
 		// this is unreachable code, but we keep it as a backup
 		panic("assertion failed! neither on base nor on wip branch")
 	}
 	return
+}
+
+func getWipBranch(currentBranch Branch, configuration Configuration) Branch {
+	if currentBranch.IsWipBranch(configuration) {
+		return currentBranch
+	}
+
+	var branch Branch
+	if configuration.customFixedBaseBranchConfigured() && configuration.customWipBranchQualifierConfigured() {
+		branch = newBranch("")
+	} else {
+		branch = currentBranch
+	}
+	return branch.addWipPrefix(configuration).addWipQualifier(configuration)
+}
+
+func getBaseBranch(currentBranch Branch, localBranches []string, configuration Configuration) Branch {
+	if configuration.customFixedBaseBranchConfigured() {
+		return newBranch(configuration.FixedBaseBranch)
+	} else if currentBranch.IsWipBranch(configuration) {
+		return currentBranch.removeWipPrefix(configuration).removeWipQualifier(localBranches, configuration)
+	}
+	return currentBranch
 }
 
 func getSleepCommand(timeoutInSeconds int) string {

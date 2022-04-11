@@ -77,33 +77,38 @@ func TestParseArgsMessage(t *testing.T) {
 }
 
 func TestDetermineBranches(t *testing.T) {
-	configuration := getDefaultConfiguration()
-	configuration.WipBranchQualifierSeparator = "-"
+	assertDetermineBranches(t, "master", "", []string{}, "", "master", "mob-session")
+	assertDetermineBranches(t, "mob-session", "", []string{}, "", "master", "mob-session")
+	assertDetermineBranches(t, "mob-session", "green", []string{}, "", "master", "mob-session")
 
-	assertDetermineBranches(t, "master", "", []string{}, "master", "mob-session")
-	assertDetermineBranches(t, "mob-session", "", []string{}, "master", "mob-session")
-	assertDetermineBranches(t, "mob-session", "green", []string{}, "master", "mob-session")
+	assertDetermineBranches(t, "master", "green", []string{}, "", "master", "mob/master-green")
+	assertDetermineBranches(t, "mob/master-green", "", []string{}, "", "master", "mob/master-green")
 
-	assertDetermineBranches(t, "master", "green", []string{}, "master", "mob/master-green")
-	assertDetermineBranches(t, "mob/master-green", "", []string{}, "master", "mob/master-green")
+	assertDetermineBranches(t, "master", "test-branch", []string{}, "", "master", "mob/master-test-branch")
+	assertDetermineBranches(t, "mob/master-test-branch", "", []string{}, "", "master", "mob/master-test-branch")
 
-	assertDetermineBranches(t, "master", "test-branch", []string{}, "master", "mob/master-test-branch")
-	assertDetermineBranches(t, "mob/master-test-branch", "", []string{}, "master", "mob/master-test-branch")
+	assertDetermineBranches(t, "feature1", "", []string{}, "", "feature1", "mob/feature1")
+	assertDetermineBranches(t, "mob/feature1", "", []string{}, "", "feature1", "mob/feature1")
+	assertDetermineBranches(t, "mob/feature1-green", "", []string{}, "", "feature1", "mob/feature1-green")
+	assertDetermineBranches(t, "feature1", "green", []string{}, "", "feature1", "mob/feature1-green")
 
-	assertDetermineBranches(t, "feature1", "", []string{}, "feature1", "mob/feature1")
-	assertDetermineBranches(t, "mob/feature1", "", []string{}, "feature1", "mob/feature1")
-	assertDetermineBranches(t, "mob/feature1-green", "", []string{}, "feature1", "mob/feature1-green")
-	assertDetermineBranches(t, "feature1", "green", []string{}, "feature1", "mob/feature1-green")
+	assertDetermineBranches(t, "feature/test", "", []string{"feature/test"}, "", "feature/test", "mob/feature/test")
+	assertDetermineBranches(t, "mob/feature/test", "", []string{"feature/test", "mob/feature/test"}, "", "feature/test", "mob/feature/test")
 
-	assertDetermineBranches(t, "feature/test", "", []string{"feature/test"}, "feature/test", "mob/feature/test")
-	assertDetermineBranches(t, "mob/feature/test", "", []string{"feature/test", "mob/feature/test"}, "feature/test", "mob/feature/test")
+	assertDetermineBranches(t, "feature/test-ch", "", []string{"DPL-2638-update-apis", "DPL-2814-create-project", "feature/test-ch", "fix/smallChanges", "master", "pipeship/pipelineupdate-pipeship-pipeline.yaml"}, "", "feature/test-ch", "mob/feature/test-ch")
 
-	assertDetermineBranches(t, "feature/test-ch", "", []string{"DPL-2638-update-apis", "DPL-2814-create-project", "feature/test-ch", "fix/smallChanges", "master", "pipeship/pipelineupdate-pipeship-pipeline.yaml"}, "feature/test-ch", "mob/feature/test-ch")
+	assertDetermineBranches(t, "mob/feature1", "", []string{}, "main", "main", "mob/feature1")
+	assertDetermineBranches(t, "feature1", "", []string{}, "main", "main", "mob/feature1")
+	assertDetermineBranches(t, "main", "", []string{}, "main", "main", "mob/main")
+	assertDetermineBranches(t, "main", "feature1", []string{}, "main", "main", "mob/feature1")
+	assertDetermineBranches(t, "feature1-wip", "feature1", []string{}, "main", "main", "mob/feature1")
 }
 
-func assertDetermineBranches(t *testing.T, branch string, qualifier string, branches []string, expectedBase string, expectedWip string) {
+func assertDetermineBranches(t *testing.T, branch string, qualifier string, branches []string, fixedBaseBranch string, expectedBase string, expectedWip string) {
 	configuration := getDefaultConfiguration()
 	configuration.WipBranchQualifier = qualifier
+	configuration.FixedBaseBranch = fixedBaseBranch
+
 	baseBranch, wipBranch := determineBranches(newBranch(branch), branches, configuration)
 	equals(t, newBranch(expectedBase), baseBranch)
 	equals(t, newBranch(expectedWip), wipBranch)

@@ -296,11 +296,20 @@ Mob supports you and can automate this step. You just need the configuration opt
 
 For example if you want use IntelliJ the configuration option would look like this: `MOB_OPEN_COMMAND=idea %s`
 
+### Use a fixed base branch
+
+Say your team typically branches off the same primary branch. It is redundant to state the base branch.
+Setting `MOB_FIXED_BASE_BRANCH` can allow you to remove the base branch name from the wip branch naming convention.
+
+For example, without setting `MOB_FIXED_BASE_BRANCH`, you will have `mob/main-feature1` as the wip branch name.
+Setting `MOB_FIXED_BASE_BRANCH=main` will cause the wip branch to be `mob/feature1` instead.
+
 ## More on Installation
 
 ### Known Issues
 
-- When you have an ssh key with a password and you running mob on windows in powershell, you will not be able to enter a password for your ssh key. You can circumvent this problem by using the git bash instead of powershell.
+- When you have an ssh key with a password and you running mob on windows in powershell, you will not be able to enter a
+  password for your ssh key. You can circumvent this problem by using the git bash instead of powershell.
 
 ### Linux Timer
 
@@ -353,6 +362,7 @@ MOB_NOTIFY_MESSAGE="mob next"
 MOB_NEXT_STAY=true
 MOB_START_INCLUDE_UNCOMMITTED_CHANGES=false
 MOB_STASH_NAME="mob-stash-name"
+MOB_FIXED_BASE_BRANCH=""
 MOB_WIP_BRANCH_QUALIFIER=""
 MOB_WIP_BRANCH_QUALIFIER_SEPARATOR="-"
 MOB_WIP_BRANCH_PREFIX="mob/"
