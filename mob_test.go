@@ -76,6 +76,16 @@ func TestParseArgsMessage(t *testing.T) {
 	equals(t, "ci-skip", configuration.WipCommitMessage)
 }
 
+func TestParseArgsRetain(t *testing.T) {
+	configuration := getDefaultConfiguration()
+
+	command, parameters, configuration := parseArgs([]string{"mob", "done", "--retain"}, configuration)
+
+	equals(t, "done", command)
+	equals(t, "", strings.Join(parameters, ""))
+	equals(t, true, configuration.RetainWipBranch)
+}
+
 func TestDetermineBranches(t *testing.T) {
 	configuration := getDefaultConfiguration()
 	configuration.WipBranchQualifierSeparator = "-"
@@ -1110,6 +1120,20 @@ func TestStartDoneFeatureBranch(t *testing.T) {
 
 	assertOnBranch(t, "feature1")
 	assertNoMobSessionBranches(t, configuration, "mob-session")
+}
+
+func TestDoneRetainFeatureBranch(t *testing.T) {
+	_, configuration := setup(t)
+	configuration.RetainWipBranch = true
+	configuration.WipBranchQualifier = "feature1"
+
+	start(configuration)
+	createFileAndCommitIt(t, "example.txt", "contentIrrelevant", "[manual-commit-1] publish this commit to master")
+
+	done(configuration)
+
+	assertOnBranch(t, "master")
+	assertMobSessionBranches(t, configuration, "mob/master-feature1")
 }
 
 func TestStartNextFeatureBranch(t *testing.T) {

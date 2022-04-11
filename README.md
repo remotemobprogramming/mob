@@ -167,6 +167,7 @@ Basic Commands(Options):
     [--no-squash]                        Squash no commits from wip branch, only merge wip branch
     [--squash]                           Squash all commits from wip branch
     [--squash-wip]                       Squash wip commits from wip branch, maintaining manual commits
+    [--retain]							 Prevent the local and remote wip branches from being deleted
   reset
     [--branch|-b <branch-postfix>]       Set wip branch to 'mob/<base-branch>/<branch-postfix>'
   clean                                  Removes all orphan wip branches
@@ -357,6 +358,7 @@ MOB_WIP_BRANCH_QUALIFIER=""
 MOB_WIP_BRANCH_QUALIFIER_SEPARATOR="-"
 MOB_WIP_BRANCH_PREFIX="mob/"
 MOB_DONE_SQUASH=true
+MOB_RETAIN_WIP_BRANCH=false
 MOB_OPEN_COMMAND="idea %s"
 MOB_TIMER=""
 MOB_TIMER_ROOM="mob"

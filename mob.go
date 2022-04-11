@@ -61,6 +61,7 @@ type Configuration struct {
 	WipBranchQualifierSeparator    string // override with MOB_WIP_BRANCH_QUALIFIER_SEPARATOR
 	WipBranchPrefix                string // override with MOB_WIP_BRANCH_PREFIX
 	DoneSquash                     string // override with MOB_DONE_SQUASH
+	RetainWipBranch                bool   // override with MOB_RETAIN_WIP_BRANCH
 	OpenCommand                    string // override with MOB_OPEN_COMMAND
 	Timer                          string // override with MOB_TIMER
 	TimerRoom                      string // override with MOB_TIMER_ROOM
@@ -307,6 +308,7 @@ func getDefaultConfiguration() Configuration {
 		WipBranchQualifier:             "",
 		WipBranchQualifierSeparator:    "-",
 		DoneSquash:                     Squash,
+		RetainWipBranch:                false,
 		OpenCommand:                    "",
 		Timer:                          "",
 		TimerLocal:                     true,
@@ -386,6 +388,8 @@ func parseUserConfiguration(configuration Configuration, path string) Configurat
 			setUnquotedString(&configuration.WipBranchPrefix, key, value)
 		case "MOB_DONE_SQUASH":
 			setMobDoneSquash(&configuration, key, value)
+		case "MOB_RETAIN_WIP_BRANCH":
+			setBoolean(&configuration.RetainWipBranch, key, value)
 		case "MOB_OPEN_COMMAND":
 			setUnquotedString(&configuration.OpenCommand, key, value)
 		case "MOB_TIMER":
@@ -463,6 +467,8 @@ func parseProjectConfiguration(configuration Configuration, path string) Configu
 			setUnquotedString(&configuration.WipBranchPrefix, key, value)
 		case "MOB_DONE_SQUASH":
 			setMobDoneSquash(&configuration, key, value)
+		case "MOB_RETAIN_WIP_BRANCH":
+			setBoolean(&configuration.RetainWipBranch, key, value)
 		case "MOB_TIMER":
 			setUnquotedString(&configuration.Timer, key, value)
 		case "MOB_TIMER_ROOM":
@@ -555,6 +561,7 @@ func parseEnvironmentVariables(configuration Configuration) Configuration {
 	setBoolFromEnvVariable(&configuration.StartIncludeUncommittedChanges, "MOB_START_INCLUDE_UNCOMMITTED_CHANGES")
 
 	setDoneSquashFromEnvVariable(&configuration, "MOB_DONE_SQUASH")
+	setBoolFromEnvVariable(&configuration.RetainWipBranch, "MOB_RETAIN_WIP_BRANCH")
 
 	setStringFromEnvVariable(&configuration.OpenCommand, "MOB_OPEN_COMMAND")
 
@@ -657,6 +664,7 @@ func config(c Configuration) {
 	say("MOB_WIP_BRANCH_QUALIFIER_SEPARATOR" + "=" + quote(c.WipBranchQualifierSeparator))
 	say("MOB_WIP_BRANCH_PREFIX" + "=" + quote(c.WipBranchPrefix))
 	say("MOB_DONE_SQUASH" + "=" + string(c.DoneSquash))
+	say("MOB_RETAIN_WIP_BRANCH" + "=" + strconv.FormatBool(c.RetainWipBranch))
 	say("MOB_OPEN_COMMAND" + "=" + quote(c.OpenCommand))
 	say("MOB_TIMER" + "=" + quote(c.Timer))
 	say("MOB_TIMER_ROOM" + "=" + quote(c.TimerRoom))
@@ -700,6 +708,8 @@ func parseArgs(args []string, configuration Configuration) (command string, para
 			newConfiguration.DoneSquash = NoSquash
 		case "--squash-wip":
 			newConfiguration.DoneSquash = SquashWip
+		case "--retain":
+			newConfiguration.RetainWipBranch = true
 		default:
 			if i == 1 {
 				command = arg
@@ -1417,14 +1427,17 @@ func done(configuration Configuration) {
 			return
 		}
 
-		git("branch", "-D", wipBranch.Name)
+		if !configuration.RetainWipBranch {
+			git("branch", "-D", wipBranch.Name)
+		}
 
 		if uncommittedChanges && configuration.DoneSquash != Squash { // give the user the chance to name their final commit
 			git("reset", "--soft", "HEAD^")
 		}
 
-		gitWithoutEmptyStrings("push", configuration.gitHooksOption(), configuration.RemoteName, "--delete", wipBranch.Name)
-
+		if !configuration.RetainWipBranch {
+			gitWithoutEmptyStrings("push", configuration.gitHooksOption(), configuration.RemoteName, "--delete", wipBranch.Name)
+		}
 		cachedChanges := getCachedChanges()
 		hasCachedChanges := len(cachedChanges) > 0
 		if hasCachedChanges {
@@ -1597,6 +1610,7 @@ Basic Commands(Options):
     [--no-squash]                        Squash no commits from wip branch, only merge wip branch
     [--squash]                           Squash all commits from wip branch
     [--squash-wip]                       Squash wip commits from wip branch, maintaining manual commits
+    [--retain]                           Prevent the local and remote wip branches from being deleted
   reset
     [--branch|-b <branch-postfix>]       Set wip branch to 'mob/<base-branch>/<branch-postfix>'
   clean                                  Removes all orphan wip branches
