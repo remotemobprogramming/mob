@@ -715,7 +715,7 @@ func execute(command string, parameter []string, configuration Configuration) {
 
 	switch command {
 	case "s", "start":
-		start(configuration)
+		start(configuration).Exit()
 
 		if len(parameter) > 0 {
 			timer := parameter[0]
@@ -728,7 +728,7 @@ func execute(command string, parameter []string, configuration Configuration) {
 	case "b", "branch":
 		branch(configuration)
 	case "n", "next":
-		next(configuration)
+		next(configuration).Exit()
 	case "d", "done":
 		done(configuration)
 	case "fetch":
@@ -841,13 +841,16 @@ func getSleepCommand(timeoutInSeconds int) string {
 func injectCommandWithMessage(command string, message string) string {
 	placeHolders := strings.Count(command, "%s")
 	if placeHolders > 1 {
-		sayError(fmt.Sprintf("Too many placeholders (%d) in format command string: %s", placeHolders, command))
-		exit(1)
+		panic(MessageToMobResult(fmt.Sprintf("Too many placeholders (%d) in format command string: %s", placeHolders, command)).Print())
 	}
 	if placeHolders == 0 {
 		return fmt.Sprintf("%s %s", command, message)
 	}
 	return fmt.Sprintf(command, message)
+}
+
+func MessageToMobResult(errorMessage string) MobResult {
+	return MobResult{errorMessage: errorMessage}
 }
 
 func getVoiceCommand(message string, voiceCommand string) string {
@@ -1069,39 +1072,43 @@ func reset(configuration Configuration) {
 	sayInfo("Branches " + currentWipBranch.String() + " and " + currentWipBranch.remote(configuration).String() + " deleted")
 }
 
-func start(configuration Configuration) {
+func start(configuration Configuration) MobResult {
 	uncommittedChanges := hasUncommittedChanges()
 	if uncommittedChanges && !configuration.StartIncludeUncommittedChanges {
-		sayError("cannot start; clean working tree required")
 		sayUnstagedChangesInfo() // TODO perhaps add them to error?
 		sayUntrackedFilesInfo()
-		sayFix("To start, including uncommitted changes, use", configuration.mob("start --include-uncommitted-changes"))
-		exit(1)
-		return
+		return MobResult{
+			errorMessage:   "cannot start; clean working tree required",
+			fixInstruction: "To start, including uncommitted changes, use",
+			fixCommand:     configuration.mob("start --include-uncommitted-changes"),
+		}.Print()
 	}
 
 	git("fetch", configuration.RemoteName, "--prune")
 	currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), gitBranches(), configuration)
 
 	if !currentBaseBranch.hasRemoteBranch(configuration) {
-		sayError("Remote branch " + currentBaseBranch.remote(configuration).String() + " is missing")
-		sayFix("To set the upstream branch, use", "git push "+configuration.RemoteName+" "+currentBaseBranch.String()+" --set-upstream")
-		exit(1)
-		return
+		return MobResult{
+			errorMessage:   "Remote branch " + currentBaseBranch.remote(configuration).String() + " is missing",
+			fixInstruction: "To set the upstream branch, use",
+			fixCommand:     "git push " + configuration.RemoteName + " " + currentBaseBranch.String() + " --set-upstream",
+		}.Print()
 	}
 
 	if currentBaseBranch.hasUnpushedCommits(configuration) {
-		sayError("cannot start; unpushed changes on base branch must be pushed upstream")
-		sayFix("to fix this, push those commits and try again", "git push "+configuration.RemoteName+" "+currentBaseBranch.String())
-		exit(1)
-		return
+		return MobResult{
+			errorMessage:   "cannot start; unpushed changes on base branch must be pushed upstream",
+			fixInstruction: "to fix this, push those commits and try again",
+			fixCommand:     "git push " + configuration.RemoteName + " " + currentBaseBranch.String(),
+		}.Print()
 	}
 
 	if uncommittedChanges && silentgit("ls-tree", "-r", "HEAD", "--full-name", "--name-only", ".") == "" {
-		sayError("cannot start; current working dir is an uncommitted subdir")
-		sayFix("to fix this, go to the parent directory and try again", "cd ..")
-		exit(1)
-		return
+		return MobResult{
+			errorMessage:   "cannot start; current working dir is an uncommitted subdir",
+			fixInstruction: "to fix this, go to the parent directory and try again",
+			fixCommand:     "cd ..",
+		}.Print()
 	}
 
 	if uncommittedChanges {
@@ -1131,6 +1138,8 @@ func start(configuration Configuration) {
 	sayLastCommitsList(currentBaseBranch.String(), currentWipBranch.String())
 
 	openLastModifiedFileIfPresent(configuration)
+
+	return MobResult{}.Print()
 }
 
 func openLastModifiedFileIfPresent(configuration Configuration) {
@@ -1269,15 +1278,47 @@ func findStashByName(stashes string, stash string) string {
 	return "unknown"
 }
 
-func next(configuration Configuration) {
+type MobResult struct {
+	errorMessage   string
+	fixInstruction string
+	fixCommand     string
+}
+
+func (e MobResult) HasError() bool {
+	return e.errorMessage != ""
+}
+
+func (e MobResult) HasFix() bool {
+	return e.fixInstruction != "" && e.fixCommand != ""
+}
+
+func (e MobResult) Print() MobResult {
+	if e.HasError() {
+		sayError(e.errorMessage)
+		if e.HasFix() {
+			sayFix(e.fixInstruction, e.fixCommand)
+		}
+	}
+	return e
+}
+
+func (e MobResult) Exit() {
+	if e.HasError() {
+		exit(1)
+	}
+}
+
+func next(configuration Configuration) MobResult {
 	if !isMobProgramming(configuration) {
-		sayFix("to start working together, use", configuration.mob("start"))
-		return
+		return MobResult{
+			errorMessage:   "you are not in a mob programming session",
+			fixInstruction: "to start working together, use",
+			fixCommand:     configuration.mob("start"),
+		}.Print()
 	}
 
 	if !configuration.hasCustomCommitMessage() && configuration.RequireCommitMessage && hasUncommittedChanges() {
-		sayError("commit message required")
-		exit(1)
+		return MobResult{errorMessage: "commit message required"}.Print()
 	}
 
 	currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), gitBranches(), configuration)
@@ -1297,6 +1338,8 @@ func next(configuration Configuration) {
 	if !configuration.NextStay {
 		git("checkout", currentBaseBranch.Name)
 	}
+
+	return MobResult{}.Print()
 }
 
 func getChangesOfLastCommit() string {
@@ -1637,8 +1680,7 @@ func silentgit(args ...string) string {
 	commandString, output, err := runCommand("git", args...)
 
 	if err != nil {
-		sayGitError(commandString, output, err)
-		exit(1)
+		panic(GitErrorToMobResult(commandString, output, err).Print())
 	}
 
 	return strings.TrimSpace(output)
@@ -1672,8 +1714,7 @@ func git(args ...string) {
 	commandString, output, err := runCommand("git", args...)
 
 	if err != nil {
-		sayGitError(commandString, output, err)
-		exit(1)
+		panic(GitErrorToMobResult(commandString, output, err).Print())
 	}
 
 	sayIndented(commandString)
@@ -1683,13 +1724,11 @@ func gitCommitHash() string {
 	return silentgitignorefailure("rev-parse", "HEAD")
 }
 
-func sayGitError(commandString string, output string, err error) {
+func GitErrorToMobResult(commandString string, output string, err error) MobResult {
 	if !isGit() {
-		sayError("expecting the current working directory to be a git repository.")
+		return MobResult{errorMessage: "expecting the current working directory to be a git repository."}
 	} else {
-		sayError(commandString)
-		sayError(output)
-		sayError(err.Error())
+		return MobResult{errorMessage: commandString + "\n" + output + "\n" + err.Error()}
 	}
 }
 
