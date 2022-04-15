@@ -1405,6 +1405,7 @@ func TestGitStatusWithManyFiles(t *testing.T) {
 
 func TestSetMobDoneSquashOldBehaviour(t *testing.T) {
 	configuration := getDefaultConfiguration()
+	configuration.DoneSquash = Squash
 
 	setMobDoneSquash(&configuration, "", "false")
 	equals(t, NoSquash, configuration.DoneSquash)
@@ -1415,6 +1416,7 @@ func TestSetMobDoneSquashOldBehaviour(t *testing.T) {
 
 func TestSetMobDoneSquashNewBehaviour(t *testing.T) {
 	configuration := getDefaultConfiguration()
+	configuration.DoneSquash = Squash
 
 	setMobDoneSquash(&configuration, "", "no-squash")
 	equals(t, NoSquash, configuration.DoneSquash)
@@ -1424,8 +1426,21 @@ func TestSetMobDoneSquashNewBehaviour(t *testing.T) {
 
 	setMobDoneSquash(&configuration, "", "squash-wip")
 	equals(t, SquashWip, configuration.DoneSquash)
+}
+
+func TestSetMobDoneSquashGarbageValue(t *testing.T) {
+	configuration := getDefaultConfiguration()
+	configuration.DoneSquash = NoSquash
 
 	setMobDoneSquash(&configuration, "", "garbage")
+	equals(t, Squash, configuration.DoneSquash)
+}
+
+func TestSetMobDoneSquashEmptyStringValue(t *testing.T) {
+	configuration := getDefaultConfiguration()
+	configuration.DoneSquash = NoSquash
+
+	setMobDoneSquash(&configuration, "", "")
 	equals(t, Squash, configuration.DoneSquash)
 }
 
