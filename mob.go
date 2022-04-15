@@ -511,17 +511,8 @@ func setBoolean(s *bool, key string, value string) {
 }
 
 func setMobDoneSquash(configuration *Configuration, key string, value string) {
-	boolValue, err := strconv.ParseBool(value)
-	if err != nil {
-		sayWarning("Could not set key from configuration file because value is not parseable (" + key + "=" + value + ")")
-		return
-	}
-	if boolValue {
-		configuration.DoneSquash = Squash
-	} else {
-		configuration.DoneSquash = NoSquash
-	}
-	debugInfo("Overwriting " + key + " =" + strconv.FormatBool(boolValue))
+	configuration.DoneSquash = doneSquash(value)
+	debugInfo("Overwriting " + key + " =" + string(configuration.DoneSquash))
 }
 
 func parseEnvironmentVariables(configuration Configuration) Configuration {

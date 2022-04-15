@@ -1403,6 +1403,32 @@ func TestGitStatusWithManyFiles(t *testing.T) {
 	}, status)
 }
 
+func TestSetMobDoneSquashOldBehaviour(t *testing.T) {
+	configuration := getDefaultConfiguration()
+
+	setMobDoneSquash(&configuration, "", "false")
+	equals(t, NoSquash, configuration.DoneSquash)
+
+	setMobDoneSquash(&configuration, "", "true")
+	equals(t, Squash, configuration.DoneSquash)
+}
+
+func TestSetMobDoneSquashNewBehaviour(t *testing.T) {
+	configuration := getDefaultConfiguration()
+
+	setMobDoneSquash(&configuration, "", "no-squash")
+	equals(t, NoSquash, configuration.DoneSquash)
+
+	setMobDoneSquash(&configuration, "", "squash")
+	equals(t, Squash, configuration.DoneSquash)
+
+	setMobDoneSquash(&configuration, "", "squash-wip")
+	equals(t, SquashWip, configuration.DoneSquash)
+
+	setMobDoneSquash(&configuration, "", "garbage")
+	equals(t, Squash, configuration.DoneSquash)
+}
+
 func gitStatus() GitStatus {
 	shortStatus := silentgit("status", "--short")
 	statusLines := strings.Split(shortStatus, "\n")
