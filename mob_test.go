@@ -384,6 +384,16 @@ func TestReadConfigurationFromFileOverrideEverything(t *testing.T) {
 	equals(t, "Room\"\"_42", actualConfiguration1.TimerRoom)
 }
 
+func TestReadConfigurationFromFileWithNonBooleanQuotedDoneSquashValue(t *testing.T) {
+	Debug = true
+	tempDir = t.TempDir()
+	setWorkingDir(tempDir)
+
+	createFile(t, ".mob", "\nMOB_DONE_SQUASH=\"squash-wip\"")
+	actualConfiguration := parseUserConfiguration(getDefaultConfiguration(), tempDir+"/.mob")
+	equals(t, SquashWip, actualConfiguration.DoneSquash)
+}
+
 func TestReadConfigurationFromFileAndSkipBrokenLines(t *testing.T) {
 	Debug = true
 	tempDir = t.TempDir()

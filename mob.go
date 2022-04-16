@@ -511,6 +511,14 @@ func setBoolean(s *bool, key string, value string) {
 }
 
 func setMobDoneSquash(configuration *Configuration, key string, value string) {
+	if strings.HasPrefix(value, "\"") {
+		unquotedValue, err := strconv.Unquote(value)
+		if err != nil {
+			sayWarning("Could not set key from configuration file because value is not parseable (" + key + "=" + value + ")")
+			return
+		}
+		value = unquotedValue
+	}
 	configuration.DoneSquash = doneSquash(value)
 	debugInfo("Overwriting " + key + " =" + string(configuration.DoneSquash))
 }
