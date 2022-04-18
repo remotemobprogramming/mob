@@ -44,28 +44,4 @@ To submit a contribution, please follow the following workflow:
 - Run all the tests via `go test -v`, and if they pass:
 - Create a Pull Request
 
-By creating a pull request you certify that your code conforms to the
-[Developer Certificate of Origin (DCO)](https://developercertificate.org/).
-This essentially means that you have the right to contribute the code under
-this project's [license](LICENSE) and that you agree to this license.
-
-### Commits
-
-Commit messages should be clear and fully elaborate the context and the reason of a change.
-If your commit refers to an issue, please post-fix it with the issue number, e.g.
-
-```
-Issue: #123
-```
-
-You can sign-off your commits with `git commit -m "..." -s`, but you're not required to do so.
-
-### Pull Requests
-
-If your Pull Request resolves an issue, please add a respective line to the end, like
-
-```
-Resolves #123
-```
-
 That's it! Happy contributing 😃
