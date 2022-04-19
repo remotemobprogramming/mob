@@ -599,7 +599,7 @@ func setBoolFromEnvVariable(s *bool, key string) {
 		*s = false
 		debugInfo("overriding " + key + "=" + strconv.FormatBool(*s))
 	} else {
-		sayError("ignoring " + key + "=" + value + " (not a boolean)")
+		sayWarning("ignoring " + key + "=" + value + " (not a boolean)")
 	}
 }
 
@@ -880,7 +880,7 @@ func executeCommandsInBackgroundProcess(commands ...string) (err error) {
 	case "darwin", "linux":
 		_, err = startCommand("sh", "-c", fmt.Sprintf("(%s) &", strings.Join(cmds, ";")))
 	default:
-		sayError(fmt.Sprintf("Cannot execute background commands on your os: %s", runtime.GOOS))
+		sayWarning(fmt.Sprintf("Cannot execute background commands on your os: %s", runtime.GOOS))
 	}
 	return err
 }
@@ -892,34 +892,36 @@ func startTimer(timerInMinutes string, configuration Configuration) {
 	timeOfTimeout := time.Now().Add(time.Minute * time.Duration(timeoutInMinutes)).Format("15:04")
 	debugInfo(fmt.Sprintf("Starting timer at %s for %d minutes = %d seconds (parsed from user input %s)", timeOfTimeout, timeoutInMinutes, timeoutInSeconds, timerInMinutes))
 
-	timerSuccessful := false
-
 	room := getMobTimerRoom(configuration)
-	if room != "" {
+	startRemoteTimer := room != ""
+	startLocalTimer := configuration.TimerLocal
+
+	if !startRemoteTimer && !startLocalTimer {
+		sayError("No timer configured, not starting timer")
+		exit(1)
+	}
+
+	if startRemoteTimer {
 		timerUser := getUserForMobTimer(configuration.TimerUser)
 		err := httpPutTimer(timeoutInMinutes, room, timerUser, configuration.TimerUrl)
 		if err != nil {
 			sayError("remote timer couldn't be started")
 			sayError(err.Error())
-		} else {
-			timerSuccessful = true
+			exit(1)
 		}
 	}
 
-	if configuration.TimerLocal {
+	if startLocalTimer {
 		err := executeCommandsInBackgroundProcess(getSleepCommand(timeoutInSeconds), getVoiceCommand(configuration.VoiceMessage, configuration.VoiceCommand), getNotifyCommand(configuration.NotifyMessage, configuration.NotifyCommand))
 
 		if err != nil {
 			sayError(fmt.Sprintf("timer couldn't be started on your system (%s)", runtime.GOOS))
 			sayError(err.Error())
-		} else {
-			timerSuccessful = true
+			exit(1)
 		}
 	}
 
-	if timerSuccessful {
-		sayInfo("It's now " + currentTime() + ". " + fmt.Sprintf("%d min timer ends at approx. %s", timeoutInMinutes, timeOfTimeout) + ". Happy collaborating! :)")
-	}
+	sayInfo("It's now " + currentTime() + ". " + fmt.Sprintf("%d min timer ends at approx. %s", timeoutInMinutes, timeOfTimeout) + ". Happy collaborating! :)")
 }
 
 func getMobTimerRoom(configuration Configuration) string {
@@ -948,33 +950,37 @@ func startBreakTimer(timerInMinutes string, configuration Configuration) {
 	timeOfTimeout := time.Now().Add(time.Minute * time.Duration(timeoutInMinutes)).Format("15:04")
 	debugInfo(fmt.Sprintf("Starting break timer at %s for %d minutes = %d seconds (parsed from user input %s)", timeOfTimeout, timeoutInMinutes, timeoutInSeconds, timerInMinutes))
 
-	timerSuccessful := false
 	room := getMobTimerRoom(configuration)
-	if room != "" {
+	startRemoteTimer := room != ""
+	startLocalTimer := configuration.TimerLocal
+
+	if !startRemoteTimer && !startLocalTimer {
+		sayError("No break timer configured, not starting break timer")
+		exit(1)
+	}
+
+	if startRemoteTimer {
 		timerUser := getUserForMobTimer(configuration.TimerUser)
 		err := httpPutBreakTimer(timeoutInMinutes, room, timerUser, configuration.TimerUrl)
+
 		if err != nil {
 			sayError("remote break timer couldn't be started")
 			sayError(err.Error())
-		} else {
-			timerSuccessful = true
+			exit(1)
 		}
 	}
 
-	if configuration.TimerLocal {
+	if startLocalTimer {
 		err := executeCommandsInBackgroundProcess(getSleepCommand(timeoutInSeconds), getVoiceCommand("mob start", configuration.VoiceCommand), getNotifyCommand("mob start", configuration.NotifyCommand))
 
 		if err != nil {
 			sayError(fmt.Sprintf("break timer couldn't be started on your system (%s)", runtime.GOOS))
 			sayError(err.Error())
-		} else {
-			timerSuccessful = true
+			exit(1)
 		}
 	}
 
-	if timerSuccessful {
-		sayInfo("It's now " + currentTime() + ". " + fmt.Sprintf("%d min break timer ends at approx. %s", timeoutInMinutes, timeOfTimeout) + ". Happy collaborating! :)")
-	}
+	sayInfo("It's now " + currentTime() + ". " + fmt.Sprintf("%d min break timer ends at approx. %s", timeoutInMinutes, timeOfTimeout) + ". Happy collaborating! :)")
 }
 
 func getUserForMobTimer(userOverride string) string {
@@ -1042,11 +1048,12 @@ func moo(configuration Configuration) {
 	err := executeCommandsInBackgroundProcess(getVoiceCommand(voiceMessage, configuration.VoiceCommand))
 
 	if err != nil {
-		sayError(fmt.Sprintf("can't run voice command on your system (%s)", runtime.GOOS))
-		sayError(err.Error())
-	} else {
-		sayInfo(voiceMessage)
+		sayWarning(fmt.Sprintf("can't run voice command on your system (%s)", runtime.GOOS))
+		sayWarning(err.Error())
+		return
 	}
+
+	sayInfo(voiceMessage)
 }
 
 func reset(configuration Configuration) {
@@ -1156,8 +1163,9 @@ func openLastModifiedFileIfPresent(configuration Configuration) {
 	commandname, args := configuration.openCommandFor(lastModifiedFilePath)
 	_, err := startCommand(commandname, args...)
 	if err != nil {
-		sayError(fmt.Sprintf("Couldn't open last modified file on your system (%s)", runtime.GOOS))
-		sayError(err.Error())
+		sayWarning(fmt.Sprintf("Couldn't open last modified file on your system (%s)", runtime.GOOS))
+		sayWarning(err.Error())
+		return
 	}
 	debugInfo("Open last modified file: " + lastModifiedFilePath)
 }
@@ -1337,8 +1345,8 @@ func getPathOfLastModifiedFile() string {
 		debugInfo(absoluteFilepath)
 		info, err := os.Stat(absoluteFilepath)
 		if err != nil {
-			sayError("Could not get statistics of file: " + absoluteFilepath)
-			sayError(err.Error())
+			sayWarning("Could not get statistics of file: " + absoluteFilepath)
+			sayWarning(err.Error())
 			continue
 		}
 		modTime := info.ModTime()
@@ -1431,7 +1439,7 @@ func done(configuration Configuration) {
 		}
 		err := appendCoauthorsToSquashMsg(gitDir())
 		if err != nil {
-			sayError(err.Error())
+			sayWarning(err.Error())
 		}
 
 		if hasUncommittedChanges() {
@@ -1694,8 +1702,8 @@ func gitignorefailure(args ...string) error {
 
 	sayIndented(commandString)
 	if err != nil {
-		sayError(output)
-		sayError(err.Error())
+		sayWarning(output)
+		sayWarning(err.Error())
 	}
 	return err
 }
