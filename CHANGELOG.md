@@ -2,6 +2,8 @@
 - Add `mob clean` command that removes orphan wip branches that might be a left over of someone else doing a `mob done`. This is especially helpful when using a lot of feature branches. If you call `mob clean` on an orphan wip branch, it will switch you to the base branch, falling back to main/master if the base branch does not exist.
 - The values `squash`, `no-squash` and `squash-wip` for MOB_DONE_SQUASH can be set not only via env var, but now in the .mob configuration file as well.
 
+Thanks to @hollesse and @thmuch making this release possible!
+
 # 3.0.0
 - **NEW** Mob will automatically open the last modified file of the previous typist in your preferred IDE. Therefore, you need to set the configuration option `MOB_OPEN_COMMAND` to a command which opens your IDE. For example, the open command for IntelliJ is `idea %s`
 - Add a Smiley face to Happy Collaborating message to make your day :)
