@@ -798,7 +798,7 @@ func clean(configuration Configuration) {
 		b := newBranch(branch)
 		if b.isOrphanWipBranch(configuration) {
 			sayInfo("Removing orphan wip branch " + b.Name)
-			git("branch", "-d", b.Name)
+			git("branch", "-D", b.Name)
 		}
 	}
 
