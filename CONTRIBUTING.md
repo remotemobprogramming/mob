@@ -31,6 +31,7 @@ If it does not, you might want to add the `--debug` option to your call:
 $ mob config --debug
 ```
 
+
 ## How to contribute
 
 If you want to tackle an existing issue please add a comment on GitHub to make sure the issue is
@@ -45,3 +46,21 @@ To submit a contribution, please follow the following workflow:
 - Create a Pull Request
 
 That's it! Happy contributing 😃
+
+
+## Going back to the official release
+
+When you've finished local testing (and you've created a pull request), maybe you want to go back to the
+official `mob` releases. If you're using a package manager, you probably have to delete your locally
+built binary first ...
+
+```
+rm /usr/local/bin/mob
+```
+
+... and then reactivate the `mob` version provided by your package manager. If you're using Homebrew,
+it works like this:
+
+```
+brew link remotemobprogramming/brew/mob
+```
