@@ -207,6 +207,8 @@ Examples:
   mob moo
 ```
 
+If you need some assistance when typing the subcommands and options, you might want to have a look at [fig](https://fig.io/) which gives you autocompletion in your shell.
+
 ## Best Practices
 
 - **Say out loud**
