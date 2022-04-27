@@ -609,6 +609,22 @@ func TestCleanAfterStart(t *testing.T) {
 	assertMobSessionBranches(t, configuration, "mob-session")
 }
 
+func TestCleanNotFullyMergedMissingRemoteBranch(t *testing.T) {
+	_, configuration := setup(t)
+	start(configuration)
+
+	createFile(t, "example.txt", "contentIrrelevant")
+
+	next(configuration)
+
+	git("push", "origin", "mob-session", "--delete")
+
+	clean(configuration)
+
+	assertOnBranch(t, "master")
+	assertNoLocalBranch(t, "mob-session")
+}
+
 func TestCleanFeatureOrphanWipBranch(t *testing.T) {
 	_, configuration := setup(t)
 	git("checkout", "-b", "feature1")
