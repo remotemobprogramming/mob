@@ -1,0 +1,7 @@
+#! /usr/bin/env bash
+file=/usr/local/bin/mob
+if test -f "$file"; then
+sudo rm "$file"
+fi
+sudo ./install
+
