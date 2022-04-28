@@ -241,7 +241,7 @@ The perfect git handover is quick, requires no talking, and allows the rest of t
 - **Mona** steals screenshare using keyboard shortcut, and, afterwards, runs `mob start`
 - **Maria** checks her twitter
 
-### Complimentary Scripts
+### Complementary Scripts
 
 `mob-start feature1` creates a new base branch `feature1` to immediately start a wip branch `mob/feature1` from there.
 
