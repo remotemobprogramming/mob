@@ -1,7 +1,6 @@
 package main
 
 import (
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -1388,13 +1387,6 @@ func TestIsGitIdentifiesOutsideOfGitRepo(t *testing.T) {
 	equals(t, false, isGit())
 }
 
-func TestNotAGitRepoMessage(t *testing.T) {
-	output, _ := setup(t)
-	setWorkingDir(tempDir + "/notgit")
-	sayGitError("TEST", "TEST", errors.New("TEST"))
-	assertOutputContains(t, output, "expecting the current working directory to be a git repository.")
-}
-
 func TestEmptyGitStatus(t *testing.T) {
 	setup(t)
 
@@ -1506,7 +1498,7 @@ func captureOutput(t *testing.T) *string {
 }
 
 func run(t *testing.T, name string, args ...string) *string {
-	commandString, output, err := runCommand(name, args...)
+	commandString, output, err := runCommandSilent(name, args...)
 	if err != nil {
 		fmt.Println(commandString)
 		fmt.Println(output)
