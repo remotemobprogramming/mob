@@ -1498,7 +1498,7 @@ func captureOutput(t *testing.T) *string {
 }
 
 func run(t *testing.T, name string, args ...string) *string {
-	commandString, output, err := runCommand(name, args...)
+	commandString, output, err := runCommandSilent(name, args...)
 	if err != nil {
 		fmt.Println(commandString)
 		fmt.Println(output)

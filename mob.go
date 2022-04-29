@@ -23,8 +23,9 @@ const (
 )
 
 var (
-	workingDir = ""
-	Debug      = false // override with --debug parameter
+	workingDir                 = ""
+	Debug                      = false // override with --debug parameter
+	GitPassthroughStderrStdout = false // hack to get git hooks to print to stdout/stderr
 )
 
 const (
@@ -266,6 +267,11 @@ func main() {
 	debugInfo("parameters '" + strings.Join(parameters, " ") + "'")
 	debugInfo("version " + versionNumber)
 	debugInfo("workingDir '" + workingDir + "'")
+
+	// workaround until we have a better design
+	if configuration.GitHooksEnabled {
+		GitPassthroughStderrStdout = true
+	}
 
 	execute(command, parameters, configuration)
 }
@@ -1417,6 +1423,7 @@ func done(configuration Configuration) {
 		git("checkout", baseBranch.Name)
 		git("merge", baseBranch.remote(configuration).Name, "--ff-only")
 		mergeFailed := gitignorefailure("merge", squashOrNoCommit(configuration), "--ff", wipBranch.Name)
+
 		if mergeFailed != nil {
 			// TODO should this be an error and a fix for that error?
 			sayWarning("Skipped deleting " + wipBranch.Name + " because of merge conflicts.")
@@ -1634,17 +1641,23 @@ func version() {
 }
 
 func silentgit(args ...string) string {
-	commandString, output, err := runCommand("git", args...)
+	commandString, output, err := runCommandSilent("git", args...)
 
 	if err != nil {
-		sayGitError(commandString, output, err)
+		if !isGit() {
+			sayError("expecting the current working directory to be a git repository.")
+		} else {
+			sayError(commandString)
+			sayError(output)
+			sayError(err.Error())
+		}
 		exit(1)
 	}
 	return strings.TrimSpace(output)
 }
 
 func silentgitignorefailure(args ...string) string {
-	_, output, err := runCommand("git", args...)
+	_, output, err := runCommandSilent("git", args...)
 
 	if err != nil {
 		return ""
@@ -1668,44 +1681,73 @@ func gitWithoutEmptyStrings(args ...string) {
 }
 
 func git(args ...string) {
-	commandString, output, err := runCommand("git", args...)
+	commandString, output, err := "", "", error(nil)
+	if GitPassthroughStderrStdout {
+		commandString, output, err = runCommand("git", args...)
+	} else {
+		commandString, output, err = runCommandSilent("git", args...)
+	}
 
 	if err != nil {
-		sayGitError(commandString, output, err)
+		if !isGit() {
+			sayError("expecting the current working directory to be a git repository.")
+		} else {
+			sayError(commandString)
+			sayError(output)
+			sayError(err.Error())
+		}
 		exit(1)
 	} else {
 		sayIndented(commandString)
 	}
 }
 
+func gitignorefailure(args ...string) error {
+	commandString, output, err := "", "", error(nil)
+	if GitPassthroughStderrStdout {
+		commandString, output, err = runCommand("git", args...)
+	} else {
+		commandString, output, err = runCommandSilent("git", args...)
+	}
+
+	sayIndented(commandString)
+
+	if err != nil {
+		if !isGit() {
+			sayError("expecting the current working directory to be a git repository.")
+			exit(1)
+		} else {
+			sayWarning(commandString)
+			sayWarning(output)
+			sayWarning(err.Error())
+			return err
+		}
+	}
+
+	sayIndented(commandString)
+	return nil
+}
+
 func gitCommitHash() string {
 	return silentgitignorefailure("rev-parse", "HEAD")
 }
 
-func sayGitError(commandString string, output string, err error) {
-	if !isGit() {
-		sayError("expecting the current working directory to be a git repository.")
-	} else {
-		sayError(commandString)
-		sayError(output)
-		sayError(err.Error())
-	}
-}
-
 func isGit() bool {
-	_, _, err := runCommand("git", "rev-parse")
+	_, _, err := runCommandSilent("git", "rev-parse")
 	return err == nil
 }
 
-func gitignorefailure(args ...string) error {
-	commandString, output, err := runCommand("git", args...)
-
-	sayIndented(commandString)
-	if err != nil {
-		sayWarning(output)
-		sayWarning(err.Error())
+func runCommandSilent(name string, args ...string) (string, string, error) {
+	command := exec.Command(name, args...)
+	if len(workingDir) > 0 {
+		command.Dir = workingDir
 	}
-	return err
+	commandString := strings.Join(command.Args, " ")
+	debugInfo("Running command <" + commandString + "> in silent mode, capturing combined output")
+	outputBytes, err := command.CombinedOutput()
+	output := string(outputBytes)
+	debugInfo(output)
+	return commandString, output, err
 }
 
 func runCommand(name string, args ...string) (string, string, error) {
@@ -1714,11 +1756,42 @@ func runCommand(name string, args ...string) (string, string, error) {
 		command.Dir = workingDir
 	}
 	commandString := strings.Join(command.Args, " ")
-	debugInfo("Running command " + commandString)
-	outputBinary, err := command.CombinedOutput()
-	output := string(outputBinary)
+	debugInfo("Running command <" + commandString + "> passing output through")
+
+	stdout, _ := command.StdoutPipe()
+	command.Stderr = command.Stdout
+	errStart := command.Start()
+	if errStart != nil {
+		return commandString, "", errStart
+	}
+
+	output := ""
+
+	stdoutscanner := bufio.NewScanner(stdout)
+	lineEnded := true
+	stdoutscanner.Split(bufio.ScanBytes)
+	for stdoutscanner.Scan() {
+		character := stdoutscanner.Text()
+		if character == "\n" {
+			lineEnded = true
+		} else {
+			if lineEnded {
+				printToConsole("  ")
+				lineEnded = false
+			}
+		}
+		printToConsole(character)
+		output += character
+	}
+
+	errWait := command.Wait()
+	if errWait != nil {
+		debugInfo(output)
+		return commandString, output, errWait
+	}
+
 	debugInfo(output)
-	return commandString, output, err
+	return commandString, output, nil
 }
 
 func startCommand(name string, args ...string) (string, error) {
