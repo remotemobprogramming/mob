@@ -1,3 +1,6 @@
+# 3.1.3
+Just a version bump.
+
 # 3.1.2
 - Fixes a bug where mob hides output of interactive git hooks when `MOB_GIT_HOOKS_ENABLED=true`. And without output, the user doesn't know what to input. And without input, mob waits indefinitely.
 
