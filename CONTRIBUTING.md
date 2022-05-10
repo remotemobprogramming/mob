@@ -62,5 +62,5 @@ rm /usr/local/bin/mob
 it works like this:
 
 ```
-brew link remotemobprogramming/brew/mob
+brew unlink mob && brew link mob
 ```
