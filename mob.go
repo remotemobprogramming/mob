@@ -1620,6 +1620,13 @@ Timer Commands:
   start <minutes>    start mob session in wip branch and a <minutes> timer
   break <minutes>    start a <minutes> break timer
 
+Short Commands (Options and descriptions as above):
+  s                  alias for 'start'
+  n                  alias for 'next'
+  d                  alias for 'done'
+  b                  alias for 'branch'
+  t                  alias for 'timer'
+
 Get more information:
   status             show the status of the current session
   fetch              fetch remote state
