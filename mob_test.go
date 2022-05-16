@@ -786,6 +786,25 @@ func TestStartNextStay_WriteLastModifiedFileInCommit_WhenFileIsModified(t *testi
 	equals(t, silentgit("log", "--format=%B", "-n", "1", "HEAD"), configuration.WipCommitMessage+"\n\nlastFile:file1.txt")
 }
 
+func TestStartNextStay_WriteLastModifiedFileInCommit_WhenFileIsModifiedAndWorkingDirIsNotProjectRoot(t *testing.T) {
+	_, configuration := setup(t)
+	configuration.NextStay = true
+
+	start(configuration)
+	createFile(t, "file1.txt", "contentIrrelevant")
+	createFile(t, "file2.txt", "contentIrrelevant")
+	next(configuration)
+
+	start(configuration)
+	createDirectory(t, "dir")
+	createFile(t, "file1.txt", "contentIrrelevantButModified")
+	setWorkingDir(workingDir + "/dir")
+	next(configuration)
+
+	assertOnBranch(t, "mob-session")
+	equals(t, silentgit("log", "--format=%B", "-n", "1", "HEAD"), configuration.WipCommitMessage+"\n\nlastFile:file1.txt")
+}
+
 func TestStartNextStay_DoNotWriteLastModifiedFileInCommit_WhenFileIsDeleted(t *testing.T) {
 	_, configuration := setup(t)
 	configuration.NextStay = true

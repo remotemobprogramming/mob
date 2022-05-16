@@ -1,3 +1,6 @@
+# 3.1.4
+- Fixes a bug where mob saves the wrong filepath of the last modfied file in the wip commit message.
+
 # 3.1.3
 Just a version bump.
 

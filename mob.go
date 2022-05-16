@@ -1334,10 +1334,10 @@ func createWipCommitMessage(configuration Configuration) string {
 
 // uses git status --short. To work properly files have to be staged.
 func getPathOfLastModifiedFile() string {
-	files := getModifiedFiles()
+	rootDir := gitRootDir()
+	files := getModifiedFiles(rootDir)
 	lastModifiedFilePath := ""
 	lastModifiedTime := time.Time{}
-	rootDir := gitRootDir()
 
 	debugInfo("Find last modified file")
 	if len(files) == 1 {
@@ -1366,9 +1366,12 @@ func getPathOfLastModifiedFile() string {
 }
 
 // uses git status --short. To work properly files have to be staged.
-func getModifiedFiles() []string {
+func getModifiedFiles(rootDir string) []string {
 	debugInfo("Find modified files")
+	oldWorkingDir := workingDir
+	workingDir = rootDir
 	gitstatus := silentgit("status", "--short")
+	workingDir = oldWorkingDir
 	lines := strings.Split(gitstatus, "\n")
 	files := []string{}
 	for _, line := range lines {
