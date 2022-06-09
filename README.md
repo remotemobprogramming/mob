@@ -96,19 +96,19 @@ sudo snap connect mob-sh:ssh-keys
 If you have go 1.16+ you can install and build directly from source:
 
 ```bash
-go install github.com/remotemobprogramming/mob/v2@latest
+go install github.com/remotemobprogramming/mob/v3@latest
 ```
 
 or pick a specific version:
 
 ```bash
-go install github.com/remotemobprogramming/mob/v2@v2.5.0
+go install github.com/remotemobprogramming/mob/v3@v3.0.0
 ```
 
 or to install latest unreleased changes:
 
 ```bash
-go install github.com/remotemobprogramming/mob/v2@main
+go install github.com/remotemobprogramming/mob/v3@main
 ```
 
 ## How to use
