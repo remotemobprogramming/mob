@@ -119,26 +119,30 @@ add_to_path() {
   esac
 }
 
-display_success() {
+check_command() {
   location="$(command -v mob)"
 
   if [ $location = ""]; then
+    echo 
+    echo "(!) 'mob' could not be found after install!" 
+
     case "$(determine_os)" in
     linux)
-      echo 
-      echo "(!) Mob could not be found. If you installed using --user it should be found when you login next time." 
+      echo "    If you installed using --user it should be found when you login next time." 
       echo "    If it does not, you might need to manually add it to your .profile or equivalent like so:"
       echo 
       echo "    echo \"export PATH=$target:\\\$PATH\" >> ~/.profile" 
       ;;
+    *)
+      echo "    Make sure that $target is in your PATH"
     esac
     return
   fi
     
   echo "Mob binary location: $location"
+
   version="$(mob version)"
   echo "Mob binary version: $version"
-
 }
 
 check_say() {
@@ -149,9 +153,9 @@ check_say() {
       echo
       echo "Couldn't find a 'say' command on your system."
       echo "While 'mob' will still work, you won't get any spoken indication that your time is up."
-      echo "Please refer to the documentation how to setup text to speech on a *NIX system."
+      echo "Please refer to the documentation how to setup text to speech on a *NIX system:"
       echo
-      echo "$readme#$(determine_os)-timer"
+      echo "     $readme#$(determine_os)-timer"
       echo
     fi
     ;;
@@ -172,7 +176,7 @@ main() {
   check_access_rights
   install_remote_binary
   add_to_path
-  display_success
+  check_command
   check_say
   check_installation_path
 }
