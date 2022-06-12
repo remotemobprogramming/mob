@@ -121,10 +121,24 @@ add_to_path() {
 
 display_success() {
   location="$(command -v mob)"
-  echo "Mob binary location: $location"
 
+  if [ $location = ""]; then
+    case "$(determine_os)" in
+    linux)
+      echo 
+      echo "(!) Mob could not be found. If you installed using --user it should be found when you login next time." 
+      echo "    If it does not, you might need to manually add it to your .profile or equivalent like so:"
+      echo 
+      echo "    echo \"export PATH=$target:\\\$PATH\" >> ~/.profile" 
+      ;;
+    esac
+    return
+  fi
+    
+  echo "Mob binary location: $location"
   version="$(mob version)"
   echo "Mob binary version: $version"
+
 }
 
 check_say() {
@@ -146,7 +160,7 @@ check_say() {
 
 check_installation_path() {
   location="$(command -v mob)"
-  if [ "$location" != "$target/mob" ]; then
+  if [ "$location" != "$target/mob" ] && [ "$location" != "" ]; then
     echo "(!) The installation location doesn't match the location of the mob binary."
     echo "    This means that the binary that's used is not the binary that has just been installed"
     echo "    You probably want to delete the binary at $location"
