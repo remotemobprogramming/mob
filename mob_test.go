@@ -856,19 +856,6 @@ func TestStartNextStay_OpenLastModifiedFile(t *testing.T) {
 	})
 }
 
-func TestStartDoneWithMobDoneSquash(t *testing.T) {
-	_, configuration := setup(t)
-	configuration.DoneSquash = Squash
-
-	start(configuration)
-	assertOnBranch(t, "mob-session")
-
-	done(configuration)
-
-	assertOnBranch(t, "master")
-	assertNoMobSessionBranches(t, configuration, "mob-session")
-}
-
 func TestRunOutput(t *testing.T) {
 	_, configuration := setup(t)
 
@@ -910,6 +897,19 @@ func TestTestbed(t *testing.T) {
 	assertOutputContains(t, &output, "localother")
 	assertOutputContains(t, &output, "alice")
 	assertOutputContains(t, &output, "bob")
+}
+
+func TestStartDoneWithMobDoneSquash(t *testing.T) {
+	_, configuration := setup(t)
+	configuration.DoneSquash = Squash
+
+	start(configuration)
+	assertOnBranch(t, "mob-session")
+
+	done(configuration)
+
+	assertOnBranch(t, "master")
+	assertNoMobSessionBranches(t, configuration, "mob-session")
 }
 
 func TestStartDoneWithMobDoneNoSquash(t *testing.T) {
