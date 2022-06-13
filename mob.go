@@ -1425,7 +1425,7 @@ func done(configuration Configuration) {
 
 		git("checkout", baseBranch.Name)
 		git("merge", baseBranch.remote(configuration).Name, "--ff-only")
-		mergeFailed := gitignorefailure("merge", squashOrNoCommit(configuration), "--ff", wipBranch.Name)
+		mergeFailed := gitignorefailure("merge", squashOrCommit(configuration), "--ff", wipBranch.Name)
 
 		if mergeFailed != nil {
 			// TODO should this be an error and a fix for that error?
@@ -1473,11 +1473,11 @@ func gitRootDir() string {
 	return strings.TrimSuffix(gitDir(), "/.git")
 }
 
-func squashOrNoCommit(configuration Configuration) string {
+func squashOrCommit(configuration Configuration) string {
 	if configuration.DoneSquash == Squash {
 		return "--squash"
 	} else {
-		return "--no-commit"
+		return "--commit"
 	}
 }
 

@@ -912,6 +912,51 @@ func TestStartDoneWithMobDoneSquash(t *testing.T) {
 	assertNoMobSessionBranches(t, configuration, "mob-session")
 }
 
+func TestStartDoneSquashWithUnpushedCommit(t *testing.T) {
+	_, configuration := setup(t)
+	configuration.DoneSquash = Squash
+
+	// now in /local
+	createFileAndCommitIt(t, "file1.txt", "owqe", "not a mob session yet")
+
+	setWorkingDir(tempDir + "/alice")
+	start(configuration)
+	createFile(t, "file2.txt", "zcvx")
+	next(configuration)
+
+	setWorkingDir(tempDir + "/local")
+	git("push")
+
+	setWorkingDir(tempDir + "/alice")
+	start(configuration)
+	done(configuration)
+
+	assertFileExist(t, "file1.txt")
+}
+
+func TestStartDoneSquashWipWithUnpushedCommit(t *testing.T) {
+	Debug = true
+	_, configuration := setup(t)
+	configuration.DoneSquash = SquashWip
+
+	// now in /local
+	createFileAndCommitIt(t, "file1.txt", "owqe", "not a mob session yet")
+
+	setWorkingDir(tempDir + "/alice")
+	start(configuration)
+	createFile(t, "file2.txt", "zcvx")
+	next(configuration)
+
+	setWorkingDir(tempDir + "/local")
+	git("push")
+
+	setWorkingDir(tempDir + "/alice")
+	start(configuration)
+	done(configuration)
+
+	assertFileExist(t, "file1.txt")
+}
+
 func TestStartDoneWithMobDoneNoSquash(t *testing.T) {
 	_, configuration := setup(t)
 	configuration.DoneSquash = NoSquash
