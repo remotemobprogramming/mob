@@ -7,6 +7,8 @@ jobs:
     - name: Show git version
       run: git version
     - uses: actions/checkout@v2
+    - name: Run ShellCheck
+      uses: azohra/shell-linter@latest
     - name: Use Go 1.16.x
       uses: actions/setup-go@v2
       with:
