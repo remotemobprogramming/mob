@@ -122,7 +122,7 @@ add_to_path() {
 check_command() {
   location="$(command -v mob)"
 
-  if [ $location = "" ]; then
+  if [ "$location" = "" ]; then
     echo 
     echo "(!) 'mob' could not be found after install!" 
 
