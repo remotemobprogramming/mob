@@ -7,10 +7,6 @@ jobs:
     - name: Show git version
       run: git version
     - uses: actions/checkout@v2
-    - name: Shell linter
-      uses: azohra/shell-linter@latest
-      with:
-        exclude-paths: "CNAME,LICENSE,mob-configuration-example"
     - name: Use Go 1.16.x
       uses: actions/setup-go@v2
       with:
