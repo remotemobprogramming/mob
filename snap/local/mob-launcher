@@ -1,6 +1,6 @@
 #!/bin/sh
 if snapctl is-connected ssh-keys; then
-  HOME=$(getent passwd "$(id -u)" | cut -d ':' -f 6); mob "$@"
+  HOME=$(getent passwd $(id -u) | cut -d ':' -f 6); mob "$@"
 else
   echo " 👉 mob-sh has no access to ssh-keys, please run"
   echo ""
