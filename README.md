@@ -64,6 +64,12 @@ On Windows via [Scoop](https://scoop.sh/):
 scoop install mob
 ```
 
+or via [Chocolatey](https://chocolatey.org/)
+
+```bash
+choco install mob
+```
+
 On Arch Linux via yay:
 
 ```bash
