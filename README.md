@@ -395,6 +395,9 @@ Override default value just for a single call:
 MOB_NEXT_STAY=true mob next
 ```
 
+### Integration with timer.mob.sh
+For your name to show up in the room at timer.mob.sh you must set a timer value either via the `MOB_TIMER` variable, a config file, or an argument to `start`.
+
 ## How to uninstall
 Mob can simply be uninstalled by removing the installed binary (at least if it was installed via the http://install.mob.sh script). 
 
