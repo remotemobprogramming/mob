@@ -420,6 +420,16 @@ func TestExecuteInvalidCommandKicksOffHelp(t *testing.T) {
 	assertOutputContains(t, output, "Basic Commands:")
 }
 
+func TestExecuteAnyCommandWithHelpArgumentShowsHelpOutput(t *testing.T) {
+	output, _ := setup(t)
+
+	execute("s", []string{"10", "--help"}, getDefaultConfiguration())
+	assertOutputContains(t, output, "Basic Commands:")
+
+	execute("next", []string{"help"}, getDefaultConfiguration())
+	assertOutputContains(t, output, "Basic Commands:")
+}
+
 func TestStart(t *testing.T) {
 	_, configuration := setup(t)
 
@@ -1479,6 +1489,14 @@ func TestSetMobDoneSquashEmptyStringValue(t *testing.T) {
 
 	setMobDoneSquash(&configuration, "", "")
 	equals(t, Squash, configuration.DoneSquash)
+}
+
+func TestHelpRequested(t *testing.T) {
+	equals(t, false, helpRequested([]string{""}))
+	equals(t, false, helpRequested([]string{"a", "mob", "21"}))
+	equals(t, true, helpRequested([]string{"--help"}))
+	equals(t, true, helpRequested([]string{"a", "help", "12"}))
+	equals(t, true, helpRequested([]string{"s", "10", "-h"}))
 }
 
 func gitStatus() GitStatus {

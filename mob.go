@@ -718,6 +718,10 @@ func parseArgs(args []string, configuration Configuration) (command string, para
 }
 
 func execute(command string, parameter []string, configuration Configuration) {
+	if helpRequested(parameter) {
+		help(configuration)
+		return
+	}
 
 	switch command {
 	case "s", "start":
@@ -779,6 +783,16 @@ func execute(command string, parameter []string, configuration Configuration) {
 	default:
 		help(configuration)
 	}
+}
+
+func helpRequested(parameter []string) bool {
+	for i := 0; i < len(parameter); i++ {
+		element := parameter[i]
+		if element == "help" || element == "--help" || element == "-h" {
+			return true
+		}
+	}
+	return false
 }
 
 func clean(configuration Configuration) {
