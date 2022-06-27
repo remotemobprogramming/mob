@@ -1,5 +1,6 @@
 # 3.1.5
 - Fix: `mob done --squash-wip` now successfully auto-merges auto-mergeable diverging changes.
+- Print the help output whenever any kind of help argument (`help`, `--help`, `-h`) is present in the command, e.g. `mob s 10 -h`.
 
 # 3.1.4
 - Fixes a bug where mob saves the wrong filepath of the last modfied file in the wip commit message.

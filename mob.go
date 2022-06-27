@@ -718,6 +718,10 @@ func parseArgs(args []string, configuration Configuration) (command string, para
 }
 
 func execute(command string, parameter []string, configuration Configuration) {
+	if helpRequested(parameter) {
+		help(configuration)
+		return
+	}
 
 	switch command {
 	case "s", "start":
@@ -779,6 +783,16 @@ func execute(command string, parameter []string, configuration Configuration) {
 	default:
 		help(configuration)
 	}
+}
+
+func helpRequested(parameter []string) bool {
+	for i := 0; i < len(parameter); i++ {
+		element := parameter[i]
+		if element == "help" || element == "--help" || element == "-h" {
+			return true
+		}
+	}
+	return false
 }
 
 func clean(configuration Configuration) {
@@ -1597,15 +1611,15 @@ func help(configuration Configuration) {
 	output := configuration.CliName + ` enables a smooth Git handover
 
 Basic Commands:
-  start              start session from base branch in wip branch
-  next               handover changes in wip branch to next person
-  done               squashes all changes in wip branch to index in base branch
-  reset              removes local and remote wip branch
+  start              Start session from base branch in wip branch
+  next               Handover changes in wip branch to next person
+  done               Squash all changes in wip branch to index in base branch
+  reset              Remove local and remote wip branch
 
-Basic Commands(Options):
-  start [<minutes>]                      Start a <minutes> timer
+Basic Commands with Options:
+  start [<minutes>]                      Start <minutes> minutes timer
     [--include-uncommitted-changes|-i]   Move uncommitted changes to wip branch
-    [--branch|-b <branch-postfix>]       Set wip branch to 'mob/<base-branch>/<branch-postfix>'
+    [--branch|-b <branch-postfix>]       Set wip branch to 'mob/<base-branch>` + configuration.WipBranchQualifierSeparator + `<branch-postfix>'
   next
     [--stay|-s]                          Stay on wip branch (default)
     [--return-to-base-branch|-r]         Return to base branch
@@ -1616,32 +1630,32 @@ Basic Commands(Options):
     [--squash-wip]                       Squash wip commits from wip branch, maintaining manual commits
   reset
     [--branch|-b <branch-postfix>]       Set wip branch to 'mob/<base-branch>/<branch-postfix>'
-  clean                                  Removes all orphan wip branches
+  clean                                  Remove all orphan wip branches
 
 Timer Commands:
-  timer <minutes>    start a <minutes> timer
-  start <minutes>    start mob session in wip branch and a <minutes> timer
-  break <minutes>    start a <minutes> break timer
+  timer <minutes>    Start <minutes> minutes timer
+  start <minutes>    Start mob session in wip branch and a <minutes> timer
+  break <minutes>    Start <minutes> break timer
 
 Short Commands (Options and descriptions as above):
-  s                  alias for 'start'
-  n                  alias for 'next'
-  d                  alias for 'done'
-  b                  alias for 'branch'
-  t                  alias for 'timer'
+  s                  Alias for 'start'
+  n                  Alias for 'next'
+  d                  Alias for 'done'
+  b                  Alias for 'branch'
+  t                  Alias for 'timer'
 
 Get more information:
-  status             show the status of the current session
-  fetch              fetch remote state
-  branch             show remote wip branches
-  config             show all configuration options
-  version            show the version
-  help               show help
+  status             Show status of the current session
+  fetch              Fetch remote state
+  branch             Show remote wip branches
+  config             Show all configuration options
+  version            Show tool version
+  help               Show help
 
 Other
-  moo                moo!
+  moo                Moo!
 
-Add --debug to any option to enable verbose logging
+Add '--debug' to any option to enable verbose logging.
 `
 	say(output)
 }
