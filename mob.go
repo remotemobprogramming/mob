@@ -1629,7 +1629,7 @@ Basic Commands with Options:
     [--squash]                           Squash all commits from wip branch
     [--squash-wip]                       Squash wip commits from wip branch, maintaining manual commits
   reset
-    [--branch|-b <branch-postfix>]       Set wip branch to 'mob/<base-branch>/<branch-postfix>'
+    [--branch|-b <branch-postfix>]       Set wip branch to 'mob/<base-branch>` + configuration.WipBranchQualifierSeparator + `<branch-postfix>'
   clean                                  Remove all orphan wip branches
 
 Timer Commands:
