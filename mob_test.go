@@ -866,19 +866,6 @@ func TestStartNextStay_OpenLastModifiedFile(t *testing.T) {
 	})
 }
 
-func TestStartDoneWithMobDoneSquash(t *testing.T) {
-	_, configuration := setup(t)
-	configuration.DoneSquash = Squash
-
-	start(configuration)
-	assertOnBranch(t, "mob-session")
-
-	done(configuration)
-
-	assertOnBranch(t, "master")
-	assertNoMobSessionBranches(t, configuration, "mob-session")
-}
-
 func TestRunOutput(t *testing.T) {
 	_, configuration := setup(t)
 
@@ -920,6 +907,64 @@ func TestTestbed(t *testing.T) {
 	assertOutputContains(t, &output, "localother")
 	assertOutputContains(t, &output, "alice")
 	assertOutputContains(t, &output, "bob")
+}
+
+func TestStartDoneWithMobDoneSquash(t *testing.T) {
+	_, configuration := setup(t)
+	configuration.DoneSquash = Squash
+
+	start(configuration)
+	assertOnBranch(t, "mob-session")
+
+	done(configuration)
+
+	assertOnBranch(t, "master")
+	assertNoMobSessionBranches(t, configuration, "mob-session")
+}
+
+func TestStartDoneSquashWithUnpushedCommit(t *testing.T) {
+	_, configuration := setup(t)
+	configuration.DoneSquash = Squash
+
+	// now in /local
+	createFileAndCommitIt(t, "file1.txt", "owqe", "not a mob session yet")
+
+	setWorkingDir(tempDir + "/alice")
+	start(configuration)
+	createFile(t, "file2.txt", "zcvx")
+	next(configuration)
+
+	setWorkingDir(tempDir + "/local")
+	git("push")
+
+	setWorkingDir(tempDir + "/alice")
+	start(configuration)
+	done(configuration)
+
+	assertFileExist(t, "file1.txt")
+}
+
+func TestStartDoneSquashWipWithUnpushedCommit(t *testing.T) {
+	Debug = true
+	_, configuration := setup(t)
+	configuration.DoneSquash = SquashWip
+
+	// now in /local
+	createFileAndCommitIt(t, "file1.txt", "owqe", "not a mob session yet")
+
+	setWorkingDir(tempDir + "/alice")
+	start(configuration)
+	createFile(t, "file2.txt", "zcvx")
+	next(configuration)
+
+	setWorkingDir(tempDir + "/local")
+	git("push")
+
+	setWorkingDir(tempDir + "/alice")
+	start(configuration)
+	done(configuration)
+
+	assertFileExist(t, "file1.txt")
 }
 
 func TestStartDoneWithMobDoneNoSquash(t *testing.T) {

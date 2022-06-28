@@ -12,7 +12,7 @@ type Replacer func(string) string
 
 func squashWip(configuration Configuration) {
 	currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), gitBranches(), configuration)
-	mergeBase := silentgit("merge-base", currentWipBranch.String(), currentBaseBranch.String())
+	mergeBase := silentgit("merge-base", currentWipBranch.String(), currentBaseBranch.remote(configuration).String())
 
 	originalGitEditor, originalGitSequenceEditor := getEnvGitEditor()
 	setEnvGitEditor(
@@ -23,7 +23,7 @@ func squashWip(configuration Configuration) {
 	git("rebase", "--interactive", "--keep-empty", mergeBase)
 	setEnvGitEditor(originalGitEditor, originalGitSequenceEditor)
 	sayInfo("resulting history is:")
-	sayLastCommitsWithMessage(currentBaseBranch.String(), currentWipBranch.String())
+	sayLastCommitsWithMessage(currentBaseBranch.remote(configuration).String(), currentWipBranch.String())
 	if lastCommitIsWipCommit(configuration) { // last commit is wip commit
 		sayInfo("undoing the final wip commit and staging its changes:")
 		git("reset", "--soft", "HEAD^")
