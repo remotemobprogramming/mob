@@ -246,6 +246,12 @@ func main() {
 	parseDebug(os.Args)
 	debugInfo(runtime.Version())
 
+	if !isGitInstalled() {
+		sayError("'git' command was not found in PATH. It may be not installed. " +
+			"To learn how to install 'git' refer to https://git-scm.com/book/en/v2/Getting-Started-Installing-Git.")
+		exit(1)
+	}
+
 	configuration := getDefaultConfiguration()
 	configuration = parseEnvironmentVariables(configuration)
 
@@ -1754,6 +1760,14 @@ func gitignorefailure(args ...string) error {
 
 func gitCommitHash() string {
 	return silentgitignorefailure("rev-parse", "HEAD")
+}
+
+func isGitInstalled() bool {
+	_, _, err := runCommandSilent("git", "--version")
+	if err != nil {
+		debugInfo("isGitInstalled encountered an error: " + err.Error())
+	}
+	return err == nil
 }
 
 func isGit() bool {
