@@ -246,13 +246,19 @@ func main() {
 	parseDebug(os.Args)
 	debugInfo(runtime.Version())
 
+	if !isGitInstalled() {
+		sayError("'git' command was not found in PATH. It may be not installed. " +
+			"To learn how to install 'git' refer to https://git-scm.com/book/en/v2/Getting-Started-Installing-Git.")
+		exit(1)
+	}
+
 	configuration := getDefaultConfiguration()
 	configuration = parseEnvironmentVariables(configuration)
 
 	currentUser, _ := user.Current()
 	userConfigurationPath := currentUser.HomeDir + "/.mob"
 	configuration = parseUserConfiguration(configuration, userConfigurationPath)
-	if isGitSilent() {
+	if isGit() {
 		configuration = parseProjectConfiguration(configuration, gitRootDir()+"/.mob")
 	}
 	debugInfo("Args '" + strings.Join(os.Args, " ") + "'")
@@ -1756,25 +1762,17 @@ func gitCommitHash() string {
 	return silentgitignorefailure("rev-parse", "HEAD")
 }
 
-func isGit() bool {
-	err := isGitWithError()
-
-	if strings.Contains(fmt.Sprint(err), "executable file not found in %PATH%") {
-		sayError("'git' command was not found in PATH. It may be not installed. " +
-			"To learn how to install 'git' refer to https://git-scm.com/book/en/v2/Getting-Started-Installing-Git.")
+func isGitInstalled() bool {
+	_, _, err := runCommandSilent("git", "--version")
+	if err != nil {
+		debugInfo("isGitInstalled encountered an error: " + err.Error())
 	}
-
 	return err == nil
 }
 
-func isGitSilent() bool {
-	err := isGitWithError()
-	return err == nil
-}
-
-func isGitWithError() error {
+func isGit() bool {
 	_, _, err := runCommandSilent("git", "rev-parse")
-	return err
+	return err == nil
 }
 
 func runCommandSilent(name string, args ...string) (string, string, error) {
