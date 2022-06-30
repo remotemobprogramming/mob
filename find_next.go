@@ -22,11 +22,30 @@ func findNextTypist(lastCommitters []string, gitUserName string) (nextTypist str
 			previousCommitters = prepend(previousCommitters, lastCommitters[i])
 		}
 	}
-	if nextTypistNeverDifferentFromGitUser {
+	if nextTypist == "" {
+		// Current committer is new to the session.
+		numberOfPreviousCommitters := len(previousCommitters)
+		if numberOfPreviousCommitters == 1 {
+			nextTypist = previousCommitters[0]
+		} else if numberOfPreviousCommitters > 1 {
+			// Pick the next typist from the list of previous committers only.
+			reversedPreviousCommitters := reverse(previousCommitters[:len(previousCommitters)-1])
+			nextTypist, _ = findNextTypist(reversedPreviousCommitters, reversedPreviousCommitters[0])
+		}
+	} else if nextTypistNeverDifferentFromGitUser {
 		// Someone mobs themselves. ;)
-		return "", nil
+		nextTypist = ""
 	}
-	return
+	return nextTypist, nil
+}
+
+func reverse(list []string) []string {
+	length := len(list)
+	reversed := make([]string, length)
+	for i := 0; i < length; i++ {
+		reversed[length-1-i] = list[i]
+	}
+	return reversed
 }
 
 func lookahead(processedCommitters []string, previousCommitters []string) (nextTypist string) {
