@@ -1,11 +1,13 @@
 package main
 
 func findNextTypist(lastCommitters []string, gitUserName string) (nextTypist string, previousCommitters []string) {
+	nextTypistNeverDifferentFromGitUser := true
 	numberOfLastCommitters := len(lastCommitters)
 	for i := 0; i < numberOfLastCommitters; i++ {
 		if lastCommitters[i] == gitUserName && i > 0 {
 			nextTypist = lastCommitters[i-1]
 			if nextTypist != gitUserName {
+				nextTypistNeverDifferentFromGitUser = false
 				// '2*i+1' defines how far we look ahead. It is the number of already processed elements.
 				lookaheadThreshold := min(2*i+1, len(lastCommitters))
 				previousMobber := lookahead(lastCommitters[:i], lastCommitters[i:lookaheadThreshold])
@@ -19,6 +21,10 @@ func findNextTypist(lastCommitters []string, gitUserName string) (nextTypist str
 		if i == 0 || previousCommitters[0] != lastCommitters[i] {
 			previousCommitters = prepend(previousCommitters, lastCommitters[i])
 		}
+	}
+	if nextTypistNeverDifferentFromGitUser {
+		// Someone mobs themselves. ;)
+		return "", nil
 	}
 	return
 }
