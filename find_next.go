@@ -10,9 +10,9 @@ func findNextTypist(lastCommitters []string, gitUserName string) (nextTypist str
 				nextTypistNeverDifferentFromGitUser = false
 				// '2*i+1' defines how far we look ahead. It is the number of already processed elements.
 				lookaheadThreshold := min(2*i+1, len(lastCommitters))
-				previousMobber := lookahead(lastCommitters[:i], lastCommitters[i:lookaheadThreshold])
-				if previousMobber != "" {
-					nextTypist = previousMobber
+				previousTypist := lookahead(lastCommitters[:i], lastCommitters[i:lookaheadThreshold])
+				if previousTypist != "" {
+					nextTypist = previousTypist
 				}
 				return
 			}
