@@ -13,6 +13,15 @@ func TestFindNextTypistNoCommits(t *testing.T) {
 	equals(t, history, []string(nil))
 }
 
+func TestFindNextTypistOnFirstCommit(t *testing.T) {
+	lastCommitters := []string{"alice"}
+
+	nextTypist, history := findNextTypist(lastCommitters, "alice")
+
+	equals(t, nextTypist, "")
+	equals(t, history, []string(nil))
+}
+
 func TestFindNextTypistStartingWithFirstCommitterTwice(t *testing.T) {
 	lastCommitters := []string{"alice", "alice"}
 

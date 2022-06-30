@@ -25,9 +25,9 @@ func findNextTypist(lastCommitters []string, gitUserName string) (nextTypist str
 	if nextTypist == "" {
 		// Current committer is new to the session.
 		numberOfPreviousCommitters := len(previousCommitters)
-		if numberOfPreviousCommitters == 1 {
+		if numberOfPreviousCommitters == 2 {
 			nextTypist = previousCommitters[0]
-		} else if numberOfPreviousCommitters > 1 {
+		} else if numberOfPreviousCommitters > 2 {
 			// Pick the next typist from the list of previous committers only.
 			reversedPreviousCommitters := reverse(previousCommitters[:len(previousCommitters)-1])
 			nextTypist, _ = findNextTypist(reversedPreviousCommitters, reversedPreviousCommitters[0])
