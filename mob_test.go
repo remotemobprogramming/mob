@@ -519,7 +519,7 @@ func TestStartNextStartWithBranch(t *testing.T) {
 	assertOnBranch(t, "mob/master-green")
 }
 
-func TestStartFromDivergingBranches(t *testing.T) {
+func TestStartWarnsAboutPreexistingWipBranches(t *testing.T) {
 	output, configuration := setup(t)
 	checkoutBranchAndCreateRemoteBranch("feature-something")
 	checkoutBranchAndCreateRemoteBranch("feature-something-2")
@@ -536,6 +536,10 @@ func TestStartFromDivergingBranches(t *testing.T) {
 	assertOutputContains(t, output, "mob/feature-something-2")
 }
 
+//TODO is this test really useful?
+// as far as I understand it, it does not warn, because "feature-something-2" is not contained in "feature-something"
+// and then again, the warning message has changed and it would also fail because of the changed warning message
+// I would delete this test
 func TestStartFromDivergingBranches_noWarning(t *testing.T) {
 	output, configuration := setup(t)
 	checkoutBranchAndCreateRemoteBranch("mob/feature-something")
@@ -548,6 +552,22 @@ func TestStartFromDivergingBranches_noWarning(t *testing.T) {
 	assertOnBranch(t, "mob/feature-something-2")
 
 	assertOutputNotContains(t, output, "qualified mob branches detected")
+}
+
+func TestStartWarnsOnDivergingWipBranch(t *testing.T) {
+	output, configuration := setup(t)
+
+	start(configuration)
+	createFileAndCommitIt(t, "example.txt", "asdf", "asdf")
+	next(configuration)
+
+	git("checkout", "master")
+	createFileAndCommitIt(t, "example.txt", "other", "other")
+	git("push")
+
+	start(configuration)
+
+	assertOutputContains(t, output, "Careful, your wip branch (mob-session) diverges from your main branch (origin/master) !")
 }
 
 func TestStartNextOnFeatureWithBranch(t *testing.T) {

@@ -1261,10 +1261,13 @@ func getWipBranchesForBaseBranch(currentBaseBranch Branch, configuration Configu
 }
 
 func startJoinMobSession(configuration Configuration) {
-	_, currentWipBranch := determineBranches(gitCurrentBranch(), gitBranches(), configuration)
+	baseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), gitBranches(), configuration)
 
 	sayInfo("joining existing session from " + currentWipBranch.remote(configuration).String())
-	// TODO warn about diverging branches
+	if doBranchesDiverge(baseBranch.remote(configuration).Name, currentWipBranch.Name) {
+		sayWarning("Careful, your wip branch (" + currentWipBranch.Name + ") diverges from your main branch (" + baseBranch.remote(configuration).Name + ") !")
+	}
+
 	git("checkout", "-B", currentWipBranch.Name, currentWipBranch.remote(configuration).Name)
 	git("branch", "--set-upstream-to="+currentWipBranch.remote(configuration).Name, currentWipBranch.Name)
 }
