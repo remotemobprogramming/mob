@@ -1536,6 +1536,29 @@ func TestSetMobDoneSquashEmptyStringValue(t *testing.T) {
 	equals(t, Squash, configuration.DoneSquash)
 }
 
+func TestBranchesDoNotDiverge(t *testing.T) {
+	setup(t)
+	createFileAndCommitIt(t, "example.txt", "asdf", "asdf")
+	git("checkout", "-b", "diverges")
+
+	diverge := doBranchesDiverge("master", "diverges")
+
+	equals(t, false, diverge)
+}
+
+func TestBranchesDoDiverge(t *testing.T) {
+	setup(t)
+	createFileAndCommitIt(t, "example.txt", "asdf", "asdf")
+	git("checkout", "-b", "diverges")
+	createFileAndCommitIt(t, "example.txt", "other", "asdf")
+	git("checkout", "master")
+	createFileAndCommitIt(t, "diverging-commit.txt", "asdf", "diverging")
+
+	diverge := doBranchesDiverge("master", "diverges")
+
+	equals(t, true, diverge)
+}
+
 func TestHelpRequested(t *testing.T) {
 	equals(t, false, helpRequested([]string{""}))
 	equals(t, false, helpRequested([]string{"a", "mob", "21"}))
