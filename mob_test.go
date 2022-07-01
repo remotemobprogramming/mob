@@ -536,24 +536,6 @@ func TestStartWarnsAboutPreexistingWipBranches(t *testing.T) {
 	assertOutputContains(t, output, "mob/feature-something-2")
 }
 
-//TODO is this test really useful?
-// as far as I understand it, it does not warn, because "feature-something-2" is not contained in "feature-something"
-// and then again, the warning message has changed and it would also fail because of the changed warning message
-// I would delete this test
-func TestStartFromDivergingBranches_noWarning(t *testing.T) {
-	output, configuration := setup(t)
-	checkoutBranchAndCreateRemoteBranch("mob/feature-something")
-	checkoutBranchAndCreateRemoteBranch("feature-something")
-	checkoutBranchAndCreateRemoteBranch("mob/feature-something-2")
-	checkoutBranchAndCreateRemoteBranch("feature-something-2")
-
-	assertOnBranch(t, "feature-something-2")
-	start(configuration)
-	assertOnBranch(t, "mob/feature-something-2")
-
-	assertOutputNotContains(t, output, "qualified mob branches detected")
-}
-
 func TestStartWarnsOnDivergingWipBranch(t *testing.T) {
 	output, configuration := setup(t)
 
