@@ -2,6 +2,11 @@
 - Add a more specific error message if `git` is not installed.
 - Fix: `mob done --squash-wip` now successfully auto-merges auto-mergeable diverging changes.
 - Print the help output whenever any kind of help argument (`help`, `--help`, `-h`) is present in the command, e.g. `mob s 10 -h`.
+- Various fixes in suggestion of next typist:
+  - Show list of last committers only if there are any.
+  - Skip suggestions if there has only been a single person so far.
+  - Consider the case of a new typist joining the session.
+  - Fix reporting on first commit.
 
 # 3.1.4
 - Fixes a bug where mob saves the wrong filepath of the last modfied file in the wip commit message.
