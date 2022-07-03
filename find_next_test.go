@@ -13,13 +13,31 @@ func TestFindNextTypistNoCommits(t *testing.T) {
 	equals(t, history, []string(nil))
 }
 
+func TestFindNextTypistOnFirstCommit(t *testing.T) {
+	lastCommitters := []string{"alice"}
+
+	nextTypist, history := findNextTypist(lastCommitters, "alice")
+
+	equals(t, nextTypist, "")
+	equals(t, history, []string(nil))
+}
+
+func TestFindNextTypistStartingWithFirstCommitterTwice(t *testing.T) {
+	lastCommitters := []string{"alice", "alice"}
+
+	nextTypist, history := findNextTypist(lastCommitters, "alice")
+
+	equals(t, nextTypist, "")
+	equals(t, history, []string(nil))
+}
+
 func TestFindNextTypistOnlyCurrentCommitterInList(t *testing.T) {
 	lastCommitters := []string{"alice", "alice", "alice"}
 
 	nextTypist, history := findNextTypist(lastCommitters, "alice")
 
-	equals(t, nextTypist, "alice")
-	equals(t, history, []string{"alice"})
+	equals(t, nextTypist, "")
+	equals(t, history, []string(nil))
 }
 
 func TestFindNextTypistCurrentCommitterAlternatingWithOneOtherPerson(t *testing.T) {
@@ -29,6 +47,24 @@ func TestFindNextTypistCurrentCommitterAlternatingWithOneOtherPerson(t *testing.
 
 	equals(t, nextTypist, "bob")
 	equals(t, history, []string{"bob", "alice"})
+}
+
+func TestFindNextTypistCommitterFirstSeenInFirstRound(t *testing.T) {
+	lastCommitters := []string{"alice", "bob", "craig"}
+
+	nextTypist, history := findNextTypist(lastCommitters, "alice")
+
+	equals(t, nextTypist, "craig")
+	equals(t, history, []string(nil))
+}
+
+func TestFindNextTypistSecondCommitterFirstSeenRunningSession(t *testing.T) {
+	lastCommitters := []string{"alice", "bob", "craig", "bob"}
+
+	nextTypist, history := findNextTypist(lastCommitters, "alice")
+
+	equals(t, nextTypist, "craig")
+	equals(t, history, []string(nil))
 }
 
 func TestFindNextTypistCurrentCommitterCommittedBefore(t *testing.T) {
