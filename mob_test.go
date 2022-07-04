@@ -344,7 +344,7 @@ func TestReadConfigurationFromFileOverrideEverything(t *testing.T) {
 		MOB_WIP_BRANCH_QUALIFIER="green"
 		MOB_WIP_BRANCH_QUALIFIER_SEPARATOR="---"
 		MOB_WIP_BRANCH_PREFIX="ensemble/"
-		MOB_DONE_SQUASH=false
+		MOB_DONE_SQUASH=no-squash
 		MOB_OPEN_COMMAND="idea %s"
 		MOB_TIMER="123"
 		MOB_TIMER_ROOM="Room_42"
