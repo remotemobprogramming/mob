@@ -1,3 +1,6 @@
+# 3.1.6
+- Show a deprecation warning when MOB_DONE_SQUASH is set to `true` or `false` in the environment variable or in the .mob configuration file.
+
 # 3.1.5
 - Add a more specific error message if `git` is not installed.
 - Fix: `mob done --squash-wip` now successfully auto-merges auto-mergeable diverging changes.

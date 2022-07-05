@@ -1536,6 +1536,46 @@ func TestSetMobDoneSquashEmptyStringValue(t *testing.T) {
 	equals(t, Squash, configuration.DoneSquash)
 }
 
+func TestPrintDeprecatedDoneSquashMessageWhenValueIsTrue(t *testing.T) {
+	output, _ := setup(t)
+
+	printDeprecatedDoneSquashMessage("true")
+
+	assertOutputContains(t, output, "MOB_DONE_SQUASH is set to the deprecated value true. Use the value squash instead")
+}
+
+func TestPrintDeprecatedDoneSquashMessageWhenValueIsQuotedTrue(t *testing.T) {
+	output, _ := setup(t)
+
+	printDeprecatedDoneSquashMessage("\"true\"")
+
+	assertOutputContains(t, output, "MOB_DONE_SQUASH is set to the deprecated value \"true\". Use the value squash instead")
+}
+
+func TestPrintDeprecatedDoneSquashMessageWhenValueIsFalse(t *testing.T) {
+	output, _ := setup(t)
+
+	printDeprecatedDoneSquashMessage("false")
+
+	assertOutputContains(t, output, "MOB_DONE_SQUASH is set to the deprecated value false. Use the value no-squash instead")
+}
+
+func TestPrintDeprecatedDoneSquashMessageWhenValueIsQuotedFalse(t *testing.T) {
+	output, _ := setup(t)
+
+	printDeprecatedDoneSquashMessage("\"false\"")
+
+	assertOutputContains(t, output, "MOB_DONE_SQUASH is set to the deprecated value \"false\". Use the value no-squash instead")
+}
+
+func TestDoesNotPrintDeprecatedDoneSquashMessageWhenUsingNewValue(t *testing.T) {
+	output, _ := setup(t)
+
+	printDeprecatedDoneSquashMessage(Squash)
+
+	assertOutputNotContains(t, output, "MOB_DONE_SQUASH is set to the deprecated value")
+}
+
 func TestHelpRequested(t *testing.T) {
 	equals(t, false, helpRequested([]string{""}))
 	equals(t, false, helpRequested([]string{"a", "mob", "21"}))
