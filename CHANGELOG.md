@@ -1,6 +1,3 @@
-# 3.1.6
-- Show a deprecation warning when MOB_DONE_SQUASH is set to `true` or `false` in the environment variable or in the .mob configuration file.
-
 # 3.1.5
 - Add a more specific error message if `git` is not installed.
 - Fix: `mob done --squash-wip` now successfully auto-merges auto-mergeable diverging changes.
@@ -10,6 +7,7 @@
   - Skip suggestions if there has only been a single person so far.
   - Consider the case of a new typist joining the session.
   - Fix reporting on first commit.
+- Show a deprecation warning when MOB_DONE_SQUASH is set to `true` or `false` in the environment variable or in the .mob configuration file.
 
 # 3.1.4
 - Fixes a bug where mob saves the wrong filepath of the last modfied file in the wip commit message.
