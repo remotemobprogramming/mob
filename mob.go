@@ -956,16 +956,7 @@ func getMobTimerRoom(configuration Configuration) string {
 		return configuration.TimerRoom
 	}
 
-	currentWipBranchQualifier := configuration.WipBranchQualifier
-	if currentWipBranchQualifier == "" {
-		currentBranch := gitCurrentBranch()
-		currentBaseBranch, _ := determineBranches(currentBranch, gitBranches(), configuration)
-
-		if currentBranch.IsWipBranch(configuration) {
-			wipBranchWithoutWipPrefix := currentBranch.removeWipPrefix(configuration).Name
-			currentWipBranchQualifier = removePrefix(removePrefix(wipBranchWithoutWipPrefix, currentBaseBranch.Name), configuration.WipBranchQualifierSeparator)
-		}
-	}
+	currentWipBranchQualifier := getCurrentWipBranchQualifier(configuration)
 
 	if configuration.TimerRoomUseWipBranchQualifier && currentWipBranchQualifier != "" {
 		sayInfo("Using wip branch qualifier for room name")
@@ -973,6 +964,20 @@ func getMobTimerRoom(configuration Configuration) string {
 	}
 
 	return configuration.TimerRoom
+}
+
+func getCurrentWipBranchQualifier(configuration Configuration) string {
+	if configuration.WipBranchQualifier == "" {
+		currentBranch := gitCurrentBranch()
+		currentBaseBranch, _ := determineBranches(currentBranch, gitBranches(), configuration)
+
+		if currentBranch.IsWipBranch(configuration) {
+			wipBranchWithoutWipPrefix := currentBranch.removeWipPrefix(configuration).Name
+			return removePrefix(removePrefix(wipBranchWithoutWipPrefix, currentBaseBranch.Name), configuration.WipBranchQualifierSeparator)
+		}
+	}
+
+	return configuration.WipBranchQualifier
 }
 
 func startBreakTimer(timerInMinutes string, configuration Configuration) {
