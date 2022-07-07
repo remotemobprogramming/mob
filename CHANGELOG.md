@@ -2,6 +2,7 @@
 - Add a more specific error message if `git` is not installed.
 - Fix: `mob done --squash-wip` now successfully auto-merges auto-mergeable diverging changes.
 - Print the help output whenever any kind of help argument (`help`, `--help`, `-h`) is present in the command, e.g. `mob s 10 -h`.
+- Adds a warning to `mob start` in case the wip branch diverges from the main branch.
 - Various fixes in suggestion of next typist:
   - Show list of last committers only if there are any.
   - Skip suggestions if there has only been a single person so far.

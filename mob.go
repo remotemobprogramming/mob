@@ -1274,9 +1274,13 @@ func getWipBranchesForBaseBranch(currentBaseBranch Branch, configuration Configu
 }
 
 func startJoinMobSession(configuration Configuration) {
-	_, currentWipBranch := determineBranches(gitCurrentBranch(), gitBranches(), configuration)
+	baseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), gitBranches(), configuration)
 
 	sayInfo("joining existing session from " + currentWipBranch.remote(configuration).String())
+	if doBranchesDiverge(baseBranch.remote(configuration).Name, currentWipBranch.Name) {
+		sayWarning("Careful, your wip branch (" + currentWipBranch.Name + ") diverges from your main branch (" + baseBranch.remote(configuration).Name + ") !")
+	}
+
 	git("checkout", "-B", currentWipBranch.Name, currentWipBranch.remote(configuration).Name)
 	git("branch", "--set-upstream-to="+currentWipBranch.remote(configuration).Name, currentWipBranch.Name)
 }
@@ -1589,6 +1593,14 @@ func gitRemoteBranches() []string {
 func gitCurrentBranch() Branch {
 	// upgrade to branch --show-current when git v2.21 is more widely spread
 	return newBranch(silentgit("rev-parse", "--abbrev-ref", "HEAD"))
+}
+
+func doBranchesDiverge(ancestor string, successor string) bool {
+	_, _, err := runCommandSilent("git", "merge-base", "--is-ancestor", ancestor, successor)
+	if err == nil {
+		return false
+	}
+	return true
 }
 
 func gitUserName() string {

@@ -519,7 +519,7 @@ func TestStartNextStartWithBranch(t *testing.T) {
 	assertOnBranch(t, "mob/master-green")
 }
 
-func TestStartFromDivergingBranches(t *testing.T) {
+func TestStartWarnsAboutPreexistingWipBranches(t *testing.T) {
 	output, configuration := setup(t)
 	checkoutBranchAndCreateRemoteBranch("feature-something")
 	checkoutBranchAndCreateRemoteBranch("feature-something-2")
@@ -536,18 +536,20 @@ func TestStartFromDivergingBranches(t *testing.T) {
 	assertOutputContains(t, output, "mob/feature-something-2")
 }
 
-func TestStartFromDivergingBranches_noWarning(t *testing.T) {
+func TestStartWarnsOnDivergingWipBranch(t *testing.T) {
 	output, configuration := setup(t)
-	checkoutBranchAndCreateRemoteBranch("mob/feature-something")
-	checkoutBranchAndCreateRemoteBranch("feature-something")
-	checkoutBranchAndCreateRemoteBranch("mob/feature-something-2")
-	checkoutBranchAndCreateRemoteBranch("feature-something-2")
 
-	assertOnBranch(t, "feature-something-2")
 	start(configuration)
-	assertOnBranch(t, "mob/feature-something-2")
+	createFileAndCommitIt(t, "example.txt", "asdf", "asdf")
+	next(configuration)
 
-	assertOutputNotContains(t, output, "qualified mob branches detected")
+	git("checkout", "master")
+	createFileAndCommitIt(t, "example.txt", "other", "other")
+	git("push")
+
+	start(configuration)
+
+	assertOutputContains(t, output, "Careful, your wip branch (mob-session) diverges from your main branch (origin/master) !")
 }
 
 func TestStartNextOnFeatureWithBranch(t *testing.T) {
@@ -1534,6 +1536,29 @@ func TestSetMobDoneSquashEmptyStringValue(t *testing.T) {
 
 	setMobDoneSquash(&configuration, "", "")
 	equals(t, Squash, configuration.DoneSquash)
+}
+
+func TestBranchesDoNotDiverge(t *testing.T) {
+	setup(t)
+	createFileAndCommitIt(t, "example.txt", "asdf", "asdf")
+	git("checkout", "-b", "diverges")
+
+	diverge := doBranchesDiverge("master", "diverges")
+
+	equals(t, false, diverge)
+}
+
+func TestBranchesDoDiverge(t *testing.T) {
+	setup(t)
+	createFileAndCommitIt(t, "example.txt", "asdf", "asdf")
+	git("checkout", "-b", "diverges")
+	createFileAndCommitIt(t, "example.txt", "other", "asdf")
+	git("checkout", "master")
+	createFileAndCommitIt(t, "diverging-commit.txt", "asdf", "diverging")
+
+	diverge := doBranchesDiverge("master", "diverges")
+
+	equals(t, true, diverge)
 }
 
 func TestPrintDeprecatedDoneSquashMessageWhenValueIsTrue(t *testing.T) {
