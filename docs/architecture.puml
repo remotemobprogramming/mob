@@ -1,0 +1,12 @@
+@startuml
+
+package main
+package find_next
+package coauthors
+package squash_wip
+
+main --> find_next
+main <-left-> coauthors
+main <-> squash_wip
+
+@enduml
