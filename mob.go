@@ -964,6 +964,11 @@ func startTimer(timerInMinutes string, configuration Configuration) {
 }
 
 func getMobTimerRoom(configuration Configuration) string {
+	if !isGit() {
+		debugInfo("timer not in git repository, using MOB_TIMER_ROOM for room name")
+		return configuration.TimerRoom
+	}
+
 	currentWipBranchQualifier := configuration.WipBranchQualifier
 	if currentWipBranchQualifier == "" {
 		currentBranch := gitCurrentBranch()
@@ -979,6 +984,7 @@ func getMobTimerRoom(configuration Configuration) string {
 		sayInfo("Using wip branch qualifier for room name")
 		return currentWipBranchQualifier
 	}
+
 	return configuration.TimerRoom
 }
 
