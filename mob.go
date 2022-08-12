@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"bytes"
+	"crypto/tls"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -25,6 +26,7 @@ const (
 var (
 	workingDir                 = ""
 	Debug                      = false // override with --debug parameter
+	DisableSSLVerification     = false // override with --disable-ssl-verification
 	GitPassthroughStderrStdout = false // hack to get git hooks to print to stdout/stderr
 )
 
@@ -244,6 +246,7 @@ func stringContains(list []string, element string) bool {
 
 func main() {
 	parseDebug(os.Args)
+	parseDisableSSLVerification(os.Args)
 	debugInfo(runtime.Version())
 
 	if !isGitInstalled() {
@@ -336,6 +339,16 @@ func parseDebug(args []string) {
 	for i := 0; i < len(args); i++ {
 		if args[i] == "--debug" {
 			Debug = true
+		}
+	}
+}
+
+func parseDisableSSLVerification(args []string) {
+	// disable-ssl-verification needs to be parsed always, since it could be used by any command later on
+	// and alters the configuration of the http client.
+	for i := 0; i < len(args); i++ {
+		if args[i] == "--disable-ssl-verification" {
+			DisableSSLVerification = true
 		}
 	}
 }
@@ -704,6 +717,8 @@ func parseArgs(args []string, configuration Configuration) (command string, para
 			newConfiguration.StartIncludeUncommittedChanges = true
 		case "--debug":
 			// ignore this, already parsed
+		case "--disable-ssl-verification":
+			// ignore this, already parsed
 		case "--stay", "-s":
 			newConfiguration.NextStay = true
 		case "--return-to-base-branch", "-r":
@@ -1064,12 +1079,21 @@ func sendRequest(requestBody []byte, requestMethod string, requestUrl string) er
 
 	responseBody := bytes.NewBuffer(requestBody)
 	request, requestCreationError := http.NewRequest(requestMethod, requestUrl, responseBody)
+
+	httpClient := http.DefaultClient
+	if DisableSSLVerification {
+		transCfg := &http.Transport{
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+		}
+		httpClient = &http.Client{Transport: transCfg}
+	}
+
 	if requestCreationError != nil {
 		return fmt.Errorf("failed to create the http request object: %w", requestCreationError)
 	}
 
 	request.Header.Set("Content-Type", "application/json")
-	response, responseErr := http.DefaultClient.Do(request)
+	response, responseErr := httpClient.Do(request)
 	if responseErr != nil {
 		return fmt.Errorf("failed to make the http request: %w", responseErr)
 	}
@@ -1695,6 +1719,7 @@ Other
   moo                Moo!
 
 Add '--debug' to any option to enable verbose logging.
+If you receive SSL verification errors add '--disable-ssl-verification' to the CLI. 
 `
 	say(output)
 }
