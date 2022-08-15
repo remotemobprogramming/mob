@@ -4,11 +4,13 @@ import (
 	"bufio"
 	"bytes"
 	"crypto/tls"
+	x509 "crypto/x509"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	"os"
 	"os/exec"
 	"os/user"
@@ -26,7 +28,6 @@ const (
 var (
 	workingDir                 = ""
 	Debug                      = false // override with --debug parameter
-	DisableSSLVerification     = false // override with --disable-ssl-verification
 	GitPassthroughStderrStdout = false // hack to get git hooks to print to stdout/stderr
 )
 
@@ -71,6 +72,7 @@ type Configuration struct {
 	TimerRoomUseWipBranchQualifier bool   // override with MOB_TIMER_ROOM_USE_WIP_BRANCH_QUALIFIER
 	TimerUser                      string // override with MOB_TIMER_USER
 	TimerUrl                       string // override with MOB_TIMER_URL
+	TimerDisableSSLVerification    bool   // override with MOB_TIMER_INSECURE
 }
 
 func (c Configuration) wipBranchQualifierSuffix() string {
@@ -246,7 +248,6 @@ func stringContains(list []string, element string) bool {
 
 func main() {
 	parseDebug(os.Args)
-	parseDisableSSLVerification(os.Args)
 	debugInfo(runtime.Version())
 
 	if !isGitInstalled() {
@@ -343,16 +344,6 @@ func parseDebug(args []string) {
 	}
 }
 
-func parseDisableSSLVerification(args []string) {
-	// disable-ssl-verification needs to be parsed always, since it could be used by any command later on
-	// and alters the configuration of the http client.
-	for i := 0; i < len(args); i++ {
-		if args[i] == "--disable-ssl-verification" {
-			DisableSSLVerification = true
-		}
-	}
-}
-
 func (c Configuration) mob(command string) string {
 	return c.CliName + " " + command
 }
@@ -427,6 +418,8 @@ func parseUserConfiguration(configuration Configuration, path string) Configurat
 			setUnquotedString(&configuration.TimerUrl, key, value)
 		case "MOB_STASH_NAME":
 			setUnquotedString(&configuration.StashName, key, value)
+		case "MOB_TIMER_INSECURE":
+			setBoolean(&configuration.TimerDisableSSLVerification, key, value)
 
 		default:
 			continue
@@ -589,6 +582,7 @@ func parseEnvironmentVariables(configuration Configuration) Configuration {
 	setBoolFromEnvVariable(&configuration.TimerLocal, "MOB_TIMER_LOCAL")
 	setStringFromEnvVariable(&configuration.TimerUser, "MOB_TIMER_USER")
 	setStringFromEnvVariable(&configuration.TimerUrl, "MOB_TIMER_URL")
+	setBoolFromEnvVariable(&configuration.TimerDisableSSLVerification, "MOB_TIMER_INSECURE")
 
 	return configuration
 }
@@ -716,8 +710,6 @@ func parseArgs(args []string, configuration Configuration) (command string, para
 		case "--include-uncommitted-changes", "-i":
 			newConfiguration.StartIncludeUncommittedChanges = true
 		case "--debug":
-			// ignore this, already parsed
-		case "--disable-ssl-verification":
 			// ignore this, already parsed
 		case "--stay", "-s":
 			newConfiguration.NextStay = true
@@ -957,7 +949,7 @@ func startTimer(timerInMinutes string, configuration Configuration) {
 
 	if startRemoteTimer {
 		timerUser := getUserForMobTimer(configuration.TimerUser)
-		err := httpPutTimer(timeoutInMinutes, room, timerUser, configuration.TimerUrl)
+		err := httpPutTimer(timeoutInMinutes, room, timerUser, configuration)
 		if err != nil {
 			sayError("remote timer couldn't be started")
 			sayError(err.Error())
@@ -1021,7 +1013,7 @@ func startBreakTimer(timerInMinutes string, configuration Configuration) {
 
 	if startRemoteTimer {
 		timerUser := getUserForMobTimer(configuration.TimerUser)
-		err := httpPutBreakTimer(timeoutInMinutes, room, timerUser, configuration.TimerUrl)
+		err := httpPutBreakTimer(timeoutInMinutes, room, timerUser, configuration)
 
 		if err != nil {
 			sayError("remote break timer couldn't be started")
@@ -1058,30 +1050,30 @@ func toMinutes(timerInMinutes string) int {
 	return timeoutInMinutes
 }
 
-func httpPutTimer(timeoutInMinutes int, room string, user string, timerService string) error {
+func httpPutTimer(timeoutInMinutes int, room, timerUser string, config Configuration) error {
 	putBody, _ := json.Marshal(map[string]interface{}{
 		"timer": timeoutInMinutes,
-		"user":  user,
+		"user":  timerUser,
 	})
-	return sendRequest(putBody, "PUT", timerService+room)
+	return sendRequest(putBody, "PUT", config.TimerUrl+room, config.TimerDisableSSLVerification)
 }
 
-func httpPutBreakTimer(timeoutInMinutes int, room string, user string, timerService string) error {
+func httpPutBreakTimer(timeoutInMinutes int, room, timerUser string, config Configuration) error {
 	putBody, _ := json.Marshal(map[string]interface{}{
 		"breaktimer": timeoutInMinutes,
-		"user":       user,
+		"user":       timerUser,
 	})
-	return sendRequest(putBody, "PUT", timerService+room)
+	return sendRequest(putBody, "PUT", config.TimerUrl+room, config.TimerDisableSSLVerification)
 }
 
-func sendRequest(requestBody []byte, requestMethod string, requestUrl string) error {
+func sendRequest(requestBody []byte, requestMethod string, requestUrl string, disableSSLVerification bool) error {
 	sayInfo(requestMethod + " " + requestUrl + " " + string(requestBody))
 
 	responseBody := bytes.NewBuffer(requestBody)
-	request, requestCreationError := http.NewRequest(requestMethod, requestUrl, responseBody)
+	request, requestCreationError := http.NewRequest(requestMethod, "https://untrusted-root.badssl.com/", responseBody)
 
 	httpClient := http.DefaultClient
-	if DisableSSLVerification {
+	if disableSSLVerification {
 		transCfg := &http.Transport{
 			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 		}
@@ -1094,6 +1086,19 @@ func sendRequest(requestBody []byte, requestMethod string, requestUrl string) er
 
 	request.Header.Set("Content-Type", "application/json")
 	response, responseErr := httpClient.Do(request)
+	if e, ok := responseErr.(*url.Error); ok {
+		switch e.Err.(type) {
+		case x509.UnknownAuthorityError:
+			sayError("The timer.mob.sh SSL certificate is signed by an unknown authority!")
+			sayError("HINT: You can ignore that by adding MOB_TIMER_INSECURE=true to your configuration or environment.")
+			return fmt.Errorf("failed, to amke the http request: %w", responseErr)
+
+		default:
+			return fmt.Errorf("failed to make the http request: %w", responseErr)
+
+		}
+	}
+
 	if responseErr != nil {
 		return fmt.Errorf("failed to make the http request: %w", responseErr)
 	}
@@ -1719,7 +1724,6 @@ Other
   moo                Moo!
 
 Add '--debug' to any option to enable verbose logging.
-If you receive SSL verification errors add '--disable-ssl-verification' to the CLI. 
 `
 	say(output)
 }
