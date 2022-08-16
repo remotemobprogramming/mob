@@ -951,7 +951,7 @@ func startTimer(timerInMinutes string, configuration Configuration) {
 
 	if startRemoteTimer {
 		timerUser := getUserForMobTimer(configuration.TimerUser)
-		err := httpPutTimer(timeoutInMinutes, room, timerUser, configuration)
+		err := httpPutTimer(timeoutInMinutes, room, timerUser, configuration.TimerUrl, configuration.TimerInsecure)
 		if err != nil {
 			sayError("remote timer couldn't be started")
 			sayError(err.Error())
@@ -1015,7 +1015,7 @@ func startBreakTimer(timerInMinutes string, configuration Configuration) {
 
 	if startRemoteTimer {
 		timerUser := getUserForMobTimer(configuration.TimerUser)
-		err := httpPutBreakTimer(timeoutInMinutes, room, timerUser, configuration)
+		err := httpPutBreakTimer(timeoutInMinutes, room, timerUser, configuration.TimerUrl, configuration.TimerInsecure)
 
 		if err != nil {
 			sayError("remote break timer couldn't be started")
@@ -1052,27 +1052,27 @@ func toMinutes(timerInMinutes string) int {
 	return timeoutInMinutes
 }
 
-func httpPutTimer(timeoutInMinutes int, room, timerUser string, config Configuration) error {
+func httpPutTimer(timeoutInMinutes int, room string, user string, timerService string, disableSSLVerification bool) error {
 	putBody, _ := json.Marshal(map[string]interface{}{
 		"timer": timeoutInMinutes,
-		"user":  timerUser,
+		"user":  user,
 	})
-	return sendRequest(putBody, "PUT", config.TimerUrl+room, config.TimerInsecure)
+	return sendRequest(putBody, "PUT", timerService+room, disableSSLVerification)
 }
 
-func httpPutBreakTimer(timeoutInMinutes int, room, timerUser string, config Configuration) error {
+func httpPutBreakTimer(timeoutInMinutes int, room string, user string, timerService string, disableSSLVerification bool) error {
 	putBody, _ := json.Marshal(map[string]interface{}{
 		"breaktimer": timeoutInMinutes,
-		"user":       timerUser,
+		"user":       user,
 	})
-	return sendRequest(putBody, "PUT", config.TimerUrl+room, config.TimerInsecure)
+	return sendRequest(putBody, "PUT", timerService+room, disableSSLVerification)
 }
 
 func sendRequest(requestBody []byte, requestMethod string, requestUrl string, disableSSLVerification bool) error {
 	sayInfo(requestMethod + " " + requestUrl + " " + string(requestBody))
 
 	responseBody := bytes.NewBuffer(requestBody)
-	request, requestCreationError := http.NewRequest(requestMethod, "https://untrusted-root.badssl.com/", responseBody)
+	request, requestCreationError := http.NewRequest(requestMethod, requestUrl, responseBody)
 
 	httpClient := http.DefaultClient
 	if disableSSLVerification {
