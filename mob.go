@@ -72,7 +72,7 @@ type Configuration struct {
 	TimerRoomUseWipBranchQualifier bool   // override with MOB_TIMER_ROOM_USE_WIP_BRANCH_QUALIFIER
 	TimerUser                      string // override with MOB_TIMER_USER
 	TimerUrl                       string // override with MOB_TIMER_URL
-	TimerDisableSSLVerification    bool   // override with MOB_TIMER_INSECURE
+	TimerInsecure                  bool   // override with MOB_TIMER_INSECURE
 }
 
 func (c Configuration) wipBranchQualifierSuffix() string {
@@ -419,7 +419,7 @@ func parseUserConfiguration(configuration Configuration, path string) Configurat
 		case "MOB_STASH_NAME":
 			setUnquotedString(&configuration.StashName, key, value)
 		case "MOB_TIMER_INSECURE":
-			setBoolean(&configuration.TimerDisableSSLVerification, key, value)
+			setBoolean(&configuration.TimerInsecure, key, value)
 
 		default:
 			continue
@@ -495,6 +495,8 @@ func parseProjectConfiguration(configuration Configuration, path string) Configu
 			setUnquotedString(&configuration.TimerUrl, key, value)
 		case "MOB_STASH_NAME":
 			setUnquotedString(&configuration.StashName, key, value)
+		case "MOB_TIMER_INSECURE":
+			setBoolean(&configuration.TimerInsecure, key, value)
 
 		default:
 			continue
@@ -582,7 +584,7 @@ func parseEnvironmentVariables(configuration Configuration) Configuration {
 	setBoolFromEnvVariable(&configuration.TimerLocal, "MOB_TIMER_LOCAL")
 	setStringFromEnvVariable(&configuration.TimerUser, "MOB_TIMER_USER")
 	setStringFromEnvVariable(&configuration.TimerUrl, "MOB_TIMER_URL")
-	setBoolFromEnvVariable(&configuration.TimerDisableSSLVerification, "MOB_TIMER_INSECURE")
+	setBoolFromEnvVariable(&configuration.TimerInsecure, "MOB_TIMER_INSECURE")
 
 	return configuration
 }
@@ -1055,7 +1057,7 @@ func httpPutTimer(timeoutInMinutes int, room, timerUser string, config Configura
 		"timer": timeoutInMinutes,
 		"user":  timerUser,
 	})
-	return sendRequest(putBody, "PUT", config.TimerUrl+room, config.TimerDisableSSLVerification)
+	return sendRequest(putBody, "PUT", config.TimerUrl+room, config.TimerInsecure)
 }
 
 func httpPutBreakTimer(timeoutInMinutes int, room, timerUser string, config Configuration) error {
@@ -1063,7 +1065,7 @@ func httpPutBreakTimer(timeoutInMinutes int, room, timerUser string, config Conf
 		"breaktimer": timeoutInMinutes,
 		"user":       timerUser,
 	})
-	return sendRequest(putBody, "PUT", config.TimerUrl+room, config.TimerDisableSSLVerification)
+	return sendRequest(putBody, "PUT", config.TimerUrl+room, config.TimerInsecure)
 }
 
 func sendRequest(requestBody []byte, requestMethod string, requestUrl string, disableSSLVerification bool) error {
