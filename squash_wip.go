@@ -20,7 +20,7 @@ func squashWip(configuration Configuration) {
 		mobExecutable()+" squash-wip --git-sequence-editor",
 	)
 	sayInfo("rewriting history of '" + currentWipBranch.String() + "': squashing wip commits while keeping manual commits.")
-	git("rebase", "--interactive", "--keep-empty", mergeBase)
+	git("rebase", "--interactive", "--keep-empty", "--autostash", mergeBase)
 	setEnvGitEditor(originalGitEditor, originalGitSequenceEditor)
 	sayInfo("resulting history is:")
 	sayLastCommitsWithMessage(currentBaseBranch.remote(configuration).String(), currentWipBranch.String())
