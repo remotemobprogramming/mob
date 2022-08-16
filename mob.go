@@ -1072,7 +1072,7 @@ func sendRequest(requestBody []byte, requestMethod string, requestUrl string, di
 	sayInfo(requestMethod + " " + requestUrl + " " + string(requestBody))
 
 	responseBody := bytes.NewBuffer(requestBody)
-	request, requestCreationError := http.NewRequest(requestMethod, requestUrl, responseBody)
+	request, requestCreationError := http.NewRequest(requestMethod, "https://untrusted-root.badssl.com/", responseBody)
 
 	httpClient := http.DefaultClient
 	if disableSSLVerification {
@@ -1092,7 +1092,8 @@ func sendRequest(requestBody []byte, requestMethod string, requestUrl string, di
 		switch e.Err.(type) {
 		case x509.UnknownAuthorityError:
 			sayError("The timer.mob.sh SSL certificate is signed by an unknown authority!")
-			sayError("HINT: You can ignore that by adding MOB_TIMER_INSECURE=true to your configuration or environment.")
+			sayFix("HINT: You can ignore that by adding MOB_TIMER_INSECURE=true to your configuration or environment. Or add is command line parameter:",
+				"mob <your command> --timer-insecure")
 			return fmt.Errorf("failed, to amke the http request: %w", responseErr)
 
 		default:
