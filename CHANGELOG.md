@@ -1,3 +1,6 @@
+# 3.1.6
+- Fix: `mob done --squash-wip` won't fail if a previously committed file has uncommitted modifications.
+
 # 3.1.5
 - Add a more specific error message if `git` is not installed.
 - Allow for using `mob timer` outside of git repositories.

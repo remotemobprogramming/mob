@@ -90,6 +90,21 @@ func TestSquashWipCommits_onlyWipCommits(t *testing.T) {
 	equals(t, []string{""}, commitsOnCurrentBranch(configuration))
 }
 
+func TestSquashWipCommits_uncommittedModificationOfCommittedFile(t *testing.T) {
+	_, configuration := setup(t)
+	manualCommit(t, configuration, "file1.txt", "first manual commit")
+	start(configuration)
+	createFile(t, "file1.txt", "change")
+
+	squashWip(configuration)
+
+	assertOnBranch(t, "mob-session")
+	assertGitStatus(t, GitStatus{
+		"file1.txt": "M",
+	})
+	equals(t, []string{"first manual commit"}, commitsOnCurrentBranch(configuration))
+}
+
 func TestSquashWipCommits_resetsEnv(t *testing.T) {
 	_, configuration := setup(t)
 	start(configuration)

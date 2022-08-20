@@ -1099,6 +1099,26 @@ func TestStartDoneSquashWipWithUncommittedChanges(t *testing.T) {
 	assertNoMobSessionBranches(t, configuration, "mob-session")
 }
 
+func TestStartDoneSquashWipPublishingOneManualCommitHasUncommittedModifications(t *testing.T) {
+	_, configuration := setup(t)
+	configuration.DoneSquash = SquashWip
+
+	start(configuration)
+	createFileAndCommitIt(t, "example.txt", "contentIrrelevant", "[manual-commit-1] publish this commit to master")
+
+	createFile(t, "example.txt", "contentIrrelevant2") // modify previously committed file
+	done(configuration)
+
+	assertOnBranch(t, "master")
+	assertGitStatus(t, GitStatus{
+		"example.txt": "M",
+	})
+	assertCommitsOnBranch(t, 2, "master")
+	assertCommitLogContainsMessage(t, "master", "[manual-commit-1] publish this commit to master")
+	assertCommitsOnBranch(t, 1, "origin/master")
+	assertNoMobSessionBranches(t, configuration, "mob-session")
+}
+
 func TestStartDoneSquashWipOneWipCommitAfterManualCommit(t *testing.T) {
 	_, configuration := setup(t)
 

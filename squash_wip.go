@@ -11,6 +11,9 @@ import (
 type Replacer func(string) string
 
 func squashWip(configuration Configuration) {
+	if hasUncommittedChanges() {
+		makeWipCommit(configuration)
+	}
 	currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), gitBranches(), configuration)
 	mergeBase := silentgit("merge-base", currentWipBranch.String(), currentBaseBranch.remote(configuration).String())
 

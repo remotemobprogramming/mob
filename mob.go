@@ -1451,15 +1451,14 @@ func done(configuration Configuration) {
 		return
 	}
 
-	if configuration.DoneSquash == SquashWip {
-		squashWip(configuration)
-	}
-
 	git("fetch", configuration.RemoteName, "--prune")
 
 	baseBranch, wipBranch := determineBranches(gitCurrentBranch(), gitBranches(), configuration)
 
 	if wipBranch.hasRemoteBranch(configuration) {
+		if configuration.DoneSquash == SquashWip {
+			squashWip(configuration)
+		}
 		uncommittedChanges := hasUncommittedChanges()
 		if uncommittedChanges {
 			makeWipCommit(configuration)
