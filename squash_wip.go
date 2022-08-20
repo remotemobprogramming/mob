@@ -11,6 +11,9 @@ import (
 type Replacer func(string) string
 
 func squashWip(configuration Configuration) {
+	if hasUncommittedChanges() {
+		makeWipCommit(configuration)
+	}
 	currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), gitBranches(), configuration)
 	mergeBase := silentgit("merge-base", currentWipBranch.String(), currentBaseBranch.remote(configuration).String())
 
@@ -20,7 +23,7 @@ func squashWip(configuration Configuration) {
 		mobExecutable()+" squash-wip --git-sequence-editor",
 	)
 	sayInfo("rewriting history of '" + currentWipBranch.String() + "': squashing wip commits while keeping manual commits.")
-	git("rebase", "--interactive", "--keep-empty", "--autostash", mergeBase)
+	git("rebase", "--interactive", "--keep-empty", mergeBase)
 	setEnvGitEditor(originalGitEditor, originalGitSequenceEditor)
 	sayInfo("resulting history is:")
 	sayLastCommitsWithMessage(currentBaseBranch.remote(configuration).String(), currentWipBranch.String())
