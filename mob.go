@@ -697,6 +697,7 @@ func config(c Configuration) {
 	say("MOB_TIMER_LOCAL" + "=" + strconv.FormatBool(c.TimerLocal))
 	say("MOB_TIMER_USER" + "=" + quote(c.TimerUser))
 	say("MOB_TIMER_URL" + "=" + quote(c.TimerUrl))
+	say("MOB_TIMER_INSECURE" + "=" + strconv.FormatBool(c.TimerInsecure))
 }
 
 func quote(value string) string {
@@ -1092,8 +1093,8 @@ func sendRequest(requestBody []byte, requestMethod string, requestUrl string, di
 		switch e.Err.(type) {
 		case x509.UnknownAuthorityError:
 			sayError("The timer.mob.sh SSL certificate is signed by an unknown authority!")
-			sayFix("HINT: You can ignore that by adding MOB_TIMER_INSECURE=true to your configuration or environment. Or add is command line parameter:",
-				"mob <your command> --timer-insecure")
+			sayFix("HINT: You can ignore that by adding MOB_TIMER_INSECURE=true to your configuration or environment.",
+				"echo MOB_TIMER_INSECURE=true >> ~/.mob")
 			return fmt.Errorf("failed, to amke the http request: %w", responseErr)
 
 		default:
