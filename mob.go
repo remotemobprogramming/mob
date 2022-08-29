@@ -1073,7 +1073,7 @@ func sendRequest(requestBody []byte, requestMethod string, requestUrl string, di
 	sayInfo(requestMethod + " " + requestUrl + " " + string(requestBody))
 
 	responseBody := bytes.NewBuffer(requestBody)
-	request, requestCreationError := http.NewRequest(requestMethod, "https://untrusted-root.badssl.com/", responseBody)
+	request, requestCreationError := http.NewRequest(requestMethod, requestUrl, responseBody)
 
 	httpClient := http.DefaultClient
 	if disableSSLVerification {
