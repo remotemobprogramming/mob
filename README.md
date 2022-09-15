@@ -22,8 +22,8 @@ Fast [git handover](https://www.remotemobprogramming.org/#git-handover) for remo
 - **mob** is the fastest way to [hand over code via git](https://www.remotemobprogramming.org/#git-handover)
 - **mob** keeps your branches clean and only creates WIP commits on temporary branches
 - **mob** has a shared team timer [timer.mob.sh](https://timer.mob.sh)
-- **mob** is on 'assess' in the latest [Thoughtworks Technology Radar](https://twitter.com/simonharrer/status/1453372354097205253?s=20)
-- **mob** has an extension in VSCode to use mob.sh via GUI [Mob VSCode GUI](https://marketplace.visualstudio.com/items?itemName=alessandrosangalli.mob-vscode-gui)
+- **mob** is on 'assess' in the [Thoughtworks Technology Radar](https://twitter.com/simonharrer/status/1453372354097205253?s=20)
+- **mob** has [VSCode integration](https://marketplace.visualstudio.com/items?itemName=alessandrosangalli.mob-vscode-gui)
 
 ![diagram how mob works](diagram.svg)
 
