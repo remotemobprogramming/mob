@@ -3,11 +3,14 @@ package main
 import (
 	"bufio"
 	"bytes"
+	"crypto/tls"
+	x509 "crypto/x509"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	"os"
 	"os/exec"
 	"os/user"
@@ -69,6 +72,7 @@ type Configuration struct {
 	TimerRoomUseWipBranchQualifier bool   // override with MOB_TIMER_ROOM_USE_WIP_BRANCH_QUALIFIER
 	TimerUser                      string // override with MOB_TIMER_USER
 	TimerUrl                       string // override with MOB_TIMER_URL
+	TimerInsecure                  bool   // override with MOB_TIMER_INSECURE
 }
 
 func (c Configuration) wipBranchQualifierSuffix() string {
@@ -414,6 +418,8 @@ func parseUserConfiguration(configuration Configuration, path string) Configurat
 			setUnquotedString(&configuration.TimerUrl, key, value)
 		case "MOB_STASH_NAME":
 			setUnquotedString(&configuration.StashName, key, value)
+		case "MOB_TIMER_INSECURE":
+			setBoolean(&configuration.TimerInsecure, key, value)
 
 		default:
 			continue
@@ -489,6 +495,8 @@ func parseProjectConfiguration(configuration Configuration, path string) Configu
 			setUnquotedString(&configuration.TimerUrl, key, value)
 		case "MOB_STASH_NAME":
 			setUnquotedString(&configuration.StashName, key, value)
+		case "MOB_TIMER_INSECURE":
+			setBoolean(&configuration.TimerInsecure, key, value)
 
 		default:
 			continue
@@ -576,6 +584,7 @@ func parseEnvironmentVariables(configuration Configuration) Configuration {
 	setBoolFromEnvVariable(&configuration.TimerLocal, "MOB_TIMER_LOCAL")
 	setStringFromEnvVariable(&configuration.TimerUser, "MOB_TIMER_USER")
 	setStringFromEnvVariable(&configuration.TimerUrl, "MOB_TIMER_URL")
+	setBoolFromEnvVariable(&configuration.TimerInsecure, "MOB_TIMER_INSECURE")
 
 	return configuration
 }
@@ -688,6 +697,7 @@ func config(c Configuration) {
 	say("MOB_TIMER_LOCAL" + "=" + strconv.FormatBool(c.TimerLocal))
 	say("MOB_TIMER_USER" + "=" + quote(c.TimerUser))
 	say("MOB_TIMER_URL" + "=" + quote(c.TimerUrl))
+	say("MOB_TIMER_INSECURE" + "=" + strconv.FormatBool(c.TimerInsecure))
 }
 
 func quote(value string) string {
@@ -942,7 +952,7 @@ func startTimer(timerInMinutes string, configuration Configuration) {
 
 	if startRemoteTimer {
 		timerUser := getUserForMobTimer(configuration.TimerUser)
-		err := httpPutTimer(timeoutInMinutes, room, timerUser, configuration.TimerUrl)
+		err := httpPutTimer(timeoutInMinutes, room, timerUser, configuration.TimerUrl, configuration.TimerInsecure)
 		if err != nil {
 			sayError("remote timer couldn't be started")
 			sayError(err.Error())
@@ -1006,7 +1016,7 @@ func startBreakTimer(timerInMinutes string, configuration Configuration) {
 
 	if startRemoteTimer {
 		timerUser := getUserForMobTimer(configuration.TimerUser)
-		err := httpPutBreakTimer(timeoutInMinutes, room, timerUser, configuration.TimerUrl)
+		err := httpPutBreakTimer(timeoutInMinutes, room, timerUser, configuration.TimerUrl, configuration.TimerInsecure)
 
 		if err != nil {
 			sayError("remote break timer couldn't be started")
@@ -1043,33 +1053,56 @@ func toMinutes(timerInMinutes string) int {
 	return timeoutInMinutes
 }
 
-func httpPutTimer(timeoutInMinutes int, room string, user string, timerService string) error {
+func httpPutTimer(timeoutInMinutes int, room string, user string, timerService string, disableSSLVerification bool) error {
 	putBody, _ := json.Marshal(map[string]interface{}{
 		"timer": timeoutInMinutes,
 		"user":  user,
 	})
-	return sendRequest(putBody, "PUT", timerService+room)
+	return sendRequest(putBody, "PUT", timerService+room, disableSSLVerification)
 }
 
-func httpPutBreakTimer(timeoutInMinutes int, room string, user string, timerService string) error {
+func httpPutBreakTimer(timeoutInMinutes int, room string, user string, timerService string, disableSSLVerification bool) error {
 	putBody, _ := json.Marshal(map[string]interface{}{
 		"breaktimer": timeoutInMinutes,
 		"user":       user,
 	})
-	return sendRequest(putBody, "PUT", timerService+room)
+	return sendRequest(putBody, "PUT", timerService+room, disableSSLVerification)
 }
 
-func sendRequest(requestBody []byte, requestMethod string, requestUrl string) error {
+func sendRequest(requestBody []byte, requestMethod string, requestUrl string, disableSSLVerification bool) error {
 	sayInfo(requestMethod + " " + requestUrl + " " + string(requestBody))
 
 	responseBody := bytes.NewBuffer(requestBody)
 	request, requestCreationError := http.NewRequest(requestMethod, requestUrl, responseBody)
+
+	httpClient := http.DefaultClient
+	if disableSSLVerification {
+		transCfg := &http.Transport{
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+		}
+		httpClient = &http.Client{Transport: transCfg}
+	}
+
 	if requestCreationError != nil {
 		return fmt.Errorf("failed to create the http request object: %w", requestCreationError)
 	}
 
 	request.Header.Set("Content-Type", "application/json")
-	response, responseErr := http.DefaultClient.Do(request)
+	response, responseErr := httpClient.Do(request)
+	if e, ok := responseErr.(*url.Error); ok {
+		switch e.Err.(type) {
+		case x509.UnknownAuthorityError:
+			sayError("The timer.mob.sh SSL certificate is signed by an unknown authority!")
+			sayFix("HINT: You can ignore that by adding MOB_TIMER_INSECURE=true to your configuration or environment.",
+				"echo MOB_TIMER_INSECURE=true >> ~/.mob")
+			return fmt.Errorf("failed, to amke the http request: %w", responseErr)
+
+		default:
+			return fmt.Errorf("failed to make the http request: %w", responseErr)
+
+		}
+	}
+
 	if responseErr != nil {
 		return fmt.Errorf("failed to make the http request: %w", responseErr)
 	}
