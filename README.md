@@ -449,7 +449,9 @@ go test -coverprofile=cover.out && go tool cover -html=cover.out
 
 ## Credits
 
-Developed and maintained by [Dr. Simon Harrer](https://twitter.com/simonharrer).
+Created by [Dr. Simon Harrer](https://twitter.com/simonharrer) in 2018.
+
+Maintained by [Dr. Simon Harrer](https://twitter.com/simonharrer) and [Gregor Riegler](https://twitter.com/gregor_riegler).
 
 Contributions and testing by Jochen Christ, Martin Huber, Franziska Dessart, Nikolas Hermann
 and Christoph Welcz. Thank you!
