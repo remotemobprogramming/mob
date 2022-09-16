@@ -60,6 +60,7 @@ type Configuration struct {
 	NotifyMessage                  string // override with MOB_NOTIFY_MESSAGE
 	NextStay                       bool   // override with MOB_NEXT_STAY
 	StartIncludeUncommittedChanges bool   // override with MOB_START_INCLUDE_UNCOMMITTED_CHANGES variable
+	StartCreateRemoteBranch        bool   // override with MOB_START_CREATE_REMOTE_BRANCH variable
 	StashName                      string // override with MOB_STASH_NAME
 	WipBranchQualifier             string // override with MOB_WIP_BRANCH_QUALIFIER
 	WipBranchQualifierSeparator    string // override with MOB_WIP_BRANCH_QUALIFIER_SEPARATOR
@@ -320,6 +321,7 @@ func getDefaultConfiguration() Configuration {
 		NextStay:                       true,
 		RequireCommitMessage:           false,
 		StartIncludeUncommittedChanges: false,
+		StartCreateRemoteBranch:        false,
 		WipBranchQualifier:             "",
 		WipBranchQualifierSeparator:    "-",
 		DoneSquash:                     Squash,
@@ -394,6 +396,8 @@ func parseUserConfiguration(configuration Configuration, path string) Configurat
 			setBoolean(&configuration.NextStay, key, value)
 		case "MOB_START_INCLUDE_UNCOMMITTED_CHANGES":
 			setBoolean(&configuration.StartIncludeUncommittedChanges, key, value)
+		case "MOB_START_CREATE_REMOTE_BRANCH":
+			setBoolean(&configuration.StartCreateRemoteBranch, key, value)
 		case "MOB_WIP_BRANCH_QUALIFIER":
 			setUnquotedString(&configuration.WipBranchQualifier, key, value)
 		case "MOB_WIP_BRANCH_QUALIFIER_SEPARATOR":
@@ -473,6 +477,8 @@ func parseProjectConfiguration(configuration Configuration, path string) Configu
 			setBoolean(&configuration.NextStay, key, value)
 		case "MOB_START_INCLUDE_UNCOMMITTED_CHANGES":
 			setBoolean(&configuration.StartIncludeUncommittedChanges, key, value)
+		case "MOB_START_CREATE_REMOTE_BRANCH":
+			setBoolean(&configuration.StartCreateRemoteBranch, key, value)
 		case "MOB_WIP_BRANCH_QUALIFIER":
 			setUnquotedString(&configuration.WipBranchQualifier, key, value)
 		case "MOB_WIP_BRANCH_QUALIFIER_SEPARATOR":
@@ -573,6 +579,7 @@ func parseEnvironmentVariables(configuration Configuration) Configuration {
 	setBoolFromEnvVariable(&configuration.NextStay, "MOB_NEXT_STAY")
 
 	setBoolFromEnvVariable(&configuration.StartIncludeUncommittedChanges, "MOB_START_INCLUDE_UNCOMMITTED_CHANGES")
+	setBoolFromEnvVariable(&configuration.StartCreateRemoteBranch, "MOB_START_CREATE_REMOTE_BRANCH")
 
 	setDoneSquashFromEnvVariable(&configuration, "MOB_DONE_SQUASH")
 
@@ -734,6 +741,8 @@ func parseArgs(args []string, configuration Configuration) (command string, para
 			newConfiguration.DoneSquash = NoSquash
 		case "--squash-wip":
 			newConfiguration.DoneSquash = SquashWip
+		case "--create":
+			newConfiguration.StartCreateRemoteBranch = true
 		default:
 			if i == 1 {
 				command = arg
@@ -1155,17 +1164,29 @@ func start(configuration Configuration) error {
 		sayInfo("cannot start; clean working tree required")
 		sayUnstagedChangesInfo()
 		sayUntrackedFilesInfo()
-		sayFix("To start, including uncommitted changes, use", configuration.mob("start --include-uncommitted-changes"))
+		fixCommand := configuration.mob("start --include-uncommitted-changes")
+		if configuration.StartCreateRemoteBranch {
+			fixCommand = configuration.mob("start --create --include-uncommitted-changes")
+		}
+		sayFix("To start, including uncommitted changes, use", fixCommand)
 		return errors.New("cannot start; clean working tree required")
 	}
 
 	git("fetch", configuration.RemoteName, "--prune")
 	currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), gitBranches(), configuration)
 
-	if !currentBaseBranch.hasRemoteBranch(configuration) {
+	if !currentBaseBranch.hasRemoteBranch(configuration) && !configuration.StartCreateRemoteBranch {
 		sayError("Remote branch " + currentBaseBranch.remote(configuration).String() + " is missing")
-		sayFix("To set the upstream branch, use", "git push "+configuration.RemoteName+" "+currentBaseBranch.String()+" --set-upstream")
+		sayFix("To start and set the upstream use", "mob start --create")
 		return errors.New("remote branch is missing")
+	}
+
+	if !currentBaseBranch.hasRemoteBranch(configuration) && configuration.StartCreateRemoteBranch {
+		git("push", configuration.RemoteName, currentBaseBranch.String(), "--set-upstream")
+	}
+
+	if currentBaseBranch.hasRemoteBranch(configuration) && configuration.StartCreateRemoteBranch {
+		debugInfo("Remote branch " + currentBaseBranch.remote(configuration).String() + " already exists")
 	}
 
 	if currentBaseBranch.hasUnpushedCommits(configuration) {
