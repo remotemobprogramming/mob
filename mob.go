@@ -74,6 +74,7 @@ type Configuration struct {
 	TimerUser                      string // override with MOB_TIMER_USER
 	TimerUrl                       string // override with MOB_TIMER_URL
 	TimerInsecure                  bool   // override with MOB_TIMER_INSECURE
+	ResetDeleteRemoteWipBranch     bool   // override with MOB_RESET_DELETE_REMOTE_WIP_BRANCH
 }
 
 func (c Configuration) wipBranchQualifierSuffix() string {
@@ -333,6 +334,7 @@ func getDefaultConfiguration() Configuration {
 		TimerUrl:                       "https://timer.mob.sh/",
 		WipBranchPrefix:                "mob/",
 		StashName:                      "mob-stash-name",
+		ResetDeleteRemoteWipBranch:     false,
 	}
 }
 
@@ -424,6 +426,8 @@ func parseUserConfiguration(configuration Configuration, path string) Configurat
 			setUnquotedString(&configuration.StashName, key, value)
 		case "MOB_TIMER_INSECURE":
 			setBoolean(&configuration.TimerInsecure, key, value)
+		case "MOB_RESET_DELETE_REMOTE_WIP_BRANCH":
+			setBoolean(&configuration.ResetDeleteRemoteWipBranch, key, value)
 
 		default:
 			continue
@@ -503,6 +507,8 @@ func parseProjectConfiguration(configuration Configuration, path string) Configu
 			setUnquotedString(&configuration.StashName, key, value)
 		case "MOB_TIMER_INSECURE":
 			setBoolean(&configuration.TimerInsecure, key, value)
+		case "MOB_RESET_DELETE_REMOTE_WIP_BRANCH":
+			setBoolean(&configuration.ResetDeleteRemoteWipBranch, key, value)
 
 		default:
 			continue
@@ -592,6 +598,8 @@ func parseEnvironmentVariables(configuration Configuration) Configuration {
 	setStringFromEnvVariable(&configuration.TimerUser, "MOB_TIMER_USER")
 	setStringFromEnvVariable(&configuration.TimerUrl, "MOB_TIMER_URL")
 	setBoolFromEnvVariable(&configuration.TimerInsecure, "MOB_TIMER_INSECURE")
+
+	setBoolFromEnvVariable(&configuration.ResetDeleteRemoteWipBranch, "MOB_RESET_DELETE_REMOTE_WIP_BRANCH")
 
 	return configuration
 }
@@ -743,6 +751,8 @@ func parseArgs(args []string, configuration Configuration) (command string, para
 			newConfiguration.DoneSquash = SquashWip
 		case "--create":
 			newConfiguration.StartCreate = true
+		case "--delete-remote-wip-branch":
+			newConfiguration.ResetDeleteRemoteWipBranch = true
 		default:
 			if i == 1 {
 				command = arg
@@ -1144,6 +1154,14 @@ func moo(configuration Configuration) {
 }
 
 func reset(configuration Configuration) {
+	if configuration.ResetDeleteRemoteWipBranch {
+		deleteRemoteWipBranch(configuration)
+	} else {
+		sayFix("Executing this command deletes the mob branch for everyone. If you're sure you want that, use", configuration.mob("reset --delete-remote-wip-branch"))
+	}
+}
+
+func deleteRemoteWipBranch(configuration Configuration) {
 	git("fetch", configuration.RemoteName)
 
 	currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), gitBranches(), configuration)
