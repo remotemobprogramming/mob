@@ -790,7 +790,7 @@ func TestStartCreateOnUnpushedFeatureBranchWithUncommitedChanges(t *testing.T) {
 	configuration.StartCreate = true
 	start(configuration)
 
-	assertOutputContains(t, output, "To start, including uncommitted changes and set the upstream for branch feature1, use")
+	assertOutputContains(t, output, "To start, including uncommitted changes and set the upstream for your branch, use")
 	assertOutputContains(t, output, "mob start --create --include-uncommitted-changes")
 }
 

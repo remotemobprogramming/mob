@@ -1164,11 +1164,11 @@ func start(configuration Configuration) error {
 		sayInfo("cannot start; clean working tree required")
 		sayUnstagedChangesInfo()
 		sayUntrackedFilesInfo()
-		fixCommand := configuration.mob("start --include-uncommitted-changes")
 		if configuration.StartCreate {
-			fixCommand = configuration.mob("start --create --include-uncommitted-changes")
+			sayFix("To start, including uncommitted changes and set the upstream for your branch, use", configuration.mob("start --create --include-uncommitted-changes"))
+		} else {
+			sayFix("To start, including uncommitted changes, use", configuration.mob("start --include-uncommitted-changes"))
 		}
-		sayFix("To start, including uncommitted changes, use", fixCommand)
 		return errors.New("cannot start; clean working tree required")
 	}
 
