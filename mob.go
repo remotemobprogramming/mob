@@ -22,7 +22,7 @@ import (
 )
 
 const (
-	versionNumber = "3.2.0"
+	versionNumber = "3.3.0"
 )
 
 var (
@@ -60,6 +60,7 @@ type Configuration struct {
 	NotifyMessage                  string // override with MOB_NOTIFY_MESSAGE
 	NextStay                       bool   // override with MOB_NEXT_STAY
 	StartIncludeUncommittedChanges bool   // override with MOB_START_INCLUDE_UNCOMMITTED_CHANGES variable
+	StartCreate                    bool   // override with MOB_START_CREATE variable
 	StashName                      string // override with MOB_STASH_NAME
 	WipBranchQualifier             string // override with MOB_WIP_BRANCH_QUALIFIER
 	WipBranchQualifierSeparator    string // override with MOB_WIP_BRANCH_QUALIFIER_SEPARATOR
@@ -320,6 +321,7 @@ func getDefaultConfiguration() Configuration {
 		NextStay:                       true,
 		RequireCommitMessage:           false,
 		StartIncludeUncommittedChanges: false,
+		StartCreate:                    false,
 		WipBranchQualifier:             "",
 		WipBranchQualifierSeparator:    "-",
 		DoneSquash:                     Squash,
@@ -394,6 +396,8 @@ func parseUserConfiguration(configuration Configuration, path string) Configurat
 			setBoolean(&configuration.NextStay, key, value)
 		case "MOB_START_INCLUDE_UNCOMMITTED_CHANGES":
 			setBoolean(&configuration.StartIncludeUncommittedChanges, key, value)
+		case "MOB_START_CREATE":
+			setBoolean(&configuration.StartCreate, key, value)
 		case "MOB_WIP_BRANCH_QUALIFIER":
 			setUnquotedString(&configuration.WipBranchQualifier, key, value)
 		case "MOB_WIP_BRANCH_QUALIFIER_SEPARATOR":
@@ -473,6 +477,8 @@ func parseProjectConfiguration(configuration Configuration, path string) Configu
 			setBoolean(&configuration.NextStay, key, value)
 		case "MOB_START_INCLUDE_UNCOMMITTED_CHANGES":
 			setBoolean(&configuration.StartIncludeUncommittedChanges, key, value)
+		case "MOB_START_CREATE":
+			setBoolean(&configuration.StartCreate, key, value)
 		case "MOB_WIP_BRANCH_QUALIFIER":
 			setUnquotedString(&configuration.WipBranchQualifier, key, value)
 		case "MOB_WIP_BRANCH_QUALIFIER_SEPARATOR":
@@ -573,6 +579,7 @@ func parseEnvironmentVariables(configuration Configuration) Configuration {
 	setBoolFromEnvVariable(&configuration.NextStay, "MOB_NEXT_STAY")
 
 	setBoolFromEnvVariable(&configuration.StartIncludeUncommittedChanges, "MOB_START_INCLUDE_UNCOMMITTED_CHANGES")
+	setBoolFromEnvVariable(&configuration.StartCreate, "MOB_START_CREATE")
 
 	setDoneSquashFromEnvVariable(&configuration, "MOB_DONE_SQUASH")
 
@@ -734,6 +741,8 @@ func parseArgs(args []string, configuration Configuration) (command string, para
 			newConfiguration.DoneSquash = NoSquash
 		case "--squash-wip":
 			newConfiguration.DoneSquash = SquashWip
+		case "--create":
+			newConfiguration.StartCreate = true
 		default:
 			if i == 1 {
 				command = arg
@@ -1155,18 +1164,24 @@ func start(configuration Configuration) error {
 		sayInfo("cannot start; clean working tree required")
 		sayUnstagedChangesInfo()
 		sayUntrackedFilesInfo()
-		sayFix("To start, including uncommitted changes, use", configuration.mob("start --include-uncommitted-changes"))
+		if configuration.StartCreate {
+			sayFix("To start, including uncommitted changes and create the remote branch, use", configuration.mob("start --create --include-uncommitted-changes"))
+		} else {
+			sayFix("To start, including uncommitted changes, use", configuration.mob("start --include-uncommitted-changes"))
+		}
 		return errors.New("cannot start; clean working tree required")
 	}
 
 	git("fetch", configuration.RemoteName, "--prune")
 	currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), gitBranches(), configuration)
 
-	if !currentBaseBranch.hasRemoteBranch(configuration) {
+	if !currentBaseBranch.hasRemoteBranch(configuration) && !configuration.StartCreate {
 		sayError("Remote branch " + currentBaseBranch.remote(configuration).String() + " is missing")
-		sayFix("To set the upstream branch, use", "git push "+configuration.RemoteName+" "+currentBaseBranch.String()+" --set-upstream")
+		sayFix("To start and and create the remote branch", "mob start --create")
 		return errors.New("remote branch is missing")
 	}
+
+	createRemoteBranch(configuration, currentBaseBranch)
 
 	if currentBaseBranch.hasUnpushedCommits(configuration) {
 		sayError("cannot start; unpushed changes on base branch must be pushed upstream")
@@ -1209,6 +1224,14 @@ func start(configuration Configuration) error {
 	openLastModifiedFileIfPresent(configuration)
 
 	return nil // no error
+}
+
+func createRemoteBranch(configuration Configuration, currentBaseBranch Branch) {
+	if !currentBaseBranch.hasRemoteBranch(configuration) && configuration.StartCreate {
+		git("push", configuration.RemoteName, currentBaseBranch.String(), "--set-upstream")
+	} else if currentBaseBranch.hasRemoteBranch(configuration) && configuration.StartCreate {
+		sayInfo("Remote branch " + currentBaseBranch.remote(configuration).String() + " already exists")
+	}
 }
 
 func openLastModifiedFileIfPresent(configuration Configuration) {
@@ -1691,6 +1714,7 @@ Basic Commands with Options:
   start [<minutes>]                      Start <minutes> minutes timer
     [--include-uncommitted-changes|-i]   Move uncommitted changes to wip branch
     [--branch|-b <branch-postfix>]       Set wip branch to 'mob/<base-branch>` + configuration.WipBranchQualifierSeparator + `<branch-postfix>'
+    [--create]                           Create the remote branch
   next
     [--stay|-s]                          Stay on wip branch (default)
     [--return-to-base-branch|-r]         Return to base branch

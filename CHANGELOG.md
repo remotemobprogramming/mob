@@ -1,3 +1,6 @@
+# 3.3.0
+- Feature: `mob start --create` will create the remote branch and start the mob session on that branch. 
+
 # 3.2.0
 - Fix: `mob done --squash-wip` won't fail if a previously committed file has uncommitted modifications.
 - Feature: `MOB_TIMER_INSECURE=true` allows enterprises to use the timer.mob.sh companion service despite SSL issues.

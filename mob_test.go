@@ -42,6 +42,16 @@ func TestParseArgs(t *testing.T) {
 	equals(t, "green", configuration.WipBranchQualifier)
 }
 
+func TestParseArgsStartCreate(t *testing.T) {
+	configuration := getDefaultConfiguration()
+
+	command, parameters, configuration := parseArgs([]string{"mob", "start", "--create"}, configuration)
+
+	equals(t, "start", command)
+	equals(t, "", strings.Join(parameters, ""))
+	equals(t, true, configuration.StartCreate)
+}
+
 func TestParseArgsDoneNoSquash(t *testing.T) {
 	configuration := getDefaultConfiguration()
 	equals(t, Squash, configuration.DoneSquash)
@@ -189,6 +199,7 @@ func assertMobDoneSquashValue(t *testing.T, value string, expected string) {
 
 func TestBooleanEnvironmentVariables(t *testing.T) {
 	assertBoolEnvVarParsed(t, "MOB_START_INCLUDE_UNCOMMITTED_CHANGES", false, Configuration.GetMobStartIncludeUncommittedChanges)
+	assertBoolEnvVarParsed(t, "MOB_START_CREATE", false, Configuration.GetMobStartCreateRemoteBranch)
 	assertBoolEnvVarParsed(t, "MOB_NEXT_STAY", true, Configuration.GetMobNextStay)
 	assertBoolEnvVarParsed(t, "MOB_REQUIRE_COMMIT_MESSAGE", false, Configuration.GetRequireCommitMessage)
 }
@@ -228,6 +239,10 @@ func (c Configuration) GetMobDoneSquash() string {
 
 func (c Configuration) GetMobStartIncludeUncommittedChanges() bool {
 	return c.StartIncludeUncommittedChanges
+}
+
+func (c Configuration) GetMobStartCreateRemoteBranch() bool {
+	return c.StartCreate
 }
 
 func (c Configuration) GetMobNextStay() bool {
@@ -341,6 +356,7 @@ func TestReadConfigurationFromFileOverrideEverything(t *testing.T) {
 		MOB_NOTIFY_MESSAGE="team next"
 		MOB_NEXT_STAY=false
 		MOB_START_INCLUDE_UNCOMMITTED_CHANGES=true
+		MOB_START_CREATE=true
 		MOB_WIP_BRANCH_QUALIFIER="green"
 		MOB_WIP_BRANCH_QUALIFIER_SEPARATOR="---"
 		MOB_WIP_BRANCH_PREFIX="ensemble/"
@@ -365,6 +381,7 @@ func TestReadConfigurationFromFileOverrideEverything(t *testing.T) {
 	equals(t, "team next", actualConfiguration.NotifyMessage)
 	equals(t, false, actualConfiguration.NextStay)
 	equals(t, true, actualConfiguration.StartIncludeUncommittedChanges)
+	equals(t, true, actualConfiguration.StartCreate)
 	equals(t, "green", actualConfiguration.WipBranchQualifier)
 	equals(t, "---", actualConfiguration.WipBranchQualifierSeparator)
 	equals(t, "ensemble/", actualConfiguration.WipBranchPrefix)
@@ -521,8 +538,8 @@ func TestStartNextStartWithBranch(t *testing.T) {
 
 func TestStartWarnsAboutPreexistingWipBranches(t *testing.T) {
 	output, configuration := setup(t)
-	checkoutBranchAndCreateRemoteBranch("feature-something")
-	checkoutBranchAndCreateRemoteBranch("feature-something-2")
+	checkoutAndPushBranch("feature-something")
+	checkoutAndPushBranch("feature-something-2")
 
 	assertOnBranch(t, "feature-something-2")
 	start(configuration)
@@ -555,8 +572,7 @@ func TestStartWarnsOnDivergingWipBranch(t *testing.T) {
 func TestStartNextOnFeatureWithBranch(t *testing.T) {
 	_, configuration := setup(t)
 	configuration.WipBranchQualifier = "green"
-	git("checkout", "-b", "feature1")
-	git("push", "origin", "feature1", "--set-upstream")
+	checkoutAndPushBranch("feature1")
 	assertOnBranch(t, "feature1")
 
 	start(configuration)
@@ -742,6 +758,95 @@ func TestStartOnUnpushedFeatureBranch(t *testing.T) {
 
 	assertOnBranch(t, "feature1")
 	assertOutputContains(t, output, "Remote branch origin/feature1 is missing")
+	assertOutputContains(t, output, "mob start --create")
+}
+
+func TestStartOnUnpushedFeatureBranchWithUncommitedChanges(t *testing.T) {
+	output, configuration := setup(t)
+	git("checkout", "-b", "feature1")
+	createFile(t, "file.txt", "contentIrrelevant")
+
+	start(configuration)
+
+	assertOnBranch(t, "feature1")
+	assertOutputContains(t, output, "mob start --include-uncommitted-changes")
+}
+
+func TestStartCreateOnUnpushedFeatureBranch(t *testing.T) {
+	output, configuration := setup(t)
+	git("checkout", "-b", "feature1")
+
+	configuration.StartCreate = true
+	start(configuration)
+
+	assertOutputNotContains(t, output, "Remote branch origin/feature1 already exists")
+	assertOnBranch(t, "mob/feature1")
+}
+
+func TestStartCreateOnUnpushedFeatureBranchWithUncommitedChanges(t *testing.T) {
+	output, configuration := setup(t)
+	git("checkout", "-b", "feature1")
+	createFile(t, "file.txt", "contentIrrelevant")
+
+	configuration.StartCreate = true
+	start(configuration)
+
+	assertOutputContains(t, output, "To start, including uncommitted changes and create the remote branch, use")
+	assertOutputContains(t, output, "mob start --create --include-uncommitted-changes")
+}
+
+func TestStartCreateIncludeUncommitedChangesOnUnpushedFeatureBranchWithUncommitedChanges(t *testing.T) {
+	_, configuration := setup(t)
+	git("checkout", "-b", "feature1")
+	createFile(t, "file.txt", "contentIrrelevant")
+
+	configuration.StartCreate = true
+	configuration.StartIncludeUncommittedChanges = true
+	start(configuration)
+
+	assertOnBranch(t, "mob/feature1")
+}
+
+func TestStartCreateOnPushedFeatureBranch(t *testing.T) {
+	output, configuration := setup(t)
+	checkoutAndPushBranch("feature1")
+
+	configuration.StartCreate = true
+	start(configuration)
+
+	assertOutputContains(t, output, "Remote branch origin/feature1 already exists")
+	assertOnBranch(t, "mob/feature1")
+}
+
+func TestStartCreateOnPushedFeatureBranchWhichIsAhead(t *testing.T) {
+	_, configuration := setup(t)
+	checkoutAndPushBranch("feature1")
+	createFile(t, "file.txt", "contentIrrelevant")
+	git("add", ".")
+	git("commit", "-m", "commit ahead")
+	git("push")
+	git("reset", "--hard", "HEAD~1")
+
+	configuration.StartCreate = true
+	start(configuration)
+
+	assertOnBranch(t, "mob/feature1")
+	assertCommitLogContainsMessage(t, "mob/feature1", "commit ahead")
+}
+
+func TestStartCreateOnPushedFeatureBranchWhichIsBehind(t *testing.T) {
+	output, configuration := setup(t)
+	checkoutAndPushBranch("feature1")
+	createFile(t, "file.txt", "contentIrrelevant")
+	git("add", ".")
+	git("commit", "-m", "commit ahead")
+
+	configuration.StartCreate = true
+	start(configuration)
+
+	assertOnBranch(t, "feature1")
+	assertOutputContains(t, output, "ERROR cannot start; unpushed changes on base branch must be pushed upstream")
+	assertOutputContains(t, output, "git push origin feature1")
 }
 
 func TestStartNextBackToMaster(t *testing.T) {
@@ -1247,16 +1352,6 @@ func TestStartNextFeatureBranch(t *testing.T) {
 	assertNoMobSessionBranches(t, configuration, "mob-session")
 }
 
-func TestStartDoneLocalFeatureBranch(t *testing.T) {
-	output, configuration := setup(t)
-	git("checkout", "-b", "feature1")
-
-	start(configuration)
-
-	assertOnBranch(t, "feature1")
-	assertOutputContains(t, output, "git push origin feature1 --set-upstream")
-}
-
 func TestGitRootDir(t *testing.T) {
 	setup(t)
 	expectedPath, _ := filepath.EvalSymlinks(tempDir + "/local")
@@ -1441,7 +1536,7 @@ func TestDoneMerge(t *testing.T) {
 func TestDoneSquashNoChanges(t *testing.T) {
 	output, configuration := setup(t)
 	setWorkingDir(tempDir + "/local")
-	checkoutBranchAndCreateRemoteBranch("feature-something")
+	checkoutAndPushBranch("feature-something")
 
 	start(configuration)
 	done(configuration)
@@ -1823,7 +1918,7 @@ func failWithFailure(t *testing.T, exp interface{}, act interface{}) {
 	t.FailNow()
 }
 
-func checkoutBranchAndCreateRemoteBranch(branch string) {
+func checkoutAndPushBranch(branch string) {
 	git("checkout", "-b", branch)
 	git("push", "origin", branch, "--set-upstream")
 }
