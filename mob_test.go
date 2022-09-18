@@ -773,12 +773,13 @@ func TestStartOnUnpushedFeatureBranchWithUncommitedChanges(t *testing.T) {
 }
 
 func TestStartCreateOnUnpushedFeatureBranch(t *testing.T) {
-	_, configuration := setup(t)
+	output, configuration := setup(t)
 	git("checkout", "-b", "feature1")
 
 	configuration.StartCreate = true
 	start(configuration)
 
+	assertOutputNotContains(t, output, "Remote branch origin/feature1 already exists")
 	assertOnBranch(t, "mob/feature1")
 }
 
@@ -790,7 +791,7 @@ func TestStartCreateOnUnpushedFeatureBranchWithUncommitedChanges(t *testing.T) {
 	configuration.StartCreate = true
 	start(configuration)
 
-	assertOutputContains(t, output, "To start, including uncommitted changes and set the upstream for your branch, use")
+	assertOutputContains(t, output, "To start, including uncommitted changes and create the remote branch, use")
 	assertOutputContains(t, output, "mob start --create --include-uncommitted-changes")
 }
 
@@ -807,12 +808,13 @@ func TestStartCreateIncludeUncommitedChangesOnUnpushedFeatureBranchWithUncommite
 }
 
 func TestStartCreateOnPushedFeatureBranch(t *testing.T) {
-	_, configuration := setup(t)
+	output, configuration := setup(t)
 	checkoutAndPushBranch("feature1")
 
 	configuration.StartCreate = true
 	start(configuration)
 
+	assertOutputContains(t, output, "Remote branch origin/feature1 already exists")
 	assertOnBranch(t, "mob/feature1")
 }
 

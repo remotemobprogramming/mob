@@ -1165,7 +1165,7 @@ func start(configuration Configuration) error {
 		sayUnstagedChangesInfo()
 		sayUntrackedFilesInfo()
 		if configuration.StartCreate {
-			sayFix("To start, including uncommitted changes and set the upstream for your branch, use", configuration.mob("start --create --include-uncommitted-changes"))
+			sayFix("To start, including uncommitted changes and create the remote branch, use", configuration.mob("start --create --include-uncommitted-changes"))
 		} else {
 			sayFix("To start, including uncommitted changes, use", configuration.mob("start --include-uncommitted-changes"))
 		}
@@ -1177,7 +1177,7 @@ func start(configuration Configuration) error {
 
 	if !currentBaseBranch.hasRemoteBranch(configuration) && !configuration.StartCreate {
 		sayError("Remote branch " + currentBaseBranch.remote(configuration).String() + " is missing")
-		sayFix("To start and set the upstream use", "mob start --create")
+		sayFix("To start and and create the remote branch", "mob start --create")
 		return errors.New("remote branch is missing")
 	}
 
@@ -1229,10 +1229,8 @@ func start(configuration Configuration) error {
 func createRemoteBranch(configuration Configuration, currentBaseBranch Branch) {
 	if !currentBaseBranch.hasRemoteBranch(configuration) && configuration.StartCreate {
 		git("push", configuration.RemoteName, currentBaseBranch.String(), "--set-upstream")
-	}
-
-	if currentBaseBranch.hasRemoteBranch(configuration) && configuration.StartCreate {
-		debugInfo("Remote branch " + currentBaseBranch.remote(configuration).String() + " already exists")
+	} else if currentBaseBranch.hasRemoteBranch(configuration) && configuration.StartCreate {
+		sayInfo("Remote branch " + currentBaseBranch.remote(configuration).String() + " already exists")
 	}
 }
 
@@ -1716,7 +1714,7 @@ Basic Commands with Options:
   start [<minutes>]                      Start <minutes> minutes timer
     [--include-uncommitted-changes|-i]   Move uncommitted changes to wip branch
     [--branch|-b <branch-postfix>]       Set wip branch to 'mob/<base-branch>` + configuration.WipBranchQualifierSeparator + `<branch-postfix>'
-    [--create]                           Set upstream for your branch
+    [--create]                           Create the remote branch
   next
     [--stay|-s]                          Stay on wip branch (default)
     [--return-to-base-branch|-r]         Return to base branch

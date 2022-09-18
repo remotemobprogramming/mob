@@ -1,5 +1,5 @@
-# 3.2.1
-- Feature: `mob start --create` will set the upstream for your branch and start the mob session on that branch. 
+# 3.3.0
+- Feature: `mob start --create` will create the remote branch and start the mob session on that branch. 
 
 # 3.2.0
 - Fix: `mob done --squash-wip` won't fail if a previously committed file has uncommitted modifications.
