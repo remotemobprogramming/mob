@@ -451,7 +451,7 @@ go test -coverprofile=cover.out && go tool cover -html=cover.out
 
 Created by [Dr. Simon Harrer](https://twitter.com/simonharrer) in September 2018.
 
-Currently maintained by [Dr. Simon Harrer](https://twitter.com/simonharrer) and [Gregor Riegler](https://twitter.com/gregor_riegler).
+Currently maintained by [Gregor Riegler](https://twitter.com/gregor_riegler) and [Joshua Töpfer](https://twitter.com/JoshuaToepfer), and to some limited degree still by [Dr. Simon Harrer](https://twitter.com/simonharrer).
 
 Contributions and testing by Jochen Christ, Martin Huber, Franziska Dessart, Nikolas Hermann
 and Christoph Welcz. Thank you!
