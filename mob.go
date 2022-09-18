@@ -22,7 +22,7 @@ import (
 )
 
 const (
-	versionNumber = "3.2.0"
+	versionNumber = "3.3.0"
 )
 
 var (
