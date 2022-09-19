@@ -783,6 +783,18 @@ func TestStartCreateOnUnpushedFeatureBranch(t *testing.T) {
 	assertOnBranch(t, "mob/feature1")
 }
 
+func TestStartCreateOnUnpushedFeatureBranchWithBranchPostfix(t *testing.T) {
+	output, configuration := setup(t)
+	git("checkout", "-b", "feature1")
+
+	configuration.StartCreate = true
+	configuration.WipBranchQualifier = "green"
+	start(configuration)
+
+	assertOutputNotContains(t, output, "Remote branch origin/feature1 already exists")
+	assertOnBranch(t, "mob/feature1-green")
+}
+
 func TestStartCreateOnUnpushedFeatureBranchWithUncommitedChanges(t *testing.T) {
 	output, configuration := setup(t)
 	git("checkout", "-b", "feature1")
@@ -807,6 +819,19 @@ func TestStartCreateIncludeUncommitedChangesOnUnpushedFeatureBranchWithUncommite
 	assertOnBranch(t, "mob/feature1")
 }
 
+func TestStartCreateIncludeUncommitedChangesOnUnpushedFeatureBranchWithUncommitedChangesAndBranchPostfix(t *testing.T) {
+	_, configuration := setup(t)
+	git("checkout", "-b", "feature1")
+	createFile(t, "file.txt", "contentIrrelevant")
+
+	configuration.StartCreate = true
+	configuration.StartIncludeUncommittedChanges = true
+	configuration.WipBranchQualifier = "green"
+	start(configuration)
+
+	assertOnBranch(t, "mob/feature1-green")
+}
+
 func TestStartCreateOnPushedFeatureBranch(t *testing.T) {
 	output, configuration := setup(t)
 	checkoutAndPushBranch("feature1")
@@ -816,6 +841,18 @@ func TestStartCreateOnPushedFeatureBranch(t *testing.T) {
 
 	assertOutputContains(t, output, "Remote branch origin/feature1 already exists")
 	assertOnBranch(t, "mob/feature1")
+}
+
+func TestStartCreateOnPushedFeatureBranchWithBranchPostfix(t *testing.T) {
+	output, configuration := setup(t)
+	checkoutAndPushBranch("feature1")
+
+	configuration.StartCreate = true
+	configuration.WipBranchQualifier = "green"
+	start(configuration)
+
+	assertOutputContains(t, output, "Remote branch origin/feature1 already exists")
+	assertOnBranch(t, "mob/feature1-green")
 }
 
 func TestStartCreateOnPushedFeatureBranchWhichIsAhead(t *testing.T) {
