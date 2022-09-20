@@ -505,6 +505,7 @@ func TestStartWithMultipleExistingBranchesWithStay(t *testing.T) {
 
 func TestStartNextWithBranch(t *testing.T) {
 	_, configuration := setup(t)
+	configuration.ResetDeleteRemoteWipBranch = true
 	assertOnBranch(t, "master")
 	configuration.WipBranchQualifier = "green"
 
@@ -596,7 +597,16 @@ func TestStartNextWithBranchContainingHyphen(t *testing.T) {
 }
 
 func TestReset(t *testing.T) {
+	output, configuration := setup(t)
+
+	reset(configuration)
+
+	assertOutputContains(t, output, "mob reset --delete-remote-wip-branch")
+}
+
+func TestResetDeleteRemoteWipBranch(t *testing.T) {
 	_, configuration := setup(t)
+	configuration.ResetDeleteRemoteWipBranch = true
 
 	reset(configuration)
 
@@ -605,7 +615,23 @@ func TestReset(t *testing.T) {
 }
 
 func TestResetCommit(t *testing.T) {
+	output, configuration := setup(t)
+
+	start(configuration)
+	createFile(t, "example.txt", "contentIrrelevant")
+	next(configuration)
+	assertMobSessionBranches(t, configuration, "mob-session")
+
+	reset(configuration)
+
+	assertOutputContains(t, output, "mob reset --delete-remote-wip-branch")
+	assertMobSessionBranches(t, configuration, "mob-session")
+}
+
+func TestResetDeleteRemoteWipBranchCommit(t *testing.T) {
 	_, configuration := setup(t)
+	configuration.ResetDeleteRemoteWipBranch = true
+
 	start(configuration)
 	createFile(t, "example.txt", "contentIrrelevant")
 	next(configuration)
