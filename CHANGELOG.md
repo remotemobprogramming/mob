@@ -1,4 +1,5 @@
-# 3.3.0
+# 4.0.0
+- **NEW** Feature: `mob reset` doesn't reset the mob branch anymore. It now warns you that it deletes the mob branch for everyone and if you want to continue do `mob reset --delete-remote-wip-branch`.
 - Feature: `mob start --create` will create the remote branch and start the mob session on that branch. 
 
 # 3.2.0
