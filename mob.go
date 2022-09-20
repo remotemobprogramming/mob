@@ -1147,7 +1147,7 @@ func reset(configuration Configuration) {
 	if configuration.ResetDeleteRemoteWipBranch {
 		deleteRemoteWipBranch(configuration)
 	} else {
-		sayFix("Executing this command deletes the mob branch for everyone. If you're sure you want that, use", configuration.mob("reset --delete-remote-wip-branch"))
+		say.Fix("Executing this command deletes the mob branch for everyone. If you're sure you want that, use", configuration.mob("reset --delete-remote-wip-branch"))
 	}
 }
 
