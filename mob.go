@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/remotemobprogramming/mob/v3/say"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -27,7 +28,6 @@ const (
 
 var (
 	workingDir                 = ""
-	Debug                      = false // override with --debug parameter
 	GitPassthroughStderrStdout = false // hack to get git hooks to print to stdout/stderr
 )
 
@@ -129,8 +129,8 @@ func (branch Branch) remote(configuration Configuration) Branch {
 func (branch Branch) hasRemoteBranch(configuration Configuration) bool {
 	remoteBranches := gitRemoteBranches()
 	remoteBranch := branch.remote(configuration).Name
-	debugInfo("Remote Branches: " + strings.Join(remoteBranches, "\n"))
-	debugInfo("Remote Branch: " + remoteBranch)
+	say.Debug("Remote Branches: " + strings.Join(remoteBranches, "\n"))
+	say.Debug("Remote Branch: " + remoteBranch)
 
 	for i := 0; i < len(remoteBranches); i++ {
 		if remoteBranches[i] == remoteBranch {
@@ -232,7 +232,7 @@ func (branch Branch) hasUnpushedCommits(configuration Configuration) bool {
 	}
 	unpushedCommits := unpushedCount != 0
 	if unpushedCommits {
-		sayInfo(fmt.Sprintf("there are %d unpushed commits on local base branch <%s>", unpushedCount, branch.Name))
+		say.Info(fmt.Sprintf("there are %d unpushed commits on local base branch <%s>", unpushedCount, branch.Name))
 	}
 	return unpushedCommits
 }
@@ -248,11 +248,11 @@ func stringContains(list []string, element string) bool {
 }
 
 func main() {
-	parseDebug(os.Args)
-	debugInfo(runtime.Version())
+	say.TurnOnDebuggingByArgs(os.Args)
+	say.Debug(runtime.Version())
 
 	if !isGitInstalled() {
-		sayError("'git' command was not found in PATH. It may be not installed. " +
+		say.Error("'git' command was not found in PATH. It may be not installed. " +
 			"To learn how to install 'git' refer to https://git-scm.com/book/en/v2/Getting-Started-Installing-Git.")
 		exit(1)
 	}
@@ -266,18 +266,18 @@ func main() {
 	if isGit() {
 		configuration = parseProjectConfiguration(configuration, gitRootDir()+"/.mob")
 	}
-	debugInfo("Args '" + strings.Join(os.Args, " ") + "'")
+	say.Debug("Args '" + strings.Join(os.Args, " ") + "'")
 	currentCliName := currentCliName(os.Args[0])
 	if currentCliName != configuration.CliName {
-		debugInfo("Updating cli name to " + currentCliName)
+		say.Debug("Updating cli name to " + currentCliName)
 		configuration.CliName = currentCliName
 	}
 
 	command, parameters, configuration := parseArgs(os.Args, configuration)
-	debugInfo("command '" + command + "'")
-	debugInfo("parameters '" + strings.Join(parameters, " ") + "'")
-	debugInfo("version " + versionNumber)
-	debugInfo("workingDir '" + workingDir + "'")
+	say.Debug("command '" + command + "'")
+	say.Debug("parameters '" + strings.Join(parameters, " ") + "'")
+	say.Debug("version " + versionNumber)
+	say.Debug("workingDir '" + workingDir + "'")
 
 	// workaround until we have a better design
 	if configuration.GitHooksEnabled {
@@ -336,16 +336,6 @@ func getDefaultConfiguration() Configuration {
 	}
 }
 
-func parseDebug(args []string) {
-	// debug needs to be parsed at the beginning to have DEBUG enabled as quickly as possible
-	// otherwise, parsing others or other parameters don't have debug enabled
-	for i := 0; i < len(args); i++ {
-		if args[i] == "--debug" {
-			Debug = true
-		}
-	}
-}
-
 func (c Configuration) mob(command string) string {
 	return c.CliName + " " + command
 }
@@ -354,25 +344,25 @@ func parseUserConfiguration(configuration Configuration, path string) Configurat
 	file, err := os.Open(path)
 
 	if err != nil {
-		debugInfo("No user configuration file found. (" + path + ") Error: " + err.Error())
+		say.Debug("No user configuration file found. (" + path + ") Error: " + err.Error())
 		return configuration
 	} else {
-		debugInfo("Found user configuration file at " + path)
+		say.Debug("Found user configuration file at " + path)
 	}
 
 	fileScanner := bufio.NewScanner(file)
 
 	for fileScanner.Scan() {
 		line := strings.TrimSpace(fileScanner.Text())
-		debugInfo(line)
+		say.Debug(line)
 		if !strings.Contains(line, "=") {
-			debugInfo("Skip line because line contains no =. Line=" + line)
+			say.Debug("Skip line because line contains no =. Line=" + line)
 			continue
 		}
 		key := line[0:strings.Index(line, "=")]
 		value := strings.TrimPrefix(line, key+"=")
-		debugInfo("Key is " + key)
-		debugInfo("Value is " + value)
+		say.Debug("Key is " + key)
+		say.Debug("Value is " + value)
 		switch key {
 		case "MOB_CLI_NAME":
 			setUnquotedString(&configuration.CliName, key, value)
@@ -431,7 +421,7 @@ func parseUserConfiguration(configuration Configuration, path string) Configurat
 	}
 
 	if err := fileScanner.Err(); err != nil {
-		sayWarning("User configuration file exists, but could not be read. (" + path + ")")
+		say.Warning("User configuration file exists, but could not be read. (" + path + ")")
 	}
 
 	return configuration
@@ -441,28 +431,28 @@ func parseProjectConfiguration(configuration Configuration, path string) Configu
 	file, err := os.Open(path)
 
 	if err != nil {
-		debugInfo("No project configuration file found. (" + path + ") Error: " + err.Error())
+		say.Debug("No project configuration file found. (" + path + ") Error: " + err.Error())
 		return configuration
 	} else {
-		debugInfo("Found project configuration file at " + path)
+		say.Debug("Found project configuration file at " + path)
 	}
 
 	fileScanner := bufio.NewScanner(file)
 
 	for fileScanner.Scan() {
 		line := strings.TrimSpace(fileScanner.Text())
-		debugInfo(line)
+		say.Debug(line)
 		if !strings.Contains(line, "=") {
-			debugInfo("Skip line because line contains no =. Line=" + line)
+			say.Debug("Skip line because line contains no =. Line=" + line)
 			continue
 		}
 		key := line[0:strings.Index(line, "=")]
 		value := strings.TrimPrefix(line, key+"=")
-		debugInfo("Key is " + key)
-		debugInfo("Value is " + value)
+		say.Debug("Key is " + key)
+		say.Debug("Value is " + value)
 		switch key {
 		case "MOB_VOICE_COMMAND", "MOB_VOICE_MESSAGE", "MOB_NOTIFY_COMMAND", "MOB_NOTIFY_MESSAGE", "MOB_OPEN_COMMAND":
-			sayWarning("Skipped overwriting key " + key + " from project/.mob file out of security reasons!")
+			say.Warning("Skipped overwriting key " + key + " from project/.mob file out of security reasons!")
 		case "MOB_CLI_NAME":
 			setUnquotedString(&configuration.CliName, key, value)
 		case "MOB_REMOTE_NAME":
@@ -510,7 +500,7 @@ func parseProjectConfiguration(configuration Configuration, path string) Configu
 	}
 
 	if err := fileScanner.Err(); err != nil {
-		sayWarning("Project configuration file exists, but could not be read. (" + path + ")")
+		say.Warning("Project configuration file exists, but could not be read. (" + path + ")")
 	}
 
 	return configuration
@@ -519,35 +509,35 @@ func parseProjectConfiguration(configuration Configuration, path string) Configu
 func setUnquotedString(s *string, key string, value string) {
 	unquotedValue, err := strconv.Unquote(value)
 	if err != nil {
-		sayWarning("Could not set key from configuration file because value is not parseable (" + key + "=" + value + ")")
+		say.Warning("Could not set key from configuration file because value is not parseable (" + key + "=" + value + ")")
 		return
 	}
 	*s = unquotedValue
-	debugInfo("Overwriting " + key + " =" + unquotedValue)
+	say.Debug("Overwriting " + key + " =" + unquotedValue)
 }
 
 func setBoolean(s *bool, key string, value string) {
 	boolValue, err := strconv.ParseBool(value)
 	if err != nil {
-		sayWarning("Could not set key from configuration file because value is not parseable (" + key + "=" + value + ")")
+		say.Warning("Could not set key from configuration file because value is not parseable (" + key + "=" + value + ")")
 		return
 	}
 	*s = boolValue
-	debugInfo("Overwriting " + key + " =" + strconv.FormatBool(boolValue))
+	say.Debug("Overwriting " + key + " =" + strconv.FormatBool(boolValue))
 }
 
 func setMobDoneSquash(configuration *Configuration, key string, value string) {
 	if strings.HasPrefix(value, "\"") {
 		unquotedValue, err := strconv.Unquote(value)
 		if err != nil {
-			sayWarning("Could not set key from configuration file because value is not parseable (" + key + "=" + value + ")")
+			say.Warning("Could not set key from configuration file because value is not parseable (" + key + "=" + value + ")")
 			return
 		}
 		value = unquotedValue
 	}
 	printDeprecatedDoneSquashMessage(value)
 	configuration.DoneSquash = doneSquash(value)
-	debugInfo("Overwriting " + key + " =" + string(configuration.DoneSquash))
+	say.Debug("Overwriting " + key + " =" + string(configuration.DoneSquash))
 }
 
 func parseEnvironmentVariables(configuration Configuration) Configuration {
@@ -600,7 +590,7 @@ func setStringFromEnvVariable(s *string, key string) {
 	value, set := os.LookupEnv(key)
 	if set && value != "" {
 		*s = value
-		debugInfo("overriding " + key + "=" + *s)
+		say.Debug("overriding " + key + "=" + *s)
 	}
 }
 
@@ -608,7 +598,7 @@ func setOptionalStringFromEnvVariable(s *string, key string) {
 	value, set := os.LookupEnv(key)
 	if set {
 		*s = value
-		debugInfo("overriding " + key + "=" + *s)
+		say.Debug("overriding " + key + "=" + *s)
 	}
 }
 
@@ -618,17 +608,17 @@ func setBoolFromEnvVariable(s *bool, key string) {
 		return
 	}
 	if value == "" {
-		debugInfo("ignoring " + key + "=" + value + " (empty string)")
+		say.Debug("ignoring " + key + "=" + value + " (empty string)")
 	}
 
 	if value == "true" {
 		*s = true
-		debugInfo("overriding " + key + "=" + strconv.FormatBool(*s))
+		say.Debug("overriding " + key + "=" + strconv.FormatBool(*s))
 	} else if value == "false" {
 		*s = false
-		debugInfo("overriding " + key + "=" + strconv.FormatBool(*s))
+		say.Debug("overriding " + key + "=" + strconv.FormatBool(*s))
 	} else {
-		sayWarning("ignoring " + key + "=" + value + " (not a boolean)")
+		say.Warning("ignoring " + key + "=" + value + " (not a boolean)")
 	}
 }
 
@@ -641,11 +631,11 @@ func setDoneSquashFromEnvVariable(configuration *Configuration, key string) {
 	configuration.DoneSquash = doneSquash(value)
 
 	if value == "" {
-		debugInfo("ignoring " + key + "=" + value + " (empty string)")
+		say.Debug("ignoring " + key + "=" + value + " (empty string)")
 		return
 	}
 
-	debugInfo("overriding " + key + "=" + string(configuration.DoneSquash))
+	say.Debug("overriding " + key + "=" + string(configuration.DoneSquash))
 }
 
 func printDeprecatedDoneSquashMessage(value string) {
@@ -656,55 +646,55 @@ func printDeprecatedDoneSquashMessage(value string) {
 
 	if unquotedValue == "true" || unquotedValue == "false" {
 		newValue := doneSquash(unquotedValue)
-		say("MOB_DONE_SQUASH is set to the deprecated value " + value + ". Use the value " + newValue + " instead.")
+		say.Say("MOB_DONE_SQUASH is set to the deprecated value " + value + ". Use the value " + newValue + " instead.")
 	}
 }
 
 func removed(key string, message string) {
 	if _, set := os.LookupEnv(key); set {
-		say("Configuration option '" + key + "' is no longer used.")
-		say(message)
+		say.Say("Configuration option '" + key + "' is no longer used.")
+		say.Say(message)
 	}
 }
 
 func deprecated(key string, message string) {
 	if _, set := os.LookupEnv(key); set {
-		say("Configuration option '" + key + "' is deprecated.")
-		say(message)
+		say.Say("Configuration option '" + key + "' is deprecated.")
+		say.Say(message)
 	}
 }
 
 func experimental(key string) {
 	if _, set := os.LookupEnv(key); set {
-		say("Configuration option '" + key + "' is experimental. Be prepared that this option will be removed!")
+		say.Say("Configuration option '" + key + "' is experimental. Be prepared that this option will be removed!")
 	}
 }
 
 func config(c Configuration) {
-	say("MOB_CLI_NAME" + "=" + quote(c.CliName))
-	say("MOB_REMOTE_NAME" + "=" + quote(c.RemoteName))
-	say("MOB_WIP_COMMIT_MESSAGE" + "=" + quote(c.WipCommitMessage))
-	say("MOB_GIT_HOOKS_ENABLED" + "=" + strconv.FormatBool(c.GitHooksEnabled))
-	say("MOB_REQUIRE_COMMIT_MESSAGE" + "=" + strconv.FormatBool(c.RequireCommitMessage))
-	say("MOB_VOICE_COMMAND" + "=" + quote(c.VoiceCommand))
-	say("MOB_VOICE_MESSAGE" + "=" + quote(c.VoiceMessage))
-	say("MOB_NOTIFY_COMMAND" + "=" + quote(c.NotifyCommand))
-	say("MOB_NOTIFY_MESSAGE" + "=" + quote(c.NotifyMessage))
-	say("MOB_NEXT_STAY" + "=" + strconv.FormatBool(c.NextStay))
-	say("MOB_START_INCLUDE_UNCOMMITTED_CHANGES" + "=" + strconv.FormatBool(c.StartIncludeUncommittedChanges))
-	say("MOB_STASH_NAME" + "=" + quote(c.StashName))
-	say("MOB_WIP_BRANCH_QUALIFIER" + "=" + quote(c.WipBranchQualifier))
-	say("MOB_WIP_BRANCH_QUALIFIER_SEPARATOR" + "=" + quote(c.WipBranchQualifierSeparator))
-	say("MOB_WIP_BRANCH_PREFIX" + "=" + quote(c.WipBranchPrefix))
-	say("MOB_DONE_SQUASH" + "=" + string(c.DoneSquash))
-	say("MOB_OPEN_COMMAND" + "=" + quote(c.OpenCommand))
-	say("MOB_TIMER" + "=" + quote(c.Timer))
-	say("MOB_TIMER_ROOM" + "=" + quote(c.TimerRoom))
-	say("MOB_TIMER_ROOM_USE_WIP_BRANCH_QUALIFIER" + "=" + strconv.FormatBool(c.TimerRoomUseWipBranchQualifier))
-	say("MOB_TIMER_LOCAL" + "=" + strconv.FormatBool(c.TimerLocal))
-	say("MOB_TIMER_USER" + "=" + quote(c.TimerUser))
-	say("MOB_TIMER_URL" + "=" + quote(c.TimerUrl))
-	say("MOB_TIMER_INSECURE" + "=" + strconv.FormatBool(c.TimerInsecure))
+	say.Say("MOB_CLI_NAME" + "=" + quote(c.CliName))
+	say.Say("MOB_REMOTE_NAME" + "=" + quote(c.RemoteName))
+	say.Say("MOB_WIP_COMMIT_MESSAGE" + "=" + quote(c.WipCommitMessage))
+	say.Say("MOB_GIT_HOOKS_ENABLED" + "=" + strconv.FormatBool(c.GitHooksEnabled))
+	say.Say("MOB_REQUIRE_COMMIT_MESSAGE" + "=" + strconv.FormatBool(c.RequireCommitMessage))
+	say.Say("MOB_VOICE_COMMAND" + "=" + quote(c.VoiceCommand))
+	say.Say("MOB_VOICE_MESSAGE" + "=" + quote(c.VoiceMessage))
+	say.Say("MOB_NOTIFY_COMMAND" + "=" + quote(c.NotifyCommand))
+	say.Say("MOB_NOTIFY_MESSAGE" + "=" + quote(c.NotifyMessage))
+	say.Say("MOB_NEXT_STAY" + "=" + strconv.FormatBool(c.NextStay))
+	say.Say("MOB_START_INCLUDE_UNCOMMITTED_CHANGES" + "=" + strconv.FormatBool(c.StartIncludeUncommittedChanges))
+	say.Say("MOB_STASH_NAME" + "=" + quote(c.StashName))
+	say.Say("MOB_WIP_BRANCH_QUALIFIER" + "=" + quote(c.WipBranchQualifier))
+	say.Say("MOB_WIP_BRANCH_QUALIFIER_SEPARATOR" + "=" + quote(c.WipBranchQualifierSeparator))
+	say.Say("MOB_WIP_BRANCH_PREFIX" + "=" + quote(c.WipBranchPrefix))
+	say.Say("MOB_DONE_SQUASH" + "=" + string(c.DoneSquash))
+	say.Say("MOB_OPEN_COMMAND" + "=" + quote(c.OpenCommand))
+	say.Say("MOB_TIMER" + "=" + quote(c.Timer))
+	say.Say("MOB_TIMER_ROOM" + "=" + quote(c.TimerRoom))
+	say.Say("MOB_TIMER_ROOM_USE_WIP_BRANCH_QUALIFIER" + "=" + strconv.FormatBool(c.TimerRoomUseWipBranchQualifier))
+	say.Say("MOB_TIMER_LOCAL" + "=" + strconv.FormatBool(c.TimerLocal))
+	say.Say("MOB_TIMER_USER" + "=" + quote(c.TimerUser))
+	say.Say("MOB_TIMER_URL" + "=" + quote(c.TimerUrl))
+	say.Say("MOB_TIMER_INSECURE" + "=" + strconv.FormatBool(c.TimerInsecure))
 }
 
 func quote(value string) string {
@@ -773,7 +763,7 @@ func execute(command string, parameter []string, configuration Configuration) {
 		} else if configuration.Timer != "" {
 			startTimer(configuration.Timer, configuration)
 		} else {
-			sayInfo("It's now " + currentTime() + ". Happy collaborating! :)")
+			say.Info("It's now " + currentTime() + ". Happy collaborating! :)")
 		}
 	case "b", "branch":
 		branch(configuration)
@@ -842,7 +832,7 @@ func clean(configuration Configuration) {
 	if currentBranch.isOrphanWipBranch(configuration) {
 		currentBaseBranch, _ := determineBranches(currentBranch, localBranches, configuration)
 
-		sayInfo("Current branch " + currentBranch.Name + " is an orphan")
+		say.Info("Current branch " + currentBranch.Name + " is an orphan")
 		if currentBaseBranch.exists(localBranches) {
 			git("checkout", currentBaseBranch.Name)
 		} else if newBranch("main").exists(localBranches) {
@@ -855,7 +845,7 @@ func clean(configuration Configuration) {
 	for _, branch := range localBranches {
 		b := newBranch(branch)
 		if b.isOrphanWipBranch(configuration) {
-			sayInfo("Removing orphan wip branch " + b.Name)
+			say.Info("Removing orphan wip branch " + b.Name)
 			git("branch", "-D", b.Name)
 		}
 	}
@@ -867,10 +857,10 @@ func (branch Branch) isOrphanWipBranch(configuration Configuration) bool {
 }
 
 func branch(configuration Configuration) {
-	say(silentgit("branch", "--list", "--remote", newBranch("*").addWipPrefix(configuration).remote(configuration).Name))
+	say.Say(silentgit("branch", "--list", "--remote", newBranch("*").addWipPrefix(configuration).remote(configuration).Name))
 
 	// DEPRECATED
-	say(silentgit("branch", "--list", "--remote", newBranch("mob-session").remote(configuration).Name))
+	say.Say(silentgit("branch", "--list", "--remote", newBranch("mob-session").remote(configuration).Name))
 }
 
 func determineBranches(currentBranch Branch, localBranches []string, configuration Configuration) (baseBranch Branch, wipBranch Branch) {
@@ -886,7 +876,7 @@ func determineBranches(currentBranch Branch, localBranches []string, configurati
 		wipBranch = currentBranch.addWipPrefix(configuration).addWipQualifier(configuration)
 	}
 
-	debugInfo("on currentBranch " + currentBranch.String() + " => BASE " + baseBranch.String() + " WIP " + wipBranch.String() + " with allLocalBranches " + strings.Join(localBranches, ","))
+	say.Debug("on currentBranch " + currentBranch.String() + " => BASE " + baseBranch.String() + " WIP " + wipBranch.String() + " with allLocalBranches " + strings.Join(localBranches, ","))
 	if currentBranch != baseBranch && currentBranch != wipBranch {
 		// this is unreachable code, but we keep it as a backup
 		panic("assertion failed! neither on base nor on wip branch")
@@ -901,7 +891,7 @@ func getSleepCommand(timeoutInSeconds int) string {
 func injectCommandWithMessage(command string, message string) string {
 	placeHolders := strings.Count(command, "%s")
 	if placeHolders > 1 {
-		sayError(fmt.Sprintf("Too many placeholders (%d) in format command string: %s", placeHolders, command))
+		say.Error(fmt.Sprintf("Too many placeholders (%d) in format command string: %s", placeHolders, command))
 		exit(1)
 	}
 	if placeHolders == 0 {
@@ -931,14 +921,14 @@ func executeCommandsInBackgroundProcess(commands ...string) (err error) {
 			cmds = append(cmds, c)
 		}
 	}
-	debugInfo(fmt.Sprintf("Operating System %s", runtime.GOOS))
+	say.Debug(fmt.Sprintf("Operating System %s", runtime.GOOS))
 	switch runtime.GOOS {
 	case "windows":
 		_, err = startCommand("powershell", "-command", fmt.Sprintf("start-process powershell -NoNewWindow -ArgumentList '-command \"%s\"'", strings.Join(cmds, ";")))
 	case "darwin", "linux":
 		_, err = startCommand("sh", "-c", fmt.Sprintf("(%s) &", strings.Join(cmds, ";")))
 	default:
-		sayWarning(fmt.Sprintf("Cannot execute background commands on your os: %s", runtime.GOOS))
+		say.Warning(fmt.Sprintf("Cannot execute background commands on your os: %s", runtime.GOOS))
 	}
 	return err
 }
@@ -948,14 +938,14 @@ func startTimer(timerInMinutes string, configuration Configuration) {
 
 	timeoutInSeconds := timeoutInMinutes * 60
 	timeOfTimeout := time.Now().Add(time.Minute * time.Duration(timeoutInMinutes)).Format("15:04")
-	debugInfo(fmt.Sprintf("Starting timer at %s for %d minutes = %d seconds (parsed from user input %s)", timeOfTimeout, timeoutInMinutes, timeoutInSeconds, timerInMinutes))
+	say.Debug(fmt.Sprintf("Starting timer at %s for %d minutes = %d seconds (parsed from user input %s)", timeOfTimeout, timeoutInMinutes, timeoutInSeconds, timerInMinutes))
 
 	room := getMobTimerRoom(configuration)
 	startRemoteTimer := room != ""
 	startLocalTimer := configuration.TimerLocal
 
 	if !startRemoteTimer && !startLocalTimer {
-		sayError("No timer configured, not starting timer")
+		say.Error("No timer configured, not starting timer")
 		exit(1)
 	}
 
@@ -963,8 +953,8 @@ func startTimer(timerInMinutes string, configuration Configuration) {
 		timerUser := getUserForMobTimer(configuration.TimerUser)
 		err := httpPutTimer(timeoutInMinutes, room, timerUser, configuration.TimerUrl, configuration.TimerInsecure)
 		if err != nil {
-			sayError("remote timer couldn't be started")
-			sayError(err.Error())
+			say.Error("remote timer couldn't be started")
+			say.Error(err.Error())
 			exit(1)
 		}
 	}
@@ -973,18 +963,18 @@ func startTimer(timerInMinutes string, configuration Configuration) {
 		err := executeCommandsInBackgroundProcess(getSleepCommand(timeoutInSeconds), getVoiceCommand(configuration.VoiceMessage, configuration.VoiceCommand), getNotifyCommand(configuration.NotifyMessage, configuration.NotifyCommand))
 
 		if err != nil {
-			sayError(fmt.Sprintf("timer couldn't be started on your system (%s)", runtime.GOOS))
-			sayError(err.Error())
+			say.Error(fmt.Sprintf("timer couldn't be started on your system (%s)", runtime.GOOS))
+			say.Error(err.Error())
 			exit(1)
 		}
 	}
 
-	sayInfo("It's now " + currentTime() + ". " + fmt.Sprintf("%d min timer ends at approx. %s", timeoutInMinutes, timeOfTimeout) + ". Happy collaborating! :)")
+	say.Info("It's now " + currentTime() + ". " + fmt.Sprintf("%d min timer ends at approx. %s", timeoutInMinutes, timeOfTimeout) + ". Happy collaborating! :)")
 }
 
 func getMobTimerRoom(configuration Configuration) string {
 	if !isGit() {
-		debugInfo("timer not in git repository, using MOB_TIMER_ROOM for room name")
+		say.Debug("timer not in git repository, using MOB_TIMER_ROOM for room name")
 		return configuration.TimerRoom
 	}
 
@@ -1000,7 +990,7 @@ func getMobTimerRoom(configuration Configuration) string {
 	}
 
 	if configuration.TimerRoomUseWipBranchQualifier && currentWipBranchQualifier != "" {
-		sayInfo("Using wip branch qualifier for room name")
+		say.Info("Using wip branch qualifier for room name")
 		return currentWipBranchQualifier
 	}
 
@@ -1012,14 +1002,14 @@ func startBreakTimer(timerInMinutes string, configuration Configuration) {
 
 	timeoutInSeconds := timeoutInMinutes * 60
 	timeOfTimeout := time.Now().Add(time.Minute * time.Duration(timeoutInMinutes)).Format("15:04")
-	debugInfo(fmt.Sprintf("Starting break timer at %s for %d minutes = %d seconds (parsed from user input %s)", timeOfTimeout, timeoutInMinutes, timeoutInSeconds, timerInMinutes))
+	say.Debug(fmt.Sprintf("Starting break timer at %s for %d minutes = %d seconds (parsed from user input %s)", timeOfTimeout, timeoutInMinutes, timeoutInSeconds, timerInMinutes))
 
 	room := getMobTimerRoom(configuration)
 	startRemoteTimer := room != ""
 	startLocalTimer := configuration.TimerLocal
 
 	if !startRemoteTimer && !startLocalTimer {
-		sayError("No break timer configured, not starting break timer")
+		say.Error("No break timer configured, not starting break timer")
 		exit(1)
 	}
 
@@ -1028,8 +1018,8 @@ func startBreakTimer(timerInMinutes string, configuration Configuration) {
 		err := httpPutBreakTimer(timeoutInMinutes, room, timerUser, configuration.TimerUrl, configuration.TimerInsecure)
 
 		if err != nil {
-			sayError("remote break timer couldn't be started")
-			sayError(err.Error())
+			say.Error("remote break timer couldn't be started")
+			say.Error(err.Error())
 			exit(1)
 		}
 	}
@@ -1038,13 +1028,13 @@ func startBreakTimer(timerInMinutes string, configuration Configuration) {
 		err := executeCommandsInBackgroundProcess(getSleepCommand(timeoutInSeconds), getVoiceCommand("mob start", configuration.VoiceCommand), getNotifyCommand("mob start", configuration.NotifyCommand))
 
 		if err != nil {
-			sayError(fmt.Sprintf("break timer couldn't be started on your system (%s)", runtime.GOOS))
-			sayError(err.Error())
+			say.Error(fmt.Sprintf("break timer couldn't be started on your system (%s)", runtime.GOOS))
+			say.Error(err.Error())
 			exit(1)
 		}
 	}
 
-	sayInfo("It's now " + currentTime() + ". " + fmt.Sprintf("%d min break timer ends at approx. %s", timeoutInMinutes, timeOfTimeout) + ". Happy collaborating! :)")
+	say.Info("It's now " + currentTime() + ". " + fmt.Sprintf("%d min break timer ends at approx. %s", timeoutInMinutes, timeOfTimeout) + ". Happy collaborating! :)")
 }
 
 func getUserForMobTimer(userOverride string) string {
@@ -1079,7 +1069,7 @@ func httpPutBreakTimer(timeoutInMinutes int, room string, user string, timerServ
 }
 
 func sendRequest(requestBody []byte, requestMethod string, requestUrl string, disableSSLVerification bool) error {
-	sayInfo(requestMethod + " " + requestUrl + " " + string(requestBody))
+	say.Info(requestMethod + " " + requestUrl + " " + string(requestBody))
 
 	responseBody := bytes.NewBuffer(requestBody)
 	request, requestCreationError := http.NewRequest(requestMethod, requestUrl, responseBody)
@@ -1101,8 +1091,8 @@ func sendRequest(requestBody []byte, requestMethod string, requestUrl string, di
 	if e, ok := responseErr.(*url.Error); ok {
 		switch e.Err.(type) {
 		case x509.UnknownAuthorityError:
-			sayError("The timer.mob.sh SSL certificate is signed by an unknown authority!")
-			sayFix("HINT: You can ignore that by adding MOB_TIMER_INSECURE=true to your configuration or environment.",
+			say.Error("The timer.mob.sh SSL certificate is signed by an unknown authority!")
+			say.Fix("HINT: You can ignore that by adding MOB_TIMER_INSECURE=true to your configuration or environment.",
 				"echo MOB_TIMER_INSECURE=true >> ~/.mob")
 			return fmt.Errorf("failed, to amke the http request: %w", responseErr)
 
@@ -1121,7 +1111,7 @@ func sendRequest(requestBody []byte, requestMethod string, requestUrl string, di
 		return fmt.Errorf("failed to read the http response: %w", responseReadingErr)
 	}
 	if string(body) != "" {
-		sayInfo(string(body))
+		say.Info(string(body))
 	}
 	return nil
 }
@@ -1135,12 +1125,12 @@ func moo(configuration Configuration) {
 	err := executeCommandsInBackgroundProcess(getVoiceCommand(voiceMessage, configuration.VoiceCommand))
 
 	if err != nil {
-		sayWarning(fmt.Sprintf("can't run voice command on your system (%s)", runtime.GOOS))
-		sayWarning(err.Error())
+		say.Warning(fmt.Sprintf("can't run voice command on your system (%s)", runtime.GOOS))
+		say.Warning(err.Error())
 		return
 	}
 
-	sayInfo(voiceMessage)
+	say.Info(voiceMessage)
 }
 
 func reset(configuration Configuration) {
@@ -1155,19 +1145,19 @@ func reset(configuration Configuration) {
 	if currentWipBranch.hasRemoteBranch(configuration) {
 		gitWithoutEmptyStrings("push", configuration.gitHooksOption(), configuration.RemoteName, "--delete", currentWipBranch.String())
 	}
-	sayInfo("Branches " + currentWipBranch.String() + " and " + currentWipBranch.remote(configuration).String() + " deleted")
+	say.Info("Branches " + currentWipBranch.String() + " and " + currentWipBranch.remote(configuration).String() + " deleted")
 }
 
 func start(configuration Configuration) error {
 	uncommittedChanges := hasUncommittedChanges()
 	if uncommittedChanges && !configuration.StartIncludeUncommittedChanges {
-		sayInfo("cannot start; clean working tree required")
+		say.Info("cannot start; clean working tree required")
 		sayUnstagedChangesInfo()
 		sayUntrackedFilesInfo()
 		if configuration.StartCreate {
-			sayFix("To start, including uncommitted changes and create the remote branch, use", configuration.mob("start --create --include-uncommitted-changes"))
+			say.Fix("To start, including uncommitted changes and create the remote branch, use", configuration.mob("start --create --include-uncommitted-changes"))
 		} else {
-			sayFix("To start, including uncommitted changes, use", configuration.mob("start --include-uncommitted-changes"))
+			say.Fix("To start, including uncommitted changes, use", configuration.mob("start --include-uncommitted-changes"))
 		}
 		return errors.New("cannot start; clean working tree required")
 	}
@@ -1176,28 +1166,28 @@ func start(configuration Configuration) error {
 	currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), gitBranches(), configuration)
 
 	if !currentBaseBranch.hasRemoteBranch(configuration) && !configuration.StartCreate {
-		sayError("Remote branch " + currentBaseBranch.remote(configuration).String() + " is missing")
-		sayFix("To start and and create the remote branch", "mob start --create")
+		say.Error("Remote branch " + currentBaseBranch.remote(configuration).String() + " is missing")
+		say.Fix("To start and and create the remote branch", "mob start --create")
 		return errors.New("remote branch is missing")
 	}
 
 	createRemoteBranch(configuration, currentBaseBranch)
 
 	if currentBaseBranch.hasUnpushedCommits(configuration) {
-		sayError("cannot start; unpushed changes on base branch must be pushed upstream")
-		sayFix("to fix this, push those commits and try again", "git push "+configuration.RemoteName+" "+currentBaseBranch.String())
+		say.Error("cannot start; unpushed changes on base branch must be pushed upstream")
+		say.Fix("to fix this, push those commits and try again", "git push "+configuration.RemoteName+" "+currentBaseBranch.String())
 		return errors.New("cannot start; unpushed changes on base branch must be pushed upstream")
 	}
 
 	if uncommittedChanges && silentgit("ls-tree", "-r", "HEAD", "--full-name", "--name-only", ".") == "" {
-		sayError("cannot start; current working dir is an uncommitted subdir")
-		sayFix("to fix this, go to the parent directory and try again", "cd ..")
+		say.Error("cannot start; current working dir is an uncommitted subdir")
+		say.Fix("to fix this, go to the parent directory and try again", "cd ..")
 		return errors.New("cannot start; current working dir is an uncommitted subdir")
 	}
 
 	if uncommittedChanges {
 		git("stash", "push", "--include-untracked", "--message", configuration.StashName)
-		sayInfo("uncommitted changes were stashed. If an error occurs later on, you can recover them with 'git stash pop'.")
+		say.Info("uncommitted changes were stashed. If an error occurs later on, you can recover them with 'git stash pop'.")
 	}
 
 	if !isMobProgramming(configuration) {
@@ -1218,7 +1208,7 @@ func start(configuration Configuration) error {
 		git("stash", "pop", stash)
 	}
 
-	sayInfo("you are on wip branch '" + currentWipBranch.String() + "' (base branch '" + currentBaseBranch.String() + "')")
+	say.Info("you are on wip branch '" + currentWipBranch.String() + "' (base branch '" + currentBaseBranch.String() + "')")
 	sayLastCommitsList(currentBaseBranch.String(), currentWipBranch.String())
 
 	openLastModifiedFileIfPresent(configuration)
@@ -1230,45 +1220,45 @@ func createRemoteBranch(configuration Configuration, currentBaseBranch Branch) {
 	if !currentBaseBranch.hasRemoteBranch(configuration) && configuration.StartCreate {
 		git("push", configuration.RemoteName, currentBaseBranch.String(), "--set-upstream")
 	} else if currentBaseBranch.hasRemoteBranch(configuration) && configuration.StartCreate {
-		sayInfo("Remote branch " + currentBaseBranch.remote(configuration).String() + " already exists")
+		say.Info("Remote branch " + currentBaseBranch.remote(configuration).String() + " already exists")
 	}
 }
 
 func openLastModifiedFileIfPresent(configuration Configuration) {
 	if !configuration.isOpenCommandGiven() {
-		debugInfo("No open command given")
+		say.Debug("No open command given")
 		return
 	}
 
-	debugInfo("Try to open last modified file")
+	say.Debug("Try to open last modified file")
 	if !lastCommitIsWipCommit(configuration) {
-		debugInfo("Last commit isn't a WIP commit.")
+		say.Debug("Last commit isn't a WIP commit.")
 		return
 	}
 	lastCommitMessage := lastCommitMessage()
 	split := strings.Split(lastCommitMessage, "lastFile:")
 	if len(split) == 1 {
-		sayWarning("Couldn't find last modified file in commit message!")
+		say.Warning("Couldn't find last modified file in commit message!")
 		return
 	}
 	if len(split) > 2 {
-		sayWarning("Could not determine last modified file from commit message, separator was used multiple times!")
+		say.Warning("Could not determine last modified file from commit message, separator was used multiple times!")
 		return
 	}
 	lastModifiedFile := split[1]
 	if lastModifiedFile == "" {
-		debugInfo("Could not find last modified file in commit message")
+		say.Debug("Could not find last modified file in commit message")
 		return
 	}
 	lastModifiedFilePath := gitRootDir() + "/" + lastModifiedFile
 	commandname, args := configuration.openCommandFor(lastModifiedFilePath)
 	_, err := startCommand(commandname, args...)
 	if err != nil {
-		sayWarning(fmt.Sprintf("Couldn't open last modified file on your system (%s)", runtime.GOOS))
-		sayWarning(err.Error())
+		say.Warning(fmt.Sprintf("Couldn't open last modified file on your system (%s)", runtime.GOOS))
+		say.Warning(err.Error())
 		return
 	}
-	debugInfo("Open last modified file: " + lastModifiedFilePath)
+	say.Debug("Open last modified file: " + lastModifiedFilePath)
 }
 
 func warnForActiveWipBranches(configuration Configuration, currentBaseBranch Branch) {
@@ -1279,9 +1269,9 @@ func warnForActiveWipBranches(configuration Configuration, currentBaseBranch Bra
 	// TODO show all active wip branches, even non-qualified ones
 	existingWipBranches := getWipBranchesForBaseBranch(currentBaseBranch, configuration)
 	if len(existingWipBranches) > 0 && configuration.WipBranchQualifier == "" {
-		sayWarning("Creating a new wip branch even though preexisting wip branches have been detected.")
+		say.Warning("Creating a new wip branch even though preexisting wip branches have been detected.")
 		for _, wipBranch := range existingWipBranches {
-			sayWithPrefix(wipBranch, "  - ")
+			say.WithPrefix(wipBranch, "  - ")
 		}
 	}
 }
@@ -1289,9 +1279,9 @@ func warnForActiveWipBranches(configuration Configuration, currentBaseBranch Bra
 func showActiveMobSessions(configuration Configuration, currentBaseBranch Branch) {
 	existingWipBranches := getWipBranchesForBaseBranch(currentBaseBranch, configuration)
 	if len(existingWipBranches) > 0 {
-		sayInfo("remote wip branches detected:")
+		say.Info("remote wip branches detected:")
 		for _, wipBranch := range existingWipBranches {
-			sayWithPrefix(wipBranch, "  - ")
+			say.WithPrefix(wipBranch, "  - ")
 		}
 	}
 }
@@ -1300,8 +1290,8 @@ func sayUntrackedFilesInfo() {
 	untrackedFiles := getUntrackedFiles()
 	hasUntrackedFiles := len(untrackedFiles) > 0
 	if hasUntrackedFiles {
-		sayInfo("untracked files present:")
-		sayInfoIndented(untrackedFiles)
+		say.Info("untracked files present:")
+		say.InfoIndented(untrackedFiles)
 	}
 }
 
@@ -1309,14 +1299,14 @@ func sayUnstagedChangesInfo() {
 	unstagedChanges := getUnstagedChanges()
 	hasUnstagedChanges := len(unstagedChanges) > 0
 	if hasUnstagedChanges {
-		sayInfo("unstaged changes present:")
-		sayInfoIndented(unstagedChanges)
+		say.Info("unstaged changes present:")
+		say.InfoIndented(unstagedChanges)
 	}
 }
 
 func getWipBranchesForBaseBranch(currentBaseBranch Branch, configuration Configuration) []string {
 	remoteBranches := gitRemoteBranches()
-	debugInfo("check on current base branch " + currentBaseBranch.String() + " with remote branches " + strings.Join(remoteBranches, ","))
+	say.Debug("check on current base branch " + currentBaseBranch.String() + " with remote branches " + strings.Join(remoteBranches, ","))
 
 	remoteBranchWithQualifier := currentBaseBranch.addWipPrefix(configuration).addWipQualifier(configuration).remote(configuration).Name
 	remoteBranchNoQualifier := currentBaseBranch.addWipPrefix(configuration).remote(configuration).Name
@@ -1338,9 +1328,9 @@ func getWipBranchesForBaseBranch(currentBaseBranch Branch, configuration Configu
 func startJoinMobSession(configuration Configuration) {
 	baseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), gitBranches(), configuration)
 
-	sayInfo("joining existing session from " + currentWipBranch.remote(configuration).String())
+	say.Info("joining existing session from " + currentWipBranch.remote(configuration).String())
 	if doBranchesDiverge(baseBranch.remote(configuration).Name, currentWipBranch.Name) {
-		sayWarning("Careful, your wip branch (" + currentWipBranch.Name + ") diverges from your main branch (" + baseBranch.remote(configuration).Name + ") !")
+		say.Warning("Careful, your wip branch (" + currentWipBranch.Name + ") diverges from your main branch (" + baseBranch.remote(configuration).Name + ") !")
 	}
 
 	git("checkout", "-B", currentWipBranch.Name, currentWipBranch.remote(configuration).Name)
@@ -1350,7 +1340,7 @@ func startJoinMobSession(configuration Configuration) {
 func startNewMobSession(configuration Configuration) {
 	currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), gitBranches(), configuration)
 
-	sayInfo("starting new session from " + currentBaseBranch.remote(configuration).String())
+	say.Info("starting new session from " + currentBaseBranch.remote(configuration).String())
 	git("checkout", "-B", currentWipBranch.Name, currentBaseBranch.remote(configuration).Name)
 	gitWithoutEmptyStrings("push", configuration.gitHooksOption(), "--set-upstream", configuration.RemoteName, currentWipBranch.Name)
 }
@@ -1376,12 +1366,12 @@ func findStashByName(stashes string, stash string) string {
 
 func next(configuration Configuration) {
 	if !isMobProgramming(configuration) {
-		sayFix("to start working together, use", configuration.mob("start"))
+		say.Fix("to start working together, use", configuration.mob("start"))
 		return
 	}
 
 	if !configuration.hasCustomCommitMessage() && configuration.RequireCommitMessage && hasUncommittedChanges() {
-		sayError("commit message required")
+		say.Error("commit message required")
 		return
 	}
 
@@ -1391,7 +1381,7 @@ func next(configuration Configuration) {
 		if currentWipBranch.hasLocalCommits(configuration) {
 			gitWithoutEmptyStrings("push", configuration.gitHooksOption(), configuration.RemoteName, currentWipBranch.Name)
 		} else {
-			sayInfo("nothing was done, so nothing to commit")
+			say.Info("nothing was done, so nothing to commit")
 		}
 	} else {
 		makeWipCommit(configuration)
@@ -1416,8 +1406,8 @@ func makeWipCommit(configuration Configuration) {
 	git("add", "--all")
 	commitMessage := createWipCommitMessage(configuration)
 	gitWithoutEmptyStrings("commit", "--message", commitMessage, configuration.gitHooksOption())
-	sayInfoIndented(getChangesOfLastCommit())
-	sayInfoIndented(gitCommitHash())
+	say.InfoIndented(getChangesOfLastCommit())
+	say.InfoIndented(gitCommitHash())
 }
 
 func createWipCommitMessage(configuration Configuration) string {
@@ -1438,20 +1428,20 @@ func getPathOfLastModifiedFile() string {
 	lastModifiedFilePath := ""
 	lastModifiedTime := time.Time{}
 
-	debugInfo("Find last modified file")
+	say.Debug("Find last modified file")
 	if len(files) == 1 {
 		lastModifiedFilePath = files[0]
-		debugInfo("Just one modified file: " + lastModifiedFilePath)
+		say.Debug("Just one modified file: " + lastModifiedFilePath)
 		return lastModifiedFilePath
 	}
 
 	for _, file := range files {
 		absoluteFilepath := rootDir + "/" + file
-		debugInfo(absoluteFilepath)
+		say.Debug(absoluteFilepath)
 		info, err := os.Stat(absoluteFilepath)
 		if err != nil {
-			sayWarning("Could not get statistics of file: " + absoluteFilepath)
-			sayWarning(err.Error())
+			say.Warning("Could not get statistics of file: " + absoluteFilepath)
+			say.Warning(err.Error())
 			continue
 		}
 		modTime := info.ModTime()
@@ -1459,14 +1449,14 @@ func getPathOfLastModifiedFile() string {
 			lastModifiedTime = modTime
 			lastModifiedFilePath = file
 		}
-		debugInfo(modTime.String())
+		say.Debug(modTime.String())
 	}
 	return lastModifiedFilePath
 }
 
 // uses git status --short. To work properly files have to be staged.
 func getModifiedFiles(rootDir string) []string {
-	debugInfo("Find modified files")
+	say.Debug("Find modified files")
 	oldWorkingDir := workingDir
 	workingDir = rootDir
 	gitstatus := silentgit("status", "--short")
@@ -1483,7 +1473,7 @@ func getModifiedFiles(rootDir string) []string {
 			continue
 		}
 		relativeFilepath = strings.TrimSpace(relativeFilepath)
-		debugInfo(relativeFilepath)
+		say.Debug(relativeFilepath)
 		files = append(files, relativeFilepath)
 	}
 	return files
@@ -1503,7 +1493,7 @@ func fetch(configuration Configuration) {
 
 func done(configuration Configuration) {
 	if !isMobProgramming(configuration) {
-		sayFix("to start working together, use", configuration.mob("start"))
+		say.Fix("to start working together, use", configuration.mob("start"))
 		return
 	}
 
@@ -1527,8 +1517,8 @@ func done(configuration Configuration) {
 
 		if mergeFailed != nil {
 			// TODO should this be an error and a fix for that error?
-			sayWarning("Skipped deleting " + wipBranch.Name + " because of merge conflicts.")
-			sayWarning("To fix this, solve the merge conflict manually, commit, push, and afterwards delete " + wipBranch.Name)
+			say.Warning("Skipped deleting " + wipBranch.Name + " because of merge conflicts.")
+			say.Warning("To fix this, solve the merge conflict manually, commit, push, and afterwards delete " + wipBranch.Name)
 			return
 		}
 
@@ -1543,23 +1533,23 @@ func done(configuration Configuration) {
 		cachedChanges := getCachedChanges()
 		hasCachedChanges := len(cachedChanges) > 0
 		if hasCachedChanges {
-			sayInfoIndented(cachedChanges)
+			say.InfoIndented(cachedChanges)
 		}
 		err := appendCoauthorsToSquashMsg(gitDir())
 		if err != nil {
-			sayWarning(err.Error())
+			say.Warning(err.Error())
 		}
 
 		if hasUncommittedChanges() {
-			sayNext("To finish, use", "git commit")
+			say.Next("To finish, use", "git commit")
 		} else if configuration.DoneSquash == Squash {
-			sayInfo("nothing was done, so nothing to commit")
+			say.Info("nothing was done, so nothing to commit")
 		}
 
 	} else {
 		git("checkout", baseBranch.Name)
 		git("branch", "-D", wipBranch.Name)
-		sayInfo("someone else already ended your session")
+		say.Info("someone else already ended your session")
 	}
 }
 
@@ -1582,12 +1572,12 @@ func squashOrCommit(configuration Configuration) string {
 func status(configuration Configuration) {
 	if isMobProgramming(configuration) {
 		currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), gitBranches(), configuration)
-		sayInfo("you are on wip branch " + currentWipBranch.String() + " (base branch " + currentBaseBranch.String() + ")")
+		say.Info("you are on wip branch " + currentWipBranch.String() + " (base branch " + currentBaseBranch.String() + ")")
 
 		sayLastCommitsList(currentBaseBranch.String(), currentWipBranch.String())
 	} else {
 		currentBaseBranch, _ := determineBranches(gitCurrentBranch(), gitBranches(), configuration)
-		sayInfo("you are on base branch '" + currentBaseBranch.String() + "'")
+		say.Info("you are on base branch '" + currentBaseBranch.String() + "'")
 		showActiveMobSessions(configuration, currentBaseBranch)
 	}
 }
@@ -1597,12 +1587,12 @@ func sayLastCommitsList(currentBaseBranch string, currentWipBranch string) {
 	log := silentgit("--no-pager", "log", commitsBaseWipBranch, "--pretty=format:%h %cr <%an>", "--abbrev-commit")
 	lines := strings.Split(log, "\n")
 	if len(lines) > 5 {
-		sayInfo("wip branch '" + currentWipBranch + "' contains " + strconv.Itoa(len(lines)) + " commits. The last 5 were:")
+		say.Info("wip branch '" + currentWipBranch + "' contains " + strconv.Itoa(len(lines)) + " commits. The last 5 were:")
 		lines = lines[:5]
 	}
 	ReverseSlice(lines)
 	output := strings.Join(lines, "\n")
-	say(output)
+	say.Say(output)
 }
 
 func ReverseSlice(s interface{}) {
@@ -1625,14 +1615,14 @@ func hasUncommittedChanges() bool {
 func isMobProgramming(configuration Configuration) bool {
 	currentBranch := gitCurrentBranch()
 	_, currentWipBranch := determineBranches(currentBranch, gitBranches(), configuration)
-	debugInfo("current branch " + currentBranch.String() + " and currentWipBranch " + currentWipBranch.String())
+	say.Debug("current branch " + currentBranch.String() + " and currentWipBranch " + currentWipBranch.String())
 	return currentWipBranch == currentBranch
 }
 
 func hasLocalBranch(localBranch string) bool {
 	localBranches := gitBranches()
-	debugInfo("Local Branches: " + strings.Join(localBranches, "\n"))
-	debugInfo("Local Branch: " + localBranch)
+	say.Debug("Local Branches: " + strings.Join(localBranches, "\n"))
+	say.Debug("Local Branch: " + localBranch)
 
 	for i := 0; i < len(localBranches); i++ {
 		if localBranches[i] == localBranch {
@@ -1673,11 +1663,11 @@ func gitUserEmail() string {
 }
 
 func showNext(configuration Configuration) {
-	debugInfo("determining next person based on previous changes")
+	say.Debug("determining next person based on previous changes")
 	gitUserName := gitUserName()
 	if gitUserName == "" {
-		sayWarning("failed to detect who's next because you haven't set your git user name")
-		sayFix("To fix, use", "git config --global user.name \"Your Name Here\"")
+		say.Warning("failed to detect who's next because you haven't set your git user name")
+		say.Fix("To fix, use", "git config --global user.name \"Your Name Here\"")
 		return
 	}
 
@@ -1687,17 +1677,17 @@ func showNext(configuration Configuration) {
 	changes := silentgit("--no-pager", "log", commitsBaseWipBranch, "--pretty=format:%an", "--abbrev-commit")
 	lines := strings.Split(strings.Replace(changes, "\r\n", "\n", -1), "\n")
 	numberOfLines := len(lines)
-	debugInfo("there have been " + strconv.Itoa(numberOfLines) + " changes")
-	debugInfo("current git user.name is '" + gitUserName + "'")
+	say.Debug("there have been " + strconv.Itoa(numberOfLines) + " changes")
+	say.Debug("current git user.name is '" + gitUserName + "'")
 	if numberOfLines < 1 {
 		return
 	}
 	nextTypist, previousCommitters := findNextTypist(lines, gitUserName)
 	if nextTypist != "" {
 		if len(previousCommitters) != 0 {
-			sayInfo("Committers after your last commit: " + strings.Join(previousCommitters, ", "))
+			say.Info("Committers after your last commit: " + strings.Join(previousCommitters, ", "))
 		}
-		sayInfo("***" + nextTypist + "*** is (probably) next.")
+		say.Info("***" + nextTypist + "*** is (probably) next.")
 	}
 }
 
@@ -1752,11 +1742,11 @@ Other
 
 Add '--debug' to any option to enable verbose logging.
 `
-	say(output)
+	say.Say(output)
 }
 
 func version() {
-	say("v" + versionNumber)
+	say.Say("v" + versionNumber)
 }
 
 func silentgit(args ...string) string {
@@ -1764,11 +1754,11 @@ func silentgit(args ...string) string {
 
 	if err != nil {
 		if !isGit() {
-			sayError("expecting the current working directory to be a git repository.")
+			say.Error("expecting the current working directory to be a git repository.")
 		} else {
-			sayError(commandString)
-			sayError(output)
-			sayError(err.Error())
+			say.Error(commandString)
+			say.Error(output)
+			say.Error(err.Error())
 		}
 		exit(1)
 	}
@@ -1809,15 +1799,15 @@ func git(args ...string) {
 
 	if err != nil {
 		if !isGit() {
-			sayError("expecting the current working directory to be a git repository.")
+			say.Error("expecting the current working directory to be a git repository.")
 		} else {
-			sayError(commandString)
-			sayError(output)
-			sayError(err.Error())
+			say.Error(commandString)
+			say.Error(output)
+			say.Error(err.Error())
 		}
 		exit(1)
 	} else {
-		sayIndented(commandString)
+		say.Indented(commandString)
 	}
 }
 
@@ -1829,21 +1819,21 @@ func gitignorefailure(args ...string) error {
 		commandString, output, err = runCommandSilent("git", args...)
 	}
 
-	sayIndented(commandString)
+	say.Indented(commandString)
 
 	if err != nil {
 		if !isGit() {
-			sayError("expecting the current working directory to be a git repository.")
+			say.Error("expecting the current working directory to be a git repository.")
 			exit(1)
 		} else {
-			sayWarning(commandString)
-			sayWarning(output)
-			sayWarning(err.Error())
+			say.Warning(commandString)
+			say.Warning(output)
+			say.Warning(err.Error())
 			return err
 		}
 	}
 
-	sayIndented(commandString)
+	say.Indented(commandString)
 	return nil
 }
 
@@ -1854,7 +1844,7 @@ func gitCommitHash() string {
 func isGitInstalled() bool {
 	_, _, err := runCommandSilent("git", "--version")
 	if err != nil {
-		debugInfo("isGitInstalled encountered an error: " + err.Error())
+		say.Debug("isGitInstalled encountered an error: " + err.Error())
 	}
 	return err == nil
 }
@@ -1870,10 +1860,10 @@ func runCommandSilent(name string, args ...string) (string, string, error) {
 		command.Dir = workingDir
 	}
 	commandString := strings.Join(command.Args, " ")
-	debugInfo("Running command <" + commandString + "> in silent mode, capturing combined output")
+	say.Debug("Running command <" + commandString + "> in silent mode, capturing combined output")
 	outputBytes, err := command.CombinedOutput()
 	output := string(outputBytes)
-	debugInfo(output)
+	say.Debug(output)
 	return commandString, output, err
 }
 
@@ -1883,7 +1873,7 @@ func runCommand(name string, args ...string) (string, string, error) {
 		command.Dir = workingDir
 	}
 	commandString := strings.Join(command.Args, " ")
-	debugInfo("Running command <" + commandString + "> passing output through")
+	say.Debug("Running command <" + commandString + "> passing output through")
 
 	stdout, _ := command.StdoutPipe()
 	command.Stderr = command.Stdout
@@ -1903,21 +1893,21 @@ func runCommand(name string, args ...string) (string, string, error) {
 			lineEnded = true
 		} else {
 			if lineEnded {
-				printToConsole("  ")
+				say.PrintToConsole("  ")
 				lineEnded = false
 			}
 		}
-		printToConsole(character)
+		say.PrintToConsole(character)
 		output += character
 	}
 
 	errWait := command.Wait()
 	if errWait != nil {
-		debugInfo(output)
+		say.Debug(output)
 		return commandString, output, errWait
 	}
 
-	debugInfo(output)
+	say.Debug(output)
 	return commandString, output, nil
 }
 
@@ -1927,73 +1917,11 @@ func startCommand(name string, args ...string) (string, error) {
 		command.Dir = workingDir
 	}
 	commandString := strings.Join(command.Args, " ")
-	debugInfo("Starting command " + commandString)
+	say.Debug("Starting command " + commandString)
 	err := command.Start()
 	return commandString, err
 }
 
 var exit = func(code int) {
 	os.Exit(code)
-}
-
-func sayError(text string) {
-	sayWithPrefix(text, "ERROR ")
-}
-
-func debugInfo(text string) {
-	if Debug {
-		sayWithPrefix(text, "DEBUG ")
-	}
-}
-
-func sayIndented(text string) {
-	sayWithPrefix(text, "  ")
-}
-
-func sayFix(instruction string, command string) {
-	sayWithPrefix(instruction, "👉 ")
-	sayEmptyLine()
-	sayIndented(command)
-	sayEmptyLine()
-}
-
-func sayNext(instruction string, command string) {
-	sayWithPrefix(instruction, "👉 ")
-	sayEmptyLine()
-	sayIndented(command)
-	sayEmptyLine()
-}
-
-func sayInfo(text string) {
-	sayWithPrefix(text, "> ")
-}
-
-func sayInfoIndented(text string) {
-	sayWithPrefix(text, "    ")
-}
-
-func sayWarning(text string) {
-	sayWithPrefix(text, "⚠ ")
-}
-
-func sayWithPrefix(s string, prefix string) {
-	lines := strings.Split(strings.TrimSpace(s), "\n")
-	for i := 0; i < len(lines); i++ {
-		printToConsole(prefix + strings.TrimSpace(lines[i]) + "\n")
-	}
-}
-
-func say(s string) {
-	if len(s) == 0 {
-		return
-	}
-	printToConsole(strings.TrimRight(s, " \r\n\t\v\f") + "\n")
-}
-
-func sayEmptyLine() {
-	printToConsole("\n")
-}
-
-var printToConsole = func(message string) {
-	fmt.Print(message)
 }

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/remotemobprogramming/mob/v3/say"
 	"io"
 	"io/ioutil"
 	"os"
@@ -22,13 +23,13 @@ func squashWip(configuration Configuration) {
 		mobExecutable()+" squash-wip --git-editor",
 		mobExecutable()+" squash-wip --git-sequence-editor",
 	)
-	sayInfo("rewriting history of '" + currentWipBranch.String() + "': squashing wip commits while keeping manual commits.")
+	say.Info("rewriting history of '" + currentWipBranch.String() + "': squashing wip commits while keeping manual commits.")
 	git("rebase", "--interactive", "--keep-empty", mergeBase)
 	setEnvGitEditor(originalGitEditor, originalGitSequenceEditor)
-	sayInfo("resulting history is:")
+	say.Info("resulting history is:")
 	sayLastCommitsWithMessage(currentBaseBranch.remote(configuration).String(), currentWipBranch.String())
 	if lastCommitIsWipCommit(configuration) { // last commit is wip commit
-		sayInfo("undoing the final wip commit and staging its changes:")
+		say.Info("undoing the final wip commit and staging its changes:")
 		git("reset", "--soft", "HEAD^")
 	}
 
@@ -48,11 +49,11 @@ func sayLastCommitsWithMessage(currentBaseBranch string, currentWipBranch string
 	log := silentgit("--no-pager", "log", commitsBaseWipBranch, "--pretty=oneline", "--abbrev-commit")
 	lines := strings.Split(log, "\n")
 	if len(lines) > 10 {
-		sayInfo("wip branch '" + currentWipBranch + "' contains " + strconv.Itoa(len(lines)) + " commits. The last 10 were:")
+		say.Info("wip branch '" + currentWipBranch + "' contains " + strconv.Itoa(len(lines)) + " commits. The last 10 were:")
 		lines = lines[:10]
 	}
 	output := strings.Join(lines, "\n")
-	say(output)
+	say.Say(output)
 }
 
 func setEnvGitEditor(gitEditor string, gitSequenceEditor string) {
@@ -69,7 +70,7 @@ func getEnvGitEditor() (gitEditor string, gitSequenceEditor string) {
 func mobExecutable() string {
 	if isTestEnvironment() {
 		wd, _ := os.Getwd()
-		return "go run $(ls -1 " + wd + "/*.go | grep -v _test.go)"
+		return "cd " + wd + " && go run $(ls -1 ./*.go | grep -v _test.go)"
 	} else {
 		return "mob"
 	}
