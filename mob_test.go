@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/remotemobprogramming/mob/v3/say"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -341,7 +342,7 @@ func TestExecuteKicksOffStatus(t *testing.T) {
 }
 
 func TestReadConfigurationFromFileOverrideEverything(t *testing.T) {
-	Debug = true
+	say.TurnOnDebugging()
 	tempDir = t.TempDir()
 	setWorkingDir(tempDir)
 
@@ -401,7 +402,7 @@ func TestReadConfigurationFromFileOverrideEverything(t *testing.T) {
 }
 
 func TestReadConfigurationFromFileWithNonBooleanQuotedDoneSquashValue(t *testing.T) {
-	Debug = true
+	say.TurnOnDebugging()
 	tempDir = t.TempDir()
 	setWorkingDir(tempDir)
 
@@ -411,7 +412,7 @@ func TestReadConfigurationFromFileWithNonBooleanQuotedDoneSquashValue(t *testing
 }
 
 func TestReadConfigurationFromFileAndSkipBrokenLines(t *testing.T) {
-	Debug = true
+	say.TurnOnDebugging()
 	tempDir = t.TempDir()
 	setWorkingDir(tempDir)
 
@@ -421,7 +422,7 @@ func TestReadConfigurationFromFileAndSkipBrokenLines(t *testing.T) {
 }
 
 func TestSkipIfConfigurationDoesNotExist(t *testing.T) {
-	Debug = true
+	say.TurnOnDebugging()
 	tempDir = t.TempDir()
 	setWorkingDir(tempDir)
 
@@ -726,7 +727,7 @@ func TestStartIncludeUnstagedChanges(t *testing.T) {
 func TestStartIncludeUnstagedChangesInNewWorkingDirectory(t *testing.T) {
 	output, configuration := setup(t)
 	configuration.StartIncludeUncommittedChanges = true
-	Debug = true
+	say.TurnOnDebugging()
 	createDirectory(t, "subdirnew")
 	setWorkingDir(tempDir + "/local/subdirnew")
 	createFile(t, "test.txt", "contentIrrelevant")
@@ -1115,7 +1116,7 @@ func TestStartDoneSquashWithUnpushedCommit(t *testing.T) {
 }
 
 func TestStartDoneSquashWipWithUnpushedCommit(t *testing.T) {
-	Debug = true
+	say.TurnOnDebugging()
 	_, configuration := setup(t)
 	configuration.DoneSquash = SquashWip
 
@@ -1815,7 +1816,7 @@ func setup(t *testing.T) (output *string, configuration Configuration) {
 
 func captureOutput(t *testing.T) *string {
 	messages := ""
-	printToConsole = func(text string) {
+	say.PrintToConsole = func(text string) {
 		t.Log(strings.TrimRight(text, "\n"))
 		messages += text
 	}
@@ -1837,7 +1838,7 @@ func createTestbed(t *testing.T, configuration Configuration) {
 	workingDir = ""
 
 	tempDir = t.TempDir()
-	say("Creating testbed in temporary directory " + tempDir)
+	say.Say("Creating testbed in temporary directory " + tempDir)
 
 	run(t, "./create-testbed", tempDir)
 
@@ -1848,7 +1849,7 @@ func createTestbed(t *testing.T, configuration Configuration) {
 
 func setWorkingDir(dir string) {
 	workingDir = dir
-	say("\n===== cd " + dir)
+	say.Say("\n===== cd " + dir)
 }
 
 func assertCommits(t *testing.T, commits int) {

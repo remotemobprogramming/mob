@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"fmt"
+	"github.com/remotemobprogramming/mob/v3/say"
 	"os"
 	"path"
 	"regexp"
@@ -24,20 +25,20 @@ func collectCoauthorsFromWipCommits(file *os.File) []Author {
 	// For details and background, see https://github.com/remotemobprogramming/mob/issues/81
 
 	coauthors := parseCoauthors(file)
-	debugInfo("Parsed coauthors")
-	debugInfo(strings.Join(coauthors, ","))
+	say.Debug("Parsed coauthors")
+	say.Debug(strings.Join(coauthors, ","))
 
 	coauthors = removeElementsContaining(coauthors, gitUserEmail())
-	debugInfo("Parsed coauthors without committer")
-	debugInfo(strings.Join(coauthors, ","))
+	say.Debug("Parsed coauthors without committer")
+	say.Debug(strings.Join(coauthors, ","))
 
 	coauthors = removeDuplicateValues(coauthors)
-	debugInfo("Unique coauthors without committer")
-	debugInfo(strings.Join(coauthors, ","))
+	say.Debug("Unique coauthors without committer")
+	say.Debug(strings.Join(coauthors, ","))
 
 	sortByLength(coauthors)
-	debugInfo("Sorted unique coauthors without committer")
-	debugInfo(strings.Join(coauthors, ","))
+	say.Debug("Sorted unique coauthors without committer")
+	say.Debug(strings.Join(coauthors, ","))
 
 	return coauthors
 }
@@ -94,11 +95,11 @@ func removeDuplicateValues(slice []string) []string {
 
 func appendCoauthorsToSquashMsg(gitDir string) error {
 	squashMsgPath := path.Join(gitDir, "SQUASH_MSG")
-	debugInfo("opening " + squashMsgPath)
+	say.Debug("opening " + squashMsgPath)
 	file, err := os.OpenFile(squashMsgPath, os.O_APPEND|os.O_RDWR, 0644)
 	if err != nil {
 		if os.IsNotExist(err) {
-			debugInfo(squashMsgPath + " does not exist")
+			say.Debug(squashMsgPath + " does not exist")
 			// No wip commits, nothing to squash, this isn't really an error
 			return nil
 		}
