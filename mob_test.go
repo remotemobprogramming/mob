@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"github.com/remotemobprogramming/mob/v3/say"
+	"github.com/remotemobprogramming/mob/v4/say"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -641,6 +641,37 @@ func TestResetDeleteRemoteWipBranchCommit(t *testing.T) {
 
 	assertOnBranch(t, "master")
 	assertNoMobSessionBranches(t, configuration, "mob-session")
+}
+
+func TestResetCommitBranch(t *testing.T) {
+	output, configuration := setup(t)
+	configuration.WipBranchQualifier = "green"
+
+	start(configuration)
+	createFile(t, "example.txt", "contentIrrelevant")
+	next(configuration)
+	assertMobSessionBranches(t, configuration, "mob/master-green")
+
+	reset(configuration)
+
+	assertOutputContains(t, output, "mob reset --delete-remote-wip-branch")
+	assertMobSessionBranches(t, configuration, "mob/master-green")
+}
+
+func TestResetDeleteRemoteWipBranchCommitBranch(t *testing.T) {
+	_, configuration := setup(t)
+	configuration.WipBranchQualifier = "green"
+	configuration.ResetDeleteRemoteWipBranch = true
+
+	start(configuration)
+	createFile(t, "example.txt", "contentIrrelevant")
+	next(configuration)
+	assertMobSessionBranches(t, configuration, "mob/master-green")
+
+	reset(configuration)
+
+	assertOnBranch(t, "master")
+	assertNoMobSessionBranches(t, configuration, "mob/master-green")
 }
 
 func TestClean(t *testing.T) {
