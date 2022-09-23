@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/remotemobprogramming/mob/v3/say"
+	"github.com/remotemobprogramming/mob/v4/say"
 	"io"
 	"io/ioutil"
 	"os"
