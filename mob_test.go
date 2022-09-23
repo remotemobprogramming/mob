@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/remotemobprogramming/mob/v4/git"
 	"github.com/remotemobprogramming/mob/v4/say"
 	"io/ioutil"
 	"os"
@@ -344,7 +345,7 @@ func TestExecuteKicksOffStatus(t *testing.T) {
 func TestReadConfigurationFromFileOverrideEverything(t *testing.T) {
 	say.TurnOnDebugging()
 	tempDir = t.TempDir()
-	setWorkingDir(tempDir)
+	setWorkingDirForTest(tempDir)
 
 	createFile(t, ".mob", `
 		MOB_CLI_NAME="team"
@@ -404,7 +405,7 @@ func TestReadConfigurationFromFileOverrideEverything(t *testing.T) {
 func TestReadConfigurationFromFileWithNonBooleanQuotedDoneSquashValue(t *testing.T) {
 	say.TurnOnDebugging()
 	tempDir = t.TempDir()
-	setWorkingDir(tempDir)
+	setWorkingDirForTest(tempDir)
 
 	createFile(t, ".mob", "\nMOB_DONE_SQUASH=\"squash-wip\"")
 	actualConfiguration := parseUserConfiguration(getDefaultConfiguration(), tempDir+"/.mob")
@@ -414,7 +415,7 @@ func TestReadConfigurationFromFileWithNonBooleanQuotedDoneSquashValue(t *testing
 func TestReadConfigurationFromFileAndSkipBrokenLines(t *testing.T) {
 	say.TurnOnDebugging()
 	tempDir = t.TempDir()
-	setWorkingDir(tempDir)
+	setWorkingDirForTest(tempDir)
 
 	createFile(t, ".mob", "\nMOB_TIMER_ROOM=\"Broken\" \"String\"")
 	actualConfiguration := parseUserConfiguration(getDefaultConfiguration(), tempDir+"/.mob")
@@ -424,7 +425,7 @@ func TestReadConfigurationFromFileAndSkipBrokenLines(t *testing.T) {
 func TestSkipIfConfigurationDoesNotExist(t *testing.T) {
 	say.TurnOnDebugging()
 	tempDir = t.TempDir()
-	setWorkingDir(tempDir)
+	setWorkingDirForTest(tempDir)
 
 	actualConfiguration := parseUserConfiguration(getDefaultConfiguration(), tempDir+"/.mob")
 	equals(t, getDefaultConfiguration(), actualConfiguration)
@@ -548,7 +549,7 @@ func TestStartWarnsAboutPreexistingWipBranches(t *testing.T) {
 	assertOnBranch(t, "mob/feature-something-2")
 	next(configuration)
 
-	git("checkout", "feature-something")
+	git.Git("checkout", "feature-something")
 	start(configuration)
 	assertOnBranch(t, "mob/feature-something")
 	assertOutputContains(t, output, "preexisting wip branches have been detected")
@@ -562,9 +563,9 @@ func TestStartWarnsOnDivergingWipBranch(t *testing.T) {
 	createFileAndCommitIt(t, "example.txt", "asdf", "asdf")
 	next(configuration)
 
-	git("checkout", "master")
+	git.Git("checkout", "master")
 	createFileAndCommitIt(t, "example.txt", "other", "other")
-	git("push")
+	git.Git("push")
 
 	start(configuration)
 
@@ -672,7 +673,7 @@ func TestResetDeleteRemoteWipBranchCommitBranch(t *testing.T) {
 
 func TestClean(t *testing.T) {
 	_, configuration := setup(t)
-	git("checkout", "-b", "mob-session")
+	git.Git("checkout", "-b", "mob-session")
 
 	clean(configuration)
 
@@ -698,7 +699,7 @@ func TestCleanNotFullyMergedMissingRemoteBranch(t *testing.T) {
 
 	next(configuration)
 
-	git("push", "origin", "mob-session", "--delete")
+	git.Git("push", "origin", "mob-session", "--delete")
 
 	clean(configuration)
 
@@ -708,9 +709,9 @@ func TestCleanNotFullyMergedMissingRemoteBranch(t *testing.T) {
 
 func TestCleanFeatureOrphanWipBranch(t *testing.T) {
 	_, configuration := setup(t)
-	git("checkout", "-b", "feature1")
-	git("push", "origin", "feature1", "--set-upstream")
-	git("checkout", "-b", "mob/feature1")
+	git.Git("checkout", "-b", "feature1")
+	git.Git("push", "origin", "feature1", "--set-upstream")
+	git.Git("checkout", "-b", "mob/feature1")
 
 	clean(configuration)
 
@@ -720,7 +721,7 @@ func TestCleanFeatureOrphanWipBranch(t *testing.T) {
 
 func TestCleanMissingBaseBranch(t *testing.T) {
 	_, configuration := setup(t)
-	git("checkout", "-b", "mob/feature1")
+	git.Git("checkout", "-b", "mob/feature1")
 
 	clean(configuration)
 
@@ -756,7 +757,7 @@ func TestStartIncludeUnstagedChangesInNewWorkingDirectory(t *testing.T) {
 	configuration.StartIncludeUncommittedChanges = true
 	say.TurnOnDebugging()
 	createDirectory(t, "subdirnew")
-	setWorkingDir(tempDir + "/local/subdirnew")
+	setWorkingDirForTest(tempDir + "/local/subdirnew")
 	createFile(t, "test.txt", "contentIrrelevant")
 	assertFileExist(t, tempDir+"/local/subdirnew/test.txt")
 
@@ -806,7 +807,7 @@ func TestStartUntrackedFiles(t *testing.T) {
 
 func TestStartOnUnpushedFeatureBranch(t *testing.T) {
 	output, configuration := setup(t)
-	git("checkout", "-b", "feature1")
+	git.Git("checkout", "-b", "feature1")
 
 	start(configuration)
 
@@ -817,7 +818,7 @@ func TestStartOnUnpushedFeatureBranch(t *testing.T) {
 
 func TestStartOnUnpushedFeatureBranchWithUncommitedChanges(t *testing.T) {
 	output, configuration := setup(t)
-	git("checkout", "-b", "feature1")
+	git.Git("checkout", "-b", "feature1")
 	createFile(t, "file.txt", "contentIrrelevant")
 
 	start(configuration)
@@ -828,7 +829,7 @@ func TestStartOnUnpushedFeatureBranchWithUncommitedChanges(t *testing.T) {
 
 func TestStartCreateOnUnpushedFeatureBranch(t *testing.T) {
 	output, configuration := setup(t)
-	git("checkout", "-b", "feature1")
+	git.Git("checkout", "-b", "feature1")
 
 	configuration.StartCreate = true
 	start(configuration)
@@ -839,7 +840,7 @@ func TestStartCreateOnUnpushedFeatureBranch(t *testing.T) {
 
 func TestStartCreateOnUnpushedFeatureBranchWithBranchPostfix(t *testing.T) {
 	output, configuration := setup(t)
-	git("checkout", "-b", "feature1")
+	git.Git("checkout", "-b", "feature1")
 
 	configuration.StartCreate = true
 	configuration.WipBranchQualifier = "green"
@@ -851,7 +852,7 @@ func TestStartCreateOnUnpushedFeatureBranchWithBranchPostfix(t *testing.T) {
 
 func TestStartCreateOnUnpushedFeatureBranchWithUncommitedChanges(t *testing.T) {
 	output, configuration := setup(t)
-	git("checkout", "-b", "feature1")
+	git.Git("checkout", "-b", "feature1")
 	createFile(t, "file.txt", "contentIrrelevant")
 
 	configuration.StartCreate = true
@@ -863,7 +864,7 @@ func TestStartCreateOnUnpushedFeatureBranchWithUncommitedChanges(t *testing.T) {
 
 func TestStartCreateIncludeUncommitedChangesOnUnpushedFeatureBranchWithUncommitedChanges(t *testing.T) {
 	_, configuration := setup(t)
-	git("checkout", "-b", "feature1")
+	git.Git("checkout", "-b", "feature1")
 	createFile(t, "file.txt", "contentIrrelevant")
 
 	configuration.StartCreate = true
@@ -875,7 +876,7 @@ func TestStartCreateIncludeUncommitedChangesOnUnpushedFeatureBranchWithUncommite
 
 func TestStartCreateIncludeUncommitedChangesOnUnpushedFeatureBranchWithUncommitedChangesAndBranchPostfix(t *testing.T) {
 	_, configuration := setup(t)
-	git("checkout", "-b", "feature1")
+	git.Git("checkout", "-b", "feature1")
 	createFile(t, "file.txt", "contentIrrelevant")
 
 	configuration.StartCreate = true
@@ -913,10 +914,10 @@ func TestStartCreateOnPushedFeatureBranchWhichIsAhead(t *testing.T) {
 	_, configuration := setup(t)
 	checkoutAndPushBranch("feature1")
 	createFile(t, "file.txt", "contentIrrelevant")
-	git("add", ".")
-	git("commit", "-m", "commit ahead")
-	git("push")
-	git("reset", "--hard", "HEAD~1")
+	git.Git("add", ".")
+	git.Git("commit", "-m", "commit ahead")
+	git.Git("push")
+	git.Git("reset", "--hard", "HEAD~1")
 
 	configuration.StartCreate = true
 	start(configuration)
@@ -929,8 +930,8 @@ func TestStartCreateOnPushedFeatureBranchWhichIsBehind(t *testing.T) {
 	output, configuration := setup(t)
 	checkoutAndPushBranch("feature1")
 	createFile(t, "file.txt", "contentIrrelevant")
-	git("add", ".")
-	git("commit", "-m", "commit ahead")
+	git.Git("add", ".")
+	git.Git("commit", "-m", "commit ahead")
 
 	configuration.StartCreate = true
 	start(configuration)
@@ -961,7 +962,7 @@ func TestStartNextStay(t *testing.T) {
 
 	next(configuration)
 
-	equals(t, silentgit("log", "--format=%B", "-n", "1", "HEAD"), configuration.WipCommitMessage+"\n\nlastFile:file1.txt")
+	equals(t, git.SilentGit("log", "--format=%B", "-n", "1", "HEAD"), configuration.WipCommitMessage+"\n\nlastFile:file1.txt")
 	assertOnBranch(t, "mob-session")
 }
 
@@ -974,7 +975,7 @@ func TestStartNextStay_WriteLastModifiedFileInCommit_WhenFileIsAdded(t *testing.
 	createFile(t, "newerFile.txt", "contentIrrelevant")
 	next(configuration)
 
-	equals(t, silentgit("log", "--format=%B", "-n", "1", "HEAD"), configuration.WipCommitMessage+"\n\nlastFile:newerFile.txt")
+	equals(t, git.SilentGit("log", "--format=%B", "-n", "1", "HEAD"), configuration.WipCommitMessage+"\n\nlastFile:newerFile.txt")
 }
 
 func TestStartNextStay_WriteLastModifiedFileInCommit_WhenFileIsModified(t *testing.T) {
@@ -991,7 +992,7 @@ func TestStartNextStay_WriteLastModifiedFileInCommit_WhenFileIsModified(t *testi
 	next(configuration)
 
 	assertOnBranch(t, "mob-session")
-	equals(t, silentgit("log", "--format=%B", "-n", "1", "HEAD"), configuration.WipCommitMessage+"\n\nlastFile:file1.txt")
+	equals(t, git.SilentGit("log", "--format=%B", "-n", "1", "HEAD"), configuration.WipCommitMessage+"\n\nlastFile:file1.txt")
 }
 
 func TestStartNextStay_WriteLastModifiedFileInCommit_WhenFileIsModifiedAndWorkingDirIsNotProjectRoot(t *testing.T) {
@@ -1006,11 +1007,11 @@ func TestStartNextStay_WriteLastModifiedFileInCommit_WhenFileIsModifiedAndWorkin
 	start(configuration)
 	createDirectory(t, "dir")
 	createFile(t, "file1.txt", "contentIrrelevantButModified")
-	setWorkingDir(workingDir + "/dir")
+	setWorkingDirForTest(workingDir + "/dir")
 	next(configuration)
 
 	assertOnBranch(t, "mob-session")
-	equals(t, silentgit("log", "--format=%B", "-n", "1", "HEAD"), configuration.WipCommitMessage+"\n\nlastFile:file1.txt")
+	equals(t, git.SilentGit("log", "--format=%B", "-n", "1", "HEAD"), configuration.WipCommitMessage+"\n\nlastFile:file1.txt")
 }
 
 func TestStartNextStay_DoNotWriteLastModifiedFileInCommit_WhenFileIsDeleted(t *testing.T) {
@@ -1027,7 +1028,7 @@ func TestStartNextStay_DoNotWriteLastModifiedFileInCommit_WhenFileIsDeleted(t *t
 	next(configuration)
 
 	assertOnBranch(t, "mob-session")
-	equals(t, silentgit("log", "--format=%B", "-n", "1", "HEAD"), configuration.WipCommitMessage)
+	equals(t, git.SilentGit("log", "--format=%B", "-n", "1", "HEAD"), configuration.WipCommitMessage)
 }
 
 func TestStartNextStay_DoNotWriteLastModifiedFileInCommit_WhenFileIsMoved(t *testing.T) {
@@ -1044,7 +1045,7 @@ func TestStartNextStay_DoNotWriteLastModifiedFileInCommit_WhenFileIsMoved(t *tes
 	next(configuration)
 
 	assertOnBranch(t, "mob-session")
-	equals(t, silentgit("log", "--format=%B", "-n", "1", "HEAD"), configuration.WipCommitMessage)
+	equals(t, git.SilentGit("log", "--format=%B", "-n", "1", "HEAD"), configuration.WipCommitMessage)
 }
 
 func TestStartNextStay_OpenLastModifiedFile(t *testing.T) {
@@ -1067,7 +1068,7 @@ func TestStartNextStay_OpenLastModifiedFile(t *testing.T) {
 func TestRunOutput(t *testing.T) {
 	_, configuration := setup(t)
 
-	setWorkingDir(tempDir + "/local")
+	setWorkingDirForTest(tempDir + "/local")
 	start(configuration)
 	createFile(t, "file1.txt", "asdf")
 	output := run(t, "cat", tempDir+"/local/file1.txt")
@@ -1077,30 +1078,30 @@ func TestRunOutput(t *testing.T) {
 func TestTestbed(t *testing.T) {
 	_, configuration := setup(t)
 
-	setWorkingDir(tempDir + "/local")
+	setWorkingDirForTest(tempDir + "/local")
 	start(configuration)
 	createFile(t, "file1.txt", "asdf")
 	next(configuration)
 
-	setWorkingDir(tempDir + "/localother")
+	setWorkingDirForTest(tempDir + "/localother")
 	start(configuration)
 	createFile(t, "file2.txt", "asdf")
 	next(configuration)
 
-	setWorkingDir(tempDir + "/alice")
+	setWorkingDirForTest(tempDir + "/alice")
 	start(configuration)
 	createFile(t, "file3.txt", "owqe")
 	next(configuration)
 
-	setWorkingDir(tempDir + "/bob")
+	setWorkingDirForTest(tempDir + "/bob")
 	start(configuration)
 	createFile(t, "file4.txt", "zcvx")
 	next(configuration)
 
-	setWorkingDir(tempDir + "/local")
+	setWorkingDirForTest(tempDir + "/local")
 	start(configuration)
 
-	output := silentgit("log", "--pretty=format:'%ae'")
+	output := git.SilentGit("log", "--pretty=format:'%ae'")
 	assertOutputContains(t, &output, "local")
 	assertOutputContains(t, &output, "localother")
 	assertOutputContains(t, &output, "alice")
@@ -1127,15 +1128,15 @@ func TestStartDoneSquashWithUnpushedCommit(t *testing.T) {
 	// now in /local
 	createFileAndCommitIt(t, "file1.txt", "owqe", "not a mob session yet")
 
-	setWorkingDir(tempDir + "/alice")
+	setWorkingDirForTest(tempDir + "/alice")
 	start(configuration)
 	createFile(t, "file2.txt", "zcvx")
 	next(configuration)
 
-	setWorkingDir(tempDir + "/local")
-	git("push")
+	setWorkingDirForTest(tempDir + "/local")
+	git.Git("push")
 
-	setWorkingDir(tempDir + "/alice")
+	setWorkingDirForTest(tempDir + "/alice")
 	start(configuration)
 	done(configuration)
 
@@ -1150,15 +1151,15 @@ func TestStartDoneSquashWipWithUnpushedCommit(t *testing.T) {
 	// now in /local
 	createFileAndCommitIt(t, "file1.txt", "owqe", "not a mob session yet")
 
-	setWorkingDir(tempDir + "/alice")
+	setWorkingDirForTest(tempDir + "/alice")
 	start(configuration)
 	createFile(t, "file2.txt", "zcvx")
 	next(configuration)
 
-	setWorkingDir(tempDir + "/local")
-	git("push")
+	setWorkingDirForTest(tempDir + "/local")
+	git.Git("push")
 
-	setWorkingDir(tempDir + "/alice")
+	setWorkingDirForTest(tempDir + "/alice")
 	start(configuration)
 	done(configuration)
 
@@ -1417,8 +1418,8 @@ func TestStartDoneSquashWipOnlyManualCommits(t *testing.T) {
 
 func TestStartDoneFeatureBranch(t *testing.T) {
 	_, configuration := setup(t)
-	git("checkout", "-b", "feature1")
-	git("push", "origin", "feature1", "--set-upstream")
+	git.Git("checkout", "-b", "feature1")
+	git.Git("push", "origin", "feature1", "--set-upstream")
 	assertOnBranch(t, "feature1")
 	start(configuration)
 	assertOnBranch(t, "mob/feature1")
@@ -1431,8 +1432,8 @@ func TestStartDoneFeatureBranch(t *testing.T) {
 
 func TestStartNextFeatureBranch(t *testing.T) {
 	_, configuration := setup(t)
-	git("checkout", "-b", "feature1")
-	git("push", "origin", "feature1", "--set-upstream")
+	git.Git("checkout", "-b", "feature1")
+	git.Git("push", "origin", "feature1", "--set-upstream")
 	assertOnBranch(t, "feature1")
 	start(configuration)
 	assertOnBranch(t, "mob/feature1")
@@ -1446,34 +1447,34 @@ func TestStartNextFeatureBranch(t *testing.T) {
 func TestGitRootDir(t *testing.T) {
 	setup(t)
 	expectedPath, _ := filepath.EvalSymlinks(tempDir + "/local")
-	equals(t, expectedPath, gitRootDir())
+	equals(t, expectedPath, git.RootDir())
 }
 
 func TestBothCreateNonemptyCommitWithNext(t *testing.T) {
 	_, configuration := setup(t)
 
-	setWorkingDir(tempDir + "/local")
+	setWorkingDirForTest(tempDir + "/local")
 	start(configuration)
 	createFile(t, "file1.txt", "contentIrrelevant")
 
-	setWorkingDir(tempDir + "/localother")
+	setWorkingDirForTest(tempDir + "/localother")
 	start(configuration)
 	createFile(t, "file2.txt", "contentIrrelevant")
 
-	setWorkingDir(tempDir + "/local")
+	setWorkingDirForTest(tempDir + "/local")
 	next(configuration)
 
-	setWorkingDir(tempDir + "/localother")
+	setWorkingDirForTest(tempDir + "/localother")
 	// next(configuration) not possible, would fail
-	git("pull")
+	git.Git("pull")
 	next(configuration)
 
-	setWorkingDir(tempDir + "/local")
+	setWorkingDirForTest(tempDir + "/local")
 	start(configuration)
 	assertFileExist(t, "file1.txt")
 	assertFileExist(t, "file2.txt")
 
-	setWorkingDir(tempDir + "/localother")
+	setWorkingDirForTest(tempDir + "/localother")
 	start(configuration)
 	assertFileExist(t, "file1.txt")
 	assertFileExist(t, "file2.txt")
@@ -1482,25 +1483,25 @@ func TestBothCreateNonemptyCommitWithNext(t *testing.T) {
 func TestNothingToCommitCreatesNoCommits(t *testing.T) {
 	_, configuration := setup(t)
 
-	setWorkingDir(tempDir + "/local")
+	setWorkingDirForTest(tempDir + "/local")
 	start(configuration)
 	assertCommits(t, 1)
 
-	setWorkingDir(tempDir + "/localother")
+	setWorkingDirForTest(tempDir + "/localother")
 	start(configuration)
 	assertCommits(t, 1)
 
-	setWorkingDir(tempDir + "/local")
+	setWorkingDirForTest(tempDir + "/local")
 	next(configuration)
 
-	setWorkingDir(tempDir + "/localother")
+	setWorkingDirForTest(tempDir + "/localother")
 	next(configuration)
 
-	setWorkingDir(tempDir + "/local")
+	setWorkingDirForTest(tempDir + "/local")
 	start(configuration)
 	assertCommits(t, 1)
 
-	setWorkingDir(tempDir + "/localother")
+	setWorkingDirForTest(tempDir + "/localother")
 	start(configuration)
 	assertCommits(t, 1)
 }
@@ -1508,13 +1509,13 @@ func TestNothingToCommitCreatesNoCommits(t *testing.T) {
 func TestStartNextPushManualCommits(t *testing.T) {
 	_, configuration := setup(t)
 
-	setWorkingDir(tempDir + "/local")
+	setWorkingDirForTest(tempDir + "/local")
 
 	start(configuration)
 	createFileAndCommitIt(t, "example.txt", "contentIrrelevant", "asdf")
 	next(configuration)
 
-	setWorkingDir(tempDir + "/localother")
+	setWorkingDirForTest(tempDir + "/localother")
 	start(configuration)
 	assertFileExist(t, "example.txt")
 }
@@ -1522,10 +1523,10 @@ func TestStartNextPushManualCommits(t *testing.T) {
 func TestStartNextPushManualCommitsFeatureBranch(t *testing.T) {
 	_, configuration := setup(t)
 
-	setWorkingDir(tempDir + "/local")
+	setWorkingDirForTest(tempDir + "/local")
 
-	git("checkout", "-b", "feature1")
-	git("push", "origin", "feature1", "--set-upstream")
+	git.Git("checkout", "-b", "feature1")
+	git.Git("push", "origin", "feature1", "--set-upstream")
 	assertOnBranch(t, "feature1")
 	start(configuration)
 	assertOnBranch(t, "mob/feature1")
@@ -1533,9 +1534,9 @@ func TestStartNextPushManualCommitsFeatureBranch(t *testing.T) {
 	createFileAndCommitIt(t, "example.txt", "contentIrrelevant", "asdf")
 	next(configuration)
 
-	setWorkingDir(tempDir + "/localother")
-	git("fetch")
-	git("checkout", "feature1")
+	setWorkingDirForTest(tempDir + "/localother")
+	git.Git("fetch")
+	git.Git("checkout", "feature1")
 	start(configuration)
 	assertFileExist(t, "example.txt")
 }
@@ -1543,26 +1544,26 @@ func TestStartNextPushManualCommitsFeatureBranch(t *testing.T) {
 func TestConflictingMobSessions(t *testing.T) {
 	_, configuration := setup(t)
 
-	setWorkingDir(tempDir + "/local")
+	setWorkingDirForTest(tempDir + "/local")
 	start(configuration)
 	createFile(t, "example.txt", "contentIrrelevant")
 	next(configuration)
 
-	setWorkingDir(tempDir + "/localother")
+	setWorkingDirForTest(tempDir + "/localother")
 	start(configuration)
 	next(configuration)
 
-	setWorkingDir(tempDir + "/local")
+	setWorkingDirForTest(tempDir + "/local")
 	start(configuration)
 	done(configuration)
-	git("commit", "-m", "\"finished mob session\"")
+	git.Git("commit", "-m", "\"finished mob session\"")
 
-	setWorkingDir(tempDir + "/local")
+	setWorkingDirForTest(tempDir + "/local")
 	start(configuration)
 	createFile(t, "example2.txt", "contentIrrelevant")
 	next(configuration)
 
-	setWorkingDir(tempDir + "/localother")
+	setWorkingDirForTest(tempDir + "/localother")
 	start(configuration)
 }
 
@@ -1570,37 +1571,37 @@ func TestConflictingMobSessionsNextStay(t *testing.T) {
 	_, configuration := setup(t)
 	configuration.NextStay = true
 
-	setWorkingDir(tempDir + "/local")
+	setWorkingDirForTest(tempDir + "/local")
 	start(configuration)
 	createFile(t, "example.txt", "contentIrrelevant")
 	next(configuration)
 
-	setWorkingDir(tempDir + "/localother")
+	setWorkingDirForTest(tempDir + "/localother")
 	start(configuration)
 	next(configuration)
 
-	setWorkingDir(tempDir + "/local")
+	setWorkingDirForTest(tempDir + "/local")
 	start(configuration)
 	done(configuration)
-	git("commit", "-m", "\"finished mob session\"")
+	git.Git("commit", "-m", "\"finished mob session\"")
 
-	setWorkingDir(tempDir + "/localother")
+	setWorkingDirForTest(tempDir + "/localother")
 	start(configuration)
 }
 
 func TestDoneMergeConflict(t *testing.T) {
 	output, configuration := setup(t)
 
-	setWorkingDir(tempDir + "/local")
+	setWorkingDirForTest(tempDir + "/local")
 	start(configuration)
 	createFile(t, "example.txt", "content")
 	next(configuration)
 
-	setWorkingDir(tempDir + "/localother")
+	setWorkingDirForTest(tempDir + "/localother")
 	createFileAndCommitIt(t, "example.txt", "asdf", "asdf")
-	git("push")
+	git.Git("push")
 
-	setWorkingDir(tempDir + "/local")
+	setWorkingDirForTest(tempDir + "/local")
 	start(configuration)
 	done(configuration)
 	assertOutputContains(t, output, "To fix this, solve the merge conflict manually, commit, push, and afterwards delete mob-session")
@@ -1609,16 +1610,16 @@ func TestDoneMergeConflict(t *testing.T) {
 func TestDoneMerge(t *testing.T) {
 	output, configuration := setup(t)
 
-	setWorkingDir(tempDir + "/local")
+	setWorkingDirForTest(tempDir + "/local")
 	start(configuration)
 	createFile(t, "example.txt", "contentIrrelevant")
 	next(configuration)
 
-	setWorkingDir(tempDir + "/localother")
+	setWorkingDirForTest(tempDir + "/localother")
 	createFileAndCommitIt(t, "example2.txt", "contentIrrelevant", "asdf")
-	git("push")
+	git.Git("push")
 
-	setWorkingDir(tempDir + "/local")
+	setWorkingDirForTest(tempDir + "/local")
 	start(configuration)
 	done(configuration)
 	assertOutputContains(t, output, "  git commit")
@@ -1626,7 +1627,7 @@ func TestDoneMerge(t *testing.T) {
 
 func TestDoneSquashNoChanges(t *testing.T) {
 	output, configuration := setup(t)
-	setWorkingDir(tempDir + "/local")
+	setWorkingDirForTest(tempDir + "/local")
 	checkoutAndPushBranch("feature-something")
 
 	start(configuration)
@@ -1638,22 +1639,22 @@ func TestDoneSquashNoChanges(t *testing.T) {
 func TestStartAndNextInSubdir(t *testing.T) {
 	_, configuration := setup(t)
 
-	setWorkingDir(tempDir + "/local/subdir")
+	setWorkingDirForTest(tempDir + "/local/subdir")
 	start(configuration)
 	createFile(t, "example.txt", "contentIrrelevant")
 	next(configuration)
 
-	setWorkingDir(tempDir + "/localother/subdir")
+	setWorkingDirForTest(tempDir + "/localother/subdir")
 	start(configuration)
 	createFile(t, "example2.txt", "contentIrrelevant")
 	createFile(t, "../example3.txt", "contentIrrelevant")
 	next(configuration)
 
-	setWorkingDir(tempDir + "/local/subdir")
+	setWorkingDirForTest(tempDir + "/local/subdir")
 	start(configuration)
 	done(configuration)
 
-	setWorkingDir(tempDir + "/local")
+	setWorkingDirForTest(tempDir + "/local")
 	assertFileExist(t, "subdir/example.txt")
 	assertFileExist(t, "subdir/example2.txt")
 	assertFileExist(t, "example3.txt")
@@ -1661,12 +1662,12 @@ func TestStartAndNextInSubdir(t *testing.T) {
 
 func TestIsGitIdentifiesGitRepo(t *testing.T) {
 	setup(t)
-	equals(t, true, isGit())
+	equals(t, true, git.IsRepository())
 }
 
 func TestIsGitIdentifiesOutsideOfGitRepo(t *testing.T) {
-	setWorkingDir(tempDir + "/notgit")
-	equals(t, false, isGit())
+	setWorkingDirForTest(tempDir + "/notgit")
+	equals(t, false, git.IsRepository())
 }
 
 func TestEmptyGitStatus(t *testing.T) {
@@ -1693,7 +1694,7 @@ func TestGitStatusWithManyFiles(t *testing.T) {
 	setup(t)
 	createFile(t, "hello.txt", "contentIrrelevant")
 	createFile(t, "added.txt", "contentIrrelevant")
-	git("add", "added.txt")
+	git.Git("add", "added.txt")
 
 	status := gitStatus()
 
@@ -1747,9 +1748,9 @@ func TestSetMobDoneSquashEmptyStringValue(t *testing.T) {
 func TestBranchesDoNotDiverge(t *testing.T) {
 	setup(t)
 	createFileAndCommitIt(t, "example.txt", "asdf", "asdf")
-	git("checkout", "-b", "diverges")
+	git.Git("checkout", "-b", "diverges")
 
-	diverge := doBranchesDiverge("master", "diverges")
+	diverge := git.DoBranchesDiverge("master", "diverges")
 
 	equals(t, false, diverge)
 }
@@ -1757,12 +1758,12 @@ func TestBranchesDoNotDiverge(t *testing.T) {
 func TestBranchesDoDiverge(t *testing.T) {
 	setup(t)
 	createFileAndCommitIt(t, "example.txt", "asdf", "asdf")
-	git("checkout", "-b", "diverges")
+	git.Git("checkout", "-b", "diverges")
 	createFileAndCommitIt(t, "example.txt", "other", "asdf")
-	git("checkout", "master")
+	git.Git("checkout", "master")
 	createFileAndCommitIt(t, "diverging-commit.txt", "asdf", "diverging")
 
-	diverge := doBranchesDiverge("master", "diverges")
+	diverge := git.DoBranchesDiverge("master", "diverges")
 
 	equals(t, true, diverge)
 }
@@ -1816,7 +1817,7 @@ func TestHelpRequested(t *testing.T) {
 }
 
 func gitStatus() GitStatus {
-	shortStatus := silentgit("status", "--short")
+	shortStatus := git.SilentGit("status", "--short")
 	statusLines := strings.Split(shortStatus, "\n")
 	var statusMap = make(GitStatus)
 	for _, line := range statusLines {
@@ -1835,8 +1836,8 @@ func setup(t *testing.T) (output *string, configuration Configuration) {
 	output = captureOutput(t)
 	createTestbed(t, configuration)
 	assertOnBranch(t, "master")
-	equals(t, []string{"master"}, gitBranches())
-	equals(t, []string{"origin/master"}, gitRemoteBranches())
+	equals(t, []string{"master"}, git.Branches())
+	equals(t, []string{"origin/master"}, git.RemoteBranches())
 	assertNoMobSessionBranches(t, configuration, "mob-session")
 	return output, configuration
 }
@@ -1851,7 +1852,7 @@ func captureOutput(t *testing.T) *string {
 }
 
 func run(t *testing.T, name string, args ...string) *string {
-	commandString, output, err := runCommandSilent(name, args...)
+	commandString, output, err := git.RunCommandSilent(name, args...)
 	if err != nil {
 		fmt.Println(commandString)
 		fmt.Println(output)
@@ -1869,13 +1870,14 @@ func createTestbed(t *testing.T, configuration Configuration) {
 
 	run(t, "./create-testbed", tempDir)
 
-	setWorkingDir(tempDir + "/local")
+	setWorkingDirForTest(tempDir + "/local")
 	assertOnBranch(t, "master")
 	assertNoMobSessionBranches(t, configuration, "mob-session")
 }
 
-func setWorkingDir(dir string) {
+func setWorkingDirForTest(dir string) {
 	workingDir = dir
+	git.SetWorkingDir(dir)
 	say.Say("\n===== cd " + dir)
 }
 
@@ -1884,7 +1886,7 @@ func assertCommits(t *testing.T, commits int) {
 }
 
 func assertCommitsOnBranch(t *testing.T, commits int, branchName string) {
-	result := silentgit("rev-list", "--count", branchName)
+	result := git.SilentGit("rev-list", "--count", branchName)
 	number, _ := strconv.Atoi(result)
 	if number != commits {
 		failWithFailure(t, strconv.Itoa(commits)+" commits in "+workingDir, strconv.Itoa(number)+" commits in "+workingDir)
@@ -1892,7 +1894,7 @@ func assertCommitsOnBranch(t *testing.T, commits int, branchName string) {
 }
 
 func assertCommitLogContainsMessage(t *testing.T, branchName string, commitMessage string) {
-	logMessages := silentgit("log", branchName, "--oneline")
+	logMessages := git.SilentGit("log", branchName, "--oneline")
 	if !strings.Contains(logMessages, commitMessage) {
 		failWithFailure(t, "git log contains '"+commitMessage+"'", logMessages)
 	}
@@ -1910,8 +1912,8 @@ func assertFileExist(t *testing.T, filename string) {
 
 func createFileAndCommitIt(t *testing.T, filename string, content string, commitMessage string) {
 	createFile(t, filename, content)
-	git("add", filename)
-	git("commit", "-m", commitMessage)
+	git.Git("add", filename)
+	git.Git("commit", "-m", commitMessage)
 }
 
 func createFile(t *testing.T, filename string, content string) (pathToFile string) {
@@ -2010,6 +2012,6 @@ func failWithFailure(t *testing.T, exp interface{}, act interface{}) {
 }
 
 func checkoutAndPushBranch(branch string) {
-	git("checkout", "-b", branch)
-	git("push", "origin", branch, "--set-upstream")
+	git.Git("checkout", "-b", branch)
+	git.Git("push", "origin", branch, "--set-upstream")
 }

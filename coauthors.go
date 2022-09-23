@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"fmt"
+	"github.com/remotemobprogramming/mob/v4/git"
 	"github.com/remotemobprogramming/mob/v4/say"
 	"os"
 	"path"
@@ -28,7 +29,7 @@ func collectCoauthorsFromWipCommits(file *os.File) []Author {
 	say.Debug("Parsed coauthors")
 	say.Debug(strings.Join(coauthors, ","))
 
-	coauthors = removeElementsContaining(coauthors, gitUserEmail())
+	coauthors = removeElementsContaining(coauthors, git.UserEmail())
 	say.Debug("Parsed coauthors without committer")
 	say.Debug(strings.Join(coauthors, ","))
 
