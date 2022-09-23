@@ -616,7 +616,6 @@ func TestResetDeleteRemoteWipBranch(t *testing.T) {
 
 func TestResetCommit(t *testing.T) {
 	output, configuration := setup(t)
-
 	start(configuration)
 	createFile(t, "example.txt", "contentIrrelevant")
 	next(configuration)
@@ -631,7 +630,6 @@ func TestResetCommit(t *testing.T) {
 func TestResetDeleteRemoteWipBranchCommit(t *testing.T) {
 	_, configuration := setup(t)
 	configuration.ResetDeleteRemoteWipBranch = true
-
 	start(configuration)
 	createFile(t, "example.txt", "contentIrrelevant")
 	next(configuration)
@@ -646,7 +644,6 @@ func TestResetDeleteRemoteWipBranchCommit(t *testing.T) {
 func TestResetCommitBranch(t *testing.T) {
 	output, configuration := setup(t)
 	configuration.WipBranchQualifier = "green"
-
 	start(configuration)
 	createFile(t, "example.txt", "contentIrrelevant")
 	next(configuration)
@@ -662,7 +659,6 @@ func TestResetDeleteRemoteWipBranchCommitBranch(t *testing.T) {
 	_, configuration := setup(t)
 	configuration.WipBranchQualifier = "green"
 	configuration.ResetDeleteRemoteWipBranch = true
-
 	start(configuration)
 	createFile(t, "example.txt", "contentIrrelevant")
 	next(configuration)
