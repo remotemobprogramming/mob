@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/remotemobprogramming/mob/v4/git"
 	"io/ioutil"
 	"os"
 	"strings"
@@ -125,7 +126,7 @@ func TestSquashWipCommits_worksWithEmptyCommits(t *testing.T) {
 	wipCommit(t, configuration, "file1.txt")
 
 	start(configuration)
-	silentgit("commit", "--allow-empty", "-m ok")
+	git.SilentGit("commit", "--allow-empty", "-m ok")
 
 	squashWip(configuration)
 
@@ -138,7 +139,7 @@ func TestSquashWipCommits_worksWithEmptyCommits(t *testing.T) {
 func TestCommitsOnCurrentBranch(t *testing.T) {
 	_, configuration := setup(t)
 	createFileAndCommitIt(t, "file1.txt", "contentIrrelevant", "not on branch")
-	silentgit("push")
+	git.SilentGit("push")
 	start(configuration)
 	createFileAndCommitIt(t, "file2.txt", "contentIrrelevant", "on branch")
 	createFile(t, "file3.txt", "contentIrrelevant")
@@ -367,17 +368,17 @@ func manualCommit(t *testing.T, configuration Configuration, filename string, me
 }
 
 func commitsOnCurrentBranch(configuration Configuration) []string {
-	currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), gitBranches(), configuration)
+	currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), git.Branches(), configuration)
 	commitsBaseWipBranch := currentBaseBranch.String() + ".." + currentWipBranch.String()
-	log := silentgit("--no-pager", "log", commitsBaseWipBranch, "--pretty=format:%s")
+	log := git.SilentGit("--no-pager", "log", commitsBaseWipBranch, "--pretty=format:%s")
 	lines := strings.Split(log, "\n")
 	return lines
 }
 
 func commitsOnRemoteBranch(configuration Configuration) []string {
-	currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), gitBranches(), configuration)
+	currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), git.Branches(), configuration)
 	commitsBaseWipBranch := currentBaseBranch.String() + ".." + configuration.RemoteName + "/" + currentWipBranch.String()
-	log := silentgit("--no-pager", "log", commitsBaseWipBranch, "--pretty=format:%s")
+	log := git.SilentGit("--no-pager", "log", commitsBaseWipBranch, "--pretty=format:%s")
 	lines := strings.Split(log, "\n")
 	return lines
 }
