@@ -8,13 +8,14 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	config "github.com/remotemobprogramming/mob/v4/configuration"
+	"github.com/remotemobprogramming/mob/v4/help"
 	"github.com/remotemobprogramming/mob/v4/say"
 	"io/ioutil"
 	"net/http"
 	"net/url"
 	"os"
 	"os/exec"
-	"os/user"
 	"reflect"
 	"runtime"
 	"strconv"
@@ -31,77 +32,27 @@ var (
 	GitPassthroughStderrStdout = false // hack to get git hooks to print to stdout/stderr
 )
 
-const (
-	Squash    = "squash"
-	NoSquash  = "no-squash"
-	SquashWip = "squash-wip"
-)
-
-func doneSquash(value string) string {
-	switch value {
-	case "false", NoSquash:
-		return NoSquash
-	case SquashWip:
-		return SquashWip
-	default:
-		return Squash
-	}
-}
-
-type Configuration struct {
-	CliName                        string // override with MOB_CLI_NAME
-	RemoteName                     string // override with MOB_REMOTE_NAME
-	WipCommitMessage               string // override with MOB_WIP_COMMIT_MESSAGE
-	GitHooksEnabled                bool   // override with MOB_GIT_HOOKS_ENABLED
-	RequireCommitMessage           bool   // override with MOB_REQUIRE_COMMIT_MESSAGE
-	VoiceCommand                   string // override with MOB_VOICE_COMMAND
-	VoiceMessage                   string // override with MOB_VOICE_MESSAGE
-	NotifyCommand                  string // override with MOB_NOTIFY_COMMAND
-	NotifyMessage                  string // override with MOB_NOTIFY_MESSAGE
-	NextStay                       bool   // override with MOB_NEXT_STAY
-	StartIncludeUncommittedChanges bool   // override with MOB_START_INCLUDE_UNCOMMITTED_CHANGES variable
-	StartCreate                    bool   // override with MOB_START_CREATE variable
-	StashName                      string // override with MOB_STASH_NAME
-	WipBranchQualifier             string // override with MOB_WIP_BRANCH_QUALIFIER
-	WipBranchQualifierSeparator    string // override with MOB_WIP_BRANCH_QUALIFIER_SEPARATOR
-	WipBranchPrefix                string // override with MOB_WIP_BRANCH_PREFIX
-	DoneSquash                     string // override with MOB_DONE_SQUASH
-	OpenCommand                    string // override with MOB_OPEN_COMMAND
-	Timer                          string // override with MOB_TIMER
-	TimerRoom                      string // override with MOB_TIMER_ROOM
-	TimerLocal                     bool   // override with MOB_TIMER_LOCAL
-	TimerRoomUseWipBranchQualifier bool   // override with MOB_TIMER_ROOM_USE_WIP_BRANCH_QUALIFIER
-	TimerUser                      string // override with MOB_TIMER_USER
-	TimerUrl                       string // override with MOB_TIMER_URL
-	TimerInsecure                  bool   // override with MOB_TIMER_INSECURE
-	ResetDeleteRemoteWipBranch     bool   // override with MOB_RESET_DELETE_REMOTE_WIP_BRANCH
-}
-
-func (c Configuration) wipBranchQualifierSuffix() string {
+func wipBranchQualifierSuffix(c config.Configuration) string {
 	return c.WipBranchQualifierSeparator + c.WipBranchQualifier
 }
 
-func (c Configuration) customWipBranchQualifierConfigured() bool {
+func customWipBranchQualifierConfigured(c config.Configuration) bool {
 	return c.WipBranchQualifier != ""
 }
 
-func (c Configuration) hasCustomCommitMessage() bool {
-	return getDefaultConfiguration().WipCommitMessage != c.WipCommitMessage
-}
-
-func (c Configuration) isWipCommitMessage(line string) bool {
+func isWipCommitMessage(c config.Configuration, line string) bool {
 	return strings.HasPrefix(line, c.WipCommitMessage)
 }
 
-func (c Configuration) openCommandFor(filepath string) (string, []string) {
-	if !c.isOpenCommandGiven() {
+func openCommandFor(c config.Configuration, filepath string) (string, []string) {
+	if !isOpenCommandGiven(c) {
 		return "", []string{}
 	}
 	split := strings.Split(injectCommandWithMessage(c.OpenCommand, filepath), " ")
 	return split[0], split[1:]
 }
 
-func (c Configuration) isOpenCommandGiven() bool {
+func isOpenCommandGiven(c config.Configuration) bool {
 	return strings.TrimSpace(c.OpenCommand) != ""
 }
 
@@ -123,11 +74,11 @@ func (branch Branch) Is(branchName string) bool {
 	return branch.Name == branchName
 }
 
-func (branch Branch) remote(configuration Configuration) Branch {
+func (branch Branch) remote(configuration config.Configuration) Branch {
 	return newBranch(configuration.RemoteName + "/" + branch.Name)
 }
 
-func (branch Branch) hasRemoteBranch(configuration Configuration) bool {
+func (branch Branch) hasRemoteBranch(configuration config.Configuration) bool {
 	remoteBranches := gitRemoteBranches()
 	remoteBranch := branch.remote(configuration).Name
 	say.Debug("Remote Branches: " + strings.Join(remoteBranches, "\n"))
@@ -142,7 +93,7 @@ func (branch Branch) hasRemoteBranch(configuration Configuration) bool {
 	return false
 }
 
-func (branch Branch) IsWipBranch(configuration Configuration) bool {
+func (branch Branch) IsWipBranch(configuration config.Configuration) bool {
 	if branch.Name == "mob-session" {
 		return true
 	}
@@ -150,13 +101,13 @@ func (branch Branch) IsWipBranch(configuration Configuration) bool {
 	return strings.Index(branch.Name, configuration.WipBranchPrefix) == 0
 }
 
-func (branch Branch) addWipPrefix(configuration Configuration) Branch {
+func (branch Branch) addWipPrefix(configuration config.Configuration) Branch {
 	return newBranch(configuration.WipBranchPrefix + branch.Name)
 }
 
-func (branch Branch) addWipQualifier(configuration Configuration) Branch {
-	if configuration.customWipBranchQualifierConfigured() {
-		return newBranch(addSuffix(branch.Name, configuration.wipBranchQualifierSuffix()))
+func (branch Branch) addWipQualifier(configuration config.Configuration) Branch {
+	if customWipBranchQualifierConfigured(configuration) {
+		return newBranch(addSuffix(branch.Name, wipBranchQualifierSuffix(configuration)))
 	}
 	return branch
 }
@@ -165,7 +116,7 @@ func addSuffix(branch string, suffix string) string {
 	return branch + suffix
 }
 
-func (branch Branch) removeWipPrefix(configuration Configuration) Branch {
+func (branch Branch) removeWipPrefix(configuration config.Configuration) Branch {
 	return newBranch(removePrefix(branch.Name, configuration.WipBranchPrefix))
 }
 
@@ -176,7 +127,7 @@ func removePrefix(branch string, prefix string) string {
 	return branch[len(prefix):]
 }
 
-func (branch Branch) removeWipQualifier(localBranches []string, configuration Configuration) Branch {
+func (branch Branch) removeWipQualifier(localBranches []string, configuration config.Configuration) Branch {
 	for !branch.exists(localBranches) && branch.hasWipBranchQualifierSeparator(configuration) {
 		afterRemoval := branch.removeWipQualifierSuffixOrSeparator(configuration)
 
@@ -189,8 +140,8 @@ func (branch Branch) removeWipQualifier(localBranches []string, configuration Co
 	return branch
 }
 
-func (branch Branch) removeWipQualifierSuffixOrSeparator(configuration Configuration) Branch {
-	if !configuration.customWipBranchQualifierConfigured() { // WipBranchQualifier not configured
+func (branch Branch) removeWipQualifierSuffixOrSeparator(configuration config.Configuration) Branch {
+	if !customWipBranchQualifierConfigured(configuration) { // WipBranchQualifier not configured
 		return branch.removeFromSeparator(configuration.WipBranchQualifierSeparator)
 	} else { // WipBranchQualifier not configured
 		return branch.removeWipQualifierSuffix(configuration)
@@ -201,9 +152,9 @@ func (branch Branch) removeFromSeparator(separator string) Branch {
 	return newBranch(branch.Name[:strings.LastIndex(branch.Name, separator)])
 }
 
-func (branch Branch) removeWipQualifierSuffix(configuration Configuration) Branch {
-	if strings.HasSuffix(branch.Name, configuration.wipBranchQualifierSuffix()) {
-		return newBranch(branch.Name[:strings.LastIndex(branch.Name, configuration.wipBranchQualifierSuffix())])
+func (branch Branch) removeWipQualifierSuffix(configuration config.Configuration) Branch {
+	if strings.HasSuffix(branch.Name, wipBranchQualifierSuffix(configuration)) {
+		return newBranch(branch.Name[:strings.LastIndex(branch.Name, wipBranchQualifierSuffix(configuration))])
 	}
 	return branch
 }
@@ -212,17 +163,17 @@ func (branch Branch) exists(existingBranches []string) bool {
 	return stringContains(existingBranches, branch.Name)
 }
 
-func (branch Branch) hasWipBranchQualifierSeparator(configuration Configuration) bool { //TODO improve (dont use strings.Contains, add tests)
+func (branch Branch) hasWipBranchQualifierSeparator(configuration config.Configuration) bool { //TODO improve (dont use strings.Contains, add tests)
 	return strings.Contains(branch.Name, configuration.WipBranchQualifierSeparator)
 }
 
-func (branch Branch) hasLocalCommits(configuration Configuration) bool {
+func (branch Branch) hasLocalCommits(configuration config.Configuration) bool {
 	local := silentgit("for-each-ref", "--format=%(objectname)", "refs/heads/"+branch.Name)
 	remote := silentgit("for-each-ref", "--format=%(objectname)", "refs/remotes/"+branch.remote(configuration).Name)
 	return local != remote
 }
 
-func (branch Branch) hasUnpushedCommits(configuration Configuration) bool {
+func (branch Branch) hasUnpushedCommits(configuration config.Configuration) bool {
 	countOutput := silentgit(
 		"rev-list", "--count", "--left-only",
 		"refs/heads/"+branch.Name+"..."+"refs/remotes/"+branch.remote(configuration).Name,
@@ -258,15 +209,11 @@ func main() {
 		exit(1)
 	}
 
-	configuration := getDefaultConfiguration()
-	configuration = parseEnvironmentVariables(configuration)
-
-	currentUser, _ := user.Current()
-	userConfigurationPath := currentUser.HomeDir + "/.mob"
-	configuration = parseUserConfiguration(configuration, userConfigurationPath)
+	projectRootDir := ""
 	if isGit() {
-		configuration = parseProjectConfiguration(configuration, gitRootDir()+"/.mob")
+		projectRootDir = gitRootDir()
 	}
+	configuration := config.ReadConfiguration(projectRootDir)
 	say.Debug("Args '" + strings.Join(os.Args, " ") + "'")
 	currentCliName := currentCliName(os.Args[0])
 	if currentCliName != configuration.CliName {
@@ -274,7 +221,7 @@ func main() {
 		configuration.CliName = currentCliName
 	}
 
-	command, parameters, configuration := parseArgs(os.Args, configuration)
+	command, parameters, configuration := config.ParseArgs(os.Args, configuration)
 	say.Debug("command '" + command + "'")
 	say.Debug("parameters '" + strings.Join(parameters, " ") + "'")
 	say.Debug("version " + versionNumber)
@@ -296,468 +243,9 @@ func currentCliName(argZero string) string {
 	return argZero
 }
 
-func getDefaultConfiguration() Configuration {
-	voiceCommand := ""
-	notifyCommand := ""
-	switch runtime.GOOS {
-	case "darwin":
-		voiceCommand = "say \"%s\""
-		notifyCommand = "/usr/bin/osascript -e 'display notification \"%s\"'"
-	case "linux":
-		voiceCommand = "say \"%s\""
-		notifyCommand = "notify-send \"%s\""
-	case "windows":
-		voiceCommand = "(New-Object -ComObject SAPI.SPVoice).Speak(\\\"%s\\\")"
-
-	}
-	return Configuration{
-		CliName:                        "mob",
-		RemoteName:                     "origin",
-		WipCommitMessage:               "mob next [ci-skip] [ci skip] [skip ci]",
-		GitHooksEnabled:                false,
-		VoiceCommand:                   voiceCommand,
-		VoiceMessage:                   "mob next",
-		NotifyCommand:                  notifyCommand,
-		NotifyMessage:                  "mob next",
-		NextStay:                       true,
-		RequireCommitMessage:           false,
-		StartIncludeUncommittedChanges: false,
-		StartCreate:                    false,
-		WipBranchQualifier:             "",
-		WipBranchQualifierSeparator:    "-",
-		DoneSquash:                     Squash,
-		OpenCommand:                    "",
-		Timer:                          "",
-		TimerLocal:                     true,
-		TimerRoom:                      "",
-		TimerUser:                      "",
-		TimerUrl:                       "https://timer.mob.sh/",
-		WipBranchPrefix:                "mob/",
-		StashName:                      "mob-stash-name",
-		ResetDeleteRemoteWipBranch:     false,
-	}
-}
-
-func (c Configuration) mob(command string) string {
-	return c.CliName + " " + command
-}
-
-func parseUserConfiguration(configuration Configuration, path string) Configuration {
-	file, err := os.Open(path)
-
-	if err != nil {
-		say.Debug("No user configuration file found. (" + path + ") Error: " + err.Error())
-		return configuration
-	} else {
-		say.Debug("Found user configuration file at " + path)
-	}
-
-	fileScanner := bufio.NewScanner(file)
-
-	for fileScanner.Scan() {
-		line := strings.TrimSpace(fileScanner.Text())
-		say.Debug(line)
-		if !strings.Contains(line, "=") {
-			say.Debug("Skip line because line contains no =. Line=" + line)
-			continue
-		}
-		key := line[0:strings.Index(line, "=")]
-		value := strings.TrimPrefix(line, key+"=")
-		say.Debug("Key is " + key)
-		say.Debug("Value is " + value)
-		switch key {
-		case "MOB_CLI_NAME":
-			setUnquotedString(&configuration.CliName, key, value)
-		case "MOB_REMOTE_NAME":
-			setUnquotedString(&configuration.RemoteName, key, value)
-		case "MOB_WIP_COMMIT_MESSAGE":
-			setUnquotedString(&configuration.WipCommitMessage, key, value)
-		case "MOB_GIT_HOOKS_ENABLED":
-			setBoolean(&configuration.GitHooksEnabled, key, value)
-		case "MOB_REQUIRE_COMMIT_MESSAGE":
-			setBoolean(&configuration.RequireCommitMessage, key, value)
-		case "MOB_VOICE_COMMAND":
-			setUnquotedString(&configuration.VoiceCommand, key, value)
-		case "MOB_VOICE_MESSAGE":
-			setUnquotedString(&configuration.VoiceMessage, key, value)
-		case "MOB_NOTIFY_COMMAND":
-			setUnquotedString(&configuration.NotifyCommand, key, value)
-		case "MOB_NOTIFY_MESSAGE":
-			setUnquotedString(&configuration.NotifyMessage, key, value)
-		case "MOB_NEXT_STAY":
-			setBoolean(&configuration.NextStay, key, value)
-		case "MOB_START_INCLUDE_UNCOMMITTED_CHANGES":
-			setBoolean(&configuration.StartIncludeUncommittedChanges, key, value)
-		case "MOB_START_CREATE":
-			setBoolean(&configuration.StartCreate, key, value)
-		case "MOB_WIP_BRANCH_QUALIFIER":
-			setUnquotedString(&configuration.WipBranchQualifier, key, value)
-		case "MOB_WIP_BRANCH_QUALIFIER_SEPARATOR":
-			setUnquotedString(&configuration.WipBranchQualifierSeparator, key, value)
-		case "MOB_WIP_BRANCH_PREFIX":
-			setUnquotedString(&configuration.WipBranchPrefix, key, value)
-		case "MOB_DONE_SQUASH":
-			setMobDoneSquash(&configuration, key, value)
-		case "MOB_OPEN_COMMAND":
-			setUnquotedString(&configuration.OpenCommand, key, value)
-		case "MOB_TIMER":
-			setUnquotedString(&configuration.Timer, key, value)
-		case "MOB_TIMER_ROOM":
-			setUnquotedString(&configuration.TimerRoom, key, value)
-		case "MOB_TIMER_ROOM_USE_WIP_BRANCH_QUALIFIER":
-			setBoolean(&configuration.TimerRoomUseWipBranchQualifier, key, value)
-		case "MOB_TIMER_LOCAL":
-			setBoolean(&configuration.TimerLocal, key, value)
-		case "MOB_TIMER_USER":
-			setUnquotedString(&configuration.TimerUser, key, value)
-		case "MOB_TIMER_URL":
-			setUnquotedString(&configuration.TimerUrl, key, value)
-		case "MOB_STASH_NAME":
-			setUnquotedString(&configuration.StashName, key, value)
-		case "MOB_TIMER_INSECURE":
-			setBoolean(&configuration.TimerInsecure, key, value)
-		case "MOB_RESET_DELETE_REMOTE_WIP_BRANCH":
-			setBoolean(&configuration.ResetDeleteRemoteWipBranch, key, value)
-
-		default:
-			continue
-		}
-	}
-
-	if err := fileScanner.Err(); err != nil {
-		say.Warning("User configuration file exists, but could not be read. (" + path + ")")
-	}
-
-	return configuration
-}
-
-func parseProjectConfiguration(configuration Configuration, path string) Configuration {
-	file, err := os.Open(path)
-
-	if err != nil {
-		say.Debug("No project configuration file found. (" + path + ") Error: " + err.Error())
-		return configuration
-	} else {
-		say.Debug("Found project configuration file at " + path)
-	}
-
-	fileScanner := bufio.NewScanner(file)
-
-	for fileScanner.Scan() {
-		line := strings.TrimSpace(fileScanner.Text())
-		say.Debug(line)
-		if !strings.Contains(line, "=") {
-			say.Debug("Skip line because line contains no =. Line=" + line)
-			continue
-		}
-		key := line[0:strings.Index(line, "=")]
-		value := strings.TrimPrefix(line, key+"=")
-		say.Debug("Key is " + key)
-		say.Debug("Value is " + value)
-		switch key {
-		case "MOB_VOICE_COMMAND", "MOB_VOICE_MESSAGE", "MOB_NOTIFY_COMMAND", "MOB_NOTIFY_MESSAGE", "MOB_OPEN_COMMAND":
-			say.Warning("Skipped overwriting key " + key + " from project/.mob file out of security reasons!")
-		case "MOB_CLI_NAME":
-			setUnquotedString(&configuration.CliName, key, value)
-		case "MOB_REMOTE_NAME":
-			setUnquotedString(&configuration.RemoteName, key, value)
-		case "MOB_WIP_COMMIT_MESSAGE":
-			setUnquotedString(&configuration.WipCommitMessage, key, value)
-		case "MOB_GIT_HOOKS_ENABLED":
-			setBoolean(&configuration.GitHooksEnabled, key, value)
-		case "MOB_REQUIRE_COMMIT_MESSAGE":
-			setBoolean(&configuration.RequireCommitMessage, key, value)
-		case "MOB_NEXT_STAY":
-			setBoolean(&configuration.NextStay, key, value)
-		case "MOB_START_INCLUDE_UNCOMMITTED_CHANGES":
-			setBoolean(&configuration.StartIncludeUncommittedChanges, key, value)
-		case "MOB_START_CREATE":
-			setBoolean(&configuration.StartCreate, key, value)
-		case "MOB_WIP_BRANCH_QUALIFIER":
-			setUnquotedString(&configuration.WipBranchQualifier, key, value)
-		case "MOB_WIP_BRANCH_QUALIFIER_SEPARATOR":
-			setUnquotedString(&configuration.WipBranchQualifierSeparator, key, value)
-		case "MOB_WIP_BRANCH_PREFIX":
-			setUnquotedString(&configuration.WipBranchPrefix, key, value)
-		case "MOB_DONE_SQUASH":
-			setMobDoneSquash(&configuration, key, value)
-		case "MOB_TIMER":
-			setUnquotedString(&configuration.Timer, key, value)
-		case "MOB_TIMER_ROOM":
-			setUnquotedString(&configuration.TimerRoom, key, value)
-		case "MOB_TIMER_ROOM_USE_WIP_BRANCH_QUALIFIER":
-			setBoolean(&configuration.TimerRoomUseWipBranchQualifier, key, value)
-		case "MOB_TIMER_LOCAL":
-			setBoolean(&configuration.TimerLocal, key, value)
-		case "MOB_TIMER_USER":
-			setUnquotedString(&configuration.TimerUser, key, value)
-		case "MOB_TIMER_URL":
-			setUnquotedString(&configuration.TimerUrl, key, value)
-		case "MOB_STASH_NAME":
-			setUnquotedString(&configuration.StashName, key, value)
-		case "MOB_TIMER_INSECURE":
-			setBoolean(&configuration.TimerInsecure, key, value)
-		case "MOB_RESET_DELETE_REMOTE_WIP_BRANCH":
-			setBoolean(&configuration.ResetDeleteRemoteWipBranch, key, value)
-
-		default:
-			continue
-		}
-	}
-
-	if err := fileScanner.Err(); err != nil {
-		say.Warning("Project configuration file exists, but could not be read. (" + path + ")")
-	}
-
-	return configuration
-}
-
-func setUnquotedString(s *string, key string, value string) {
-	unquotedValue, err := strconv.Unquote(value)
-	if err != nil {
-		say.Warning("Could not set key from configuration file because value is not parseable (" + key + "=" + value + ")")
-		return
-	}
-	*s = unquotedValue
-	say.Debug("Overwriting " + key + " =" + unquotedValue)
-}
-
-func setBoolean(s *bool, key string, value string) {
-	boolValue, err := strconv.ParseBool(value)
-	if err != nil {
-		say.Warning("Could not set key from configuration file because value is not parseable (" + key + "=" + value + ")")
-		return
-	}
-	*s = boolValue
-	say.Debug("Overwriting " + key + " =" + strconv.FormatBool(boolValue))
-}
-
-func setMobDoneSquash(configuration *Configuration, key string, value string) {
-	if strings.HasPrefix(value, "\"") {
-		unquotedValue, err := strconv.Unquote(value)
-		if err != nil {
-			say.Warning("Could not set key from configuration file because value is not parseable (" + key + "=" + value + ")")
-			return
-		}
-		value = unquotedValue
-	}
-	printDeprecatedDoneSquashMessage(value)
-	configuration.DoneSquash = doneSquash(value)
-	say.Debug("Overwriting " + key + " =" + string(configuration.DoneSquash))
-}
-
-func parseEnvironmentVariables(configuration Configuration) Configuration {
-	setStringFromEnvVariable(&configuration.CliName, "MOB_CLI_NAME")
-	if configuration.CliName != getDefaultConfiguration().CliName {
-		configuration.WipCommitMessage = configuration.CliName + " next [ci-skip] [ci skip] [skip ci]"
-		configuration.VoiceMessage = configuration.CliName + " next"
-		configuration.NotifyMessage = configuration.CliName + " next"
-	}
-
-	removed("MOB_BASE_BRANCH", "Use '"+configuration.mob("start")+"' on your base branch instead.")
-	removed("MOB_WIP_BRANCH", "Use '"+configuration.mob("start --branch <branch>")+"' instead.")
-	deprecated("MOB_START_INCLUDE_UNCOMMITTED_CHANGES", "Use the parameter --include-uncommitted-changes instead.")
-	experimental("MOB_WIP_BRANCH_PREFIX")
-
-	setStringFromEnvVariable(&configuration.RemoteName, "MOB_REMOTE_NAME")
-	setStringFromEnvVariable(&configuration.WipCommitMessage, "MOB_WIP_COMMIT_MESSAGE")
-	setBoolFromEnvVariable(&configuration.GitHooksEnabled, "MOB_GIT_HOOKS_ENABLED")
-	setBoolFromEnvVariable(&configuration.RequireCommitMessage, "MOB_REQUIRE_COMMIT_MESSAGE")
-	setOptionalStringFromEnvVariable(&configuration.VoiceCommand, "MOB_VOICE_COMMAND")
-	setStringFromEnvVariable(&configuration.VoiceMessage, "MOB_VOICE_MESSAGE")
-	setOptionalStringFromEnvVariable(&configuration.NotifyCommand, "MOB_NOTIFY_COMMAND")
-	setStringFromEnvVariable(&configuration.NotifyMessage, "MOB_NOTIFY_MESSAGE")
-	setStringFromEnvVariable(&configuration.WipBranchQualifierSeparator, "MOB_WIP_BRANCH_QUALIFIER_SEPARATOR")
-
-	setStringFromEnvVariable(&configuration.WipBranchQualifier, "MOB_WIP_BRANCH_QUALIFIER")
-	setStringFromEnvVariable(&configuration.WipBranchPrefix, "MOB_WIP_BRANCH_PREFIX")
-
-	setBoolFromEnvVariable(&configuration.NextStay, "MOB_NEXT_STAY")
-
-	setBoolFromEnvVariable(&configuration.StartIncludeUncommittedChanges, "MOB_START_INCLUDE_UNCOMMITTED_CHANGES")
-	setBoolFromEnvVariable(&configuration.StartCreate, "MOB_START_CREATE")
-
-	setDoneSquashFromEnvVariable(&configuration, "MOB_DONE_SQUASH")
-
-	setStringFromEnvVariable(&configuration.OpenCommand, "MOB_OPEN_COMMAND")
-
-	setStringFromEnvVariable(&configuration.Timer, "MOB_TIMER")
-	setStringFromEnvVariable(&configuration.TimerRoom, "MOB_TIMER_ROOM")
-	setBoolFromEnvVariable(&configuration.TimerRoomUseWipBranchQualifier, "MOB_TIMER_ROOM_USE_WIP_BRANCH_QUALIFIER")
-	setBoolFromEnvVariable(&configuration.TimerLocal, "MOB_TIMER_LOCAL")
-	setStringFromEnvVariable(&configuration.TimerUser, "MOB_TIMER_USER")
-	setStringFromEnvVariable(&configuration.TimerUrl, "MOB_TIMER_URL")
-	setBoolFromEnvVariable(&configuration.TimerInsecure, "MOB_TIMER_INSECURE")
-
-	setBoolFromEnvVariable(&configuration.ResetDeleteRemoteWipBranch, "MOB_RESET_DELETE_REMOTE_WIP_BRANCH")
-
-	return configuration
-}
-
-func setStringFromEnvVariable(s *string, key string) {
-	value, set := os.LookupEnv(key)
-	if set && value != "" {
-		*s = value
-		say.Debug("overriding " + key + "=" + *s)
-	}
-}
-
-func setOptionalStringFromEnvVariable(s *string, key string) {
-	value, set := os.LookupEnv(key)
-	if set {
-		*s = value
-		say.Debug("overriding " + key + "=" + *s)
-	}
-}
-
-func setBoolFromEnvVariable(s *bool, key string) {
-	value, set := os.LookupEnv(key)
-	if !set {
-		return
-	}
-	if value == "" {
-		say.Debug("ignoring " + key + "=" + value + " (empty string)")
-	}
-
-	if value == "true" {
-		*s = true
-		say.Debug("overriding " + key + "=" + strconv.FormatBool(*s))
-	} else if value == "false" {
-		*s = false
-		say.Debug("overriding " + key + "=" + strconv.FormatBool(*s))
-	} else {
-		say.Warning("ignoring " + key + "=" + value + " (not a boolean)")
-	}
-}
-
-func setDoneSquashFromEnvVariable(configuration *Configuration, key string) {
-	value, set := os.LookupEnv(key)
-	if !set {
-		return
-	}
-	printDeprecatedDoneSquashMessage(value)
-	configuration.DoneSquash = doneSquash(value)
-
-	if value == "" {
-		say.Debug("ignoring " + key + "=" + value + " (empty string)")
-		return
-	}
-
-	say.Debug("overriding " + key + "=" + string(configuration.DoneSquash))
-}
-
-func printDeprecatedDoneSquashMessage(value string) {
-	unquotedValue, err := strconv.Unquote(value)
-	if err != nil {
-		unquotedValue = value
-	}
-
-	if unquotedValue == "true" || unquotedValue == "false" {
-		newValue := doneSquash(unquotedValue)
-		say.Say("MOB_DONE_SQUASH is set to the deprecated value " + value + ". Use the value " + newValue + " instead.")
-	}
-}
-
-func removed(key string, message string) {
-	if _, set := os.LookupEnv(key); set {
-		say.Say("Configuration option '" + key + "' is no longer used.")
-		say.Say(message)
-	}
-}
-
-func deprecated(key string, message string) {
-	if _, set := os.LookupEnv(key); set {
-		say.Say("Configuration option '" + key + "' is deprecated.")
-		say.Say(message)
-	}
-}
-
-func experimental(key string) {
-	if _, set := os.LookupEnv(key); set {
-		say.Say("Configuration option '" + key + "' is experimental. Be prepared that this option will be removed!")
-	}
-}
-
-func config(c Configuration) {
-	say.Say("MOB_CLI_NAME" + "=" + quote(c.CliName))
-	say.Say("MOB_REMOTE_NAME" + "=" + quote(c.RemoteName))
-	say.Say("MOB_WIP_COMMIT_MESSAGE" + "=" + quote(c.WipCommitMessage))
-	say.Say("MOB_GIT_HOOKS_ENABLED" + "=" + strconv.FormatBool(c.GitHooksEnabled))
-	say.Say("MOB_REQUIRE_COMMIT_MESSAGE" + "=" + strconv.FormatBool(c.RequireCommitMessage))
-	say.Say("MOB_VOICE_COMMAND" + "=" + quote(c.VoiceCommand))
-	say.Say("MOB_VOICE_MESSAGE" + "=" + quote(c.VoiceMessage))
-	say.Say("MOB_NOTIFY_COMMAND" + "=" + quote(c.NotifyCommand))
-	say.Say("MOB_NOTIFY_MESSAGE" + "=" + quote(c.NotifyMessage))
-	say.Say("MOB_NEXT_STAY" + "=" + strconv.FormatBool(c.NextStay))
-	say.Say("MOB_START_INCLUDE_UNCOMMITTED_CHANGES" + "=" + strconv.FormatBool(c.StartIncludeUncommittedChanges))
-	say.Say("MOB_STASH_NAME" + "=" + quote(c.StashName))
-	say.Say("MOB_WIP_BRANCH_QUALIFIER" + "=" + quote(c.WipBranchQualifier))
-	say.Say("MOB_WIP_BRANCH_QUALIFIER_SEPARATOR" + "=" + quote(c.WipBranchQualifierSeparator))
-	say.Say("MOB_WIP_BRANCH_PREFIX" + "=" + quote(c.WipBranchPrefix))
-	say.Say("MOB_DONE_SQUASH" + "=" + string(c.DoneSquash))
-	say.Say("MOB_OPEN_COMMAND" + "=" + quote(c.OpenCommand))
-	say.Say("MOB_TIMER" + "=" + quote(c.Timer))
-	say.Say("MOB_TIMER_ROOM" + "=" + quote(c.TimerRoom))
-	say.Say("MOB_TIMER_ROOM_USE_WIP_BRANCH_QUALIFIER" + "=" + strconv.FormatBool(c.TimerRoomUseWipBranchQualifier))
-	say.Say("MOB_TIMER_LOCAL" + "=" + strconv.FormatBool(c.TimerLocal))
-	say.Say("MOB_TIMER_USER" + "=" + quote(c.TimerUser))
-	say.Say("MOB_TIMER_URL" + "=" + quote(c.TimerUrl))
-	say.Say("MOB_TIMER_INSECURE" + "=" + strconv.FormatBool(c.TimerInsecure))
-}
-
-func quote(value string) string {
-	return strconv.Quote(value)
-}
-
-func parseArgs(args []string, configuration Configuration) (command string, parameters []string, newConfiguration Configuration) {
-	newConfiguration = configuration
-
-	for i := 1; i < len(args); i++ {
-		arg := args[i]
-		switch arg {
-		case "--include-uncommitted-changes", "-i":
-			newConfiguration.StartIncludeUncommittedChanges = true
-		case "--debug":
-			// ignore this, already parsed
-		case "--stay", "-s":
-			newConfiguration.NextStay = true
-		case "--return-to-base-branch", "-r":
-			newConfiguration.NextStay = false
-		case "--branch", "-b":
-			if i+1 != len(args) {
-				newConfiguration.WipBranchQualifier = args[i+1]
-			}
-			i++ // skip consumed parameter
-		case "--message", "-m":
-			if i+1 != len(args) {
-				newConfiguration.WipCommitMessage = args[i+1]
-			}
-			i++ // skip consumed parameter
-		case "--squash":
-			newConfiguration.DoneSquash = Squash
-		case "--no-squash":
-			newConfiguration.DoneSquash = NoSquash
-		case "--squash-wip":
-			newConfiguration.DoneSquash = SquashWip
-		case "--create":
-			newConfiguration.StartCreate = true
-		case "--delete-remote-wip-branch":
-			newConfiguration.ResetDeleteRemoteWipBranch = true
-		default:
-			if i == 1 {
-				command = arg
-			} else {
-				parameters = append(parameters, arg)
-			}
-		}
-	}
-
-	return
-}
-
-func execute(command string, parameter []string, configuration Configuration) {
+func execute(command string, parameter []string, configuration config.Configuration) {
 	if helpRequested(parameter) {
-		help(configuration)
+		help.Help(configuration)
 		return
 	}
 
@@ -788,7 +276,7 @@ func execute(command string, parameter []string, configuration Configuration) {
 	case "clean":
 		clean(configuration)
 	case "config":
-		config(configuration)
+		config.Config(configuration)
 	case "status":
 		status(configuration)
 	case "t", "timer":
@@ -798,13 +286,13 @@ func execute(command string, parameter []string, configuration Configuration) {
 		} else if configuration.Timer != "" {
 			startTimer(configuration.Timer, configuration)
 		} else {
-			help(configuration)
+			help.Help(configuration)
 		}
 	case "break":
 		if len(parameter) > 0 {
 			startBreakTimer(parameter[0], configuration)
 		} else {
-			help(configuration)
+			help.Help(configuration)
 		}
 	case "moo":
 		moo(configuration)
@@ -817,9 +305,9 @@ func execute(command string, parameter []string, configuration Configuration) {
 	case "version", "--version", "-v":
 		version()
 	case "help", "--help", "-h":
-		help(configuration)
+		help.Help(configuration)
 	default:
-		help(configuration)
+		help.Help(configuration)
 	}
 }
 
@@ -833,7 +321,7 @@ func helpRequested(parameter []string) bool {
 	return false
 }
 
-func clean(configuration Configuration) {
+func clean(configuration config.Configuration) {
 	git("fetch", configuration.RemoteName)
 
 	currentBranch := gitCurrentBranch()
@@ -862,19 +350,19 @@ func clean(configuration Configuration) {
 
 }
 
-func (branch Branch) isOrphanWipBranch(configuration Configuration) bool {
+func (branch Branch) isOrphanWipBranch(configuration config.Configuration) bool {
 	return branch.IsWipBranch(configuration) && !branch.hasRemoteBranch(configuration)
 }
 
-func branch(configuration Configuration) {
+func branch(configuration config.Configuration) {
 	say.Say(silentgit("branch", "--list", "--remote", newBranch("*").addWipPrefix(configuration).remote(configuration).Name))
 
 	// DEPRECATED
 	say.Say(silentgit("branch", "--list", "--remote", newBranch("mob-session").remote(configuration).Name))
 }
 
-func determineBranches(currentBranch Branch, localBranches []string, configuration Configuration) (baseBranch Branch, wipBranch Branch) {
-	if currentBranch.Is("mob-session") || (currentBranch.Is("master") && !configuration.customWipBranchQualifierConfigured()) {
+func determineBranches(currentBranch Branch, localBranches []string, configuration config.Configuration) (baseBranch Branch, wipBranch Branch) {
+	if currentBranch.Is("mob-session") || (currentBranch.Is("master") && !customWipBranchQualifierConfigured(configuration)) {
 		// DEPRECATED
 		baseBranch = newBranch("master")
 		wipBranch = newBranch("mob-session")
@@ -943,7 +431,7 @@ func executeCommandsInBackgroundProcess(commands ...string) (err error) {
 	return err
 }
 
-func startTimer(timerInMinutes string, configuration Configuration) {
+func startTimer(timerInMinutes string, configuration config.Configuration) {
 	timeoutInMinutes := toMinutes(timerInMinutes)
 
 	timeoutInSeconds := timeoutInMinutes * 60
@@ -982,7 +470,7 @@ func startTimer(timerInMinutes string, configuration Configuration) {
 	say.Info("It's now " + currentTime() + ". " + fmt.Sprintf("%d min timer ends at approx. %s", timeoutInMinutes, timeOfTimeout) + ". Happy collaborating! :)")
 }
 
-func getMobTimerRoom(configuration Configuration) string {
+func getMobTimerRoom(configuration config.Configuration) string {
 	if !isGit() {
 		say.Debug("timer not in git repository, using MOB_TIMER_ROOM for room name")
 		return configuration.TimerRoom
@@ -1007,7 +495,7 @@ func getMobTimerRoom(configuration Configuration) string {
 	return configuration.TimerRoom
 }
 
-func startBreakTimer(timerInMinutes string, configuration Configuration) {
+func startBreakTimer(timerInMinutes string, configuration config.Configuration) {
 	timeoutInMinutes := toMinutes(timerInMinutes)
 
 	timeoutInSeconds := timeoutInMinutes * 60
@@ -1130,7 +618,7 @@ func currentTime() string {
 	return time.Now().Format("15:04")
 }
 
-func moo(configuration Configuration) {
+func moo(configuration config.Configuration) {
 	voiceMessage := "moo"
 	err := executeCommandsInBackgroundProcess(getVoiceCommand(voiceMessage, configuration.VoiceCommand))
 
@@ -1143,15 +631,15 @@ func moo(configuration Configuration) {
 	say.Info(voiceMessage)
 }
 
-func reset(configuration Configuration) {
+func reset(configuration config.Configuration) {
 	if configuration.ResetDeleteRemoteWipBranch {
 		deleteRemoteWipBranch(configuration)
 	} else {
-		say.Fix("Executing this command deletes the mob branch for everyone. If you're sure you want that, use", configuration.mob("reset --delete-remote-wip-branch"))
+		say.Fix("Executing this command deletes the mob branch for everyone. If you're sure you want that, use", configuration.Mob("reset --delete-remote-wip-branch"))
 	}
 }
 
-func deleteRemoteWipBranch(configuration Configuration) {
+func deleteRemoteWipBranch(configuration config.Configuration) {
 	git("fetch", configuration.RemoteName)
 
 	currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), gitBranches(), configuration)
@@ -1161,21 +649,21 @@ func deleteRemoteWipBranch(configuration Configuration) {
 		git("branch", "--delete", "--force", currentWipBranch.String())
 	}
 	if currentWipBranch.hasRemoteBranch(configuration) {
-		gitWithoutEmptyStrings("push", configuration.gitHooksOption(), configuration.RemoteName, "--delete", currentWipBranch.String())
+		gitWithoutEmptyStrings("push", gitHooksOption(configuration), configuration.RemoteName, "--delete", currentWipBranch.String())
 	}
 	say.Info("Branches " + currentWipBranch.String() + " and " + currentWipBranch.remote(configuration).String() + " deleted")
 }
 
-func start(configuration Configuration) error {
+func start(configuration config.Configuration) error {
 	uncommittedChanges := hasUncommittedChanges()
 	if uncommittedChanges && !configuration.StartIncludeUncommittedChanges {
 		say.Info("cannot start; clean working tree required")
 		sayUnstagedChangesInfo()
 		sayUntrackedFilesInfo()
 		if configuration.StartCreate {
-			say.Fix("To start, including uncommitted changes and create the remote branch, use", configuration.mob("start --create --include-uncommitted-changes"))
+			say.Fix("To start, including uncommitted changes and create the remote branch, use", configuration.Mob("start --create --include-uncommitted-changes"))
 		} else {
-			say.Fix("To start, including uncommitted changes, use", configuration.mob("start --include-uncommitted-changes"))
+			say.Fix("To start, including uncommitted changes, use", configuration.Mob("start --include-uncommitted-changes"))
 		}
 		return errors.New("cannot start; clean working tree required")
 	}
@@ -1234,7 +722,7 @@ func start(configuration Configuration) error {
 	return nil // no error
 }
 
-func createRemoteBranch(configuration Configuration, currentBaseBranch Branch) {
+func createRemoteBranch(configuration config.Configuration, currentBaseBranch Branch) {
 	if !currentBaseBranch.hasRemoteBranch(configuration) && configuration.StartCreate {
 		git("push", configuration.RemoteName, currentBaseBranch.String(), "--set-upstream")
 	} else if currentBaseBranch.hasRemoteBranch(configuration) && configuration.StartCreate {
@@ -1242,8 +730,8 @@ func createRemoteBranch(configuration Configuration, currentBaseBranch Branch) {
 	}
 }
 
-func openLastModifiedFileIfPresent(configuration Configuration) {
-	if !configuration.isOpenCommandGiven() {
+func openLastModifiedFileIfPresent(configuration config.Configuration) {
+	if !isOpenCommandGiven(configuration) {
 		say.Debug("No open command given")
 		return
 	}
@@ -1269,7 +757,7 @@ func openLastModifiedFileIfPresent(configuration Configuration) {
 		return
 	}
 	lastModifiedFilePath := gitRootDir() + "/" + lastModifiedFile
-	commandname, args := configuration.openCommandFor(lastModifiedFilePath)
+	commandname, args := openCommandFor(configuration, lastModifiedFilePath)
 	_, err := startCommand(commandname, args...)
 	if err != nil {
 		say.Warning(fmt.Sprintf("Couldn't open last modified file on your system (%s)", runtime.GOOS))
@@ -1279,7 +767,7 @@ func openLastModifiedFileIfPresent(configuration Configuration) {
 	say.Debug("Open last modified file: " + lastModifiedFilePath)
 }
 
-func warnForActiveWipBranches(configuration Configuration, currentBaseBranch Branch) {
+func warnForActiveWipBranches(configuration config.Configuration, currentBaseBranch Branch) {
 	if isMobProgramming(configuration) {
 		return
 	}
@@ -1294,7 +782,7 @@ func warnForActiveWipBranches(configuration Configuration, currentBaseBranch Bra
 	}
 }
 
-func showActiveMobSessions(configuration Configuration, currentBaseBranch Branch) {
+func showActiveMobSessions(configuration config.Configuration, currentBaseBranch Branch) {
 	existingWipBranches := getWipBranchesForBaseBranch(currentBaseBranch, configuration)
 	if len(existingWipBranches) > 0 {
 		say.Info("remote wip branches detected:")
@@ -1322,7 +810,7 @@ func sayUnstagedChangesInfo() {
 	}
 }
 
-func getWipBranchesForBaseBranch(currentBaseBranch Branch, configuration Configuration) []string {
+func getWipBranchesForBaseBranch(currentBaseBranch Branch, configuration config.Configuration) []string {
 	remoteBranches := gitRemoteBranches()
 	say.Debug("check on current base branch " + currentBaseBranch.String() + " with remote branches " + strings.Join(remoteBranches, ","))
 
@@ -1343,7 +831,7 @@ func getWipBranchesForBaseBranch(currentBaseBranch Branch, configuration Configu
 	return result
 }
 
-func startJoinMobSession(configuration Configuration) {
+func startJoinMobSession(configuration config.Configuration) {
 	baseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), gitBranches(), configuration)
 
 	say.Info("joining existing session from " + currentWipBranch.remote(configuration).String())
@@ -1355,12 +843,12 @@ func startJoinMobSession(configuration Configuration) {
 	git("branch", "--set-upstream-to="+currentWipBranch.remote(configuration).Name, currentWipBranch.Name)
 }
 
-func startNewMobSession(configuration Configuration) {
+func startNewMobSession(configuration config.Configuration) {
 	currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), gitBranches(), configuration)
 
 	say.Info("starting new session from " + currentBaseBranch.remote(configuration).String())
 	git("checkout", "-B", currentWipBranch.Name, currentBaseBranch.remote(configuration).Name)
-	gitWithoutEmptyStrings("push", configuration.gitHooksOption(), "--set-upstream", configuration.RemoteName, currentWipBranch.Name)
+	gitWithoutEmptyStrings("push", gitHooksOption(configuration), "--set-upstream", configuration.RemoteName, currentWipBranch.Name)
 }
 
 func getUntrackedFiles() string {
@@ -1382,13 +870,13 @@ func findStashByName(stashes string, stash string) string {
 	return "unknown"
 }
 
-func next(configuration Configuration) {
+func next(configuration config.Configuration) {
 	if !isMobProgramming(configuration) {
-		say.Fix("to start working together, use", configuration.mob("start"))
+		say.Fix("to start working together, use", configuration.Mob("start"))
 		return
 	}
 
-	if !configuration.hasCustomCommitMessage() && configuration.RequireCommitMessage && hasUncommittedChanges() {
+	if !configuration.HasCustomCommitMessage() && configuration.RequireCommitMessage && hasUncommittedChanges() {
 		say.Error("commit message required")
 		return
 	}
@@ -1397,13 +885,13 @@ func next(configuration Configuration) {
 
 	if isNothingToCommit() {
 		if currentWipBranch.hasLocalCommits(configuration) {
-			gitWithoutEmptyStrings("push", configuration.gitHooksOption(), configuration.RemoteName, currentWipBranch.Name)
+			gitWithoutEmptyStrings("push", gitHooksOption(configuration), configuration.RemoteName, currentWipBranch.Name)
 		} else {
 			say.Info("nothing was done, so nothing to commit")
 		}
 	} else {
 		makeWipCommit(configuration)
-		gitWithoutEmptyStrings("push", configuration.gitHooksOption(), configuration.RemoteName, currentWipBranch.Name)
+		gitWithoutEmptyStrings("push", gitHooksOption(configuration), configuration.RemoteName, currentWipBranch.Name)
 	}
 	showNext(configuration)
 
@@ -1420,15 +908,15 @@ func getCachedChanges() string {
 	return silentgit("diff", "--cached", "--stat")
 }
 
-func makeWipCommit(configuration Configuration) {
+func makeWipCommit(configuration config.Configuration) {
 	git("add", "--all")
 	commitMessage := createWipCommitMessage(configuration)
-	gitWithoutEmptyStrings("commit", "--message", commitMessage, configuration.gitHooksOption())
+	gitWithoutEmptyStrings("commit", "--message", commitMessage, gitHooksOption(configuration))
 	say.InfoIndented(getChangesOfLastCommit())
 	say.InfoIndented(gitCommitHash())
 }
 
-func createWipCommitMessage(configuration Configuration) string {
+func createWipCommitMessage(configuration config.Configuration) string {
 	commitMessage := configuration.WipCommitMessage
 
 	lastModifiedFilePath := getPathOfLastModifiedFile()
@@ -1497,7 +985,7 @@ func getModifiedFiles(rootDir string) []string {
 	return files
 }
 
-func (c Configuration) gitHooksOption() string {
+func gitHooksOption(c config.Configuration) string {
 	if c.GitHooksEnabled {
 		return ""
 	} else {
@@ -1505,13 +993,13 @@ func (c Configuration) gitHooksOption() string {
 	}
 }
 
-func fetch(configuration Configuration) {
+func fetch(configuration config.Configuration) {
 	git("fetch", configuration.RemoteName, "--prune")
 }
 
-func done(configuration Configuration) {
+func done(configuration config.Configuration) {
 	if !isMobProgramming(configuration) {
-		say.Fix("to start working together, use", configuration.mob("start"))
+		say.Fix("to start working together, use", configuration.Mob("start"))
 		return
 	}
 
@@ -1520,14 +1008,14 @@ func done(configuration Configuration) {
 	baseBranch, wipBranch := determineBranches(gitCurrentBranch(), gitBranches(), configuration)
 
 	if wipBranch.hasRemoteBranch(configuration) {
-		if configuration.DoneSquash == SquashWip {
+		if configuration.DoneSquash == config.SquashWip {
 			squashWip(configuration)
 		}
 		uncommittedChanges := hasUncommittedChanges()
 		if uncommittedChanges {
 			makeWipCommit(configuration)
 		}
-		gitWithoutEmptyStrings("push", configuration.gitHooksOption(), configuration.RemoteName, wipBranch.Name)
+		gitWithoutEmptyStrings("push", gitHooksOption(configuration), configuration.RemoteName, wipBranch.Name)
 
 		git("checkout", baseBranch.Name)
 		git("merge", baseBranch.remote(configuration).Name, "--ff-only")
@@ -1542,11 +1030,11 @@ func done(configuration Configuration) {
 
 		git("branch", "-D", wipBranch.Name)
 
-		if uncommittedChanges && configuration.DoneSquash != Squash { // give the user the chance to name their final commit
+		if uncommittedChanges && configuration.DoneSquash != config.Squash { // give the user the chance to name their final commit
 			git("reset", "--soft", "HEAD^")
 		}
 
-		gitWithoutEmptyStrings("push", configuration.gitHooksOption(), configuration.RemoteName, "--delete", wipBranch.Name)
+		gitWithoutEmptyStrings("push", gitHooksOption(configuration), configuration.RemoteName, "--delete", wipBranch.Name)
 
 		cachedChanges := getCachedChanges()
 		hasCachedChanges := len(cachedChanges) > 0
@@ -1560,7 +1048,7 @@ func done(configuration Configuration) {
 
 		if hasUncommittedChanges() {
 			say.Next("To finish, use", "git commit")
-		} else if configuration.DoneSquash == Squash {
+		} else if configuration.DoneSquash == config.Squash {
 			say.Info("nothing was done, so nothing to commit")
 		}
 
@@ -1579,15 +1067,15 @@ func gitRootDir() string {
 	return strings.TrimSuffix(gitDir(), "/.git")
 }
 
-func squashOrCommit(configuration Configuration) string {
-	if configuration.DoneSquash == Squash {
+func squashOrCommit(configuration config.Configuration) string {
+	if configuration.DoneSquash == config.Squash {
 		return "--squash"
 	} else {
 		return "--commit"
 	}
 }
 
-func status(configuration Configuration) {
+func status(configuration config.Configuration) {
 	if isMobProgramming(configuration) {
 		currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), gitBranches(), configuration)
 		say.Info("you are on wip branch " + currentWipBranch.String() + " (base branch " + currentBaseBranch.String() + ")")
@@ -1630,7 +1118,7 @@ func hasUncommittedChanges() bool {
 	return !isNothingToCommit()
 }
 
-func isMobProgramming(configuration Configuration) bool {
+func isMobProgramming(configuration config.Configuration) bool {
 	currentBranch := gitCurrentBranch()
 	_, currentWipBranch := determineBranches(currentBranch, gitBranches(), configuration)
 	say.Debug("current branch " + currentBranch.String() + " and currentWipBranch " + currentWipBranch.String())
@@ -1680,7 +1168,7 @@ func gitUserEmail() string {
 	return silentgit("config", "--get", "user.email")
 }
 
-func showNext(configuration Configuration) {
+func showNext(configuration config.Configuration) {
 	say.Debug("determining next person based on previous changes")
 	gitUserName := gitUserName()
 	if gitUserName == "" {
@@ -1707,60 +1195,6 @@ func showNext(configuration Configuration) {
 		}
 		say.Info("***" + nextTypist + "*** is (probably) next.")
 	}
-}
-
-func help(configuration Configuration) {
-	output := configuration.CliName + ` enables a smooth Git handover
-
-Basic Commands:
-  start              Start session from base branch in wip branch
-  next               Handover changes in wip branch to next person
-  done               Squash all changes in wip branch to index in base branch
-  reset              Remove local and remote wip branch
-
-Basic Commands with Options:
-  start [<minutes>]                      Start <minutes> minutes timer
-    [--include-uncommitted-changes|-i]   Move uncommitted changes to wip branch
-    [--branch|-b <branch-postfix>]       Set wip branch to 'mob/<base-branch>` + configuration.WipBranchQualifierSeparator + `<branch-postfix>'
-    [--create]                           Create the remote branch
-  next
-    [--stay|-s]                          Stay on wip branch (default)
-    [--return-to-base-branch|-r]         Return to base branch
-    [--message|-m <commit-message>]      Override commit message
-  done
-    [--no-squash]                        Squash no commits from wip branch, only merge wip branch
-    [--squash]                           Squash all commits from wip branch
-    [--squash-wip]                       Squash wip commits from wip branch, maintaining manual commits
-  reset
-    [--branch|-b <branch-postfix>]       Set wip branch to 'mob/<base-branch>` + configuration.WipBranchQualifierSeparator + `<branch-postfix>'
-  clean                                  Remove all orphan wip branches
-
-Timer Commands:
-  timer <minutes>    Start <minutes> minutes timer
-  start <minutes>    Start mob session in wip branch and a <minutes> timer
-  break <minutes>    Start <minutes> break timer
-
-Short Commands (Options and descriptions as above):
-  s                  Alias for 'start'
-  n                  Alias for 'next'
-  d                  Alias for 'done'
-  b                  Alias for 'branch'
-  t                  Alias for 'timer'
-
-Get more information:
-  status             Show status of the current session
-  fetch              Fetch remote state
-  branch             Show remote wip branches
-  config             Show all configuration options
-  version            Show tool version
-  help               Show help
-
-Other
-  moo                Moo!
-
-Add '--debug' to any option to enable verbose logging.
-`
-	say.Say(output)
 }
 
 func version() {

@@ -1,6 +1,7 @@
 package main
 
 import (
+	config "github.com/remotemobprogramming/mob/v4/configuration"
 	"github.com/remotemobprogramming/mob/v4/say"
 	"io"
 	"io/ioutil"
@@ -11,7 +12,7 @@ import (
 
 type Replacer func(string) string
 
-func squashWip(configuration Configuration) {
+func squashWip(configuration config.Configuration) {
 	if hasUncommittedChanges() {
 		makeWipCommit(configuration)
 	}
@@ -33,10 +34,10 @@ func squashWip(configuration Configuration) {
 		git("reset", "--soft", "HEAD^")
 	}
 
-	git("push", "--force", configuration.gitHooksOption())
+	git("push", "--force", gitHooksOption(configuration))
 }
 
-func lastCommitIsWipCommit(configuration Configuration) bool {
+func lastCommitIsWipCommit(configuration config.Configuration) bool {
 	return strings.HasPrefix(lastCommitMessage(), configuration.WipCommitMessage)
 }
 
@@ -83,14 +84,14 @@ func isTestEnvironment() bool {
 }
 
 // used for non-interactive fixing of commit messages of squashed commits
-func squashWipGitEditor(fileName string, configuration Configuration) {
+func squashWipGitEditor(fileName string, configuration config.Configuration) {
 	replaceFileContents(fileName, func(input string) string {
 		return commentWipCommits(input, configuration)
 	})
 }
 
 // used for non-interactive rebase to squash post-wip-commits
-func squashWipGitSequenceEditor(fileName string, configuration Configuration) {
+func squashWipGitSequenceEditor(fileName string, configuration config.Configuration) {
 	replaceFileContents(fileName, func(input string) string {
 		return markPostWipCommitsForSquashing(input, configuration)
 	})
@@ -111,12 +112,12 @@ func replaceFileContents(fileName string, replacer Replacer) {
 	file.Close()
 }
 
-func commentWipCommits(input string, configuration Configuration) string {
+func commentWipCommits(input string, configuration config.Configuration) string {
 	var result []string
 	ignoreBlock := false
 	lines := strings.Split(input, "\n")
 	for idx, line := range lines {
-		if configuration.isWipCommitMessage(line) {
+		if isWipCommitMessage(configuration, line) {
 			ignoreBlock = true
 		} else if line == "" && isNextLineComment(lines, idx) {
 			ignoreBlock = false
@@ -135,7 +136,7 @@ func isNextLineComment(lines []string, currentLineIndex int) bool {
 	return len(lines) > currentLineIndex+1 && strings.HasPrefix(lines[currentLineIndex+1], "#")
 }
 
-func markPostWipCommitsForSquashing(input string, configuration Configuration) string {
+func markPostWipCommitsForSquashing(input string, configuration config.Configuration) string {
 	var result []string
 
 	inputLines := strings.Split(input, "\n")
@@ -147,7 +148,7 @@ func markPostWipCommitsForSquashing(input string, configuration Configuration) s
 	return strings.Join(result, "\n")
 }
 
-func markLine(inputLines []string, i int, configuration Configuration) string {
+func markLine(inputLines []string, i int, configuration config.Configuration) string {
 	var resultLine = inputLines[i]
 	previousLine := previousLine(inputLines, i)
 	if isWipCommitLine(previousLine, configuration) {
@@ -170,7 +171,7 @@ func previousLine(inputLines []string, currentIndex int) string {
 	return previousLine
 }
 
-func hasOnlyWipCommits(forthComingLines []string, configuration Configuration) bool {
+func hasOnlyWipCommits(forthComingLines []string, configuration config.Configuration) bool {
 	var onlyWipCommits = true
 	for _, forthComingLine := range forthComingLines {
 		if isPick(forthComingLine) && isManualCommit(forthComingLine, configuration) {
@@ -188,15 +189,15 @@ func markFixup(line string) string {
 	return strings.Replace(line, "pick ", "fixup ", 1)
 }
 
-func isWipCommitLine(line string, configuration Configuration) bool {
+func isWipCommitLine(line string, configuration config.Configuration) bool {
 	return isPick(line) && isWipCommit(line, configuration)
 }
 
-func isManualCommit(line string, configuration Configuration) bool {
+func isManualCommit(line string, configuration config.Configuration) bool {
 	return !isWipCommit(line, configuration)
 }
 
-func isWipCommit(line string, configuration Configuration) bool {
+func isWipCommit(line string, configuration config.Configuration) bool {
 	return strings.Contains(line, configuration.WipCommitMessage)
 }
 
