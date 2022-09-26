@@ -16,6 +16,33 @@ const (
 	SquashWip = "squash-wip"
 )
 
+func Config(c Configuration) {
+	say.Say("MOB_CLI_NAME" + "=" + quote(c.CliName))
+	say.Say("MOB_REMOTE_NAME" + "=" + quote(c.RemoteName))
+	say.Say("MOB_WIP_COMMIT_MESSAGE" + "=" + quote(c.WipCommitMessage))
+	say.Say("MOB_GIT_HOOKS_ENABLED" + "=" + strconv.FormatBool(c.GitHooksEnabled))
+	say.Say("MOB_REQUIRE_COMMIT_MESSAGE" + "=" + strconv.FormatBool(c.RequireCommitMessage))
+	say.Say("MOB_VOICE_COMMAND" + "=" + quote(c.VoiceCommand))
+	say.Say("MOB_VOICE_MESSAGE" + "=" + quote(c.VoiceMessage))
+	say.Say("MOB_NOTIFY_COMMAND" + "=" + quote(c.NotifyCommand))
+	say.Say("MOB_NOTIFY_MESSAGE" + "=" + quote(c.NotifyMessage))
+	say.Say("MOB_NEXT_STAY" + "=" + strconv.FormatBool(c.NextStay))
+	say.Say("MOB_START_INCLUDE_UNCOMMITTED_CHANGES" + "=" + strconv.FormatBool(c.StartIncludeUncommittedChanges))
+	say.Say("MOB_STASH_NAME" + "=" + quote(c.StashName))
+	say.Say("MOB_WIP_BRANCH_QUALIFIER" + "=" + quote(c.WipBranchQualifier))
+	say.Say("MOB_WIP_BRANCH_QUALIFIER_SEPARATOR" + "=" + quote(c.WipBranchQualifierSeparator))
+	say.Say("MOB_WIP_BRANCH_PREFIX" + "=" + quote(c.WipBranchPrefix))
+	say.Say("MOB_DONE_SQUASH" + "=" + string(c.DoneSquash))
+	say.Say("MOB_OPEN_COMMAND" + "=" + quote(c.OpenCommand))
+	say.Say("MOB_TIMER" + "=" + quote(c.Timer))
+	say.Say("MOB_TIMER_ROOM" + "=" + quote(c.TimerRoom))
+	say.Say("MOB_TIMER_ROOM_USE_WIP_BRANCH_QUALIFIER" + "=" + strconv.FormatBool(c.TimerRoomUseWipBranchQualifier))
+	say.Say("MOB_TIMER_LOCAL" + "=" + strconv.FormatBool(c.TimerLocal))
+	say.Say("MOB_TIMER_USER" + "=" + quote(c.TimerUser))
+	say.Say("MOB_TIMER_URL" + "=" + quote(c.TimerUrl))
+	say.Say("MOB_TIMER_INSECURE" + "=" + strconv.FormatBool(c.TimerInsecure))
+}
+
 func ReadConfiguration(gitRootDir string) Configuration {
 	configuration := GetDefaultConfiguration()
 	configuration = parseEnvironmentVariables(configuration)
@@ -462,33 +489,6 @@ func doneSquash(value string) string {
 	default:
 		return Squash
 	}
-}
-
-func Config(c Configuration) {
-	say.Say("MOB_CLI_NAME" + "=" + quote(c.CliName))
-	say.Say("MOB_REMOTE_NAME" + "=" + quote(c.RemoteName))
-	say.Say("MOB_WIP_COMMIT_MESSAGE" + "=" + quote(c.WipCommitMessage))
-	say.Say("MOB_GIT_HOOKS_ENABLED" + "=" + strconv.FormatBool(c.GitHooksEnabled))
-	say.Say("MOB_REQUIRE_COMMIT_MESSAGE" + "=" + strconv.FormatBool(c.RequireCommitMessage))
-	say.Say("MOB_VOICE_COMMAND" + "=" + quote(c.VoiceCommand))
-	say.Say("MOB_VOICE_MESSAGE" + "=" + quote(c.VoiceMessage))
-	say.Say("MOB_NOTIFY_COMMAND" + "=" + quote(c.NotifyCommand))
-	say.Say("MOB_NOTIFY_MESSAGE" + "=" + quote(c.NotifyMessage))
-	say.Say("MOB_NEXT_STAY" + "=" + strconv.FormatBool(c.NextStay))
-	say.Say("MOB_START_INCLUDE_UNCOMMITTED_CHANGES" + "=" + strconv.FormatBool(c.StartIncludeUncommittedChanges))
-	say.Say("MOB_STASH_NAME" + "=" + quote(c.StashName))
-	say.Say("MOB_WIP_BRANCH_QUALIFIER" + "=" + quote(c.WipBranchQualifier))
-	say.Say("MOB_WIP_BRANCH_QUALIFIER_SEPARATOR" + "=" + quote(c.WipBranchQualifierSeparator))
-	say.Say("MOB_WIP_BRANCH_PREFIX" + "=" + quote(c.WipBranchPrefix))
-	say.Say("MOB_DONE_SQUASH" + "=" + string(c.DoneSquash))
-	say.Say("MOB_OPEN_COMMAND" + "=" + quote(c.OpenCommand))
-	say.Say("MOB_TIMER" + "=" + quote(c.Timer))
-	say.Say("MOB_TIMER_ROOM" + "=" + quote(c.TimerRoom))
-	say.Say("MOB_TIMER_ROOM_USE_WIP_BRANCH_QUALIFIER" + "=" + strconv.FormatBool(c.TimerRoomUseWipBranchQualifier))
-	say.Say("MOB_TIMER_LOCAL" + "=" + strconv.FormatBool(c.TimerLocal))
-	say.Say("MOB_TIMER_USER" + "=" + quote(c.TimerUser))
-	say.Say("MOB_TIMER_URL" + "=" + quote(c.TimerUrl))
-	say.Say("MOB_TIMER_INSECURE" + "=" + strconv.FormatBool(c.TimerInsecure))
 }
 
 func quote(value string) string {
