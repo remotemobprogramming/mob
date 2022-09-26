@@ -27,6 +27,24 @@ clonerepo() {
     (cd "${dir}" && git config --local user.email "${name}@example.com")
 }
 
+clonerepowithsymlink() {
+  dir="$1"
+  gitdir="$2"
+  clonerepo "${dir}"
+  echo ""
+  echo "clonerepowithsymlink: move .git to ${gitdir} and create symlink to it"
+  mv "${dir}/.git" "$2"
+  ln -s "${gitdir}" "${dir}/.git"
+}
+
+cleanrepowithsymlink() {
+  dir="$1"
+  gitdir="$2"
+  echo ""
+  echo "cleanrepowithsymlink: Delete ${dir} and ${gitdir}"
+  rm -rf "${dir}" "${gitdir}"
+}
+
 tmpdir=$1
 localdir="${tmpdir}/local"
 remotedir="${tmpdir}/remote"
@@ -69,5 +87,10 @@ do
     echo "Created non-git dir ${dir}"
 done
 
+echo "Creating local repo with .git symlink"
+localsymlink="${tmpdir}/local-symlink"
+localsymlink_gitdir="${tmpdir}/local-symlink.git"
+cleanrepowithsymlink "${localsymlink}" "${localsymlink_gitdir}"
+clonerepowithsymlink "${localsymlink}" "${localsymlink_gitdir}"
 
 echo "Done."

@@ -1097,6 +1097,11 @@ func TestTestbed(t *testing.T) {
 	createFile(t, "file4.txt", "zcvx")
 	next(configuration)
 
+	setWorkingDir(tempDir + "/local-symlink")
+	start(configuration)
+	createFile(t, "file5.txt", "uiop")
+	next(configuration)
+
 	setWorkingDir(tempDir + "/local")
 	start(configuration)
 
@@ -1105,6 +1110,7 @@ func TestTestbed(t *testing.T) {
 	assertOutputContains(t, &output, "localother")
 	assertOutputContains(t, &output, "alice")
 	assertOutputContains(t, &output, "bob")
+	assertOutputContains(t, &output, "local-symlink")
 }
 
 func TestStartDoneWithMobDoneSquash(t *testing.T) {
@@ -1447,6 +1453,14 @@ func TestGitRootDir(t *testing.T) {
 	setup(t)
 	expectedPath, _ := filepath.EvalSymlinks(tempDir + "/local")
 	equals(t, expectedPath, gitRootDir())
+}
+
+func TestGitRootDirWithSymbolicLink(t *testing.T) {
+	setup(t)
+	symlinkDir := tempDir + "/local-symlink"
+	setWorkingDir(symlinkDir)
+	expectedLocalSymlinkPath, _ := filepath.EvalSymlinks(symlinkDir)
+	equals(t, expectedLocalSymlinkPath, gitRootDir())
 }
 
 func TestBothCreateNonemptyCommitWithNext(t *testing.T) {

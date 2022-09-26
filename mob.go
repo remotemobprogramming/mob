@@ -1576,7 +1576,7 @@ func gitDir() string {
 }
 
 func gitRootDir() string {
-	return strings.TrimSuffix(gitDir(), "/.git")
+	return silentgit("rev-parse", "--show-toplevel")
 }
 
 func squashOrCommit(configuration Configuration) string {
