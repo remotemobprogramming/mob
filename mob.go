@@ -876,7 +876,7 @@ func next(configuration config.Configuration) {
 		return
 	}
 
-	if !configuration.HasCustomCommitMessage() && configuration.RequireCommitMessage && hasUncommittedChanges() {
+	if !hasCustomCommitMessage(configuration) && configuration.RequireCommitMessage && hasUncommittedChanges() {
 		say.Error("commit message required")
 		return
 	}
@@ -898,6 +898,10 @@ func next(configuration config.Configuration) {
 	if !configuration.NextStay {
 		git("checkout", currentBaseBranch.Name)
 	}
+}
+
+func hasCustomCommitMessage(c config.Configuration) bool {
+	return config.GetDefaultConfiguration().WipCommitMessage != c.WipCommitMessage
 }
 
 func getChangesOfLastCommit() string {
