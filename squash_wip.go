@@ -117,7 +117,7 @@ func commentWipCommits(input string, configuration config.Configuration) string 
 	ignoreBlock := false
 	lines := strings.Split(input, "\n")
 	for idx, line := range lines {
-		if isWipCommitMessage(configuration, line) {
+		if configuration.IsWipCommitMessage(line) {
 			ignoreBlock = true
 		} else if line == "" && isNextLineComment(lines, idx) {
 			ignoreBlock = false

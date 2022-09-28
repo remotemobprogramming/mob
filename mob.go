@@ -32,28 +32,12 @@ var (
 	GitPassthroughStderrStdout = false // hack to get git hooks to print to stdout/stderr
 )
 
-func wipBranchQualifierSuffix(c config.Configuration) string {
-	return c.WipBranchQualifierSeparator + c.WipBranchQualifier
-}
-
-func customWipBranchQualifierConfigured(c config.Configuration) bool {
-	return c.WipBranchQualifier != ""
-}
-
-func isWipCommitMessage(c config.Configuration, line string) bool {
-	return strings.HasPrefix(line, c.WipCommitMessage)
-}
-
 func openCommandFor(c config.Configuration, filepath string) (string, []string) {
-	if !isOpenCommandGiven(c) {
+	if !c.IsOpenCommandGiven() {
 		return "", []string{}
 	}
 	split := strings.Split(injectCommandWithMessage(c.OpenCommand, filepath), " ")
 	return split[0], split[1:]
-}
-
-func isOpenCommandGiven(c config.Configuration) bool {
-	return strings.TrimSpace(c.OpenCommand) != ""
 }
 
 type Branch struct {
@@ -106,8 +90,8 @@ func (branch Branch) addWipPrefix(configuration config.Configuration) Branch {
 }
 
 func (branch Branch) addWipQualifier(configuration config.Configuration) Branch {
-	if customWipBranchQualifierConfigured(configuration) {
-		return newBranch(addSuffix(branch.Name, wipBranchQualifierSuffix(configuration)))
+	if configuration.CustomWipBranchQualifierConfigured() {
+		return newBranch(addSuffix(branch.Name, configuration.WipBranchQualifierSuffix()))
 	}
 	return branch
 }
@@ -141,7 +125,7 @@ func (branch Branch) removeWipQualifier(localBranches []string, configuration co
 }
 
 func (branch Branch) removeWipQualifierSuffixOrSeparator(configuration config.Configuration) Branch {
-	if !customWipBranchQualifierConfigured(configuration) { // WipBranchQualifier not configured
+	if !configuration.CustomWipBranchQualifierConfigured() { // WipBranchQualifier not configured
 		return branch.removeFromSeparator(configuration.WipBranchQualifierSeparator)
 	} else { // WipBranchQualifier not configured
 		return branch.removeWipQualifierSuffix(configuration)
@@ -153,8 +137,8 @@ func (branch Branch) removeFromSeparator(separator string) Branch {
 }
 
 func (branch Branch) removeWipQualifierSuffix(configuration config.Configuration) Branch {
-	if strings.HasSuffix(branch.Name, wipBranchQualifierSuffix(configuration)) {
-		return newBranch(branch.Name[:strings.LastIndex(branch.Name, wipBranchQualifierSuffix(configuration))])
+	if strings.HasSuffix(branch.Name, configuration.WipBranchQualifierSuffix()) {
+		return newBranch(branch.Name[:strings.LastIndex(branch.Name, configuration.WipBranchQualifierSuffix())])
 	}
 	return branch
 }
@@ -362,7 +346,7 @@ func branch(configuration config.Configuration) {
 }
 
 func determineBranches(currentBranch Branch, localBranches []string, configuration config.Configuration) (baseBranch Branch, wipBranch Branch) {
-	if currentBranch.Is("mob-session") || (currentBranch.Is("master") && !customWipBranchQualifierConfigured(configuration)) {
+	if currentBranch.Is("mob-session") || (currentBranch.Is("master") && !configuration.CustomWipBranchQualifierConfigured()) {
 		// DEPRECATED
 		baseBranch = newBranch("master")
 		wipBranch = newBranch("mob-session")
@@ -731,7 +715,7 @@ func createRemoteBranch(configuration config.Configuration, currentBaseBranch Br
 }
 
 func openLastModifiedFileIfPresent(configuration config.Configuration) {
-	if !isOpenCommandGiven(configuration) {
+	if !configuration.IsOpenCommandGiven() {
 		say.Debug("No open command given")
 		return
 	}
@@ -876,7 +860,7 @@ func next(configuration config.Configuration) {
 		return
 	}
 
-	if !hasCustomCommitMessage(configuration) && configuration.RequireCommitMessage && hasUncommittedChanges() {
+	if !configuration.HasCustomCommitMessage() && configuration.RequireCommitMessage && hasUncommittedChanges() {
 		say.Error("commit message required")
 		return
 	}
@@ -898,10 +882,6 @@ func next(configuration config.Configuration) {
 	if !configuration.NextStay {
 		git("checkout", currentBaseBranch.Name)
 	}
-}
-
-func hasCustomCommitMessage(c config.Configuration) bool {
-	return config.GetDefaultConfiguration().WipCommitMessage != c.WipCommitMessage
 }
 
 func getChangesOfLastCommit() string {
