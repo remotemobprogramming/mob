@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	config "github.com/remotemobprogramming/mob/v4/configuration"
 	"io/ioutil"
 	"os"
 	"strings"
@@ -154,7 +155,7 @@ func TestCommitsOnCurrentBranch(t *testing.T) {
 }
 
 func TestMarkSquashWip_singleManualCommit(t *testing.T) {
-	configuration := getDefaultConfiguration()
+	configuration := config.GetDefaultConfiguration()
 	input := `pick c51a56d new file
 
 # Rebase ...`
@@ -165,7 +166,7 @@ func TestMarkSquashWip_singleManualCommit(t *testing.T) {
 }
 
 func TestMarkSquashWip_manyManualCommits(t *testing.T) {
-	configuration := getDefaultConfiguration()
+	configuration := config.GetDefaultConfiguration()
 	input := `pick c51a56d new file
 pick 63ef7a4 another commit
 
@@ -177,7 +178,7 @@ pick 63ef7a4 another commit
 }
 
 func TestMarkSquashWip_wipCommitFollowedByManualCommit(t *testing.T) {
-	configuration := getDefaultConfiguration()
+	configuration := config.GetDefaultConfiguration()
 	input := fmt.Sprintf(`pick 01a9a31 %s
 pick c51a56d manual commit
 
@@ -193,7 +194,7 @@ squash c51a56d manual commit
 }
 
 func TestMarkSquashWip_manyWipCommitsFollowedByManualCommit(t *testing.T) {
-	configuration := getDefaultConfiguration()
+	configuration := config.GetDefaultConfiguration()
 	input := fmt.Sprintf(`pick 01a9a31 %[1]s
 pick 01a9a32 %[1]s
 pick 01a9a33 %[1]s
@@ -213,7 +214,7 @@ squash c51a56d manual commit
 }
 
 func TestMarkSquashWip_manualCommitFollowedByWipCommit(t *testing.T) {
-	configuration := getDefaultConfiguration()
+	configuration := config.GetDefaultConfiguration()
 	input := fmt.Sprintf(`pick c51a56d manual commit
 pick 01a9a31 %[1]s
 
@@ -229,7 +230,7 @@ pick 01a9a31 %[1]s
 }
 
 func TestMarkSquashWip_manualCommitFollowedByManyWipCommits(t *testing.T) {
-	configuration := getDefaultConfiguration()
+	configuration := config.GetDefaultConfiguration()
 	input := fmt.Sprintf(`pick c51a56d manual commit
 pick 01a9a31 %[1]s
 pick 01a9a32 %[1]s
@@ -249,7 +250,7 @@ fixup 01a9a33 %[1]s
 }
 
 func TestMarkSquashWip_wipThenManualCommitFollowedByManyWipCommits(t *testing.T) {
-	configuration := getDefaultConfiguration()
+	configuration := config.GetDefaultConfiguration()
 	input := fmt.Sprintf(`pick 01a9a31 %[1]s
 pick c51a56d manual commit
 pick 01a9a32 %[1]s
@@ -269,7 +270,7 @@ fixup 01a9a33 %[1]s
 }
 
 func TestCommentWipCommits_oneWipAndOneManualCommit(t *testing.T) {
-	configuration := getDefaultConfiguration()
+	configuration := config.GetDefaultConfiguration()
 	input := fmt.Sprintf(`# This is a combination of 2 commits.
 # This is the 1st commit message:
 
@@ -297,7 +298,7 @@ manual commit
 }
 
 func TestSquashWipCommitGitEditor(t *testing.T) {
-	configuration := getDefaultConfiguration()
+	configuration := config.GetDefaultConfiguration()
 	createTestbed(t, configuration)
 	input := createFile(t, "commits", fmt.Sprintf(
 		`# This is a combination of 2 commits.
@@ -322,14 +323,14 @@ new file
 
 # Please enter the commit message for your changes. Lines starting`, configuration.WipCommitMessage)
 
-	squashWipGitEditor(input, getDefaultConfiguration())
+	squashWipGitEditor(input, config.GetDefaultConfiguration())
 
 	result, _ := ioutil.ReadFile(input)
 	equals(t, expected, string(result))
 }
 
 func TestSquashWipCommitGitSequenceEditor(t *testing.T) {
-	configuration := getDefaultConfiguration()
+	configuration := config.GetDefaultConfiguration()
 	createTestbed(t, configuration)
 	input := createFile(t, "rebase", fmt.Sprintf(
 		`pick 01a9a31 %[1]s
@@ -348,25 +349,25 @@ squash c51a56d manual commit
 # Rebase ...
 `, configuration.WipCommitMessage)
 
-	squashWipGitSequenceEditor(input, getDefaultConfiguration())
+	squashWipGitSequenceEditor(input, config.GetDefaultConfiguration())
 
 	result, _ := ioutil.ReadFile(input)
 	equals(t, expected, string(result))
 }
 
-func wipCommit(t *testing.T, configuration Configuration, filename string) {
+func wipCommit(t *testing.T, configuration config.Configuration, filename string) {
 	start(configuration)
 	createFile(t, filename, "contentIrrelevant")
 	next(configuration)
 }
 
-func manualCommit(t *testing.T, configuration Configuration, filename string, message string) {
+func manualCommit(t *testing.T, configuration config.Configuration, filename string, message string) {
 	start(configuration)
 	createFileAndCommitIt(t, filename, "contentIrrelevant", message)
 	next(configuration)
 }
 
-func commitsOnCurrentBranch(configuration Configuration) []string {
+func commitsOnCurrentBranch(configuration config.Configuration) []string {
 	currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), gitBranches(), configuration)
 	commitsBaseWipBranch := currentBaseBranch.String() + ".." + currentWipBranch.String()
 	log := silentgit("--no-pager", "log", commitsBaseWipBranch, "--pretty=format:%s")
@@ -374,7 +375,7 @@ func commitsOnCurrentBranch(configuration Configuration) []string {
 	return lines
 }
 
-func commitsOnRemoteBranch(configuration Configuration) []string {
+func commitsOnRemoteBranch(configuration config.Configuration) []string {
 	currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), gitBranches(), configuration)
 	commitsBaseWipBranch := currentBaseBranch.String() + ".." + configuration.RemoteName + "/" + currentWipBranch.String()
 	log := silentgit("--no-pager", "log", commitsBaseWipBranch, "--pretty=format:%s")

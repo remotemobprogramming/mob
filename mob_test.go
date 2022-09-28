@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	config "github.com/remotemobprogramming/mob/v4/configuration"
 	"github.com/remotemobprogramming/mob/v4/say"
 	"io/ioutil"
 	"os"
@@ -27,67 +28,8 @@ func TestCurrentCliName(t *testing.T) {
 	equals(t, "mob", currentCliName("folder/mob"))
 }
 
-func TestQuote(t *testing.T) {
-	equals(t, "\"mob\"", quote("mob"))
-	equals(t, "\"m\\\"ob\"", quote("m\"ob"))
-}
-
-func TestParseArgs(t *testing.T) {
-	configuration := getDefaultConfiguration()
-	equals(t, configuration.WipBranchQualifier, "")
-
-	command, parameters, configuration := parseArgs([]string{"mob", "start", "--branch", "green"}, configuration)
-
-	equals(t, "start", command)
-	equals(t, "", strings.Join(parameters, ""))
-	equals(t, "green", configuration.WipBranchQualifier)
-}
-
-func TestParseArgsStartCreate(t *testing.T) {
-	configuration := getDefaultConfiguration()
-
-	command, parameters, configuration := parseArgs([]string{"mob", "start", "--create"}, configuration)
-
-	equals(t, "start", command)
-	equals(t, "", strings.Join(parameters, ""))
-	equals(t, true, configuration.StartCreate)
-}
-
-func TestParseArgsDoneNoSquash(t *testing.T) {
-	configuration := getDefaultConfiguration()
-	equals(t, Squash, configuration.DoneSquash)
-
-	command, parameters, configuration := parseArgs([]string{"mob", "done", "--no-squash"}, configuration)
-
-	equals(t, "done", command)
-	equals(t, "", strings.Join(parameters, ""))
-	equals(t, NoSquash, configuration.DoneSquash)
-}
-
-func TestParseArgsDoneSquash(t *testing.T) {
-	configuration := getDefaultConfiguration()
-	configuration.DoneSquash = NoSquash
-
-	command, parameters, configuration := parseArgs([]string{"mob", "done", "--squash"}, configuration)
-
-	equals(t, "done", command)
-	equals(t, "", strings.Join(parameters, ""))
-	equals(t, Squash, configuration.DoneSquash)
-}
-
-func TestParseArgsMessage(t *testing.T) {
-	configuration := getDefaultConfiguration()
-	equals(t, configuration.WipBranchQualifier, "")
-
-	command, parameters, configuration := parseArgs([]string{"mob", "next", "--message", "ci-skip"}, configuration)
-
-	equals(t, "next", command)
-	equals(t, "", strings.Join(parameters, ""))
-	equals(t, "ci-skip", configuration.WipCommitMessage)
-}
-
 func TestDetermineBranches(t *testing.T) {
-	configuration := getDefaultConfiguration()
+	configuration := config.GetDefaultConfiguration()
 	configuration.WipBranchQualifierSeparator = "-"
 
 	assertDetermineBranches(t, "master", "", []string{}, "master", "mob-session")
@@ -112,7 +54,7 @@ func TestDetermineBranches(t *testing.T) {
 }
 
 func assertDetermineBranches(t *testing.T, branch string, qualifier string, branches []string, expectedBase string, expectedWip string) {
-	configuration := getDefaultConfiguration()
+	configuration := config.GetDefaultConfiguration()
 	configuration.WipBranchQualifier = qualifier
 	baseBranch, wipBranch := determineBranches(newBranch(branch), branches, configuration)
 	equals(t, newBranch(expectedBase), baseBranch)
@@ -120,7 +62,7 @@ func assertDetermineBranches(t *testing.T, branch string, qualifier string, bran
 }
 
 func TestRemoveWipPrefix(t *testing.T) {
-	configuration := getDefaultConfiguration()
+	configuration := config.GetDefaultConfiguration()
 	configuration.WipBranchPrefix = "mob/"
 	equals(t, "master-green", newBranch("mob/master-green").removeWipPrefix(configuration).Name)
 	equals(t, "master-green-blue", newBranch("mob/master-green-blue").removeWipPrefix(configuration).Name)
@@ -128,7 +70,7 @@ func TestRemoveWipPrefix(t *testing.T) {
 }
 
 func TestRemoveWipBranchQualifier(t *testing.T) {
-	var configuration Configuration
+	var configuration config.Configuration
 
 	configuration.WipBranchQualifierSeparator = "-"
 	configuration.WipBranchQualifier = "green"
@@ -160,7 +102,7 @@ func TestRemoveWipBranchQualifier(t *testing.T) {
 }
 
 func TestRemoveWipBranchQualifierWithoutBranchQualifierSet(t *testing.T) {
-	var configuration Configuration
+	var configuration config.Configuration
 
 	configuration.WipBranchQualifierSeparator = "-"
 	configuration.WipBranchQualifier = ""
@@ -169,89 +111,6 @@ func TestRemoveWipBranchQualifierWithoutBranchQualifierSet(t *testing.T) {
 	configuration.WipBranchQualifierSeparator = "-"
 	configuration.WipBranchQualifier = ""
 	equals(t, "master", newBranch("master-test-branch").removeWipQualifier([]string{}, configuration).Name)
-}
-
-func TestMobRemoteNameEnvironmentVariable(t *testing.T) {
-	configuration := setEnvVarAndParse("MOB_REMOTE_NAME", "GITHUB")
-
-	equals(t, "GITHUB", configuration.RemoteName)
-}
-
-func TestMobRemoteNameEnvironmentVariableEmptyString(t *testing.T) {
-	configuration := setEnvVarAndParse("MOB_REMOTE_NAME", "")
-
-	equals(t, "origin", configuration.RemoteName)
-}
-
-func TestMobDoneSquashEnvironmentVariable(t *testing.T) {
-	assertMobDoneSquashValue(t, "", Squash)
-	assertMobDoneSquashValue(t, "true", Squash)
-	assertMobDoneSquashValue(t, "false", NoSquash)
-	assertMobDoneSquashValue(t, "garbage", Squash)
-	assertMobDoneSquashValue(t, "squash", Squash)
-	assertMobDoneSquashValue(t, "no-squash", NoSquash)
-	assertMobDoneSquashValue(t, "squash-wip", SquashWip)
-}
-
-func assertMobDoneSquashValue(t *testing.T, value string, expected string) {
-	configuration := setEnvVarAndParse("MOB_DONE_SQUASH", value)
-	equals(t, expected, configuration.DoneSquash)
-}
-
-func TestBooleanEnvironmentVariables(t *testing.T) {
-	assertBoolEnvVarParsed(t, "MOB_START_INCLUDE_UNCOMMITTED_CHANGES", false, Configuration.GetMobStartIncludeUncommittedChanges)
-	assertBoolEnvVarParsed(t, "MOB_START_CREATE", false, Configuration.GetMobStartCreateRemoteBranch)
-	assertBoolEnvVarParsed(t, "MOB_NEXT_STAY", true, Configuration.GetMobNextStay)
-	assertBoolEnvVarParsed(t, "MOB_REQUIRE_COMMIT_MESSAGE", false, Configuration.GetRequireCommitMessage)
-}
-
-func assertBoolEnvVarParsed(t *testing.T, envVar string, defaultValue bool, actual func(Configuration) bool) {
-	t.Run(envVar, func(t *testing.T) {
-		assertEnvVarParsed(t, envVar, "", defaultValue, boolToInterface(actual))
-		assertEnvVarParsed(t, envVar, "true", true, boolToInterface(actual))
-		assertEnvVarParsed(t, envVar, "false", false, boolToInterface(actual))
-		assertEnvVarParsed(t, envVar, "garbage", defaultValue, boolToInterface(actual))
-	})
-}
-
-func assertEnvVarParsed(t *testing.T, variable string, value string, expected interface{}, actual func(Configuration) interface{}) {
-	t.Run(fmt.Sprintf("%s=\"%s\"->(expects:%t)", variable, value, expected), func(t *testing.T) {
-		configuration := setEnvVarAndParse(variable, value)
-		equals(t, expected, actual(configuration))
-	})
-}
-
-func setEnvVarAndParse(variable string, value string) Configuration {
-	os.Setenv(variable, value)
-	defer os.Unsetenv(variable)
-
-	return parseEnvironmentVariables(getDefaultConfiguration())
-}
-
-func boolToInterface(actual func(Configuration) bool) func(c Configuration) interface{} {
-	return func(c Configuration) interface{} {
-		return actual(c)
-	}
-}
-
-func (c Configuration) GetMobDoneSquash() string {
-	return c.DoneSquash
-}
-
-func (c Configuration) GetMobStartIncludeUncommittedChanges() bool {
-	return c.StartIncludeUncommittedChanges
-}
-
-func (c Configuration) GetMobStartCreateRemoteBranch() bool {
-	return c.StartCreate
-}
-
-func (c Configuration) GetMobNextStay() bool {
-	return c.NextStay
-}
-
-func (c Configuration) GetRequireCommitMessage() bool {
-	return c.RequireCommitMessage
 }
 
 func TestVersion(t *testing.T) {
@@ -272,21 +131,8 @@ func TestNextNotMobProgramming(t *testing.T) {
 
 func TestRequireCommitMessage(t *testing.T) {
 	output, _ := setup(t)
-
-	os.Unsetenv("MOB_REQUIRE_COMMIT_MESSAGE")
-	defer os.Unsetenv("MOB_REQUIRE_COMMIT_MESSAGE")
-
-	configuration := parseEnvironmentVariables(getDefaultConfiguration())
-	equals(t, false, configuration.RequireCommitMessage)
-
-	os.Setenv("MOB_REQUIRE_COMMIT_MESSAGE", "false")
-	configuration = parseEnvironmentVariables(getDefaultConfiguration())
-	equals(t, false, configuration.RequireCommitMessage)
-
-	os.Setenv("MOB_REQUIRE_COMMIT_MESSAGE", "true")
-	configuration = parseEnvironmentVariables(getDefaultConfiguration())
-	equals(t, true, configuration.RequireCommitMessage)
-
+	configuration := config.GetDefaultConfiguration()
+	configuration.RequireCommitMessage = true
 	start(configuration)
 
 	next(configuration)
@@ -336,104 +182,15 @@ func TestStatusWithMoreThan5LinesOfLog(t *testing.T) {
 func TestExecuteKicksOffStatus(t *testing.T) {
 	output, _ := setup(t)
 
-	execute("status", []string{}, getDefaultConfiguration())
+	execute("status", []string{}, config.GetDefaultConfiguration())
 
 	assertOutputContains(t, output, "you are on base branch 'master'")
-}
-
-func TestReadConfigurationFromFileOverrideEverything(t *testing.T) {
-	say.TurnOnDebugging()
-	tempDir = t.TempDir()
-	setWorkingDir(tempDir)
-
-	createFile(t, ".mob", `
-		MOB_CLI_NAME="team"
-		MOB_REMOTE_NAME="gitlab"
-		MOB_WIP_COMMIT_MESSAGE="team next"
-		MOB_REQUIRE_COMMIT_MESSAGE=true
-		MOB_VOICE_COMMAND="whisper \"%s\""
-		MOB_VOICE_MESSAGE="team next"
-		MOB_NOTIFY_COMMAND="/usr/bin/osascript -e 'display notification \"%s!!!\"'"
-		MOB_NOTIFY_MESSAGE="team next"
-		MOB_NEXT_STAY=false
-		MOB_START_INCLUDE_UNCOMMITTED_CHANGES=true
-		MOB_START_CREATE=true
-		MOB_WIP_BRANCH_QUALIFIER="green"
-		MOB_WIP_BRANCH_QUALIFIER_SEPARATOR="---"
-		MOB_WIP_BRANCH_PREFIX="ensemble/"
-		MOB_DONE_SQUASH=no-squash
-		MOB_OPEN_COMMAND="idea %s"
-		MOB_TIMER="123"
-		MOB_TIMER_ROOM="Room_42"
-		MOB_TIMER_ROOM_USE_WIP_BRANCH_QUALIFIER=true
-		MOB_TIMER_LOCAL=false
-		MOB_TIMER_USER="Mona"
-		MOB_TIMER_URL="https://timer.innoq.io/"
-		MOB_STASH_NAME="team-stash-name"
-	`)
-	actualConfiguration := parseUserConfiguration(getDefaultConfiguration(), tempDir+"/.mob")
-	equals(t, "team", actualConfiguration.CliName)
-	equals(t, "gitlab", actualConfiguration.RemoteName)
-	equals(t, "team next", actualConfiguration.WipCommitMessage)
-	equals(t, true, actualConfiguration.RequireCommitMessage)
-	equals(t, "whisper \"%s\"", actualConfiguration.VoiceCommand)
-	equals(t, "team next", actualConfiguration.VoiceMessage)
-	equals(t, "/usr/bin/osascript -e 'display notification \"%s!!!\"'", actualConfiguration.NotifyCommand)
-	equals(t, "team next", actualConfiguration.NotifyMessage)
-	equals(t, false, actualConfiguration.NextStay)
-	equals(t, true, actualConfiguration.StartIncludeUncommittedChanges)
-	equals(t, true, actualConfiguration.StartCreate)
-	equals(t, "green", actualConfiguration.WipBranchQualifier)
-	equals(t, "---", actualConfiguration.WipBranchQualifierSeparator)
-	equals(t, "ensemble/", actualConfiguration.WipBranchPrefix)
-	equals(t, NoSquash, actualConfiguration.DoneSquash)
-	equals(t, "idea %s", actualConfiguration.OpenCommand)
-	equals(t, "123", actualConfiguration.Timer)
-	equals(t, "Room_42", actualConfiguration.TimerRoom)
-	equals(t, true, actualConfiguration.TimerRoomUseWipBranchQualifier)
-	equals(t, false, actualConfiguration.TimerLocal)
-	equals(t, "Mona", actualConfiguration.TimerUser)
-	equals(t, "https://timer.innoq.io/", actualConfiguration.TimerUrl)
-	equals(t, "team-stash-name", actualConfiguration.StashName)
-
-	createFile(t, ".mob", "\nMOB_TIMER_ROOM=\"Room\\\"\\\"_42\"\n")
-	actualConfiguration1 := parseUserConfiguration(getDefaultConfiguration(), tempDir+"/.mob")
-	equals(t, "Room\"\"_42", actualConfiguration1.TimerRoom)
-}
-
-func TestReadConfigurationFromFileWithNonBooleanQuotedDoneSquashValue(t *testing.T) {
-	say.TurnOnDebugging()
-	tempDir = t.TempDir()
-	setWorkingDir(tempDir)
-
-	createFile(t, ".mob", "\nMOB_DONE_SQUASH=\"squash-wip\"")
-	actualConfiguration := parseUserConfiguration(getDefaultConfiguration(), tempDir+"/.mob")
-	equals(t, SquashWip, actualConfiguration.DoneSquash)
-}
-
-func TestReadConfigurationFromFileAndSkipBrokenLines(t *testing.T) {
-	say.TurnOnDebugging()
-	tempDir = t.TempDir()
-	setWorkingDir(tempDir)
-
-	createFile(t, ".mob", "\nMOB_TIMER_ROOM=\"Broken\" \"String\"")
-	actualConfiguration := parseUserConfiguration(getDefaultConfiguration(), tempDir+"/.mob")
-	equals(t, getDefaultConfiguration().TimerRoom, actualConfiguration.TimerRoom)
-}
-
-func TestSkipIfConfigurationDoesNotExist(t *testing.T) {
-	say.TurnOnDebugging()
-	tempDir = t.TempDir()
-	setWorkingDir(tempDir)
-
-	actualConfiguration := parseUserConfiguration(getDefaultConfiguration(), tempDir+"/.mob")
-	equals(t, getDefaultConfiguration(), actualConfiguration)
 }
 
 func TestExecuteInvalidCommandKicksOffHelp(t *testing.T) {
 	output, _ := setup(t)
 
-	execute("whatever", []string{}, getDefaultConfiguration())
+	execute("whatever", []string{}, config.GetDefaultConfiguration())
 
 	assertOutputContains(t, output, "Basic Commands:")
 }
@@ -441,10 +198,10 @@ func TestExecuteInvalidCommandKicksOffHelp(t *testing.T) {
 func TestExecuteAnyCommandWithHelpArgumentShowsHelpOutput(t *testing.T) {
 	output, _ := setup(t)
 
-	execute("s", []string{"10", "--help"}, getDefaultConfiguration())
+	execute("s", []string{"10", "--help"}, config.GetDefaultConfiguration())
 	assertOutputContains(t, output, "Basic Commands:")
 
-	execute("next", []string{"help"}, getDefaultConfiguration())
+	execute("next", []string{"help"}, config.GetDefaultConfiguration())
 	assertOutputContains(t, output, "Basic Commands:")
 }
 
@@ -1115,7 +872,7 @@ func TestTestbed(t *testing.T) {
 
 func TestStartDoneWithMobDoneSquash(t *testing.T) {
 	_, configuration := setup(t)
-	configuration.DoneSquash = Squash
+	configuration.DoneSquash = config.Squash
 
 	start(configuration)
 	assertOnBranch(t, "mob-session")
@@ -1128,7 +885,7 @@ func TestStartDoneWithMobDoneSquash(t *testing.T) {
 
 func TestStartDoneSquashWithUnpushedCommit(t *testing.T) {
 	_, configuration := setup(t)
-	configuration.DoneSquash = Squash
+	configuration.DoneSquash = config.Squash
 
 	// now in /local
 	createFileAndCommitIt(t, "file1.txt", "owqe", "not a mob session yet")
@@ -1151,7 +908,7 @@ func TestStartDoneSquashWithUnpushedCommit(t *testing.T) {
 func TestStartDoneSquashWipWithUnpushedCommit(t *testing.T) {
 	say.TurnOnDebugging()
 	_, configuration := setup(t)
-	configuration.DoneSquash = SquashWip
+	configuration.DoneSquash = config.SquashWip
 
 	// now in /local
 	createFileAndCommitIt(t, "file1.txt", "owqe", "not a mob session yet")
@@ -1173,7 +930,7 @@ func TestStartDoneSquashWipWithUnpushedCommit(t *testing.T) {
 
 func TestStartDoneWithMobDoneNoSquash(t *testing.T) {
 	_, configuration := setup(t)
-	configuration.DoneSquash = NoSquash
+	configuration.DoneSquash = config.NoSquash
 
 	start(configuration)
 	assertOnBranch(t, "mob-session")
@@ -1186,7 +943,7 @@ func TestStartDoneWithMobDoneNoSquash(t *testing.T) {
 
 func TestStartDonePublishingOneManualCommit(t *testing.T) {
 	_, configuration := setup(t)
-	configuration.DoneSquash = NoSquash
+	configuration.DoneSquash = config.NoSquash
 
 	start(configuration)
 	assertOnBranch(t, "mob-session")
@@ -1207,7 +964,7 @@ func TestStartDonePublishingOneManualCommit(t *testing.T) {
 
 func TestStartDoneSquashTheOneManualCommit(t *testing.T) {
 	_, configuration := setup(t)
-	configuration.DoneSquash = Squash
+	configuration.DoneSquash = config.Squash
 
 	start(configuration)
 	assertOnBranch(t, "mob-session")
@@ -1246,7 +1003,7 @@ func TestStartDoneWithUncommittedChanges(t *testing.T) {
 
 func TestStartDoneNoSquashWithUncommittedChanges(t *testing.T) {
 	_, configuration := setup(t)
-	configuration.DoneSquash = NoSquash
+	configuration.DoneSquash = config.NoSquash
 
 	start(configuration) // should be 1 commit on mob-session so far
 	createFile(t, "example.txt", "content")
@@ -1264,7 +1021,7 @@ func TestStartDoneNoSquashWithUncommittedChanges(t *testing.T) {
 
 func TestStartDoneSquashWipPublishingOneManualCommit(t *testing.T) {
 	_, configuration := setup(t)
-	configuration.DoneSquash = SquashWip
+	configuration.DoneSquash = config.SquashWip
 
 	start(configuration)
 	createFile(t, "some.txt", "contentIrrelevant")
@@ -1289,7 +1046,7 @@ func TestStartDoneSquashWipWithUncommittedChanges(t *testing.T) {
 	start(configuration) // should be 1 commit on mob-session so far
 	createFile(t, "example.txt", "contentIrrelevant")
 
-	configuration.DoneSquash = SquashWip
+	configuration.DoneSquash = config.SquashWip
 	done(configuration)
 
 	assertOnBranch(t, "master")
@@ -1303,7 +1060,7 @@ func TestStartDoneSquashWipWithUncommittedChanges(t *testing.T) {
 
 func TestStartDoneSquashWipPublishingOneManualCommitHasUncommittedModifications(t *testing.T) {
 	_, configuration := setup(t)
-	configuration.DoneSquash = SquashWip
+	configuration.DoneSquash = config.SquashWip
 
 	start(configuration)
 	createFileAndCommitIt(t, "example.txt", "contentIrrelevant", "[manual-commit-1] publish this commit to master")
@@ -1333,7 +1090,7 @@ func TestStartDoneSquashWipOneWipCommitAfterManualCommit(t *testing.T) {
 	next(configuration)
 
 	start(configuration)
-	configuration.DoneSquash = SquashWip
+	configuration.DoneSquash = config.SquashWip
 	done(configuration)
 
 	assertOnBranch(t, "master")
@@ -1361,7 +1118,7 @@ func TestStartDoneSquashWipManyWipCommitsAfterManualCommit(t *testing.T) {
 	next(configuration)
 
 	start(configuration)
-	configuration.DoneSquash = SquashWip
+	configuration.DoneSquash = config.SquashWip
 	done(configuration)
 
 	assertOnBranch(t, "master")
@@ -1386,7 +1143,7 @@ func TestStartDoneSquashWipOnlyWipCommits(t *testing.T) {
 	next(configuration)
 
 	start(configuration)
-	configuration.DoneSquash = SquashWip
+	configuration.DoneSquash = config.SquashWip
 	done(configuration)
 
 	assertOnBranch(t, "master")
@@ -1410,7 +1167,7 @@ func TestStartDoneSquashWipOnlyManualCommits(t *testing.T) {
 	next(configuration)
 
 	start(configuration)
-	configuration.DoneSquash = SquashWip
+	configuration.DoneSquash = config.SquashWip
 	done(configuration)
 
 	assertOnBranch(t, "master")
@@ -1717,47 +1474,6 @@ func TestGitStatusWithManyFiles(t *testing.T) {
 	}, status)
 }
 
-func TestSetMobDoneSquashOldBehaviour(t *testing.T) {
-	configuration := getDefaultConfiguration()
-	configuration.DoneSquash = Squash
-
-	setMobDoneSquash(&configuration, "", "false")
-	equals(t, NoSquash, configuration.DoneSquash)
-
-	setMobDoneSquash(&configuration, "", "true")
-	equals(t, Squash, configuration.DoneSquash)
-}
-
-func TestSetMobDoneSquashNewBehaviour(t *testing.T) {
-	configuration := getDefaultConfiguration()
-	configuration.DoneSquash = Squash
-
-	setMobDoneSquash(&configuration, "", "no-squash")
-	equals(t, NoSquash, configuration.DoneSquash)
-
-	setMobDoneSquash(&configuration, "", "squash")
-	equals(t, Squash, configuration.DoneSquash)
-
-	setMobDoneSquash(&configuration, "", "squash-wip")
-	equals(t, SquashWip, configuration.DoneSquash)
-}
-
-func TestSetMobDoneSquashGarbageValue(t *testing.T) {
-	configuration := getDefaultConfiguration()
-	configuration.DoneSquash = NoSquash
-
-	setMobDoneSquash(&configuration, "", "garbage")
-	equals(t, Squash, configuration.DoneSquash)
-}
-
-func TestSetMobDoneSquashEmptyStringValue(t *testing.T) {
-	configuration := getDefaultConfiguration()
-	configuration.DoneSquash = NoSquash
-
-	setMobDoneSquash(&configuration, "", "")
-	equals(t, Squash, configuration.DoneSquash)
-}
-
 func TestBranchesDoNotDiverge(t *testing.T) {
 	setup(t)
 	createFileAndCommitIt(t, "example.txt", "asdf", "asdf")
@@ -1779,46 +1495,6 @@ func TestBranchesDoDiverge(t *testing.T) {
 	diverge := doBranchesDiverge("master", "diverges")
 
 	equals(t, true, diverge)
-}
-
-func TestPrintDeprecatedDoneSquashMessageWhenValueIsTrue(t *testing.T) {
-	output, _ := setup(t)
-
-	printDeprecatedDoneSquashMessage("true")
-
-	assertOutputContains(t, output, "MOB_DONE_SQUASH is set to the deprecated value true. Use the value squash instead")
-}
-
-func TestPrintDeprecatedDoneSquashMessageWhenValueIsQuotedTrue(t *testing.T) {
-	output, _ := setup(t)
-
-	printDeprecatedDoneSquashMessage("\"true\"")
-
-	assertOutputContains(t, output, "MOB_DONE_SQUASH is set to the deprecated value \"true\". Use the value squash instead")
-}
-
-func TestPrintDeprecatedDoneSquashMessageWhenValueIsFalse(t *testing.T) {
-	output, _ := setup(t)
-
-	printDeprecatedDoneSquashMessage("false")
-
-	assertOutputContains(t, output, "MOB_DONE_SQUASH is set to the deprecated value false. Use the value no-squash instead")
-}
-
-func TestPrintDeprecatedDoneSquashMessageWhenValueIsQuotedFalse(t *testing.T) {
-	output, _ := setup(t)
-
-	printDeprecatedDoneSquashMessage("\"false\"")
-
-	assertOutputContains(t, output, "MOB_DONE_SQUASH is set to the deprecated value \"false\". Use the value no-squash instead")
-}
-
-func TestDoesNotPrintDeprecatedDoneSquashMessageWhenUsingNewValue(t *testing.T) {
-	output, _ := setup(t)
-
-	printDeprecatedDoneSquashMessage(Squash)
-
-	assertOutputNotContains(t, output, "MOB_DONE_SQUASH is set to the deprecated value")
 }
 
 func TestHelpRequested(t *testing.T) {
@@ -1843,8 +1519,8 @@ func gitStatus() GitStatus {
 	return statusMap
 }
 
-func setup(t *testing.T) (output *string, configuration Configuration) {
-	configuration = getDefaultConfiguration()
+func setup(t *testing.T) (output *string, configuration config.Configuration) {
+	configuration = config.GetDefaultConfiguration()
 	configuration.NextStay = false
 	output = captureOutput(t)
 	createTestbed(t, configuration)
@@ -1875,7 +1551,7 @@ func run(t *testing.T, name string, args ...string) *string {
 	return &output
 }
 
-func createTestbed(t *testing.T, configuration Configuration) {
+func createTestbed(t *testing.T, configuration config.Configuration) {
 	workingDir = ""
 
 	tempDir = t.TempDir()
@@ -1967,7 +1643,7 @@ func assertOutputNotContains(t *testing.T, output *string, notContains string) {
 	}
 }
 
-func assertMobSessionBranches(t *testing.T, configuration Configuration, branch string) {
+func assertMobSessionBranches(t *testing.T, configuration config.Configuration, branch string) {
 	if !newBranch(branch).hasRemoteBranch(configuration) {
 		failWithFailure(t, newBranch(branch).remote(configuration).Name, "none")
 	}
@@ -1988,7 +1664,7 @@ func assertNoLocalBranch(t *testing.T, branch string) {
 	}
 }
 
-func assertNoMobSessionBranches(t *testing.T, configuration Configuration, branch string) {
+func assertNoMobSessionBranches(t *testing.T, configuration config.Configuration, branch string) {
 	if newBranch(branch).hasRemoteBranch(configuration) {
 		failWithFailure(t, "none", newBranch(branch).remote(configuration).Name)
 	}
