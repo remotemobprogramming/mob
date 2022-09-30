@@ -13,6 +13,7 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+	"time"
 )
 
 var (
@@ -1505,6 +1506,56 @@ func TestHelpRequested(t *testing.T) {
 	equals(t, true, helpRequested([]string{"s", "10", "-h"}))
 }
 
+func TestAbortTimerIfNewTimerIsStarted(t *testing.T) {
+	_, configuration := setup(t)
+	startTimer("10", configuration)
+	time.Sleep(time.Millisecond)
+	equals(t, 1, len(findMobTimerProcessIds()))
+
+	startTimer("10", configuration)
+
+	time.Sleep(time.Millisecond)
+	equals(t, 1, len(findMobTimerProcessIds()))
+	abortRunningTimers()
+}
+
+func TestAbortBreakTimerIfNewBreakTimerIsStarted(t *testing.T) {
+	_, configuration := setup(t)
+	startBreakTimer("10", configuration)
+	time.Sleep(time.Millisecond)
+	equals(t, 1, len(findMobTimerProcessIds()))
+
+	startBreakTimer("10", configuration)
+
+	time.Sleep(time.Millisecond)
+	equals(t, 1, len(findMobTimerProcessIds()))
+	abortRunningTimers()
+}
+
+func TestAbortTimerIfMobNext(t *testing.T) {
+	_, configuration := setup(t)
+	start(configuration)
+	startTimer("10", configuration)
+	time.Sleep(time.Millisecond)
+	equals(t, 1, len(findMobTimerProcessIds()))
+
+	next(configuration)
+	time.Sleep(time.Millisecond)
+	equals(t, 0, len(findMobTimerProcessIds()))
+}
+
+func TestAbortTimerIfMobDone(t *testing.T) {
+	_, configuration := setup(t)
+	start(configuration)
+	startTimer("10", configuration)
+	time.Sleep(time.Millisecond)
+	equals(t, 1, len(findMobTimerProcessIds()))
+
+	done(configuration)
+	time.Sleep(time.Millisecond)
+	equals(t, 0, len(findMobTimerProcessIds()))
+}
+
 func gitStatus() GitStatus {
 	shortStatus := silentgit("status", "--short")
 	statusLines := strings.Split(shortStatus, "\n")
@@ -1528,6 +1579,7 @@ func setup(t *testing.T) (output *string, configuration config.Configuration) {
 	equals(t, []string{"master"}, gitBranches())
 	equals(t, []string{"origin/master"}, gitRemoteBranches())
 	assertNoMobSessionBranches(t, configuration, "mob-session")
+	abortRunningTimers()
 	return output, configuration
 }
 

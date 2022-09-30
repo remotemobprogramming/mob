@@ -442,7 +442,8 @@ func startTimer(timerInMinutes string, configuration config.Configuration) {
 	}
 
 	if startLocalTimer {
-		err := executeCommandsInBackgroundProcess(getSleepCommand(timeoutInSeconds), getVoiceCommand(configuration.VoiceMessage, configuration.VoiceCommand), getNotifyCommand(configuration.NotifyMessage, configuration.NotifyCommand))
+		abortRunningTimers()
+		err := executeCommandsInBackgroundProcess(getSleepCommand(timeoutInSeconds), getVoiceCommand(configuration.VoiceMessage, configuration.VoiceCommand), getNotifyCommand(configuration.NotifyMessage, configuration.NotifyCommand), "echo \"mobTimer\"")
 
 		if err != nil {
 			say.Error(fmt.Sprintf("timer couldn't be started on your system (%s)", runtime.GOOS))
@@ -452,6 +453,92 @@ func startTimer(timerInMinutes string, configuration config.Configuration) {
 	}
 
 	say.Info("It's now " + currentTime() + ". " + fmt.Sprintf("%d min timer ends at approx. %s", timeoutInMinutes, timeOfTimeout) + ". Happy collaborating! :)")
+}
+
+func abortRunningTimers() {
+	processIds := findMobTimerProcessIds()
+	for _, processId := range processIds {
+		killRunningProcess(processId)
+		say.Debug("Killed mob timer with PID" + processId)
+	}
+}
+
+func killRunningProcess(processId string) {
+	var err error
+	switch runtime.GOOS {
+	case "darwin", "linux":
+		err = killRunningProcessLinuxAndDarwin(processId)
+		break
+	case "windows":
+		err = killRunningProcessWindows(processId)
+	}
+	if err != nil {
+		say.Error(fmt.Sprintf("old timer couldn't be aborted on your system (%s)", runtime.GOOS))
+		say.Error(err.Error())
+	}
+	say.Debug("Killed mob timer with PID" + processId)
+}
+
+func killRunningProcessLinuxAndDarwin(processId string) error {
+	_, _, err := runCommandSilent("kill", processId)
+	return err
+}
+
+func killRunningProcessWindows(processId string) error {
+	_, _, err := runCommandSilent("powershell", "-command", "Stop-Process", "-Id", processId)
+	return err
+}
+
+func findMobTimerProcessIds() []string {
+	say.Debug("find all mob timer processes")
+	switch runtime.GOOS {
+	case "darwin", "linux":
+		return findMobTimerProcessIdsLinuxAndDarwin()
+	case "windows":
+		return findMobTimerProcessIdsWindows()
+	}
+	return nil
+}
+
+func findMobTimerProcessIdsWindows() []string {
+	_, output, err := runCommandSilent("powershell", "-command", "Get-WmiObject", "Win32_Process", "-Filter", "\"commandLine LIKE '%mobTimer%'\"", "|", "Select-Object", "-Property", "ProcessId,CommandLine", "|", "Out-String", "-Width", "10000")
+	if err != nil {
+		say.Error(fmt.Sprintf("could not find processes on your system (%s)", runtime.GOOS))
+		say.Error(err.Error())
+	}
+	lines := strings.Split(output, "\r\n")
+	var filteredLines []string
+	for _, line := range lines {
+		if line != "" {
+			filteredLines = append(filteredLines, line)
+		}
+	}
+	processInfos := filteredLines[2:]
+	var timerProcessIds []string
+	for _, processInfo := range processInfos {
+		if strings.Contains(processInfo, "echo \"mobTimer\"") {
+			timerProcessIds = append(timerProcessIds, strings.Split(strings.TrimSpace(processInfo), " ")[0])
+		}
+	}
+	return timerProcessIds
+}
+
+func findMobTimerProcessIdsLinuxAndDarwin() []string {
+	_, output, err := runCommandSilent("ps")
+	lines := strings.Split(output, "\n")
+	if err != nil {
+		say.Error(fmt.Sprintf("could not find processes on your system (%s)", runtime.GOOS))
+		say.Error(err.Error())
+	}
+	var processIds []string
+	for _, line := range lines {
+		if strings.Contains(line, "echo \"mobTimer\"") {
+			processId := strings.Split(line, " ")[0]
+			processIds = append(processIds, processId)
+			say.Debug("Found mob timer with PID " + processId)
+		}
+	}
+	return processIds
 }
 
 func getMobTimerRoom(configuration config.Configuration) string {
@@ -507,7 +594,8 @@ func startBreakTimer(timerInMinutes string, configuration config.Configuration) 
 	}
 
 	if startLocalTimer {
-		err := executeCommandsInBackgroundProcess(getSleepCommand(timeoutInSeconds), getVoiceCommand("mob start", configuration.VoiceCommand), getNotifyCommand("mob start", configuration.NotifyCommand))
+		abortRunningTimers()
+		err := executeCommandsInBackgroundProcess(getSleepCommand(timeoutInSeconds), getVoiceCommand("mob start", configuration.VoiceCommand), getNotifyCommand("mob start", configuration.NotifyCommand), "echo \"mobTimer\"")
 
 		if err != nil {
 			say.Error(fmt.Sprintf("break timer couldn't be started on your system (%s)", runtime.GOOS))
@@ -878,6 +966,7 @@ func next(configuration config.Configuration) {
 		gitWithoutEmptyStrings("push", gitHooksOption(configuration), configuration.RemoteName, currentWipBranch.Name)
 	}
 	showNext(configuration)
+	abortRunningTimers()
 
 	if !configuration.NextStay {
 		git("checkout", currentBaseBranch.Name)
@@ -1041,6 +1130,7 @@ func done(configuration config.Configuration) {
 		git("branch", "-D", wipBranch.Name)
 		say.Info("someone else already ended your session")
 	}
+	abortRunningTimers()
 }
 
 func gitDir() string {
