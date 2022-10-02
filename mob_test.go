@@ -4,6 +4,7 @@ import (
 	"fmt"
 	config "github.com/remotemobprogramming/mob/v4/configuration"
 	"github.com/remotemobprogramming/mob/v4/say"
+	"github.com/remotemobprogramming/mob/v4/test"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -1509,26 +1510,31 @@ func TestHelpRequested(t *testing.T) {
 func TestAbortTimerIfNewTimerIsStarted(t *testing.T) {
 	_, configuration := setup(t)
 	startTimer("10", configuration)
-	time.Sleep(time.Millisecond)
-	equals(t, 1, len(findMobTimerProcessIds()))
+	assertSingleTimerProcess(t)
 
 	startTimer("10", configuration)
 
 	time.Sleep(time.Millisecond)
-	equals(t, 1, len(findMobTimerProcessIds()))
+	assertSingleTimerProcess(t)
 	abortRunningTimers()
+}
+
+func assertSingleTimerProcess(t *testing.T) {
+	test.Await(t, func() bool { return 1 == len(findMobTimerProcessIds()) })
+}
+
+func assertNoTimerProcess(t *testing.T) {
+	test.Await(t, func() bool { return 0 == len(findMobTimerProcessIds()) })
 }
 
 func TestAbortBreakTimerIfNewBreakTimerIsStarted(t *testing.T) {
 	_, configuration := setup(t)
 	startBreakTimer("10", configuration)
-	time.Sleep(time.Millisecond)
-	equals(t, 1, len(findMobTimerProcessIds()))
+	assertSingleTimerProcess(t)
 
 	startBreakTimer("10", configuration)
 
-	time.Sleep(time.Millisecond)
-	equals(t, 1, len(findMobTimerProcessIds()))
+	assertSingleTimerProcess(t)
 	abortRunningTimers()
 }
 
@@ -1536,26 +1542,22 @@ func TestAbortTimerIfMobNext(t *testing.T) {
 	_, configuration := setup(t)
 	start(configuration)
 	startTimer("10", configuration)
-	time.Sleep(time.Millisecond)
-	equals(t, 1, len(findMobTimerProcessIds()))
+	assertSingleTimerProcess(t)
 
 	next(configuration)
 
-	time.Sleep(time.Millisecond)
-	equals(t, 0, len(findMobTimerProcessIds()))
+	assertNoTimerProcess(t)
 }
 
 func TestAbortTimerIfMobDone(t *testing.T) {
 	_, configuration := setup(t)
 	start(configuration)
 	startTimer("10", configuration)
-	time.Sleep(time.Millisecond)
-	equals(t, 1, len(findMobTimerProcessIds()))
+	assertSingleTimerProcess(t)
 
 	done(configuration)
-	
-	time.Sleep(time.Millisecond)
-	equals(t, 0, len(findMobTimerProcessIds()))
+
+	assertNoTimerProcess(t)
 }
 
 func gitStatus() GitStatus {
