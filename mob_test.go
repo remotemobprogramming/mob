@@ -1540,6 +1540,7 @@ func TestAbortTimerIfMobNext(t *testing.T) {
 	equals(t, 1, len(findMobTimerProcessIds()))
 
 	next(configuration)
+
 	time.Sleep(time.Millisecond)
 	equals(t, 0, len(findMobTimerProcessIds()))
 }
@@ -1552,6 +1553,7 @@ func TestAbortTimerIfMobDone(t *testing.T) {
 	equals(t, 1, len(findMobTimerProcessIds()))
 
 	done(configuration)
+	
 	time.Sleep(time.Millisecond)
 	equals(t, 0, len(findMobTimerProcessIds()))
 }

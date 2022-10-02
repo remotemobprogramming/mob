@@ -459,7 +459,7 @@ func abortRunningTimers() {
 	processIds := findMobTimerProcessIds()
 	for _, processId := range processIds {
 		killRunningProcess(processId)
-		say.Debug("Killed mob timer with PID" + processId)
+		say.Debug("Killed mob timer with PID " + processId)
 	}
 }
 
@@ -497,7 +497,7 @@ func findMobTimerProcessIds() []string {
 	case "windows":
 		return findMobTimerProcessIdsWindows()
 	}
-	return nil
+	return []string{}
 }
 
 func findMobTimerProcessIdsWindows() []string {
