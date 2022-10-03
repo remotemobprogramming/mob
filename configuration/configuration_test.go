@@ -100,7 +100,6 @@ func assertMobDoneSquashValue(t *testing.T, value string, expected string) {
 }
 
 func TestBooleanEnvironmentVariables(t *testing.T) {
-	assertBoolEnvVarParsed(t, "MOB_START_INCLUDE_UNCOMMITTED_CHANGES", false, Configuration.GetMobStartIncludeUncommittedChanges)
 	assertBoolEnvVarParsed(t, "MOB_START_CREATE", false, Configuration.GetMobStartCreateRemoteBranch)
 	assertBoolEnvVarParsed(t, "MOB_NEXT_STAY", true, Configuration.GetMobNextStay)
 	assertBoolEnvVarParsed(t, "MOB_REQUIRE_COMMIT_MESSAGE", false, Configuration.GetRequireCommitMessage)
@@ -186,7 +185,6 @@ func TestReadConfigurationFromFileOverrideEverything(t *testing.T) {
 		MOB_NOTIFY_COMMAND="/usr/bin/osascript -e 'display notification \"%s!!!\"'"
 		MOB_NOTIFY_MESSAGE="team next"
 		MOB_NEXT_STAY=false
-		MOB_START_INCLUDE_UNCOMMITTED_CHANGES=true
 		MOB_START_CREATE=true
 		MOB_WIP_BRANCH_QUALIFIER="green"
 		MOB_WIP_BRANCH_QUALIFIER_SEPARATOR="---"
@@ -211,7 +209,6 @@ func TestReadConfigurationFromFileOverrideEverything(t *testing.T) {
 	test.Equals(t, "/usr/bin/osascript -e 'display notification \"%s!!!\"'", actualConfiguration.NotifyCommand)
 	test.Equals(t, "team next", actualConfiguration.NotifyMessage)
 	test.Equals(t, false, actualConfiguration.NextStay)
-	test.Equals(t, true, actualConfiguration.StartIncludeUncommittedChanges)
 	test.Equals(t, true, actualConfiguration.StartCreate)
 	test.Equals(t, "green", actualConfiguration.WipBranchQualifier)
 	test.Equals(t, "---", actualConfiguration.WipBranchQualifierSeparator)

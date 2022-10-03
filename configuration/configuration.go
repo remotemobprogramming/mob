@@ -27,7 +27,7 @@ type Configuration struct {
 	NotifyCommand                  string // override with MOB_NOTIFY_COMMAND
 	NotifyMessage                  string // override with MOB_NOTIFY_MESSAGE
 	NextStay                       bool   // override with MOB_NEXT_STAY
-	StartIncludeUncommittedChanges bool   // override with MOB_START_INCLUDE_UNCOMMITTED_CHANGES variable
+	StartIncludeUncommittedChanges bool
 	StartCreate                    bool   // override with MOB_START_CREATE variable
 	StashName                      string // override with MOB_STASH_NAME
 	WipBranchQualifier             string // override with MOB_WIP_BRANCH_QUALIFIER
@@ -80,7 +80,6 @@ func Config(c Configuration) {
 	say.Say("MOB_NOTIFY_COMMAND" + "=" + quote(c.NotifyCommand))
 	say.Say("MOB_NOTIFY_MESSAGE" + "=" + quote(c.NotifyMessage))
 	say.Say("MOB_NEXT_STAY" + "=" + strconv.FormatBool(c.NextStay))
-	say.Say("MOB_START_INCLUDE_UNCOMMITTED_CHANGES" + "=" + strconv.FormatBool(c.StartIncludeUncommittedChanges))
 	say.Say("MOB_STASH_NAME" + "=" + quote(c.StashName))
 	say.Say("MOB_WIP_BRANCH_QUALIFIER" + "=" + quote(c.WipBranchQualifier))
 	say.Say("MOB_WIP_BRANCH_QUALIFIER_SEPARATOR" + "=" + quote(c.WipBranchQualifierSeparator))
@@ -241,8 +240,6 @@ func parseUserConfiguration(configuration Configuration, path string) Configurat
 			setUnquotedString(&configuration.NotifyMessage, key, value)
 		case "MOB_NEXT_STAY":
 			setBoolean(&configuration.NextStay, key, value)
-		case "MOB_START_INCLUDE_UNCOMMITTED_CHANGES":
-			setBoolean(&configuration.StartIncludeUncommittedChanges, key, value)
 		case "MOB_START_CREATE":
 			setBoolean(&configuration.StartCreate, key, value)
 		case "MOB_WIP_BRANCH_QUALIFIER":
@@ -324,8 +321,6 @@ func parseProjectConfiguration(configuration Configuration, path string) Configu
 			setBoolean(&configuration.RequireCommitMessage, key, value)
 		case "MOB_NEXT_STAY":
 			setBoolean(&configuration.NextStay, key, value)
-		case "MOB_START_INCLUDE_UNCOMMITTED_CHANGES":
-			setBoolean(&configuration.StartIncludeUncommittedChanges, key, value)
 		case "MOB_START_CREATE":
 			setBoolean(&configuration.StartCreate, key, value)
 		case "MOB_WIP_BRANCH_QUALIFIER":
@@ -411,7 +406,7 @@ func parseEnvironmentVariables(configuration Configuration) Configuration {
 
 	removed("MOB_BASE_BRANCH", "Use '"+configuration.Mob("start")+"' on your base branch instead.")
 	removed("MOB_WIP_BRANCH", "Use '"+configuration.Mob("start --branch <branch>")+"' instead.")
-	deprecated("MOB_START_INCLUDE_UNCOMMITTED_CHANGES", "Use the parameter --include-uncommitted-changes instead.")
+	removed("MOB_START_INCLUDE_UNCOMMITTED_CHANGES", "Use the parameter --include-uncommitted-changes instead.")
 	experimental("MOB_WIP_BRANCH_PREFIX")
 
 	setStringFromEnvVariable(&configuration.RemoteName, "MOB_REMOTE_NAME")
@@ -429,7 +424,6 @@ func parseEnvironmentVariables(configuration Configuration) Configuration {
 
 	setBoolFromEnvVariable(&configuration.NextStay, "MOB_NEXT_STAY")
 
-	setBoolFromEnvVariable(&configuration.StartIncludeUncommittedChanges, "MOB_START_INCLUDE_UNCOMMITTED_CHANGES")
 	setBoolFromEnvVariable(&configuration.StartCreate, "MOB_START_CREATE")
 
 	setDoneSquashFromEnvVariable(&configuration, "MOB_DONE_SQUASH")

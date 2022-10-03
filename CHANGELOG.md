@@ -2,6 +2,7 @@
 - **NEW** Feature: `mob reset` doesn't reset the mob branch anymore. It now warns you that it deletes the mob branch for everyone and if you want to continue do `mob reset --delete-remote-wip-branch`.
 - Feature: `mob start --create` will create the remote branch and start the mob session on that branch.
 - Feature: mob.sh now also works with tools like `git-repo` which symlink the `.git` folder
+- Removed `MOB_START_INCLUDE_UNCOMMITTED_CHANGES` environment variable (has been deprecated for some time).
 
 # 3.2.0
 - Fix: `mob done --squash-wip` won't fail if a previously committed file has uncommitted modifications.
