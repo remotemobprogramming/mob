@@ -86,8 +86,6 @@ func TestMobRemoteNameEnvironmentVariableEmptyString(t *testing.T) {
 
 func TestMobDoneSquashEnvironmentVariable(t *testing.T) {
 	assertMobDoneSquashValue(t, "", Squash)
-	assertMobDoneSquashValue(t, "true", Squash)
-	assertMobDoneSquashValue(t, "false", NoSquash)
 	assertMobDoneSquashValue(t, "garbage", Squash)
 	assertMobDoneSquashValue(t, "squash", Squash)
 	assertMobDoneSquashValue(t, "no-squash", NoSquash)
@@ -257,18 +255,7 @@ func TestSkipIfConfigurationDoesNotExist(t *testing.T) {
 	test.Equals(t, GetDefaultConfiguration(), actualConfiguration)
 }
 
-func TestSetMobDoneSquashOldBehaviour(t *testing.T) {
-	configuration := GetDefaultConfiguration()
-	configuration.DoneSquash = Squash
-
-	setMobDoneSquash(&configuration, "", "false")
-	test.Equals(t, NoSquash, configuration.DoneSquash)
-
-	setMobDoneSquash(&configuration, "", "true")
-	test.Equals(t, Squash, configuration.DoneSquash)
-}
-
-func TestSetMobDoneSquashNewBehaviour(t *testing.T) {
+func TestSetMobDoneSquash(t *testing.T) {
 	configuration := GetDefaultConfiguration()
 	configuration.DoneSquash = Squash
 
@@ -296,54 +283,4 @@ func TestSetMobDoneSquashEmptyStringValue(t *testing.T) {
 
 	setMobDoneSquash(&configuration, "", "")
 	test.Equals(t, Squash, configuration.DoneSquash)
-}
-
-func TestPrintDeprecatedDoneSquashMessageWhenValueIsTrue(t *testing.T) {
-	configuration := GetDefaultConfiguration()
-	configuration.NextStay = false
-	output := test.CaptureOutput(t)
-
-	printDeprecatedDoneSquashMessage("true")
-
-	test.AssertOutputContains(t, output, "MOB_DONE_SQUASH is set to the deprecated value true. Use the value squash instead")
-}
-
-func TestPrintDeprecatedDoneSquashMessageWhenValueIsQuotedTrue(t *testing.T) {
-	configuration := GetDefaultConfiguration()
-	configuration.NextStay = false
-	output := test.CaptureOutput(t)
-
-	printDeprecatedDoneSquashMessage("\"true\"")
-
-	test.AssertOutputContains(t, output, "MOB_DONE_SQUASH is set to the deprecated value \"true\". Use the value squash instead")
-}
-
-func TestPrintDeprecatedDoneSquashMessageWhenValueIsFalse(t *testing.T) {
-	configuration := GetDefaultConfiguration()
-	configuration.NextStay = false
-	output := test.CaptureOutput(t)
-
-	printDeprecatedDoneSquashMessage("false")
-
-	test.AssertOutputContains(t, output, "MOB_DONE_SQUASH is set to the deprecated value false. Use the value no-squash instead")
-}
-
-func TestPrintDeprecatedDoneSquashMessageWhenValueIsQuotedFalse(t *testing.T) {
-	configuration := GetDefaultConfiguration()
-	configuration.NextStay = false
-	output := test.CaptureOutput(t)
-
-	printDeprecatedDoneSquashMessage("\"false\"")
-
-	test.AssertOutputContains(t, output, "MOB_DONE_SQUASH is set to the deprecated value \"false\". Use the value no-squash instead")
-}
-
-func TestDoesNotPrintDeprecatedDoneSquashMessageWhenUsingNewValue(t *testing.T) {
-	configuration := GetDefaultConfiguration()
-	configuration.NextStay = false
-	output := test.CaptureOutput(t)
-
-	printDeprecatedDoneSquashMessage(Squash)
-
-	test.AssertOutputNotContains(t, output, "MOB_DONE_SQUASH is set to the deprecated value")
 }

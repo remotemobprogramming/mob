@@ -391,9 +391,8 @@ func setMobDoneSquash(configuration *Configuration, key string, value string) {
 		}
 		value = unquotedValue
 	}
-	printDeprecatedDoneSquashMessage(value)
 	configuration.DoneSquash = doneSquash(value)
-	say.Debug("Overwriting " + key + " =" + string(configuration.DoneSquash))
+	say.Debug("Overwriting " + key + " =" + configuration.DoneSquash)
 }
 
 func parseEnvironmentVariables(configuration Configuration) Configuration {
@@ -484,7 +483,7 @@ func setDoneSquashFromEnvVariable(configuration *Configuration, key string) {
 	if !set {
 		return
 	}
-	printDeprecatedDoneSquashMessage(value)
+
 	configuration.DoneSquash = doneSquash(value)
 
 	if value == "" {
@@ -492,19 +491,7 @@ func setDoneSquashFromEnvVariable(configuration *Configuration, key string) {
 		return
 	}
 
-	say.Debug("overriding " + key + "=" + string(configuration.DoneSquash))
-}
-
-func printDeprecatedDoneSquashMessage(value string) {
-	unquotedValue, err := strconv.Unquote(value)
-	if err != nil {
-		unquotedValue = value
-	}
-
-	if unquotedValue == "true" || unquotedValue == "false" {
-		newValue := doneSquash(unquotedValue)
-		say.Say("MOB_DONE_SQUASH is set to the deprecated value " + value + ". Use the value " + newValue + " instead.")
-	}
+	say.Debug("overriding " + key + "=" + configuration.DoneSquash)
 }
 
 func removed(key string, message string) {
@@ -529,7 +516,7 @@ func experimental(key string) {
 
 func doneSquash(value string) string {
 	switch value {
-	case "false", NoSquash:
+	case NoSquash:
 		return NoSquash
 	case SquashWip:
 		return SquashWip
