@@ -367,7 +367,6 @@ MOB_VOICE_MESSAGE="mob next"
 MOB_NOTIFY_COMMAND="/usr/bin/osascript -e 'display notification \"%s\"'"
 MOB_NOTIFY_MESSAGE="mob next"
 MOB_NEXT_STAY=true
-MOB_START_INCLUDE_UNCOMMITTED_CHANGES=false
 MOB_START_CREATE=false
 MOB_STASH_NAME="mob-stash-name"
 MOB_WIP_BRANCH_QUALIFIER=""

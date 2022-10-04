@@ -86,8 +86,6 @@ func TestMobRemoteNameEnvironmentVariableEmptyString(t *testing.T) {
 
 func TestMobDoneSquashEnvironmentVariable(t *testing.T) {
 	assertMobDoneSquashValue(t, "", Squash)
-	assertMobDoneSquashValue(t, "true", Squash)
-	assertMobDoneSquashValue(t, "false", NoSquash)
 	assertMobDoneSquashValue(t, "garbage", Squash)
 	assertMobDoneSquashValue(t, "squash", Squash)
 	assertMobDoneSquashValue(t, "no-squash", NoSquash)
@@ -100,7 +98,6 @@ func assertMobDoneSquashValue(t *testing.T, value string, expected string) {
 }
 
 func TestBooleanEnvironmentVariables(t *testing.T) {
-	assertBoolEnvVarParsed(t, "MOB_START_INCLUDE_UNCOMMITTED_CHANGES", false, Configuration.GetMobStartIncludeUncommittedChanges)
 	assertBoolEnvVarParsed(t, "MOB_START_CREATE", false, Configuration.GetMobStartCreateRemoteBranch)
 	assertBoolEnvVarParsed(t, "MOB_NEXT_STAY", true, Configuration.GetMobNextStay)
 	assertBoolEnvVarParsed(t, "MOB_REQUIRE_COMMIT_MESSAGE", false, Configuration.GetRequireCommitMessage)
@@ -186,7 +183,6 @@ func TestReadConfigurationFromFileOverrideEverything(t *testing.T) {
 		MOB_NOTIFY_COMMAND="/usr/bin/osascript -e 'display notification \"%s!!!\"'"
 		MOB_NOTIFY_MESSAGE="team next"
 		MOB_NEXT_STAY=false
-		MOB_START_INCLUDE_UNCOMMITTED_CHANGES=true
 		MOB_START_CREATE=true
 		MOB_WIP_BRANCH_QUALIFIER="green"
 		MOB_WIP_BRANCH_QUALIFIER_SEPARATOR="---"
@@ -211,7 +207,6 @@ func TestReadConfigurationFromFileOverrideEverything(t *testing.T) {
 	test.Equals(t, "/usr/bin/osascript -e 'display notification \"%s!!!\"'", actualConfiguration.NotifyCommand)
 	test.Equals(t, "team next", actualConfiguration.NotifyMessage)
 	test.Equals(t, false, actualConfiguration.NextStay)
-	test.Equals(t, true, actualConfiguration.StartIncludeUncommittedChanges)
 	test.Equals(t, true, actualConfiguration.StartCreate)
 	test.Equals(t, "green", actualConfiguration.WipBranchQualifier)
 	test.Equals(t, "---", actualConfiguration.WipBranchQualifierSeparator)
@@ -260,18 +255,7 @@ func TestSkipIfConfigurationDoesNotExist(t *testing.T) {
 	test.Equals(t, GetDefaultConfiguration(), actualConfiguration)
 }
 
-func TestSetMobDoneSquashOldBehaviour(t *testing.T) {
-	configuration := GetDefaultConfiguration()
-	configuration.DoneSquash = Squash
-
-	setMobDoneSquash(&configuration, "", "false")
-	test.Equals(t, NoSquash, configuration.DoneSquash)
-
-	setMobDoneSquash(&configuration, "", "true")
-	test.Equals(t, Squash, configuration.DoneSquash)
-}
-
-func TestSetMobDoneSquashNewBehaviour(t *testing.T) {
+func TestSetMobDoneSquash(t *testing.T) {
 	configuration := GetDefaultConfiguration()
 	configuration.DoneSquash = Squash
 
@@ -299,54 +283,4 @@ func TestSetMobDoneSquashEmptyStringValue(t *testing.T) {
 
 	setMobDoneSquash(&configuration, "", "")
 	test.Equals(t, Squash, configuration.DoneSquash)
-}
-
-func TestPrintDeprecatedDoneSquashMessageWhenValueIsTrue(t *testing.T) {
-	configuration := GetDefaultConfiguration()
-	configuration.NextStay = false
-	output := test.CaptureOutput(t)
-
-	printDeprecatedDoneSquashMessage("true")
-
-	test.AssertOutputContains(t, output, "MOB_DONE_SQUASH is set to the deprecated value true. Use the value squash instead")
-}
-
-func TestPrintDeprecatedDoneSquashMessageWhenValueIsQuotedTrue(t *testing.T) {
-	configuration := GetDefaultConfiguration()
-	configuration.NextStay = false
-	output := test.CaptureOutput(t)
-
-	printDeprecatedDoneSquashMessage("\"true\"")
-
-	test.AssertOutputContains(t, output, "MOB_DONE_SQUASH is set to the deprecated value \"true\". Use the value squash instead")
-}
-
-func TestPrintDeprecatedDoneSquashMessageWhenValueIsFalse(t *testing.T) {
-	configuration := GetDefaultConfiguration()
-	configuration.NextStay = false
-	output := test.CaptureOutput(t)
-
-	printDeprecatedDoneSquashMessage("false")
-
-	test.AssertOutputContains(t, output, "MOB_DONE_SQUASH is set to the deprecated value false. Use the value no-squash instead")
-}
-
-func TestPrintDeprecatedDoneSquashMessageWhenValueIsQuotedFalse(t *testing.T) {
-	configuration := GetDefaultConfiguration()
-	configuration.NextStay = false
-	output := test.CaptureOutput(t)
-
-	printDeprecatedDoneSquashMessage("\"false\"")
-
-	test.AssertOutputContains(t, output, "MOB_DONE_SQUASH is set to the deprecated value \"false\". Use the value no-squash instead")
-}
-
-func TestDoesNotPrintDeprecatedDoneSquashMessageWhenUsingNewValue(t *testing.T) {
-	configuration := GetDefaultConfiguration()
-	configuration.NextStay = false
-	output := test.CaptureOutput(t)
-
-	printDeprecatedDoneSquashMessage(Squash)
-
-	test.AssertOutputNotContains(t, output, "MOB_DONE_SQUASH is set to the deprecated value")
 }

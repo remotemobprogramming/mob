@@ -3,6 +3,8 @@
 - **NEW** Feature: `mob timer`, `mob break`, `mob start`, `mob next` and `mob done` will stop already running local timers.
 - Feature: `mob start --create` will create the remote branch and start the mob session on that branch.
 - Feature: mob.sh now also works with tools like `git-repo` which symlink the `.git` folder
+- Removed `MOB_START_INCLUDE_UNCOMMITTED_CHANGES` environment variable (has been deprecated for some time).
+- `MOB_DONE_SQUASH` no longer supports a boolean value, you have to use the proper values `squash`, `no-squash` or `squash-wip` instead.
 
 # 3.2.0
 - Fix: `mob done --squash-wip` won't fail if a previously committed file has uncommitted modifications.
