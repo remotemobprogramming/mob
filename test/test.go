@@ -78,11 +78,11 @@ func AssertOutputNotContains(t *testing.T, output *string, notContains string) {
 	}
 }
 
-func Await(t *testing.T, until func() bool) {
-	AwaitBlocking(t, AWAIT_DEFAULT_POLL_INTERVAL, AWAIT_DEFAULT_AT_MOST, until)
+func Await(t *testing.T, until func() bool, awaitedState string) {
+	AwaitBlocking(t, AWAIT_DEFAULT_POLL_INTERVAL, AWAIT_DEFAULT_AT_MOST, until, awaitedState)
 }
 
-func AwaitBlocking(t *testing.T, pollInterval time.Duration, atMost time.Duration, until func() bool) {
+func AwaitBlocking(t *testing.T, pollInterval time.Duration, atMost time.Duration, until func() bool, awaitedState string) {
 	if pollInterval <= 0 {
 		failWithFailureMessage(t, fmt.Sprintf("PollInterval cannot be 0 or below, got: %d", pollInterval))
 		return
@@ -105,7 +105,7 @@ func AwaitBlocking(t *testing.T, pollInterval time.Duration, atMost time.Duratio
 			timeLeft = atMost - time.Now().Sub(startTime)
 			if timeLeft <= 0 {
 				stackTrace := string(debug.Stack())
-				failWithFailureMessage(t, fmt.Sprintf("Timeout Error: %s", stackTrace))
+				failWithFailureMessage(t, fmt.Sprintf("expected '%s' to occur within %s but did not: %s", awaitedState, atMost, stackTrace))
 				return
 			}
 		}
