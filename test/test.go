@@ -19,7 +19,7 @@ var (
 
 const (
 	AWAIT_DEFAULT_POLL_INTERVAL = 100 * time.Millisecond
-	AWAIT_DEFAULT_AT_MOST       = 5 * time.Second
+	AWAIT_DEFAULT_AT_MOST       = 2 * time.Second
 )
 
 func Equals(t *testing.T, exp, act interface{}) {
