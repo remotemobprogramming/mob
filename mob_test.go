@@ -1520,11 +1520,11 @@ func TestAbortTimerIfNewTimerIsStarted(t *testing.T) {
 }
 
 func assertSingleTimerProcess(t *testing.T) {
-	test.Await(t, func() bool { return 1 == len(findMobTimerProcessIds()) })
+	test.Await(t, func() bool { return 1 == len(findMobTimerProcessIds()) }, "exactly 1 mob timer process found")
 }
 
 func assertNoTimerProcess(t *testing.T) {
-	test.Await(t, func() bool { return 0 == len(findMobTimerProcessIds()) })
+	test.Await(t, func() bool { return 0 == len(findMobTimerProcessIds()) }, "no mob timer process found")
 }
 
 func TestAbortBreakTimerIfNewBreakTimerIsStarted(t *testing.T) {
