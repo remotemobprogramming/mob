@@ -14,7 +14,6 @@ import (
 	"strconv"
 	"strings"
 	"testing"
-	"time"
 )
 
 var (
@@ -513,7 +512,6 @@ func TestStartIncludeUnstagedChanges(t *testing.T) {
 func TestStartIncludeUnstagedChangesInNewWorkingDirectory(t *testing.T) {
 	output, configuration := setup(t)
 	configuration.StartIncludeUncommittedChanges = true
-	say.TurnOnDebugging()
 	createDirectory(t, "subdirnew")
 	setWorkingDir(tempDir + "/local/subdirnew")
 	createFile(t, "test.txt", "contentIrrelevant")
@@ -908,7 +906,6 @@ func TestStartDoneSquashWithUnpushedCommit(t *testing.T) {
 }
 
 func TestStartDoneSquashWipWithUnpushedCommit(t *testing.T) {
-	say.TurnOnDebugging()
 	_, configuration := setup(t)
 	configuration.DoneSquash = config.SquashWip
 
@@ -1514,7 +1511,6 @@ func TestAbortTimerIfNewTimerIsStarted(t *testing.T) {
 
 	startTimer("10", configuration)
 
-	time.Sleep(time.Millisecond)
 	assertSingleTimerProcess(t)
 	abortRunningTimers()
 }
