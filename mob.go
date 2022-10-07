@@ -523,7 +523,7 @@ func findMobTimerProcessIdsWindows() []string {
 }
 
 func findMobTimerProcessIdsLinuxAndDarwin() []string {
-	_, output, err := runCommandSilent("ps", "-o", "pid,command")
+	_, output, err := runCommandSilent("ps", "-axo", "pid,command")
 	lines := strings.Split(output, "\n")
 	if err != nil {
 		say.Error(fmt.Sprintf("could not find processes on your system (%s)", runtime.GOOS))
