@@ -17,7 +17,6 @@ import (
 	"os"
 	"os/exec"
 	"reflect"
-	"regexp"
 	"runtime"
 	"strconv"
 	"strings"
@@ -524,19 +523,17 @@ func findMobTimerProcessIdsWindows() []string {
 }
 
 func findMobTimerProcessIdsLinuxAndDarwin() []string {
-	_, output, err := runCommandSilent("ps", "-f")
+	_, output, err := runCommandSilent("ps", "-axo", "pid,command")
 	lines := strings.Split(output, "\n")
 	if err != nil {
 		say.Error(fmt.Sprintf("could not find processes on your system (%s)", runtime.GOOS))
 		say.Error(err.Error())
 	}
 	var processIds []string
-	space := regexp.MustCompile(`\s+`)
 	for _, line := range lines {
 		if strings.Contains(line, "echo \"mobTimer\"") {
-			line = space.ReplaceAllLiteralString(line, " ")
 			line = strings.TrimSpace(line)
-			processId := strings.Split(line, " ")[1]
+			processId := strings.Split(line, " ")[0]
 			processIds = append(processIds, processId)
 			say.Debug("Found mob timer with PID " + processId)
 		}
