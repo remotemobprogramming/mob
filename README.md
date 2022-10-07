@@ -164,7 +164,7 @@ Basic Commands:
 Basic Commands(Options):
   start [<minutes>]                      Start a <minutes> timer
     [--include-uncommitted-changes|-i]   Move uncommitted changes to wip branch
-    [--branch|-b <branch-postfix>]       Set wip branch to 'mob/<base-branch>/<branch-postfix>'
+    [--branch|-b <branch-postfix>]       Set wip branch to 'mob/<base-branch>-<branch-postfix>'
     [--create]                           Create the remote branch
   next
     [--stay|-s]                          Stay on wip branch (default)
