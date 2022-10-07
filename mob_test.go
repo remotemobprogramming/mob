@@ -512,7 +512,6 @@ func TestStartIncludeUnstagedChanges(t *testing.T) {
 func TestStartIncludeUnstagedChangesInNewWorkingDirectory(t *testing.T) {
 	output, configuration := setup(t)
 	configuration.StartIncludeUncommittedChanges = true
-	say.TurnOnDebugging()
 	createDirectory(t, "subdirnew")
 	setWorkingDir(tempDir + "/local/subdirnew")
 	createFile(t, "test.txt", "contentIrrelevant")
@@ -907,7 +906,6 @@ func TestStartDoneSquashWithUnpushedCommit(t *testing.T) {
 }
 
 func TestStartDoneSquashWipWithUnpushedCommit(t *testing.T) {
-	say.TurnOnDebugging()
 	_, configuration := setup(t)
 	configuration.DoneSquash = config.SquashWip
 
@@ -1507,14 +1505,12 @@ func TestHelpRequested(t *testing.T) {
 }
 
 func TestAbortTimerIfNewTimerIsStarted(t *testing.T) {
-	output, configuration := setup(t)
-	say.TurnOnDebugging()
+	_, configuration := setup(t)
 	startTimer("10", configuration)
 	assertSingleTimerProcess(t)
 
 	startTimer("10", configuration)
 
-	assertOutputContains(t, output, "Killed mob timer with PID")
 	assertSingleTimerProcess(t)
 	abortRunningTimers()
 }
@@ -1528,41 +1524,35 @@ func assertNoTimerProcess(t *testing.T) {
 }
 
 func TestAbortBreakTimerIfNewBreakTimerIsStarted(t *testing.T) {
-	output, configuration := setup(t)
-	say.TurnOnDebugging()
+	_, configuration := setup(t)
 	startBreakTimer("10", configuration)
 	assertSingleTimerProcess(t)
 
 	startBreakTimer("10", configuration)
 
-	assertOutputContains(t, output, "Killed mob timer with PID")
 	assertSingleTimerProcess(t)
 	abortRunningTimers()
 }
 
 func TestAbortTimerIfMobNext(t *testing.T) {
-	output, configuration := setup(t)
-	say.TurnOnDebugging()
+	_, configuration := setup(t)
 	start(configuration)
 	startTimer("10", configuration)
 	assertSingleTimerProcess(t)
 
 	next(configuration)
 
-	assertOutputContains(t, output, "Killed mob timer with PID")
 	assertNoTimerProcess(t)
 }
 
 func TestAbortTimerIfMobDone(t *testing.T) {
-	output, configuration := setup(t)
-	say.TurnOnDebugging()
+	_, configuration := setup(t)
 	start(configuration)
 	startTimer("10", configuration)
 	assertSingleTimerProcess(t)
 
 	done(configuration)
 
-	assertOutputContains(t, output, "Killed mob timer with PID")
 	assertNoTimerProcess(t)
 }
 
