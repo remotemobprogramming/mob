@@ -22,6 +22,7 @@ type Configuration struct {
 	WipCommitMessage               string // override with MOB_WIP_COMMIT_MESSAGE
 	GitHooksEnabled                bool   // override with MOB_GIT_HOOKS_ENABLED
 	RequireCommitMessage           bool   // override with MOB_REQUIRE_COMMIT_MESSAGE
+	GitPushOptions                 string // override with MOB_GIT_PUSH_OPTIONS
 	VoiceCommand                   string // override with MOB_VOICE_COMMAND
 	VoiceMessage                   string // override with MOB_VOICE_MESSAGE
 	NotifyCommand                  string // override with MOB_NOTIFY_COMMAND
@@ -75,6 +76,7 @@ func Config(c Configuration) {
 	say.Say("MOB_WIP_COMMIT_MESSAGE" + "=" + quote(c.WipCommitMessage))
 	say.Say("MOB_GIT_HOOKS_ENABLED" + "=" + strconv.FormatBool(c.GitHooksEnabled))
 	say.Say("MOB_REQUIRE_COMMIT_MESSAGE" + "=" + strconv.FormatBool(c.RequireCommitMessage))
+	say.Say("MOB_GIT_PUSH_OPTIONS" + "=" + quote(c.GitPushOptions))
 	say.Say("MOB_VOICE_COMMAND" + "=" + quote(c.VoiceCommand))
 	say.Say("MOB_VOICE_MESSAGE" + "=" + quote(c.VoiceMessage))
 	say.Say("MOB_NOTIFY_COMMAND" + "=" + quote(c.NotifyCommand))
@@ -173,6 +175,7 @@ func GetDefaultConfiguration() Configuration {
 		RemoteName:                     "origin",
 		WipCommitMessage:               "mob next [ci-skip] [ci skip] [skip ci]",
 		GitHooksEnabled:                false,
+		GitPushOptions:                 "",
 		VoiceCommand:                   voiceCommand,
 		VoiceMessage:                   "mob next",
 		NotifyCommand:                  notifyCommand,
@@ -230,6 +233,8 @@ func parseUserConfiguration(configuration Configuration, path string) Configurat
 			setBoolean(&configuration.GitHooksEnabled, key, value)
 		case "MOB_REQUIRE_COMMIT_MESSAGE":
 			setBoolean(&configuration.RequireCommitMessage, key, value)
+		case "MOB_GIT_PUSH_OPTIONS":
+			setUnquotedString(&configuration.GitPushOptions, key, value)
 		case "MOB_VOICE_COMMAND":
 			setUnquotedString(&configuration.VoiceCommand, key, value)
 		case "MOB_VOICE_MESSAGE":
@@ -319,6 +324,8 @@ func parseProjectConfiguration(configuration Configuration, path string) Configu
 			setBoolean(&configuration.GitHooksEnabled, key, value)
 		case "MOB_REQUIRE_COMMIT_MESSAGE":
 			setBoolean(&configuration.RequireCommitMessage, key, value)
+		case "MOB_GIT_PUSH_OPTIONS":
+			setUnquotedString(&configuration.GitPushOptions, key, value)
 		case "MOB_NEXT_STAY":
 			setBoolean(&configuration.NextStay, key, value)
 		case "MOB_START_CREATE":
@@ -412,6 +419,7 @@ func parseEnvironmentVariables(configuration Configuration) Configuration {
 	setStringFromEnvVariable(&configuration.WipCommitMessage, "MOB_WIP_COMMIT_MESSAGE")
 	setBoolFromEnvVariable(&configuration.GitHooksEnabled, "MOB_GIT_HOOKS_ENABLED")
 	setBoolFromEnvVariable(&configuration.RequireCommitMessage, "MOB_REQUIRE_COMMIT_MESSAGE")
+	setStringFromEnvVariable(&configuration.GitPushOptions, "MOB_GIT_PUSH_OPTIONS")
 	setOptionalStringFromEnvVariable(&configuration.VoiceCommand, "MOB_VOICE_COMMAND")
 	setStringFromEnvVariable(&configuration.VoiceMessage, "MOB_VOICE_MESSAGE")
 	setOptionalStringFromEnvVariable(&configuration.NotifyCommand, "MOB_NOTIFY_COMMAND")
