@@ -1609,11 +1609,61 @@ func createTestbed(t *testing.T, configuration config.Configuration) {
 	tempDir = t.TempDir()
 	say.Say("Creating testbed in temporary directory " + tempDir)
 
-	run(t, "./create-testbed", tempDir)
+	createTestbedIn(t, tempDir)
 
 	setWorkingDir(tempDir + "/local")
 	assertOnBranch(t, "master")
 	assertNoMobSessionBranches(t, configuration, "mob-session")
+}
+
+func createTestbedIn(t *testing.T, temporaryDirectory string) {
+	say.Debug("Creating temporary test assets in " + temporaryDirectory)
+	err := os.MkdirAll(temporaryDirectory, 0755)
+	if err != nil {
+		say.Error("Could not create temporary dir " + temporaryDirectory)
+		say.Error(err.Error())
+		return
+	}
+	say.Debug("Create remote repository")
+	remoteDirectory := getRemoteDirectory(temporaryDirectory)
+	cleanRepository(remoteDirectory)
+	createRemoteRepository(remoteDirectory)
+
+	say.Debug("Create first local repository")
+	localDirectory := getLocalDirectory(temporaryDirectory)
+	cleanRepository(localDirectory)
+	cloneRepository(localDirectory, remoteDirectory)
+
+	say.Debug("Populate, initial import and push")
+	workingDir = localDirectory
+	createFile(t, "test.txt", "test")
+	createDirectory(t, "subdir")
+	createFileInPath(t, localDirectory+"/subdir", "subdir.txt", "subdir")
+	git("checkout", "-b", "master")
+	git("add", ".")
+	git("commit", "-m", "\"initial import\"")
+	git("push", "--set-upstream", "--all", "origin")
+
+	for _, name := range [3]string{"localother", "alice", "bob"} {
+		cleanRepository(temporaryDirectory + "/" + name)
+		cloneRepository(temporaryDirectory+"/"+name, remoteDirectory)
+		say.Debug("Created local repository " + name)
+	}
+
+	notGitDirectory := getNotGitDirectory(temporaryDirectory)
+	err = os.MkdirAll(notGitDirectory, 0755)
+	if err != nil {
+		say.Error("Count not create directory " + notGitDirectory)
+		say.Error(err.Error())
+		return
+	}
+
+	say.Debug("Creating local repository with .git symlink")
+	symlinkDirectory := getSymlinkDirectory(temporaryDirectory)
+	symlinkGitDirectory := getSymlinkGitDirectory(temporaryDirectory)
+	cleanRepositoryWithSymlink(symlinkDirectory, symlinkGitDirectory)
+	cloneRepositoryWithSymlink(symlinkDirectory, symlinkGitDirectory, remoteDirectory)
+	say.Debug("Done.")
 }
 
 func setWorkingDir(dir string) {
@@ -1657,8 +1707,12 @@ func createFileAndCommitIt(t *testing.T, filename string, content string, commit
 }
 
 func createFile(t *testing.T, filename string, content string) (pathToFile string) {
+	return createFileInPath(t, workingDir, filename, content)
+}
+
+func createFileInPath(t *testing.T, path, filename, content string) (pathToFile string) {
 	contentAsBytes := []byte(content)
-	pathToFile = workingDir + "/" + filename
+	pathToFile = path + "/" + filename
 	err := ioutil.WriteFile(pathToFile, contentAsBytes, 0644)
 	if err != nil {
 		failWithFailure(t, "creating file "+filename+" with content "+content, "error")
@@ -1667,7 +1721,11 @@ func createFile(t *testing.T, filename string, content string) (pathToFile strin
 }
 
 func createDirectory(t *testing.T, directory string) (pathToFile string) {
-	pathToFile = workingDir + "/" + directory
+	return createDirectoryInPath(t, workingDir, directory)
+}
+
+func createDirectoryInPath(t *testing.T, path, directory string) (pathToFile string) {
+	pathToFile = path + "/" + directory
 	err := os.Mkdir(pathToFile, 0755)
 	if err != nil {
 		failWithFailure(t, "creating directory "+pathToFile, "error")
@@ -1754,4 +1812,99 @@ func failWithFailure(t *testing.T, exp interface{}, act interface{}) {
 func checkoutAndPushBranch(branch string) {
 	git("checkout", "-b", branch)
 	git("push", "origin", branch, "--set-upstream")
+}
+
+func cleanRepository(path string) {
+	say.Debug("cleanrepository: Delete " + path)
+	err := os.RemoveAll(path)
+	if err != nil {
+		say.Error("Could not remove directory " + path)
+		say.Error(err.Error())
+		return
+	}
+}
+
+func createRemoteRepository(path string) {
+	branch := "master" // fixed to master for now
+	say.Debug("createremoterepository: Creating remote repository " + path)
+	err := os.MkdirAll(path, 0755)
+	if err != nil {
+		say.Error("Could not create directory " + path)
+		say.Error(err.Error())
+		return
+	}
+	workingDir = path
+	say.Debug("before git init")
+	git("--bare", "init")
+	say.Debug("before symbolic-ref")
+	git("symbolic-ref", "HEAD", "refs/heads/"+branch)
+	say.Debug("finished")
+}
+
+func cloneRepository(path, remoteDirectory string) {
+	say.Debug("clonerepository: Cloning remote " + remoteDirectory + " to " + path)
+	err := os.MkdirAll(path, 0755)
+	if err != nil {
+		say.Error("Could not create directory " + path)
+		say.Error(err.Error())
+		return
+	}
+	workingDir = path
+	name := basename(path)
+	git("clone", "--origin", "origin", "file://"+remoteDirectory, ".")
+	git("config", "--local", "user.name", name)
+	git("config", "--local", "user.email", name+"@example.com")
+}
+
+func cloneRepositoryWithSymlink(path, gitDirectory, remoteDirectory string) {
+	cloneRepository(path, remoteDirectory)
+	say.Debug(fmt.Sprintf("clonerepositorywithsymlink: move .git to %s and create symlink to it", gitDirectory))
+	err := os.Rename(filepath.FromSlash(path+"/.git"), gitDirectory)
+	if err != nil {
+		say.Error("Could not move directory " + path + " to " + gitDirectory)
+		say.Error(err.Error())
+		return
+	}
+	err = os.Symlink(gitDirectory, filepath.FromSlash(path+"/.git"))
+	if err != nil {
+		say.Error("Could not create smylink from " + gitDirectory + " to " + path + "/.git")
+		say.Error(err.Error())
+		return
+	}
+}
+
+func cleanRepositoryWithSymlink(path, gitDirectory string) {
+	cleanRepository(path)
+	say.Debug("cleanrepositorywithsymlink: Delete " + gitDirectory)
+	err := os.RemoveAll(gitDirectory)
+	if err != nil {
+		say.Error("Could not remove directory " + gitDirectory)
+		say.Error(err.Error())
+		return
+	}
+}
+
+func basename(path string) string {
+	split := strings.Split(strings.ReplaceAll(path, "\\", "/"), "/")
+	return split[len(split)-1]
+}
+
+func getRemoteDirectory(path string) string {
+	return path + "/remote"
+}
+
+func getLocalDirectory(path string) string {
+	return path + "/local"
+}
+
+func getNotGitDirectory(path string) string {
+	return path + "/notgit"
+}
+
+func getSymlinkGitDirectory(path string) string {
+	return path + "/local-symlink.git"
+}
+
+func getSymlinkDirectory(path string) string {
+	return path + "/local-symlink"
 }
