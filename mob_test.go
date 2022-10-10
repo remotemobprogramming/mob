@@ -1617,24 +1617,24 @@ func createTestbed(t *testing.T, configuration config.Configuration) {
 }
 
 func createTestbedIn(t *testing.T, temporaryDirectory string) {
-	say.Info("Creating temporary test assets in " + temporaryDirectory)
+	say.Debug("Creating temporary test assets in " + temporaryDirectory)
 	err := os.MkdirAll(temporaryDirectory, 0755)
 	if err != nil {
 		say.Error("Could not create temporary dir " + temporaryDirectory)
 		say.Error(err.Error())
 		return
 	}
-	say.Info("Create remote repository")
+	say.Debug("Create remote repository")
 	remoteDirectory := getRemoteDirectory(temporaryDirectory)
 	cleanRepository(remoteDirectory)
 	createRemoteRepository(remoteDirectory)
 
-	say.Info("Create first local repository")
+	say.Debug("Create first local repository")
 	localDirectory := getLocalDirectory(temporaryDirectory)
 	cleanRepository(localDirectory)
 	cloneRepository(localDirectory, remoteDirectory)
 
-	say.Info("Populate, initial import and push")
+	say.Debug("Populate, initial import and push")
 	workingDir = localDirectory
 	createFile(t, "test.txt", "test")
 	createDirectory(t, "subdir")
@@ -1647,7 +1647,7 @@ func createTestbedIn(t *testing.T, temporaryDirectory string) {
 	for _, name := range [3]string{"localother", "alice", "bob"} {
 		cleanRepository(temporaryDirectory + "/" + name)
 		cloneRepository(temporaryDirectory+"/"+name, remoteDirectory)
-		say.Info("Created local repository " + name)
+		say.Debug("Created local repository " + name)
 	}
 
 	notGitDirectory := getNotGitDirectory(temporaryDirectory)
@@ -1658,12 +1658,12 @@ func createTestbedIn(t *testing.T, temporaryDirectory string) {
 		return
 	}
 
-	say.Info("Creating local repository with .git symlink")
+	say.Debug("Creating local repository with .git symlink")
 	symlinkDirectory := getSymlinkDirectory(temporaryDirectory)
 	symlinkGitDirectory := getSymlinkGitDirectory(temporaryDirectory)
 	cleanRepositoryWithSymlink(symlinkDirectory, symlinkGitDirectory)
 	cloneRepositoryWithSymlink(symlinkDirectory, symlinkGitDirectory, remoteDirectory)
-	say.Info("Done.")
+	say.Debug("Done.")
 }
 
 func setWorkingDir(dir string) {
@@ -1815,36 +1815,39 @@ func checkoutAndPushBranch(branch string) {
 }
 
 func cleanRepository(path string) {
-	say.Info("cleanrepository: Delete " + path)
+	say.Debug("cleanrepository: Delete " + path)
 	err := os.RemoveAll(path)
 	if err != nil {
-		fmt.Errorf("Could not remove directory "+path, err)
+		say.Error("Could not remove directory " + path)
+		say.Error(err.Error())
 		return
 	}
 }
 
 func createRemoteRepository(path string) {
 	branch := "master" // fixed to master for now
-	say.Info("createremoterepository: Creating remote repository " + path)
-	err := os.MkdirAll(path, 0755)
-	if err != nil {
-		fmt.Errorf("Could not create directory "+path, err)
-		return
-	}
-	workingDir = path
-	say.Info("before git init")
-	git("--bare", "init")
-	say.Info("before symbolic-ref")
-	git("symbolic-ref", "HEAD", "refs/heads/"+branch)
-	say.Info("finished")
-}
-
-func cloneRepository(path, remoteDirectory string) {
-	say.Info("clonerepository: Cloning remote " + remoteDirectory + " to " + path)
+	say.Debug("createremoterepository: Creating remote repository " + path)
 	err := os.MkdirAll(path, 0755)
 	if err != nil {
 		say.Error("Could not create directory " + path)
 		say.Error(err.Error())
+		return
+	}
+	workingDir = path
+	say.Debug("before git init")
+	git("--bare", "init")
+	say.Debug("before symbolic-ref")
+	git("symbolic-ref", "HEAD", "refs/heads/"+branch)
+	say.Debug("finished")
+}
+
+func cloneRepository(path, remoteDirectory string) {
+	say.Debug("clonerepository: Cloning remote " + remoteDirectory + " to " + path)
+	err := os.MkdirAll(path, 0755)
+	if err != nil {
+		say.Error("Could not create directory " + path)
+		say.Error(err.Error())
+		return
 	}
 	workingDir = path
 	name := basename(path)
@@ -1855,15 +1858,30 @@ func cloneRepository(path, remoteDirectory string) {
 
 func cloneRepositoryWithSymlink(path, gitDirectory, remoteDirectory string) {
 	cloneRepository(path, remoteDirectory)
-	say.Info(fmt.Sprintf("clonerepositorywithsymlink: move .git to %s and create symlink to it", gitDirectory))
-	os.Rename(filepath.FromSlash(path+"/.git"), gitDirectory)
-	os.Symlink(gitDirectory, filepath.FromSlash(path+"/.git"))
+	say.Debug(fmt.Sprintf("clonerepositorywithsymlink: move .git to %s and create symlink to it", gitDirectory))
+	err := os.Rename(filepath.FromSlash(path+"/.git"), gitDirectory)
+	if err != nil {
+		say.Error("Could not move directory " + path + " to " + gitDirectory)
+		say.Error(err.Error())
+		return
+	}
+	err = os.Symlink(gitDirectory, filepath.FromSlash(path+"/.git"))
+	if err != nil {
+		say.Error("Could not create smylink from " + gitDirectory + " to " + path + "/.git")
+		say.Error(err.Error())
+		return
+	}
 }
 
 func cleanRepositoryWithSymlink(path, gitDirectory string) {
 	cleanRepository(path)
-	say.Info("cleanrepositorywithsymlink: Delete " + gitDirectory)
-	os.RemoveAll(gitDirectory)
+	say.Debug("cleanrepositorywithsymlink: Delete " + gitDirectory)
+	err := os.RemoveAll(gitDirectory)
+	if err != nil {
+		say.Error("Could not remove directory " + gitDirectory)
+		say.Error(err.Error())
+		return
+	}
 }
 
 func basename(path string) string {
