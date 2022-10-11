@@ -74,14 +74,7 @@ func TestParseArgsMessage(t *testing.T) {
 
 func TestMobRemoteNameEnvironmentVariable(t *testing.T) {
 	configuration := setEnvVarAndParse("MOB_REMOTE_NAME", "GITHUB")
-
 	test.Equals(t, "GITHUB", configuration.RemoteName)
-}
-
-func TestMobGitPushOptionsEnvironmentVariable(t *testing.T) {
-	configuration := setEnvVarAndParse("MOB_GIT_PUSH_OPTIONS", "-o ci.skip")
-
-	test.Equals(t, "-o ci.skip", configuration.GitPushOptions)
 }
 
 func TestMobRemoteNameEnvironmentVariableEmptyString(t *testing.T) {

@@ -699,11 +699,8 @@ func TestStartCreateOnPushedFeatureBranchWhichIsBehind(t *testing.T) {
 
 func TestStartPushOnWIPBranchWithOptions(t *testing.T) {
 	output, configuration := setup(t)
-	configuration.GitPushOptions = "-v"
-
 	start(configuration)
-
-	assertOutputContains(t, output, "git push -v --no-verify --set-upstream origin mob-session")
+	assertOutputContains(t, output, "git push -o ci.skip --no-verify --set-upstream origin mob-session")
 }
 
 func TestStartNextBackToMaster(t *testing.T) {
