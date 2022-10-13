@@ -3,9 +3,13 @@ name: Test
 jobs:
   test:
     strategy:
+      fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest]
         git-version: [latest, 2.37.0]
+        include:
+          - os: ubuntu-latest
+            git-version: 2.20.0
     runs-on: ${{ matrix.os }}
     steps:
     - uses: actions/checkout@v2
@@ -20,7 +24,7 @@ jobs:
       run: |
         sudo apt-get update
         sudo apt-get install gettext asciidoc docbook2x
-        curl https://mirrors.edge.kernel.org/pub/software/scm/git/git-2.37.0.tar.gz --output git-${{ matrix.git-version }}.tar.gz
+        curl https://mirrors.edge.kernel.org/pub/software/scm/git/git-${{ matrix.git-version }}.tar.gz --output git-${{ matrix.git-version }}.tar.gz
         tar -zxf git-${{ matrix.git-version }}.tar.gz
         cd git-${{ matrix.git-version }}
         make configure
@@ -34,4 +38,4 @@ jobs:
       with:
         go-version: '~1.16.0'
     - name: Test
-      run: go test
+      run: go test -test.v
