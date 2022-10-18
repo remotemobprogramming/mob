@@ -6,6 +6,8 @@
 - Removed `MOB_START_INCLUDE_UNCOMMITTED_CHANGES` environment variable (has been deprecated for some time).
 - `MOB_DONE_SQUASH` no longer supports a boolean value, you have to use the proper values `squash`, `no-squash` or `squash-wip` instead.
 
+Thanks to @rustiever, @gulio-python, @freekk, and @sebsprenger for your contributions!
+
 # 3.2.0
 - Fix: `mob done --squash-wip` won't fail if a previously committed file has uncommitted modifications.
 - Feature: `MOB_TIMER_INSECURE=true` allows enterprises to use the timer.mob.sh companion service despite SSL issues.
