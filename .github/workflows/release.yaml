@@ -44,6 +44,10 @@ jobs:
         id: shasum
         run: |
           echo ::set-output name=sha_${{matrix.os}}::"$(shasum -a 256 *.tar.gz | awk '{printf $1}')"
+      - name: Set up Homebrew
+        if: matrix.os == 'darwin'
+        id: set-up-homebrew
+        uses: Homebrew/actions/setup-homebrew@master
       - name: Bump homebrew formula
         if: matrix.os == 'darwin'
         env:
