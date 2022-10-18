@@ -21,6 +21,9 @@ var (
 )
 
 type GitStatus = map[string]string
+type TestOptions struct {
+	enablePushOptions bool
+}
 
 func TestCurrentCliName(t *testing.T) {
 	equals(t, "mob", currentCliName("mob"))
@@ -1622,10 +1625,6 @@ func run(t *testing.T, name string, args ...string) *string {
 		t.Error("command " + commandString + " failed")
 	}
 	return &output
-}
-
-type TestOptions struct {
-	enablePushOptions bool
 }
 
 func createTestbed(t *testing.T, configuration config.Configuration, testOptions TestOptions) {
