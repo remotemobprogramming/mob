@@ -74,7 +74,6 @@ func TestParseArgsMessage(t *testing.T) {
 
 func TestMobRemoteNameEnvironmentVariable(t *testing.T) {
 	configuration := setEnvVarAndParse("MOB_REMOTE_NAME", "GITHUB")
-
 	test.Equals(t, "GITHUB", configuration.RemoteName)
 }
 
