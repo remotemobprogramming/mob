@@ -924,17 +924,18 @@ func startNewMobSession(configuration config.Configuration) {
 }
 
 func gitPush(args ...string) {
-
-	pushArgs := []string{"push"}
-	pushArgsWithOptions := append(pushArgs, "--push-option", "ci.skip")
-	argsWithoutEmptyStrings := deleteEmptyStrings(args)
-
-	allArgs := append(pushArgsWithOptions, argsWithoutEmptyStrings...)
-	err := gitignorefailure(allArgs...)
+	err := gitIgnoreFailure(pushArgsWithCiSkip(args)...)
 	if err != nil {
-		retryArgs := append(pushArgs, argsWithoutEmptyStrings...)
-		gitWithoutEmptyStrings(retryArgs...)
+		gitWithoutEmptyStrings(pushArgs(args)...)
 	}
+}
+
+func pushArgsWithCiSkip(args []string) []string {
+	return append([]string{"push", "--push-option", "ci.skip"}, deleteEmptyStrings(args)...)
+}
+
+func pushArgs(args []string) []string {
+	return append([]string{"push"}, deleteEmptyStrings(args)...)
 }
 
 func getUntrackedFiles() string {
@@ -1106,7 +1107,7 @@ func done(configuration config.Configuration) {
 
 		git("checkout", baseBranch.Name)
 		git("merge", baseBranch.remote(configuration).Name, "--ff-only")
-		mergeFailed := gitignorefailure("merge", squashOrCommit(configuration), "--ff", wipBranch.Name)
+		mergeFailed := gitIgnoreFailure("merge", squashOrCommit(configuration), "--ff", wipBranch.Name)
 
 		if mergeFailed != nil {
 			// TODO should this be an error and a fix for that error?
@@ -1351,7 +1352,7 @@ func git(args ...string) {
 	}
 }
 
-func gitignorefailure(args ...string) error {
+func gitIgnoreFailure(args ...string) error {
 	commandString, output, err := "", "", error(nil)
 	if GitPassthroughStderrStdout {
 		commandString, output, err = runCommand("git", args...)

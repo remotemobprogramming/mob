@@ -21,7 +21,7 @@ var (
 )
 
 type GitStatus = map[string]string
-type TestOptions struct {
+type TestBedOptions struct {
 	enablePushOptions bool
 }
 
@@ -702,13 +702,18 @@ func TestStartCreateOnPushedFeatureBranchWhichIsBehind(t *testing.T) {
 
 func TestStartPushOnWIPBranchWithOptions(t *testing.T) {
 	output, configuration := setup(t)
+
 	start(configuration)
+
+	assertOutputNotContains(t, output, "git push --no-verify --set-upstream origin mob-session")
 	assertOutputContains(t, output, "git push --push-option ci.skip --no-verify --set-upstream origin mob-session")
 }
 
 func TestStartPushOnWIPBranchWithOptionsShouldFailAndRetry(t *testing.T) {
-	output, configuration := setupWithOptions(t, TestOptions{enablePushOptions: false})
+	output, configuration := setupWithOptions(t, TestBedOptions{enablePushOptions: false})
+
 	start(configuration)
+
 	assertOutputContains(t, output, "git push --push-option ci.skip --no-verify --set-upstream origin mob-session")
 	assertOutputContains(t, output, "git push --no-verify --set-upstream origin mob-session")
 	assertOutputContains(t, output, "you are on wip branch 'mob-session' (base branch 'master')")
@@ -1587,8 +1592,7 @@ func gitStatus() GitStatus {
 	return statusMap
 }
 
-func setupWithOptions(t *testing.T, options TestOptions) (output *string, configuration config.Configuration) {
-
+func setupWithOptions(t *testing.T, options TestBedOptions) (output *string, configuration config.Configuration) {
 	configuration = config.GetDefaultConfiguration()
 	configuration.NextStay = false
 	output = captureOutput(t)
@@ -1602,7 +1606,7 @@ func setupWithOptions(t *testing.T, options TestOptions) (output *string, config
 }
 
 func setup(t *testing.T) (output *string, configuration config.Configuration) {
-	return setupWithOptions(t, TestOptions{
+	return setupWithOptions(t, TestBedOptions{
 		enablePushOptions: true,
 	})
 }
@@ -1627,20 +1631,20 @@ func run(t *testing.T, name string, args ...string) *string {
 	return &output
 }
 
-func createTestbed(t *testing.T, configuration config.Configuration, testOptions TestOptions) {
+func createTestbed(t *testing.T, configuration config.Configuration, options TestBedOptions) {
 	workingDir = ""
 
 	tempDir = t.TempDir()
 
 	say.Say("Creating testbed in temporary directory " + tempDir)
-	createTestbedIn(t, tempDir, testOptions)
+	createTestbedIn(t, tempDir, options)
 
 	setWorkingDir(tempDir + "/local")
 	assertOnBranch(t, "master")
 	assertNoMobSessionBranches(t, configuration, "mob-session")
 }
 
-func createTestbedIn(t *testing.T, temporaryDirectory string, options TestOptions) {
+func createTestbedIn(t *testing.T, temporaryDirectory string, options TestBedOptions) {
 	say.Debug("Creating temporary test assets in " + temporaryDirectory)
 	err := os.MkdirAll(temporaryDirectory, 0755)
 	if err != nil {
@@ -1848,7 +1852,7 @@ func cleanRepository(path string) {
 	}
 }
 
-func createRemoteRepository(path string, options TestOptions) {
+func createRemoteRepository(path string, options TestBedOptions) {
 	branch := "master" // fixed to master for now
 	say.Debug("createremoterepository: Creating remote repository " + path)
 	err := os.MkdirAll(path, 0755)
