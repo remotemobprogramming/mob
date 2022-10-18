@@ -298,7 +298,7 @@ manual commit
 }
 
 func TestSquashWipCommitGitEditor(t *testing.T) {
-	testOptions := TestOptions{enablePushOptions: true}
+	testOptions := TestBedOptions{enablePushOptions: true}
 	configuration := config.GetDefaultConfiguration()
 	createTestbed(t, configuration, testOptions)
 	input := createFile(t, "commits", fmt.Sprintf(
@@ -332,7 +332,7 @@ new file
 
 func TestSquashWipCommitGitSequenceEditor(t *testing.T) {
 	configuration := config.GetDefaultConfiguration()
-	createTestbed(t, configuration, TestOptions{enablePushOptions: true})
+	createTestbed(t, configuration, TestBedOptions{enablePushOptions: true})
 	input := createFile(t, "rebase", fmt.Sprintf(
 		`pick 01a9a31 %[1]s
 pick 01a9a32 %[1]s
