@@ -30,6 +30,9 @@ func TestCurrentCliName(t *testing.T) {
 	equals(t, "mob", currentCliName("mob.exe"))
 	equals(t, "mob", currentCliName("./mob"))
 	equals(t, "mob", currentCliName("folder/mob"))
+	// Check with platform specific path separators as well
+	equals(t, "mob", currentCliName(filepath.Join("folder", "another", "mob.exe")))
+	equals(t, "other_name", currentCliName(filepath.Join("folder", "another", "other_name")))
 }
 
 func TestDetermineBranches(t *testing.T) {
