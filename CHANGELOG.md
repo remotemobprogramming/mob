@@ -1,3 +1,6 @@
+# 4.0.1
+- fix bug where mob showed the wrong executable name in windows
+
 # 4.0.0
 - **NEW** Feature: `mob reset` doesn't reset the mob branch anymore. It now warns you that it deletes the mob branch for everyone and if you want to continue do `mob reset --delete-remote-wip-branch`.
 - **NEW** Feature: `mob timer`, `mob break`, `mob start`, `mob next` and `mob done` will stop already running local timers.
