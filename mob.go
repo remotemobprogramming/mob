@@ -16,6 +16,7 @@ import (
 	"net/url"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"reflect"
 	"runtime"
 	"strconv"
@@ -220,11 +221,7 @@ func main() {
 }
 
 func currentCliName(argZero string) string {
-	argZero = strings.TrimSuffix(argZero, ".exe")
-	if strings.Contains(argZero, "/") {
-		argZero = argZero[strings.LastIndex(argZero, "/")+1:]
-	}
-	return argZero
+	return strings.TrimSuffix(filepath.Base(argZero), ".exe")
 }
 
 func execute(command string, parameter []string, configuration config.Configuration) {
