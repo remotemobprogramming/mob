@@ -841,7 +841,11 @@ func TestStartNextStay_DoNotWriteLastModifiedFileInCommit_WhenFileIsMoved(t *tes
 func TestStartNextStay_OpenLastModifiedFile(t *testing.T) {
 	_, configuration := setup(t)
 	configuration.NextStay = true
-	configuration.OpenCommand = "touch %s-1"
+	if runtime.GOOS == "windows" {
+		configuration.OpenCommand = "cmd.exe /C type nul > %s-1"
+	} else {
+		configuration.OpenCommand = "touch %s-1"
+	}
 
 	start(configuration)
 	createFile(t, "file.txt", "contentIrrelevant")
