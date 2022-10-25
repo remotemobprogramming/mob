@@ -6,6 +6,7 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 )
@@ -71,6 +72,8 @@ func getEnvGitEditor() (gitEditor string, gitSequenceEditor string) {
 func mobExecutable() string {
 	if isTestEnvironment() {
 		wd, _ := os.Getwd()
+		// Convert Windows path separators to /, so they work in git bash. No-op for non-Windows paths.
+		wd = filepath.ToSlash(wd)
 		return "cd " + wd + " && go run $(ls -1 ./*.go | grep -v _test.go)"
 	} else {
 		return "mob"
