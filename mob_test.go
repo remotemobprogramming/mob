@@ -1247,7 +1247,7 @@ func TestStartNextFeatureBranch(t *testing.T) {
 func TestGitRootDir(t *testing.T) {
 	setup(t)
 	expectedPath, _ := filepath.EvalSymlinks(tempDir + "/local")
-	equals(t, expectedPath, gitRootDir())
+	equals(t, expectedPath, filepath.FromSlash(gitRootDir()))
 }
 
 func TestGitRootDirWithSymbolicLink(t *testing.T) {
@@ -1255,7 +1255,7 @@ func TestGitRootDirWithSymbolicLink(t *testing.T) {
 	symlinkDir := tempDir + "/local-symlink"
 	setWorkingDir(symlinkDir)
 	expectedLocalSymlinkPath, _ := filepath.EvalSymlinks(symlinkDir)
-	equals(t, expectedLocalSymlinkPath, gitRootDir())
+	equals(t, expectedLocalSymlinkPath, filepath.FromSlash(gitRootDir()))
 }
 
 func TestBothCreateNonemptyCommitWithNext(t *testing.T) {
