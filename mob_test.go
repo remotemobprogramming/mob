@@ -805,7 +805,11 @@ func TestStartNextStay_DoNotWriteLastModifiedFileInCommit_WhenFileIsDeleted(t *t
 	next(configuration)
 
 	start(configuration)
-	run(t, "rm", workingDir+"/file1.txt")
+	file1Path := filepath.Join(workingDir, "file1.txt")
+	err := os.Remove(file1Path)
+	if err != nil {
+		failWithFailure(t, "no error", fmt.Sprintf("error %v occured deleting file %s", err, file1Path))
+	}
 	next(configuration)
 
 	assertOnBranch(t, "mob-session")
@@ -822,7 +826,12 @@ func TestStartNextStay_DoNotWriteLastModifiedFileInCommit_WhenFileIsMoved(t *tes
 
 	start(configuration)
 	createDirectory(t, "dir")
-	run(t, "mv", workingDir+"/"+"file1.txt", workingDir+"/dir/"+"file1.txt")
+	oldPath := filepath.Join(workingDir, "file1.txt")
+	newPath := filepath.Join(workingDir, "dir", "file1.txt")
+	err := os.Rename(oldPath, newPath)
+	if err != nil {
+		failWithFailure(t, "no error", fmt.Sprintf("error %v occured moving %s to %s", err, oldPath, newPath))
+	}
 	next(configuration)
 
 	assertOnBranch(t, "mob-session")
@@ -852,8 +861,13 @@ func TestRunOutput(t *testing.T) {
 	setWorkingDir(tempDir + "/local")
 	start(configuration)
 	createFile(t, "file1.txt", "asdf")
-	output := run(t, "cat", tempDir+"/local/file1.txt")
-	assertOutputContains(t, output, "asdf")
+	outputFile := filepath.Join(tempDir, "local", "file1.txt")
+	content, err := os.ReadFile(outputFile)
+	if err != nil {
+		failWithFailure(t, "no error", fmt.Sprintf("error %v occured reading %s", err, outputFile))
+	}
+	output := string(content)
+	assertOutputContains(t, &output, "asdf")
 }
 
 func TestTestbed(t *testing.T) {
@@ -1621,17 +1635,6 @@ func captureOutput(t *testing.T) *string {
 		messages += text
 	}
 	return &messages
-}
-
-func run(t *testing.T, name string, args ...string) *string {
-	commandString, output, err := runCommandSilent(name, args...)
-	if err != nil {
-		fmt.Println(commandString)
-		fmt.Println(output)
-		fmt.Println(err.Error())
-		t.Error("command " + commandString + " failed")
-	}
-	return &output
 }
 
 func createTestbed(t *testing.T, configuration config.Configuration, options TestBedOptions) {

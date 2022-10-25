@@ -1,6 +1,9 @@
 package main
 
 import (
+	"fmt"
+	"os"
+	"path/filepath"
 	"testing"
 )
 
@@ -36,12 +39,17 @@ func TestStartDoneCoAuthors(t *testing.T) {
 	start(configuration)
 	done(configuration)
 
-	output := run(t, "cat", tempDir+"/local/.git/SQUASH_MSG")
+	outputFile := filepath.Join(tempDir, "local", ".git", "SQUASH_MSG")
+	content, err := os.ReadFile(outputFile)
+	if err != nil {
+		failWithFailure(t, fmt.Sprintf("reading file %s failed with %v", outputFile, err), "error")
+	}
+	output := string(content)
 
 	// don't include the person running `mob done`
-	assertOutputNotContains(t, output, "Co-authored-by: local <local@example.com>")
+	assertOutputNotContains(t, &output, "Co-authored-by: local <local@example.com>")
 	// include everyone else in commit order after removing duplicates
-	assertOutputContains(t, output, "\nCo-authored-by: bob <bob@example.com>\nCo-authored-by: alice <alice@example.com>\nCo-authored-by: localother <localother@example.com>\n")
+	assertOutputContains(t, &output, "\nCo-authored-by: bob <bob@example.com>\nCo-authored-by: alice <alice@example.com>\nCo-authored-by: localother <localother@example.com>\n")
 }
 
 func TestCreateCommitMessage(t *testing.T) {
