@@ -78,8 +78,9 @@ func mobExecutable() string {
 }
 
 func isTestEnvironment() bool {
-	return strings.HasSuffix(os.Args[0], ".test") ||
-		strings.HasSuffix(os.Args[0], "_test") ||
+	cliName := currentCliName(os.Args[0])
+	return strings.HasSuffix(cliName, ".test") ||
+		strings.HasSuffix(cliName, "_test") ||
 		os.Args[1] == "-test.v"
 }
 
