@@ -1,8 +1,6 @@
 package main
 
 import (
-	"fmt"
-	"os"
 	"path/filepath"
 	"testing"
 )
@@ -39,12 +37,7 @@ func TestStartDoneCoAuthors(t *testing.T) {
 	start(configuration)
 	done(configuration)
 
-	outputFile := filepath.Join(tempDir, "local", ".git", "SQUASH_MSG")
-	content, err := os.ReadFile(outputFile)
-	if err != nil {
-		failWithFailure(t, fmt.Sprintf("reading file %s failed with %v", outputFile, err), "error")
-	}
-	output := string(content)
+	output := readFile(t, filepath.Join(tempDir, "local", ".git", "SQUASH_MSG"))
 
 	// don't include the person running `mob done`
 	assertOutputNotContains(t, &output, "Co-authored-by: local <local@example.com>")

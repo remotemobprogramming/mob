@@ -805,11 +805,7 @@ func TestStartNextStay_DoNotWriteLastModifiedFileInCommit_WhenFileIsDeleted(t *t
 	next(configuration)
 
 	start(configuration)
-	file1Path := filepath.Join(workingDir, "file1.txt")
-	err := os.Remove(file1Path)
-	if err != nil {
-		failWithFailure(t, "no error", fmt.Sprintf("error %v occured deleting file %s", err, file1Path))
-	}
+	removeFile(t, filepath.Join(workingDir, "file1.txt"))
 	next(configuration)
 
 	assertOnBranch(t, "mob-session")
@@ -826,12 +822,7 @@ func TestStartNextStay_DoNotWriteLastModifiedFileInCommit_WhenFileIsMoved(t *tes
 
 	start(configuration)
 	createDirectory(t, "dir")
-	oldPath := filepath.Join(workingDir, "file1.txt")
-	newPath := filepath.Join(workingDir, "dir", "file1.txt")
-	err := os.Rename(oldPath, newPath)
-	if err != nil {
-		failWithFailure(t, "no error", fmt.Sprintf("error %v occured moving %s to %s", err, oldPath, newPath))
-	}
+	moveFile(t, filepath.Join(workingDir, "file1.txt"), filepath.Join(workingDir, "dir", "file1.txt"))
 	next(configuration)
 
 	assertOnBranch(t, "mob-session")
@@ -865,12 +856,7 @@ func TestRunOutput(t *testing.T) {
 	setWorkingDir(tempDir + "/local")
 	start(configuration)
 	createFile(t, "file1.txt", "asdf")
-	outputFile := filepath.Join(tempDir, "local", "file1.txt")
-	content, err := os.ReadFile(outputFile)
-	if err != nil {
-		failWithFailure(t, "no error", fmt.Sprintf("error %v occured reading %s", err, outputFile))
-	}
-	output := string(content)
+	output := readFile(t, filepath.Join(tempDir, "local", "file1.txt"))
 	assertOutputContains(t, &output, "asdf")
 }
 
@@ -1769,6 +1755,29 @@ func createDirectoryInPath(t *testing.T, path, directory string) (pathToFile str
 		failWithFailure(t, "creating directory "+pathToFile, "error")
 	}
 	return
+}
+
+func removeFile(t *testing.T, path string) {
+	err := os.Remove(path)
+	if err != nil {
+		failWithFailure(t, "no error", fmt.Sprintf("error %v occured deleting file %s", err, path))
+	}
+}
+
+func moveFile(t *testing.T, oldPath string, newPath string) {
+	err := os.Rename(oldPath, newPath)
+	if err != nil {
+		failWithFailure(t, "no error", fmt.Sprintf("error %v occured moving %s to %s", err, oldPath, newPath))
+	}
+}
+
+func readFile(t *testing.T, path string) string {
+	content, err := os.ReadFile(path)
+	if err != nil {
+		failWithFailure(t, "no error", fmt.Sprintf("reading file %s failed with %v", path, err))
+	}
+	output := string(content)
+	return output
 }
 
 func assertOnBranch(t *testing.T, branch string) {
