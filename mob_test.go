@@ -805,7 +805,7 @@ func TestStartNextStay_DoNotWriteLastModifiedFileInCommit_WhenFileIsDeleted(t *t
 	next(configuration)
 
 	start(configuration)
-	run(t, "rm", workingDir+"/file1.txt")
+	removeFile(t, filepath.Join(workingDir, "file1.txt"))
 	next(configuration)
 
 	assertOnBranch(t, "mob-session")
@@ -822,7 +822,7 @@ func TestStartNextStay_DoNotWriteLastModifiedFileInCommit_WhenFileIsMoved(t *tes
 
 	start(configuration)
 	createDirectory(t, "dir")
-	run(t, "mv", workingDir+"/"+"file1.txt", workingDir+"/dir/"+"file1.txt")
+	moveFile(t, filepath.Join(workingDir, "file1.txt"), filepath.Join(workingDir, "dir", "file1.txt"))
 	next(configuration)
 
 	assertOnBranch(t, "mob-session")
@@ -832,7 +832,11 @@ func TestStartNextStay_DoNotWriteLastModifiedFileInCommit_WhenFileIsMoved(t *tes
 func TestStartNextStay_OpenLastModifiedFile(t *testing.T) {
 	_, configuration := setup(t)
 	configuration.NextStay = true
-	configuration.OpenCommand = "touch %s-1"
+	if runtime.GOOS == "windows" {
+		configuration.OpenCommand = "cmd.exe /C type nul > %s-1"
+	} else {
+		configuration.OpenCommand = "touch %s-1"
+	}
 
 	start(configuration)
 	createFile(t, "file.txt", "contentIrrelevant")
@@ -852,8 +856,8 @@ func TestRunOutput(t *testing.T) {
 	setWorkingDir(tempDir + "/local")
 	start(configuration)
 	createFile(t, "file1.txt", "asdf")
-	output := run(t, "cat", tempDir+"/local/file1.txt")
-	assertOutputContains(t, output, "asdf")
+	output := readFile(t, filepath.Join(tempDir, "local", "file1.txt"))
+	assertOutputContains(t, &output, "asdf")
 }
 
 func TestTestbed(t *testing.T) {
@@ -1233,7 +1237,7 @@ func TestStartNextFeatureBranch(t *testing.T) {
 func TestGitRootDir(t *testing.T) {
 	setup(t)
 	expectedPath, _ := filepath.EvalSymlinks(tempDir + "/local")
-	equals(t, expectedPath, gitRootDir())
+	equals(t, expectedPath, filepath.FromSlash(gitRootDir()))
 }
 
 func TestGitRootDirWithSymbolicLink(t *testing.T) {
@@ -1241,7 +1245,7 @@ func TestGitRootDirWithSymbolicLink(t *testing.T) {
 	symlinkDir := tempDir + "/local-symlink"
 	setWorkingDir(symlinkDir)
 	expectedLocalSymlinkPath, _ := filepath.EvalSymlinks(symlinkDir)
-	equals(t, expectedLocalSymlinkPath, gitRootDir())
+	equals(t, expectedLocalSymlinkPath, filepath.FromSlash(gitRootDir()))
 }
 
 func TestBothCreateNonemptyCommitWithNext(t *testing.T) {
@@ -1623,17 +1627,6 @@ func captureOutput(t *testing.T) *string {
 	return &messages
 }
 
-func run(t *testing.T, name string, args ...string) *string {
-	commandString, output, err := runCommandSilent(name, args...)
-	if err != nil {
-		fmt.Println(commandString)
-		fmt.Println(output)
-		fmt.Println(err.Error())
-		t.Error("command " + commandString + " failed")
-	}
-	return &output
-}
-
 func createTestbed(t *testing.T, configuration config.Configuration, options TestBedOptions) {
 	workingDir = ""
 
@@ -1762,6 +1755,29 @@ func createDirectoryInPath(t *testing.T, path, directory string) (pathToFile str
 		failWithFailure(t, "creating directory "+pathToFile, "error")
 	}
 	return
+}
+
+func removeFile(t *testing.T, path string) {
+	err := os.Remove(path)
+	if err != nil {
+		failWithFailure(t, "no error", fmt.Sprintf("error %v occured deleting file %s", err, path))
+	}
+}
+
+func moveFile(t *testing.T, oldPath string, newPath string) {
+	err := os.Rename(oldPath, newPath)
+	if err != nil {
+		failWithFailure(t, "no error", fmt.Sprintf("error %v occured moving %s to %s", err, oldPath, newPath))
+	}
+}
+
+func readFile(t *testing.T, path string) string {
+	content, err := os.ReadFile(path)
+	if err != nil {
+		failWithFailure(t, "no error", fmt.Sprintf("reading file %s failed with %v", path, err))
+	}
+	output := string(content)
+	return output
 }
 
 func assertOnBranch(t *testing.T, branch string) {

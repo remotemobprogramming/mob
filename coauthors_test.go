@@ -1,6 +1,7 @@
 package main
 
 import (
+	"path/filepath"
 	"testing"
 )
 
@@ -36,12 +37,12 @@ func TestStartDoneCoAuthors(t *testing.T) {
 	start(configuration)
 	done(configuration)
 
-	output := run(t, "cat", tempDir+"/local/.git/SQUASH_MSG")
+	output := readFile(t, filepath.Join(tempDir, "local", ".git", "SQUASH_MSG"))
 
 	// don't include the person running `mob done`
-	assertOutputNotContains(t, output, "Co-authored-by: local <local@example.com>")
+	assertOutputNotContains(t, &output, "Co-authored-by: local <local@example.com>")
 	// include everyone else in commit order after removing duplicates
-	assertOutputContains(t, output, "\nCo-authored-by: bob <bob@example.com>\nCo-authored-by: alice <alice@example.com>\nCo-authored-by: localother <localother@example.com>\n")
+	assertOutputContains(t, &output, "\nCo-authored-by: bob <bob@example.com>\nCo-authored-by: alice <alice@example.com>\nCo-authored-by: localother <localother@example.com>\n")
 }
 
 func TestCreateCommitMessage(t *testing.T) {
