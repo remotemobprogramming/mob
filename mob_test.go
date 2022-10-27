@@ -1581,6 +1581,34 @@ func TestAbortTimerIfMobDone(t *testing.T) {
 	assertNoTimerProcess(t)
 }
 
+func TestGitVersionParse(t *testing.T) {
+	// Check real examples
+	equals(t, GitVersion{2, 34, 1}, parseGitVersion("git version 2.34.1"))
+	equals(t, GitVersion{2, 38, 1}, parseGitVersion("git version 2.38.1.windows.1"))
+	// Check missing prefix
+	equals(t, GitVersion{1, 2, 3}, parseGitVersion("git 1.2.3"))
+	equals(t, GitVersion{4, 5, 6}, parseGitVersion("4.5.6"))
+	// Check missing minor and patch
+	equals(t, GitVersion{2, 5, 0}, parseGitVersion("git version 2.5"))
+	equals(t, GitVersion{2, 0, 0}, parseGitVersion("git version 2"))
+	equals(t, GitVersion{4, 0, 0}, parseGitVersion("4"))
+	// Invalid versions
+	equals(t, GitVersion{0, 0, 0}, parseGitVersion("not version"))
+	equals(t, GitVersion{2, 0, 0}, parseGitVersion("2.xyz3.5"))
+	equals(t, GitVersion{2, 0, 0}, parseGitVersion("2.9999999999999999999999.5"))
+}
+
+func TestGitVersionCompare(t *testing.T) {
+	// Check real examples
+	equals(t, true, (&GitVersion{2, 12, 0}).Less(GitVersion{2, 13, 0}))
+	equals(t, false, (&GitVersion{2, 13, 0}).Less(GitVersion{2, 13, 0}))
+	equals(t, false, (&GitVersion{2, 14, 0}).Less(GitVersion{2, 13, 0}))
+	// Test each part of the version number
+	equals(t, true, (&GitVersion{1, 2, 3}).Less(GitVersion{5, 2, 3}))
+	equals(t, true, (&GitVersion{1, 2, 3}).Less(GitVersion{1, 5, 3}))
+	equals(t, true, (&GitVersion{1, 2, 3}).Less(GitVersion{1, 2, 5}))
+}
+
 func gitStatus() GitStatus {
 	shortStatus := silentgit("status", "--short")
 	statusLines := strings.Split(shortStatus, "\n")
