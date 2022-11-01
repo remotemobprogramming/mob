@@ -26,10 +26,8 @@ import (
 )
 
 const (
-	versionNumber          = "4.0.1"
-	minimumGitVersionMajor = 2
-	minimumGitVersionMinor = 13
-	minimumGitVersionPatch = 0
+	versionNumber     = "4.0.1"
+	minimumGitVersion = "2.13.0"
 )
 
 var (
@@ -234,17 +232,17 @@ func main() {
 	say.TurnOnDebuggingByArgs(os.Args)
 	say.Debug(runtime.Version())
 
-	versionString, currentVersion := gitVersion()
+	versionString := gitVersion()
 	if versionString == "" {
 		say.Error("'git' command was not found in PATH. It may be not installed. " +
 			"To learn how to install 'git' refer to https://git-scm.com/book/en/v2/Getting-Started-Installing-Git.")
 		exit(1)
 	}
 
-	if currentVersion.Less(GitVersion{minimumGitVersionMajor, minimumGitVersionMinor, minimumGitVersionPatch}) {
-		say.Error(fmt.Sprintf("'git' command version '%s' is lower than the required minimum version (%d.%d.%d). "+
-			"Please update your 'git' installation!",
-			versionString, minimumGitVersionMajor, minimumGitVersionMinor, minimumGitVersionPatch))
+	currentVersion := parseGitVersion(versionString)
+	if currentVersion.Less(parseGitVersion(minimumGitVersion)) {
+		say.Error(fmt.Sprintf("'git' command version '%s' is lower than the required minimum version (%s). "+
+			"Please update your 'git' installation!", versionString, minimumGitVersion))
 		exit(1)
 	}
 
@@ -1433,14 +1431,13 @@ func gitCommitHash() string {
 	return silentgitignorefailure("rev-parse", "HEAD")
 }
 
-func gitVersion() (string, GitVersion) {
+func gitVersion() string {
 	_, output, err := runCommandSilent("git", "--version")
 	if err != nil {
 		say.Debug("gitVersion encountered an error: " + err.Error())
-		return "", GitVersion{}
+		return ""
 	}
-	versionString := strings.TrimSpace(output)
-	return versionString, parseGitVersion(versionString)
+	return strings.TrimSpace(output)
 }
 
 func isGit() bool {
