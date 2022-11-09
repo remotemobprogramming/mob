@@ -18,6 +18,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"reflect"
+	"regexp"
 	"runtime"
 	"strconv"
 	"strings"
@@ -25,7 +26,8 @@ import (
 )
 
 const (
-	versionNumber = "4.0.1"
+	versionNumber     = "4.0.1"
+	minimumGitVersion = "2.13.0"
 )
 
 var (
@@ -39,6 +41,48 @@ func openCommandFor(c config.Configuration, filepath string) (string, []string) 
 	}
 	split := strings.Split(injectCommandWithMessage(c.OpenCommand, filepath), " ")
 	return split[0], split[1:]
+}
+
+type GitVersion struct {
+	Major int
+	Minor int
+	Patch int
+}
+
+func parseGitVersion(version string) GitVersion {
+	// The git version string can be customized, so we need a more complex regex, for example: git version 2.38.1.windows.1
+	// "git" and "version" are optional, and the version number can be x, x.y or x.y.z
+	r := regexp.MustCompile(`(?:git)?(?: version )?(?P<major>\d+)(?:\.(?P<minor>\d+)(?:\.(?P<patch>\d+))?)?`)
+	matches := r.FindStringSubmatch(version)
+	var v GitVersion
+	var err error
+	if len(matches) > r.SubexpIndex("major") {
+		v.Major, err = strconv.Atoi(matches[r.SubexpIndex("major")])
+		if err != nil {
+			v.Major = 0
+			return v
+		}
+	}
+	if len(matches) > r.SubexpIndex("minor") {
+		v.Minor, err = strconv.Atoi(matches[r.SubexpIndex("minor")])
+		if err != nil {
+			v.Minor = 0
+			return v
+		}
+	}
+	if len(matches) > r.SubexpIndex("patch") {
+		v.Patch, err = strconv.Atoi(matches[r.SubexpIndex("patch")])
+		if err != nil {
+			v.Patch = 0
+		}
+	}
+	return v
+}
+
+func (v GitVersion) Less(rhs GitVersion) bool {
+	return v.Major < rhs.Major ||
+		(v.Major == rhs.Major && v.Minor < rhs.Minor) ||
+		(v.Major == rhs.Major && v.Minor == rhs.Minor && v.Patch < rhs.Patch)
 }
 
 type Branch struct {
@@ -188,9 +232,17 @@ func main() {
 	say.TurnOnDebuggingByArgs(os.Args)
 	say.Debug(runtime.Version())
 
-	if !isGitInstalled() {
+	versionString := gitVersion()
+	if versionString == "" {
 		say.Error("'git' command was not found in PATH. It may be not installed. " +
 			"To learn how to install 'git' refer to https://git-scm.com/book/en/v2/Getting-Started-Installing-Git.")
+		exit(1)
+	}
+
+	currentVersion := parseGitVersion(versionString)
+	if currentVersion.Less(parseGitVersion(minimumGitVersion)) {
+		say.Error(fmt.Sprintf("'git' command version '%s' is lower than the required minimum version (%s). "+
+			"Please update your 'git' installation!", versionString, minimumGitVersion))
 		exit(1)
 	}
 
@@ -1379,12 +1431,13 @@ func gitCommitHash() string {
 	return silentgitignorefailure("rev-parse", "HEAD")
 }
 
-func isGitInstalled() bool {
-	_, _, err := runCommandSilent("git", "--version")
+func gitVersion() string {
+	_, output, err := runCommandSilent("git", "--version")
 	if err != nil {
-		say.Debug("isGitInstalled encountered an error: " + err.Error())
+		say.Debug("gitVersion encountered an error: " + err.Error())
+		return ""
 	}
-	return err == nil
+	return strings.TrimSpace(output)
 }
 
 func isGit() bool {
