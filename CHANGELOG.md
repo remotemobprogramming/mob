@@ -1,4 +1,4 @@
-# 4.1.0
+# 4.1.1
 - Fix: mob showed the wrong executable name in windows
 - Feature: mob.sh now makes use of `--push-option=ci.skip` when pushing
 - Feature: mob.sh now warns you when your git version is too old
