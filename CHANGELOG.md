@@ -1,5 +1,9 @@
 # 4.0.1
-- fix bug where mob showed the wrong executable name in windows
+- Fix: mob showed the wrong executable name in windows
+- Feature: mob.sh now makes use of `--push-option=ci.skip` when pushing
+- Feature: mob.sh now warns you when your git version is too old
+
+Thanks to @balintf and @muskacirca for your contributions!
 
 # 4.0.0
 - **NEW** Feature: `mob reset` doesn't reset the mob branch anymore. It now warns you that it deletes the mob branch for everyone and if you want to continue do `mob reset --delete-remote-wip-branch`.
