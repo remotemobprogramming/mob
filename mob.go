@@ -1146,7 +1146,7 @@ func done(configuration config.Configuration) {
 
 	if wipBranch.hasRemoteBranch(configuration) {
 		if configuration.DoneSquash == config.SquashWip {
-			git("pull")
+			git("merge", "FETCH_HEAD", "--ff-only")
 			squashWip(configuration)
 		}
 		uncommittedChanges := hasUncommittedChanges()
