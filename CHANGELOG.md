@@ -1,3 +1,6 @@
+# 4.1.2
+- Fix: `mob done --squash-wip` won't lose changes when you forget to `mob start`
+
 # 4.1.1
 - Fix: mob showed the wrong executable name in windows
 - Feature: mob.sh now makes use of `--push-option=ci.skip` when pushing
