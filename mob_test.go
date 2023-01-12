@@ -1206,6 +1206,29 @@ func TestStartDoneSquashWipOnlyManualCommits(t *testing.T) {
 	assertNoMobSessionBranches(t, configuration, "mob-session")
 }
 
+func TestDoneSquashWipWithoutStartDoesNotLooseChanges(t *testing.T) {
+	_, configuration := setup(t)
+
+	setWorkingDir(tempDir + "/local")
+	start(configuration)
+	createFileAndCommitIt(t, "file1.txt", "owqe", "not a mob session yet")
+	configuration.NextStay = true
+	next(configuration)
+
+	setWorkingDir(tempDir + "/alice")
+	start(configuration)
+	createFile(t, "file2.txt", "zcvx")
+	next(configuration)
+
+	setWorkingDir(tempDir + "/local")
+	assertOnBranch(t, "mob-session")
+	configuration.DoneSquash = config.SquashWip
+	done(configuration)
+
+	assertOnBranch(t, "master")
+	assertFileExist(t, "file2.txt")
+}
+
 func TestStartDoneFeatureBranch(t *testing.T) {
 	_, configuration := setup(t)
 	git("checkout", "-b", "feature1")
