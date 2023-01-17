@@ -969,18 +969,14 @@ func startNewMobSession(configuration config.Configuration) {
 
 	say.Info("starting new session from " + currentBaseBranch.remote(configuration).String())
 	git("checkout", "-B", currentWipBranch.Name, currentBaseBranch.remote(configuration).Name)
+	if configuration.StartWithCISkip {
+		git("commit", "--allow-empty", "-m", config.InitialCISkipCommitMessage)
+	}
 	gitPush(gitHooksOption(configuration), "--set-upstream", configuration.RemoteName, currentWipBranch.Name)
 }
 
 func gitPush(args ...string) {
-	err := gitIgnoreFailure(pushArgsWithCiSkip(args)...)
-	if err != nil {
-		gitWithoutEmptyStrings(pushArgs(args)...)
-	}
-}
-
-func pushArgsWithCiSkip(args []string) []string {
-	return append([]string{"push", "--push-option", "ci.skip"}, deleteEmptyStrings(args)...)
+	gitWithoutEmptyStrings(pushArgs(args)...)
 }
 
 func pushArgs(args []string) []string {
