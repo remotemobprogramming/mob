@@ -218,6 +218,17 @@ func TestStart(t *testing.T) {
 	assertMobSessionBranches(t, configuration, "mob-session")
 }
 
+func TestStartWithCISkip(t *testing.T) {
+	_, configuration := setup(t)
+	configuration.StartWithCISkip = true
+
+	start(configuration)
+
+	assertOnBranch(t, "mob-session")
+	assertMobSessionBranches(t, configuration, "mob-session")
+	assertCommitLogContainsMessage(t, "mob-session", config.InitialCISkipCommitMessage)
+}
+
 func TestStartWithMultipleExistingBranches(t *testing.T) {
 	output, configuration := setup(t)
 
@@ -1450,6 +1461,34 @@ func TestDoneSquashNoChanges(t *testing.T) {
 	done(configuration)
 
 	assertOutputContains(t, output, "nothing to commit")
+}
+
+func TestDoneSquashWipStartCommit(t *testing.T) {
+	_, configuration := setup(t)
+	configuration.NextStay = true
+	configuration.StartWithCISkip = true
+	configuration.DoneSquash = config.SquashWip
+
+	start(configuration)
+	createFile(t, "file1.txt", "contentIrrelevant")
+	next(configuration)
+	assertCommitsOnBranch(t, 3, "mob-session")
+	done(configuration)
+	assertCommitsOnBranch(t, 1, "master")
+}
+
+func TestDoneNoSquashStartCommit(t *testing.T) {
+	_, configuration := setup(t)
+	configuration.NextStay = true
+	configuration.StartWithCISkip = true
+	configuration.DoneSquash = config.NoSquash
+
+	start(configuration)
+	createFile(t, "file1.txt", "contentIrrelevant")
+	next(configuration)
+	assertCommitsOnBranch(t, 3, "mob-session")
+	done(configuration)
+	assertCommitsOnBranch(t, 3, "master")
 }
 
 func TestStartAndNextInSubdir(t *testing.T) {

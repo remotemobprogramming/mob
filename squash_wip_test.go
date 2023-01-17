@@ -136,6 +136,43 @@ func TestSquashWipCommits_worksWithEmptyCommits(t *testing.T) {
 	}, commitsOnCurrentBranch(configuration))
 }
 
+func TestSquashWipCommits_acceptanceWithDroppingStartCommit(t *testing.T) {
+	_, configuration := setup(t)
+	configuration.StartWithCISkip = true
+	wipCommit(t, configuration, "file1.txt")
+	manualCommit(t, configuration, "file2.txt", "first manual commit")
+
+	// manual commit followed by a wip commit
+	start(configuration)
+	createFileAndCommitIt(t, "file3.txt", "contentIrrelevant", "second manual commit")
+	createFile(t, "file4.txt", "contentIrrelevant")
+	next(configuration)
+
+	// final manual commit
+	start(configuration)
+	createFileAndCommitIt(t, "file5.txt", "contentIrrelevant", "third manual commit")
+
+	// Check if the initial commit for ci skip exists
+	equals(t, []string{
+		"third manual commit",
+		configuration.WipCommitMessage,
+		"second manual commit",
+		"first manual commit",
+		configuration.WipCommitMessage,
+		config.InitialCISkipCommitMessage,
+	}, commitsOnCurrentBranch(configuration))
+
+	squashWip(configuration)
+
+	assertOnBranch(t, "mob-session")
+	equals(t, []string{
+		"third manual commit",
+		"second manual commit",
+		"first manual commit",
+	}, commitsOnCurrentBranch(configuration))
+	equals(t, commitsOnCurrentBranch(configuration), commitsOnRemoteBranch(configuration))
+}
+
 func TestCommitsOnCurrentBranch(t *testing.T) {
 	_, configuration := setup(t)
 	createFileAndCommitIt(t, "file1.txt", "contentIrrelevant", "not on branch")
@@ -265,6 +302,51 @@ fixup 01a9a33 %[1]s
 # Rebase ...`, configuration.WipCommitMessage)
 
 	result := markPostWipCommitsForSquashing(input, configuration)
+
+	equals(t, expected, result)
+}
+
+func TestMarkDropStartCommit_hasInitialCISkipCommitLine(t *testing.T) {
+	configuration := config.GetDefaultConfiguration()
+	configuration.StartWithCISkip = true
+
+	input := fmt.Sprintf(`pick 01a9a31 %[2]s
+pick c51a56d manual commit
+pick 01a9a32 %[1]s
+pick 01a9a33 %[1]s
+
+# Rebase ...`, configuration.WipCommitMessage, config.InitialCISkipCommitMessage)
+	expected := fmt.Sprintf(`drop 01a9a31 %[2]s
+pick c51a56d manual commit
+pick 01a9a32 %[1]s
+pick 01a9a33 %[1]s
+
+# Rebase ...`, configuration.WipCommitMessage, config.InitialCISkipCommitMessage)
+
+	result := markStartCommitForDropping(input, configuration)
+
+	equals(t, expected, result)
+}
+
+// Check if the initial commit is not dropped when the commmit line does not contain `InitialCISkipCommitMessage`
+func TestMarkDropStartCommit_notHasInitialCISkipCommitLine(t *testing.T) {
+	configuration := config.GetDefaultConfiguration()
+	configuration.StartWithCISkip = true
+
+	input := fmt.Sprintf(`pick 01a9a31 %[1]s
+pick c51a56d manual commit
+pick 01a9a32 %[1]s
+pick 01a9a33 %[1]s
+
+# Rebase ...`, configuration.WipCommitMessage)
+	expected := fmt.Sprintf(`pick 01a9a31 %[1]s
+pick c51a56d manual commit
+pick 01a9a32 %[1]s
+pick 01a9a33 %[1]s
+
+# Rebase ...`, configuration.WipCommitMessage)
+
+	result := markStartCommitForDropping(input, configuration)
 
 	equals(t, expected, result)
 }
