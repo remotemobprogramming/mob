@@ -298,9 +298,8 @@ manual commit
 }
 
 func TestSquashWipCommitGitEditor(t *testing.T) {
-	testOptions := TestBedOptions{enablePushOptions: true}
 	configuration := config.GetDefaultConfiguration()
-	createTestbed(t, configuration, testOptions)
+	createTestbed(t, configuration)
 	input := createFile(t, "commits", fmt.Sprintf(
 		`# This is a combination of 2 commits.
 # This is the 1st commit message:
@@ -332,7 +331,7 @@ new file
 
 func TestSquashWipCommitGitSequenceEditor(t *testing.T) {
 	configuration := config.GetDefaultConfiguration()
-	createTestbed(t, configuration, TestBedOptions{enablePushOptions: true})
+	createTestbed(t, configuration)
 	input := createFile(t, "rebase", fmt.Sprintf(
 		`pick 01a9a31 %[1]s
 pick 01a9a32 %[1]s
