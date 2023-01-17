@@ -19,6 +19,7 @@ Basic Commands with Options:
     [--include-uncommitted-changes|-i]   Move uncommitted changes to wip branch
     [--branch|-b <branch-postfix>]       Set wip branch to 'mob/<base-branch>` + configuration.WipBranchQualifierSeparator + `<branch-postfix>'
     [--create]                           Create the remote branch
+    [--no-ci-skip]                       Push mob branch without ci skip option
   next
     [--stay|-s]                          Stay on wip branch (default)
     [--return-to-base-branch|-r]         Return to base branch

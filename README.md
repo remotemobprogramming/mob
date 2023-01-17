@@ -368,6 +368,7 @@ MOB_NOTIFY_COMMAND="/usr/bin/osascript -e 'display notification \"%s\"'"
 MOB_NOTIFY_MESSAGE="mob next"
 MOB_NEXT_STAY=true
 MOB_START_CREATE=false
+MOB_START_WITH_CI_SKIP=true
 MOB_STASH_NAME="mob-stash-name"
 MOB_WIP_BRANCH_QUALIFIER=""
 MOB_WIP_BRANCH_QUALIFIER_SEPARATOR="-"

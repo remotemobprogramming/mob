@@ -39,6 +39,16 @@ func TestParseArgsStartCreate(t *testing.T) {
 	test.Equals(t, true, configuration.StartCreate)
 }
 
+func TestParseArgsStartWithCISkip(t *testing.T) {
+	configuration := GetDefaultConfiguration()
+
+	command, parameters, configuration := ParseArgs([]string{"mob", "start", "--no-ci-skip"}, configuration)
+
+	test.Equals(t, "start", command)
+	test.Equals(t, "", strings.Join(parameters, ""))
+	test.Equals(t, false, configuration.StartWithCISkip)
+}
+
 func TestParseArgsDoneNoSquash(t *testing.T) {
 	configuration := GetDefaultConfiguration()
 	test.Equals(t, Squash, configuration.DoneSquash)
@@ -98,6 +108,7 @@ func assertMobDoneSquashValue(t *testing.T, value string, expected string) {
 
 func TestBooleanEnvironmentVariables(t *testing.T) {
 	assertBoolEnvVarParsed(t, "MOB_START_CREATE", false, Configuration.GetMobStartCreateRemoteBranch)
+	assertBoolEnvVarParsed(t, "MOB_START_WITH_CI_SKIP", true, Configuration.GetMobStartWithCISkip)
 	assertBoolEnvVarParsed(t, "MOB_NEXT_STAY", true, Configuration.GetMobNextStay)
 	assertBoolEnvVarParsed(t, "MOB_REQUIRE_COMMIT_MESSAGE", false, Configuration.GetRequireCommitMessage)
 }
@@ -143,6 +154,10 @@ func (c Configuration) GetMobStartCreateRemoteBranch() bool {
 	return c.StartCreate
 }
 
+func (c Configuration) GetMobStartWithCISkip() bool {
+	return c.StartWithCISkip
+}
+
 func (c Configuration) GetMobNextStay() bool {
 	return c.NextStay
 }
@@ -183,6 +198,7 @@ func TestReadConfigurationFromFileOverrideEverything(t *testing.T) {
 		MOB_NOTIFY_MESSAGE="team next"
 		MOB_NEXT_STAY=false
 		MOB_START_CREATE=true
+		MOB_START_WITH_CI_SKIP=false
 		MOB_WIP_BRANCH_QUALIFIER="green"
 		MOB_WIP_BRANCH_QUALIFIER_SEPARATOR="---"
 		MOB_WIP_BRANCH_PREFIX="ensemble/"
@@ -207,6 +223,7 @@ func TestReadConfigurationFromFileOverrideEverything(t *testing.T) {
 	test.Equals(t, "team next", actualConfiguration.NotifyMessage)
 	test.Equals(t, false, actualConfiguration.NextStay)
 	test.Equals(t, true, actualConfiguration.StartCreate)
+	test.Equals(t, false, actualConfiguration.StartWithCISkip)
 	test.Equals(t, "green", actualConfiguration.WipBranchQualifier)
 	test.Equals(t, "---", actualConfiguration.WipBranchQualifierSeparator)
 	test.Equals(t, "ensemble/", actualConfiguration.WipBranchPrefix)
