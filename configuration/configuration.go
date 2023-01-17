@@ -15,7 +15,7 @@ const (
 	NoSquash  = "no-squash"
 	SquashWip = "squash-wip"
 
-	InitialCISkipCommitMessage = "mob start [ci-skip] [ci skip] [skip ci]"
+	StartCISkipCommitMessage = "mob start [ci-skip] [ci skip] [skip ci]"
 )
 
 type Configuration struct {
@@ -65,7 +65,7 @@ func (c Configuration) HasCustomCommitMessage() bool {
 }
 
 func (c Configuration) IsWipCommitMessage(line string) bool {
-	return strings.HasPrefix(line, c.WipCommitMessage) || strings.HasPrefix(line, InitialCISkipCommitMessage)
+	return strings.HasPrefix(line, c.WipCommitMessage) || strings.HasPrefix(line, StartCISkipCommitMessage)
 }
 
 func (c Configuration) IsOpenCommandGiven() bool {

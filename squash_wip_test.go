@@ -159,7 +159,7 @@ func TestSquashWipCommits_acceptanceWithDroppingStartCommit(t *testing.T) {
 		"second manual commit",
 		"first manual commit",
 		configuration.WipCommitMessage,
-		config.InitialCISkipCommitMessage,
+		config.StartCISkipCommitMessage,
 	}, commitsOnCurrentBranch(configuration))
 
 	squashWip(configuration)
@@ -306,7 +306,7 @@ fixup 01a9a33 %[1]s
 	equals(t, expected, result)
 }
 
-func TestMarkDropStartCommit_hasInitialCISkipCommitLine(t *testing.T) {
+func TestMarkDropStartCommit_hasStartCISkipCommitLine(t *testing.T) {
 	configuration := config.GetDefaultConfiguration()
 	configuration.StartWithCISkip = true
 
@@ -315,13 +315,13 @@ pick c51a56d manual commit
 pick 01a9a32 %[1]s
 pick 01a9a33 %[1]s
 
-# Rebase ...`, configuration.WipCommitMessage, config.InitialCISkipCommitMessage)
+# Rebase ...`, configuration.WipCommitMessage, config.StartCISkipCommitMessage)
 	expected := fmt.Sprintf(`drop 01a9a31 %[2]s
 pick c51a56d manual commit
 pick 01a9a32 %[1]s
 pick 01a9a33 %[1]s
 
-# Rebase ...`, configuration.WipCommitMessage, config.InitialCISkipCommitMessage)
+# Rebase ...`, configuration.WipCommitMessage, config.StartCISkipCommitMessage)
 
 	result := markStartCommitForDropping(input, configuration)
 
@@ -329,7 +329,7 @@ pick 01a9a33 %[1]s
 }
 
 // Check if the initial commit is not dropped when the commmit line does not contain `InitialCISkipCommitMessage`
-func TestMarkDropStartCommit_notHasInitialCISkipCommitLine(t *testing.T) {
+func TestMarkDropStartCommit_notHasStartCISkipCommitLine(t *testing.T) {
 	configuration := config.GetDefaultConfiguration()
 	configuration.StartWithCISkip = true
 
