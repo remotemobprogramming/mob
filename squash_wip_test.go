@@ -187,6 +187,7 @@ func TestCommitsOnCurrentBranch(t *testing.T) {
 	equals(t, []string{
 		configuration.WipCommitMessage,
 		"on branch",
+		config.StartCISkipCommitMessage,
 	}, commits)
 }
 
