@@ -138,7 +138,6 @@ func TestSquashWipCommits_worksWithEmptyCommits(t *testing.T) {
 
 func TestSquashWipCommits_acceptanceWithDroppingStartCommit(t *testing.T) {
 	_, configuration := setup(t)
-	configuration.StartWithCISkip = true
 	wipCommit(t, configuration, "file1.txt")
 	manualCommit(t, configuration, "file2.txt", "first manual commit")
 
@@ -308,7 +307,6 @@ fixup 01a9a33 %[1]s
 
 func TestMarkDropStartCommit_hasStartCISkipCommitLine(t *testing.T) {
 	configuration := config.GetDefaultConfiguration()
-	configuration.StartWithCISkip = true
 
 	input := fmt.Sprintf(`pick 01a9a31 %[2]s
 pick c51a56d manual commit
@@ -331,7 +329,6 @@ pick 01a9a33 %[1]s
 // Check if the initial commit is not dropped when the commmit line does not contain `InitialCISkipCommitMessage`
 func TestMarkDropStartCommit_notHasStartCISkipCommitLine(t *testing.T) {
 	configuration := config.GetDefaultConfiguration()
-	configuration.StartWithCISkip = true
 
 	input := fmt.Sprintf(`pick 01a9a31 %[1]s
 pick c51a56d manual commit

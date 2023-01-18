@@ -969,9 +969,7 @@ func startNewMobSession(configuration config.Configuration) {
 
 	say.Info("starting new session from " + currentBaseBranch.remote(configuration).String())
 	git("checkout", "-B", currentWipBranch.Name, currentBaseBranch.remote(configuration).Name)
-	if configuration.StartWithCISkip {
-		git("commit", "--allow-empty", "-m", config.StartCISkipCommitMessage)
-	}
+	git("commit", "--allow-empty", "-m", config.StartCISkipCommitMessage)
 	gitPush(gitHooksOption(configuration), "--set-upstream", configuration.RemoteName, currentWipBranch.Name)
 }
 

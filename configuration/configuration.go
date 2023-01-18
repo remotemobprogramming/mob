@@ -31,7 +31,6 @@ type Configuration struct {
 	NextStay                       bool   // override with MOB_NEXT_STAY
 	StartIncludeUncommittedChanges bool
 	StartCreate                    bool   // override with MOB_START_CREATE variable
-	StartWithCISkip                bool   // override with MOB_START_WITH_CI_SKIP variable
 	StashName                      string // override with MOB_STASH_NAME
 	WipBranchQualifier             string // override with MOB_WIP_BRANCH_QUALIFIER
 	WipBranchQualifierSeparator    string // override with MOB_WIP_BRANCH_QUALIFIER_SEPARATOR
@@ -65,7 +64,7 @@ func (c Configuration) HasCustomCommitMessage() bool {
 }
 
 func (c Configuration) IsWipCommitMessage(line string) bool {
-	return strings.HasPrefix(line, c.WipCommitMessage) || strings.HasPrefix(line, StartCISkipCommitMessage)
+	return strings.HasPrefix(line, c.WipCommitMessage)
 }
 
 func (c Configuration) IsOpenCommandGiven() bool {
@@ -143,8 +142,6 @@ func ParseArgs(args []string, configuration Configuration) (command string, para
 			newConfiguration.DoneSquash = SquashWip
 		case "--create":
 			newConfiguration.StartCreate = true
-		case "--no-ci-skip":
-			newConfiguration.StartWithCISkip = false
 		case "--delete-remote-wip-branch":
 			newConfiguration.ResetDeleteRemoteWipBranch = true
 		default:
@@ -186,7 +183,6 @@ func GetDefaultConfiguration() Configuration {
 		RequireCommitMessage:           false,
 		StartIncludeUncommittedChanges: false,
 		StartCreate:                    false,
-		StartWithCISkip:                true,
 		WipBranchQualifier:             "",
 		WipBranchQualifierSeparator:    "-",
 		DoneSquash:                     Squash,
@@ -248,8 +244,6 @@ func parseUserConfiguration(configuration Configuration, path string) Configurat
 			setBoolean(&configuration.NextStay, key, value)
 		case "MOB_START_CREATE":
 			setBoolean(&configuration.StartCreate, key, value)
-		case "MOB_START_WITH_CI_SKIP":
-			setBoolean(&configuration.StartWithCISkip, key, value)
 		case "MOB_WIP_BRANCH_QUALIFIER":
 			setUnquotedString(&configuration.WipBranchQualifier, key, value)
 		case "MOB_WIP_BRANCH_QUALIFIER_SEPARATOR":
@@ -331,8 +325,6 @@ func parseProjectConfiguration(configuration Configuration, path string) Configu
 			setBoolean(&configuration.NextStay, key, value)
 		case "MOB_START_CREATE":
 			setBoolean(&configuration.StartCreate, key, value)
-		case "MOB_START_WITH_CI_SKIP":
-			setBoolean(&configuration.StartWithCISkip, key, value)
 		case "MOB_WIP_BRANCH_QUALIFIER":
 			setUnquotedString(&configuration.WipBranchQualifier, key, value)
 		case "MOB_WIP_BRANCH_QUALIFIER_SEPARATOR":
@@ -434,7 +426,6 @@ func parseEnvironmentVariables(configuration Configuration) Configuration {
 	setBoolFromEnvVariable(&configuration.NextStay, "MOB_NEXT_STAY")
 
 	setBoolFromEnvVariable(&configuration.StartCreate, "MOB_START_CREATE")
-	setBoolFromEnvVariable(&configuration.StartWithCISkip, "MOB_START_WITH_CI_SKIP")
 
 	setDoneSquashFromEnvVariable(&configuration, "MOB_DONE_SQUASH")
 

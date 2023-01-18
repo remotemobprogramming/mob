@@ -220,7 +220,6 @@ func TestStart(t *testing.T) {
 
 func TestStartWithCISkip(t *testing.T) {
 	_, configuration := setup(t)
-	configuration.StartWithCISkip = true
 
 	start(configuration)
 
@@ -1466,7 +1465,6 @@ func TestDoneSquashNoChanges(t *testing.T) {
 func TestDoneSquashWipStartCommit(t *testing.T) {
 	_, configuration := setup(t)
 	configuration.NextStay = true
-	configuration.StartWithCISkip = true
 	configuration.DoneSquash = config.SquashWip
 
 	start(configuration)
@@ -1480,7 +1478,6 @@ func TestDoneSquashWipStartCommit(t *testing.T) {
 func TestDoneNoSquashStartCommit(t *testing.T) {
 	_, configuration := setup(t)
 	configuration.NextStay = true
-	configuration.StartWithCISkip = true
 	configuration.DoneSquash = config.NoSquash
 
 	start(configuration)
@@ -1686,7 +1683,6 @@ func gitStatus() GitStatus {
 
 func setup(t *testing.T) (output *string, configuration config.Configuration) {
 	configuration = config.GetDefaultConfiguration()
-	configuration.StartWithCISkip = false
 	configuration.NextStay = false
 	output = captureOutput(t)
 	createTestbed(t, configuration)
