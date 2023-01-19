@@ -14,6 +14,8 @@ const (
 	Squash    = "squash"
 	NoSquash  = "no-squash"
 	SquashWip = "squash-wip"
+
+	StartCISkipCommitMessage = "mob start [ci-skip] [ci skip] [skip ci]"
 )
 
 type Configuration struct {

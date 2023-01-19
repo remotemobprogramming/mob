@@ -1,3 +1,6 @@
+# 4.2.0
+- Feature: mob.sh now starts a mob session with an empty commit to skip CI when creating a new remote branch for the session. The commit is squashed or dropped when `mob done` except for `--no-squash` option.
+
 # 4.1.2
 - Fix: `mob done --squash-wip` won't lose changes when you forget to `mob start`
 

@@ -21,9 +21,6 @@ var (
 )
 
 type GitStatus = map[string]string
-type TestBedOptions struct {
-	enablePushOptions bool
-}
 
 func TestCurrentCliName(t *testing.T) {
 	equals(t, "mob", currentCliName("mob"))
@@ -183,7 +180,8 @@ func TestStatusWithMoreThan5LinesOfLog(t *testing.T) {
 	}
 
 	status(configuration)
-	assertOutputContains(t, output, "wip branch 'mob-session' contains 6 commits.")
+	// 6 wip commits + 1 start commit
+	assertOutputContains(t, output, "wip branch 'mob-session' contains 7 commits.")
 }
 
 func TestExecuteKicksOffStatus(t *testing.T) {
@@ -219,6 +217,16 @@ func TestStart(t *testing.T) {
 
 	assertOnBranch(t, "mob-session")
 	assertMobSessionBranches(t, configuration, "mob-session")
+}
+
+func TestStartWithCISkip(t *testing.T) {
+	_, configuration := setup(t)
+
+	start(configuration)
+
+	assertOnBranch(t, "mob-session")
+	assertMobSessionBranches(t, configuration, "mob-session")
+	assertCommitLogContainsMessage(t, "mob-session", config.StartCISkipCommitMessage)
 }
 
 func TestStartWithMultipleExistingBranches(t *testing.T) {
@@ -708,16 +716,14 @@ func TestStartPushOnWIPBranchWithOptions(t *testing.T) {
 
 	start(configuration)
 
-	assertOutputNotContains(t, output, "git push --no-verify --set-upstream origin mob-session")
-	assertOutputContains(t, output, "git push --push-option ci.skip --no-verify --set-upstream origin mob-session")
+	assertOutputContains(t, output, "git push --no-verify --set-upstream origin mob-session")
 }
 
 func TestStartPushOnWIPBranchWithOptionsShouldFailAndRetry(t *testing.T) {
-	output, configuration := setupWithOptions(t, TestBedOptions{enablePushOptions: false})
+	output, configuration := setup(t)
 
 	start(configuration)
 
-	assertOutputContains(t, output, "git push --push-option ci.skip --no-verify --set-upstream origin mob-session")
 	assertOutputContains(t, output, "git push --no-verify --set-upstream origin mob-session")
 	assertOutputContains(t, output, "you are on wip branch 'mob-session' (base branch 'master')")
 }
@@ -975,16 +981,17 @@ func TestStartDonePublishingOneManualCommit(t *testing.T) {
 
 	start(configuration)
 	assertOnBranch(t, "mob-session")
-	// should be 1 commit on mob-session so far
+	// should be 2 commits on mob-session so far
+	// 1 commit from setup() and 1 commit from ci-skip commit when mob start
 
 	createFileAndCommitIt(t, "example.txt", "contentIrrelevant", "[manual-commit-1] publish this commit to master")
-	assertCommits(t, 2)
+	assertCommits(t, 3)
 
 	done(configuration) // without squash (configuration)
 
 	assertOnBranch(t, "master")
 	assertCleanGitStatus(t)
-	assertCommitsOnBranch(t, 2, "master")
+	assertCommitsOnBranch(t, 3, "master")
 	assertCommitLogContainsMessage(t, "master", "[manual-commit-1] publish this commit to master")
 	assertCommitsOnBranch(t, 1, "origin/master")
 	assertNoMobSessionBranches(t, configuration, "mob-session")
@@ -996,10 +1003,11 @@ func TestStartDoneSquashTheOneManualCommit(t *testing.T) {
 
 	start(configuration)
 	assertOnBranch(t, "mob-session")
-	// should be 1 commit on mob-session so far
+	// should be 2 commits on mob-session so far
+	// 1 commit from setup() and 1 commit from ci-skip commit when mob start
 
 	createFileAndCommitIt(t, "example.txt", "contentIrrelevant", "[manual-commit-1] publish this commit to master")
-	assertCommits(t, 2)
+	assertCommits(t, 3)
 
 	done(configuration)
 
@@ -1033,7 +1041,9 @@ func TestStartDoneNoSquashWithUncommittedChanges(t *testing.T) {
 	_, configuration := setup(t)
 	configuration.DoneSquash = config.NoSquash
 
-	start(configuration) // should be 1 commit on mob-session so far
+	start(configuration)
+	// should be 2 commits on mob-session so far
+	// 1 commit from setup() and 1 commit from ci-skip commit when mob start
 	createFile(t, "example.txt", "content")
 
 	done(configuration) // without squash (configuration)
@@ -1042,7 +1052,7 @@ func TestStartDoneNoSquashWithUncommittedChanges(t *testing.T) {
 	assertGitStatus(t, GitStatus{
 		"example.txt": "A",
 	})
-	assertCommitsOnBranch(t, 1, "master")
+	assertCommitsOnBranch(t, 2, "master")
 	assertCommitsOnBranch(t, 1, "origin/master")
 	assertNoMobSessionBranches(t, configuration, "mob-session")
 }
@@ -1306,11 +1316,13 @@ func TestNothingToCommitCreatesNoCommits(t *testing.T) {
 
 	setWorkingDir(tempDir + "/local")
 	start(configuration)
-	assertCommits(t, 1)
+	// should be 2 commits on mob-session so far
+	// 1 commit from setup() and 1 commit from ci-skip commit when mob start
+	assertCommits(t, 2)
 
 	setWorkingDir(tempDir + "/localother")
 	start(configuration)
-	assertCommits(t, 1)
+	assertCommits(t, 2)
 
 	setWorkingDir(tempDir + "/local")
 	next(configuration)
@@ -1320,11 +1332,11 @@ func TestNothingToCommitCreatesNoCommits(t *testing.T) {
 
 	setWorkingDir(tempDir + "/local")
 	start(configuration)
-	assertCommits(t, 1)
+	assertCommits(t, 2)
 
 	setWorkingDir(tempDir + "/localother")
 	start(configuration)
-	assertCommits(t, 1)
+	assertCommits(t, 2)
 }
 
 func TestStartNextPushManualCommits(t *testing.T) {
@@ -1455,6 +1467,32 @@ func TestDoneSquashNoChanges(t *testing.T) {
 	done(configuration)
 
 	assertOutputContains(t, output, "nothing to commit")
+}
+
+func TestDoneSquashWipStartCommit(t *testing.T) {
+	_, configuration := setup(t)
+	configuration.NextStay = true
+	configuration.DoneSquash = config.SquashWip
+
+	start(configuration)
+	createFile(t, "file1.txt", "contentIrrelevant")
+	next(configuration)
+	assertCommitsOnBranch(t, 3, "mob-session")
+	done(configuration)
+	assertCommitsOnBranch(t, 1, "master")
+}
+
+func TestDoneNoSquashStartCommit(t *testing.T) {
+	_, configuration := setup(t)
+	configuration.NextStay = true
+	configuration.DoneSquash = config.NoSquash
+
+	start(configuration)
+	createFile(t, "file1.txt", "contentIrrelevant")
+	next(configuration)
+	assertCommitsOnBranch(t, 3, "mob-session")
+	done(configuration)
+	assertCommitsOnBranch(t, 3, "master")
 }
 
 func TestStartAndNextInSubdir(t *testing.T) {
@@ -1650,23 +1688,17 @@ func gitStatus() GitStatus {
 	return statusMap
 }
 
-func setupWithOptions(t *testing.T, options TestBedOptions) (output *string, configuration config.Configuration) {
+func setup(t *testing.T) (output *string, configuration config.Configuration) {
 	configuration = config.GetDefaultConfiguration()
 	configuration.NextStay = false
 	output = captureOutput(t)
-	createTestbed(t, configuration, options)
+	createTestbed(t, configuration)
 	assertOnBranch(t, "master")
 	equals(t, []string{"master"}, gitBranches())
 	equals(t, []string{"origin/master"}, gitRemoteBranches())
 	assertNoMobSessionBranches(t, configuration, "mob-session")
 	abortRunningTimers()
 	return output, configuration
-}
-
-func setup(t *testing.T) (output *string, configuration config.Configuration) {
-	return setupWithOptions(t, TestBedOptions{
-		enablePushOptions: true,
-	})
 }
 
 func captureOutput(t *testing.T) *string {
@@ -1678,20 +1710,20 @@ func captureOutput(t *testing.T) *string {
 	return &messages
 }
 
-func createTestbed(t *testing.T, configuration config.Configuration, options TestBedOptions) {
+func createTestbed(t *testing.T, configuration config.Configuration) {
 	workingDir = ""
 
 	tempDir = t.TempDir()
 
 	say.Say("Creating testbed in temporary directory " + tempDir)
-	createTestbedIn(t, tempDir, options)
+	createTestbedIn(t, tempDir)
 
 	setWorkingDir(tempDir + "/local")
 	assertOnBranch(t, "master")
 	assertNoMobSessionBranches(t, configuration, "mob-session")
 }
 
-func createTestbedIn(t *testing.T, temporaryDirectory string, options TestBedOptions) {
+func createTestbedIn(t *testing.T, temporaryDirectory string) {
 	say.Debug("Creating temporary test assets in " + temporaryDirectory)
 	err := os.MkdirAll(temporaryDirectory, 0755)
 	if err != nil {
@@ -1702,7 +1734,7 @@ func createTestbedIn(t *testing.T, temporaryDirectory string, options TestBedOpt
 	say.Debug("Create remote repository")
 	remoteDirectory := getRemoteDirectory(temporaryDirectory)
 	cleanRepository(remoteDirectory)
-	createRemoteRepository(remoteDirectory, options)
+	createRemoteRepository(remoteDirectory)
 
 	say.Debug("Create first local repository")
 	localDirectory := getLocalDirectory(temporaryDirectory)
@@ -1922,7 +1954,7 @@ func cleanRepository(path string) {
 	}
 }
 
-func createRemoteRepository(path string, options TestBedOptions) {
+func createRemoteRepository(path string) {
 	branch := "master" // fixed to master for now
 	say.Debug("createremoterepository: Creating remote repository " + path)
 	err := os.MkdirAll(path, 0755)
@@ -1936,7 +1968,6 @@ func createRemoteRepository(path string, options TestBedOptions) {
 	git("--bare", "init")
 	say.Debug("before symbolic-ref")
 	git("symbolic-ref", "HEAD", "refs/heads/"+branch)
-	git("config", "receive.advertisePushOptions", strconv.FormatBool(options.enablePushOptions))
 	say.Debug("finished")
 }
 

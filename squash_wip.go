@@ -97,7 +97,8 @@ func squashWipGitEditor(fileName string, configuration config.Configuration) {
 // used for non-interactive rebase to squash post-wip-commits
 func squashWipGitSequenceEditor(fileName string, configuration config.Configuration) {
 	replaceFileContents(fileName, func(input string) string {
-		return markPostWipCommitsForSquashing(input, configuration)
+		result := markPostWipCommitsForSquashing(input, configuration)
+		return markStartCommitForDropping(result, configuration)
 	})
 }
 
@@ -152,6 +153,19 @@ func markPostWipCommitsForSquashing(input string, configuration config.Configura
 	return strings.Join(result, "\n")
 }
 
+func markStartCommitForDropping(input string, configuration config.Configuration) string {
+	inputLines := strings.Split(input, "\n")
+	result := inputLines
+
+	firstLine := inputLines[0]
+	if isStartCISkipCommitLine(firstLine) {
+		markedLine := markDrop(firstLine)
+		result[0] = markedLine
+	}
+
+	return strings.Join(result, "\n")
+}
+
 func markLine(inputLines []string, i int, configuration config.Configuration) string {
 	var resultLine = inputLines[i]
 	previousLine := previousLine(inputLines, i)
@@ -193,16 +207,28 @@ func markFixup(line string) string {
 	return strings.Replace(line, "pick ", "fixup ", 1)
 }
 
+func markDrop(line string) string {
+	return strings.Replace(line, "pick ", "drop ", 1)
+}
+
 func isWipCommitLine(line string, configuration config.Configuration) bool {
 	return isPick(line) && isWipCommit(line, configuration)
 }
 
+func isStartCISkipCommitLine(line string) bool {
+	return isPick(line) && isStartCISkipCommit(line)
+}
+
 func isManualCommit(line string, configuration config.Configuration) bool {
-	return !isWipCommit(line, configuration)
+	return !isWipCommit(line, configuration) && !isStartCISkipCommit(line)
 }
 
 func isWipCommit(line string, configuration config.Configuration) bool {
 	return strings.Contains(line, configuration.WipCommitMessage)
+}
+
+func isStartCISkipCommit(line string) bool {
+	return strings.Contains(line, config.StartCISkipCommitMessage)
 }
 
 func isPick(line string) bool {

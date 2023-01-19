@@ -26,7 +26,7 @@ import (
 )
 
 const (
-	versionNumber     = "4.1.2"
+	versionNumber     = "4.2.0"
 	minimumGitVersion = "2.13.0"
 )
 
@@ -969,18 +969,12 @@ func startNewMobSession(configuration config.Configuration) {
 
 	say.Info("starting new session from " + currentBaseBranch.remote(configuration).String())
 	git("checkout", "-B", currentWipBranch.Name, currentBaseBranch.remote(configuration).Name)
+	git("commit", "--allow-empty", "-m", config.StartCISkipCommitMessage)
 	gitPush(gitHooksOption(configuration), "--set-upstream", configuration.RemoteName, currentWipBranch.Name)
 }
 
 func gitPush(args ...string) {
-	err := gitIgnoreFailure(pushArgsWithCiSkip(args)...)
-	if err != nil {
-		gitWithoutEmptyStrings(pushArgs(args)...)
-	}
-}
-
-func pushArgsWithCiSkip(args []string) []string {
-	return append([]string{"push", "--push-option", "ci.skip"}, deleteEmptyStrings(args)...)
+	gitWithoutEmptyStrings(pushArgs(args)...)
 }
 
 func pushArgs(args []string) []string {
