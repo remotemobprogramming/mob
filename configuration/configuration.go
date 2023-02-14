@@ -14,14 +14,13 @@ const (
 	Squash    = "squash"
 	NoSquash  = "no-squash"
 	SquashWip = "squash-wip"
-
-	StartCISkipCommitMessage = "mob start [ci-skip] [ci skip] [skip ci]"
 )
 
 type Configuration struct {
 	CliName                        string // override with MOB_CLI_NAME
 	RemoteName                     string // override with MOB_REMOTE_NAME
 	WipCommitMessage               string // override with MOB_WIP_COMMIT_MESSAGE
+	StartCISkipCommitMessage       string // override with MOB_START_COMMIT_MESSAGE
 	GitHooksEnabled                bool   // override with MOB_GIT_HOOKS_ENABLED
 	RequireCommitMessage           bool   // override with MOB_REQUIRE_COMMIT_MESSAGE
 	VoiceCommand                   string // override with MOB_VOICE_COMMAND
@@ -75,6 +74,7 @@ func Config(c Configuration) {
 	say.Say("MOB_CLI_NAME" + "=" + quote(c.CliName))
 	say.Say("MOB_REMOTE_NAME" + "=" + quote(c.RemoteName))
 	say.Say("MOB_WIP_COMMIT_MESSAGE" + "=" + quote(c.WipCommitMessage))
+	say.Say("MOB_START_COMMIT_MESSAGE" + "=" + quote(c.StartCISkipCommitMessage))
 	say.Say("MOB_GIT_HOOKS_ENABLED" + "=" + strconv.FormatBool(c.GitHooksEnabled))
 	say.Say("MOB_REQUIRE_COMMIT_MESSAGE" + "=" + strconv.FormatBool(c.RequireCommitMessage))
 	say.Say("MOB_VOICE_COMMAND" + "=" + quote(c.VoiceCommand))
@@ -174,6 +174,7 @@ func GetDefaultConfiguration() Configuration {
 		CliName:                        "mob",
 		RemoteName:                     "origin",
 		WipCommitMessage:               "mob next [ci-skip] [ci skip] [skip ci]",
+		StartCISkipCommitMessage:       "mob start [ci-skip] [ci skip] [skip ci]",
 		GitHooksEnabled:                false,
 		VoiceCommand:                   voiceCommand,
 		VoiceMessage:                   "mob next",
@@ -228,6 +229,8 @@ func parseUserConfiguration(configuration Configuration, path string) Configurat
 			setUnquotedString(&configuration.RemoteName, key, value)
 		case "MOB_WIP_COMMIT_MESSAGE":
 			setUnquotedString(&configuration.WipCommitMessage, key, value)
+		case "MOB_START_COMMIT_MESSAGE":
+			setUnquotedString(&configuration.StartCISkipCommitMessage, key, value)
 		case "MOB_GIT_HOOKS_ENABLED":
 			setBoolean(&configuration.GitHooksEnabled, key, value)
 		case "MOB_REQUIRE_COMMIT_MESSAGE":
@@ -317,6 +320,8 @@ func parseProjectConfiguration(configuration Configuration, path string) Configu
 			setUnquotedString(&configuration.RemoteName, key, value)
 		case "MOB_WIP_COMMIT_MESSAGE":
 			setUnquotedString(&configuration.WipCommitMessage, key, value)
+		case "MOB_START_COMMIT_MESSAGE":
+			setUnquotedString(&configuration.StartCISkipCommitMessage, key, value)
 		case "MOB_GIT_HOOKS_ENABLED":
 			setBoolean(&configuration.GitHooksEnabled, key, value)
 		case "MOB_REQUIRE_COMMIT_MESSAGE":
@@ -412,6 +417,7 @@ func parseEnvironmentVariables(configuration Configuration) Configuration {
 
 	setStringFromEnvVariable(&configuration.RemoteName, "MOB_REMOTE_NAME")
 	setStringFromEnvVariable(&configuration.WipCommitMessage, "MOB_WIP_COMMIT_MESSAGE")
+	setStringFromEnvVariable(&configuration.StartCISkipCommitMessage, "MOB_START_COMMIT_MESSAGE")
 	setBoolFromEnvVariable(&configuration.GitHooksEnabled, "MOB_GIT_HOOKS_ENABLED")
 	setBoolFromEnvVariable(&configuration.RequireCommitMessage, "MOB_REQUIRE_COMMIT_MESSAGE")
 	setOptionalStringFromEnvVariable(&configuration.VoiceCommand, "MOB_VOICE_COMMAND")

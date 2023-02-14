@@ -158,7 +158,7 @@ func TestSquashWipCommits_acceptanceWithDroppingStartCommit(t *testing.T) {
 		"second manual commit",
 		"first manual commit",
 		configuration.WipCommitMessage,
-		config.StartCISkipCommitMessage,
+		configuration.StartCISkipCommitMessage,
 	}, commitsOnCurrentBranch(configuration))
 
 	squashWip(configuration)
@@ -187,7 +187,7 @@ func TestCommitsOnCurrentBranch(t *testing.T) {
 	equals(t, []string{
 		configuration.WipCommitMessage,
 		"on branch",
-		config.StartCISkipCommitMessage,
+		configuration.StartCISkipCommitMessage,
 	}, commits)
 }
 
@@ -314,13 +314,13 @@ pick c51a56d manual commit
 pick 01a9a32 %[1]s
 pick 01a9a33 %[1]s
 
-# Rebase ...`, configuration.WipCommitMessage, config.StartCISkipCommitMessage)
+# Rebase ...`, configuration.WipCommitMessage, configuration.StartCISkipCommitMessage)
 	expected := fmt.Sprintf(`drop 01a9a31 %[2]s
 pick c51a56d manual commit
 pick 01a9a32 %[1]s
 pick 01a9a33 %[1]s
 
-# Rebase ...`, configuration.WipCommitMessage, config.StartCISkipCommitMessage)
+# Rebase ...`, configuration.WipCommitMessage, configuration.StartCISkipCommitMessage)
 
 	result := markStartCommitForDropping(input, configuration)
 
