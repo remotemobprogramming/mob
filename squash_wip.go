@@ -158,7 +158,7 @@ func markStartCommitForDropping(input string, configuration config.Configuration
 	result := inputLines
 
 	firstLine := inputLines[0]
-	if isStartCISkipCommitLine(firstLine) {
+	if isStartCISkipCommitLine(firstLine, configuration) {
 		markedLine := markDrop(firstLine)
 		result[0] = markedLine
 	}
@@ -215,20 +215,20 @@ func isWipCommitLine(line string, configuration config.Configuration) bool {
 	return isPick(line) && isWipCommit(line, configuration)
 }
 
-func isStartCISkipCommitLine(line string) bool {
-	return isPick(line) && isStartCISkipCommit(line)
+func isStartCISkipCommitLine(line string, configuration config.Configuration) bool {
+	return isPick(line) && isStartCISkipCommit(line, configuration)
 }
 
 func isManualCommit(line string, configuration config.Configuration) bool {
-	return !isWipCommit(line, configuration) && !isStartCISkipCommit(line)
+	return !isWipCommit(line, configuration) && !isStartCISkipCommit(line, configuration)
 }
 
 func isWipCommit(line string, configuration config.Configuration) bool {
 	return strings.Contains(line, configuration.WipCommitMessage)
 }
 
-func isStartCISkipCommit(line string) bool {
-	return strings.Contains(line, config.StartCISkipCommitMessage)
+func isStartCISkipCommit(line string, configuration config.Configuration) bool {
+	return strings.Contains(line, configuration.StartCISkipCommitMessage)
 }
 
 func isPick(line string) bool {

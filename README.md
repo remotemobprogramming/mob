@@ -360,6 +360,7 @@ Show your current configuration with `mob config`:
 MOB_CLI_NAME="mob"
 MOB_REMOTE_NAME="origin"
 MOB_WIP_COMMIT_MESSAGE="mob next [ci-skip] [ci skip] [skip ci]"
+MOB_START_COMMIT_MESSAGE="mob start [ci-skip] [ci skip] [skip ci]"
 MOB_GIT_HOOKS_ENABLED=false
 MOB_REQUIRE_COMMIT_MESSAGE=false
 MOB_VOICE_COMMAND="say \"%s\""

@@ -176,6 +176,7 @@ func TestReadConfigurationFromFileOverrideEverything(t *testing.T) {
 		MOB_CLI_NAME="team"
 		MOB_REMOTE_NAME="gitlab"
 		MOB_WIP_COMMIT_MESSAGE="team next"
+		MOB_START_COMMIT_MESSAGE="mob: start"
 		MOB_REQUIRE_COMMIT_MESSAGE=true
 		MOB_VOICE_COMMAND="whisper \"%s\""
 		MOB_VOICE_MESSAGE="team next"
@@ -200,6 +201,7 @@ func TestReadConfigurationFromFileOverrideEverything(t *testing.T) {
 	test.Equals(t, "team", actualConfiguration.CliName)
 	test.Equals(t, "gitlab", actualConfiguration.RemoteName)
 	test.Equals(t, "team next", actualConfiguration.WipCommitMessage)
+	test.Equals(t, "mob: start", actualConfiguration.StartCISkipCommitMessage)
 	test.Equals(t, true, actualConfiguration.RequireCommitMessage)
 	test.Equals(t, "whisper \"%s\"", actualConfiguration.VoiceCommand)
 	test.Equals(t, "team next", actualConfiguration.VoiceMessage)
