@@ -228,7 +228,7 @@ func isWipCommit(line string, configuration config.Configuration) bool {
 }
 
 func isStartCISkipCommit(line string, configuration config.Configuration) bool {
-	return strings.Contains(line, configuration.StartCISkipCommitMessage)
+	return strings.Contains(line, configuration.StartCommitMessage)
 }
 
 func isPick(line string) bool {

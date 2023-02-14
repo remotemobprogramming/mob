@@ -226,7 +226,7 @@ func TestStartWithCISkip(t *testing.T) {
 
 	assertOnBranch(t, "mob-session")
 	assertMobSessionBranches(t, configuration, "mob-session")
-	assertCommitLogContainsMessage(t, "mob-session", configuration.StartCISkipCommitMessage)
+	assertCommitLogContainsMessage(t, "mob-session", configuration.StartCommitMessage)
 }
 
 func TestStartWithMultipleExistingBranches(t *testing.T) {
