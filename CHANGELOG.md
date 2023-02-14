@@ -1,3 +1,6 @@
+# 4.3.0
+- Feature: Adds `MOB_START_COMMIT_MESSAGE` config property for changing the commit message on `mob start` empty commit introduced in 4.2.0. This should help overcome problems with pre-receive git hooks.
+
 # 4.2.0
 - Feature: mob.sh now starts a mob session with an empty commit to skip CI when creating a new remote branch for the session. The commit is squashed or dropped when `mob done` except for `--no-squash` option.
 
