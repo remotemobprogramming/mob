@@ -1267,6 +1267,17 @@ func TestStartNextFeatureBranch(t *testing.T) {
 	assertNoMobSessionBranches(t, configuration, "mob-session")
 }
 
+func TestStartDoneFeatureBranchWithDash(t *testing.T) {
+	_, configuration := setup(t)
+	git("checkout", "-b", "feat/load_test_DLC-253")
+	git("push", "origin", "feat/load_test_DLC-253", "--set-upstream")
+	start(configuration)
+	createFile(t, "file1.txt", "contentIrrelevant")
+	done(configuration)
+
+	assertNoMobSessionBranches(t, configuration, "mob/feat/load_test_DLC-253")
+}
+
 func TestGitRootDir(t *testing.T) {
 	setup(t)
 	expectedPath, _ := filepath.EvalSymlinks(tempDir + "/local")
