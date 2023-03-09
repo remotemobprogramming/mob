@@ -1,3 +1,6 @@
+# 4.3.1
+- Fix: `mob done` will now print the command `git merge --squash --ff mob/main` just once and not twice.
+
 # 4.3.0
 - Feature: Adds `MOB_START_COMMIT_MESSAGE` config property for changing the commit message on `mob start` empty commit introduced in 4.2.0. This should help overcome problems with pre-receive git hooks.
 
