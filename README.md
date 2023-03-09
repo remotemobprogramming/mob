@@ -160,6 +160,7 @@ Basic Commands:
   next               handover changes in wip branch to next person
   done               squashes all changes in wip branch to index in base branch
   reset              removes local and remote wip branch
+  clean              removes all orphan wip branches
 
 Basic Commands(Options):
   start [<minutes>]                      Start a <minutes> timer
@@ -176,7 +177,6 @@ Basic Commands(Options):
     [--squash-wip]                       Squash wip commits from wip branch, maintaining manual commits
   reset
     [--branch|-b <branch-postfix>]       Set wip branch to 'mob/<base-branch>/<branch-postfix>'
-  clean                                  Removes all orphan wip branches
 
 Timer Commands:
   timer <minutes>    start a <minutes> timer

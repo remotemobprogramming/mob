@@ -13,6 +13,7 @@ Basic Commands:
   next               Handover changes in wip branch to next person
   done               Squash all changes in wip branch to index in base branch
   reset              Remove local and remote wip branch
+  clean              Removes all orphan wip branches
 
 Basic Commands with Options:
   start [<minutes>]                      Start <minutes> minutes timer
@@ -29,7 +30,6 @@ Basic Commands with Options:
     [--squash-wip]                       Squash wip commits from wip branch, maintaining manual commits
   reset
     [--branch|-b <branch-postfix>]       Set wip branch to 'mob/<base-branch>` + configuration.WipBranchQualifierSeparator + `<branch-postfix>'
-  clean                                  Remove all orphan wip branches
 
 Timer Commands:
   timer <minutes>    Start <minutes> minutes timer
