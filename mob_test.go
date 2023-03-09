@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	config "github.com/remotemobprogramming/mob/v4/configuration"
+	"github.com/remotemobprogramming/mob/v4/open"
 	"github.com/remotemobprogramming/mob/v4/say"
 	"github.com/remotemobprogramming/mob/v4/test"
 	"io/ioutil"
@@ -1670,6 +1671,37 @@ func TestAbortTimerIfMobDone(t *testing.T) {
 	assertNoTimerProcess(t)
 }
 
+func TestOpenTimerInBrowserWithTimerRoom(t *testing.T) {
+	mockOpenInBrowser()
+	output, configuration := setup(t)
+	configuration.TimerRoom = "testroom"
+
+	err := openTimerInBrowser(configuration)
+
+	assertOutputNotContains(t, output, "Timer Room is not configured.")
+	assertNoError(t, err)
+}
+
+func TestOpenTimerInBrowserWithoutTimerRoom(t *testing.T) {
+	mockOpenInBrowser()
+	output, configuration := setup(t)
+
+	err := openTimerInBrowser(configuration)
+
+	assertOutputContains(t, output, "Timer Room is not configured.")
+	assertNoError(t, err)
+}
+
+func TestOpenTimerInBrowserError(t *testing.T) {
+	mockOpenInBrowser()
+	_, configuration := setup(t)
+	configuration.TimerUrl = ""
+
+	err := openTimerInBrowser(configuration)
+
+	assertError(t, err, "Timer url is not configured")
+}
+
 func TestGitVersionParse(t *testing.T) {
 	// Check real examples
 	equals(t, GitVersion{2, 34, 1}, parseGitVersion("git version 2.34.1"))
@@ -1732,6 +1764,13 @@ func captureOutput(t *testing.T) *string {
 		messages += text
 	}
 	return &messages
+}
+
+func mockOpenInBrowser() {
+	open.OpenInBrowser = func(url string) error {
+		fmt.Printf("call to mock OpenInBrowser with url: %s \n", url)
+		return nil
+	}
 }
 
 func createTestbed(t *testing.T, configuration config.Configuration) {
@@ -1800,6 +1839,22 @@ func createTestbedIn(t *testing.T, temporaryDirectory string) {
 func setWorkingDir(dir string) {
 	workingDir = dir
 	say.Say("\n===== cd " + dir)
+}
+
+func assertNoError(t *testing.T, err error) {
+	if err != nil {
+		failWithFailure(t, err, nil)
+	}
+
+}
+
+func assertError(t *testing.T, err error, errorMessage string) {
+	if err == nil {
+		failWithFailure(t, errorMessage, "No Error thrown")
+	}
+	if err.Error() != errorMessage {
+		failWithFailure(t, errorMessage, err.Error())
+	}
 }
 
 func assertCommits(t *testing.T, commits int) {
