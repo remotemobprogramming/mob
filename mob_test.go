@@ -918,6 +918,19 @@ func TestStartDoneWithMobDoneSquash(t *testing.T) {
 	assertNoMobSessionBranches(t, configuration, "mob-session")
 }
 
+func TestStartDoneWithMobDoneBugMergeTwice(t *testing.T) {
+	output, configuration := setup(t)
+
+	start(configuration)
+	assertOnBranch(t, "mob-session")
+
+	done(configuration)
+
+	assertOnBranch(t, "master")
+	assertNoMobSessionBranches(t, configuration, "mob-session")
+	assertOutputNotContains(t, output, "git merge --squash --ff mob-session\n  git merge --squash --ff mob-session\n")
+}
+
 func TestStartDoneSquashWithUnpushedCommit(t *testing.T) {
 	_, configuration := setup(t)
 	configuration.DoneSquash = config.Squash

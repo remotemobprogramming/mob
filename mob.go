@@ -26,7 +26,7 @@ import (
 )
 
 const (
-	versionNumber     = "4.3.0"
+	versionNumber     = "4.3.1"
 	minimumGitVersion = "2.13.0"
 )
 
@@ -1403,8 +1403,6 @@ func gitIgnoreFailure(args ...string) error {
 	} else {
 		commandString, output, err = runCommandSilent("git", args...)
 	}
-
-	say.Indented(commandString)
 
 	if err != nil {
 		if !isGit() {
