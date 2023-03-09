@@ -27,7 +27,7 @@ import (
 )
 
 const (
-	versionNumber     = "4.4.0"
+	versionNumber     = "4.4.1"
 	minimumGitVersion = "2.13.0"
 )
 
@@ -1092,7 +1092,7 @@ func createWipCommitMessage(configuration config.Configuration) string {
 	return commitMessage
 }
 
-// uses git status --short. To work properly files have to be staged.
+// uses git status --porcelain. To work properly files have to be staged.
 func getPathOfLastModifiedFile() string {
 	rootDir := gitRootDir()
 	files := getModifiedFiles(rootDir)
@@ -1125,12 +1125,12 @@ func getPathOfLastModifiedFile() string {
 	return lastModifiedFilePath
 }
 
-// uses git status --short. To work properly files have to be staged.
+// uses git status --porcelain. To work properly files have to be staged.
 func getModifiedFiles(rootDir string) []string {
 	say.Debug("Find modified files")
 	oldWorkingDir := workingDir
 	workingDir = rootDir
-	gitstatus := silentgit("status", "--short")
+	gitstatus := silentgit("status", "--porcelain")
 	workingDir = oldWorkingDir
 	lines := strings.Split(gitstatus, "\n")
 	files := []string{}
@@ -1277,7 +1277,7 @@ func ReverseSlice(s interface{}) {
 }
 
 func isNothingToCommit() bool {
-	output := silentgit("status", "--short")
+	output := silentgit("status", "--porcelain")
 	return len(output) == 0
 }
 
