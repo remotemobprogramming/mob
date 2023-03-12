@@ -11,7 +11,7 @@ jobs:
       GOARCH: amd64
       GOOS: ${{ matrix.os }}
     name: release
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os == 'darwin' && 'macos-latest' || 'ubuntu-latest'}}
     outputs:
       sha_linux: ${{ steps.shasum.outputs.sha_linux }}
     steps:
@@ -24,8 +24,15 @@ jobs:
         run: go test
         env:
           GOOS: linux # the tests will only run if the os matches the os of the system of run-on
-      - name: Build
+      - name: Build ${{matrix.os}} amd64
+        if: ${{ matrix.os != 'darwin' }}
         run: go build -o mob${{ matrix.os == 'windows' && '.exe' || '' }}
+        env:
+          GOOS: ${{ matrix.os }}
+      - name: Build macOS universal
+        if: ${{ matrix.os == 'darwin' }}
+        run: >
+          GOARCH=amd64 go build -o mob_amd64 && GOARCH=arm64 go build -o mob_arm64 && lipo -create -output mob mob_amd64 mob_arm64
         env:
           GOOS: ${{ matrix.os }}
       - name: Create release artifacts using .github/build
@@ -58,7 +65,7 @@ jobs:
           brew tap ${{github.repository_owner}}/homebrew-brew
           brew bump-formula-pr -f --version=${{ github.event.release.tag_name }} --no-browse --no-audit \
           --sha256=${{ steps.shasum.outputs.sha_darwin }} \
-          --url="https://github.com/${{github.repository_owner}}/mob/releases/download/${{ github.event.release.tag_name }}/mob_${{ github.event.release.tag_name }}_darwin_amd64.tar.gz" \
+          --url="https://github.com/${{github.repository_owner}}/mob/releases/download/${{ github.event.release.tag_name }}/mob_${{ github.event.release.tag_name }}_darwin_universal.tar.gz" \
           ${{github.repository_owner}}/homebrew-brew/mob
 
   publish-arch-linux-package:
