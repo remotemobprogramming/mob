@@ -23,7 +23,7 @@ jobs:
       - name: Test
         run: go test
         env:
-          GOOS: linux # the tests will only run if the os matches the os of the system of run-on
+          GOOS: ${{ matrix.os == 'darwin' && 'darwin' || 'linux'}}
       - name: Build ${{matrix.os}} amd64
         if: ${{ matrix.os != 'darwin' }}
         run: go build -o mob${{ matrix.os == 'windows' && '.exe' || '' }}
