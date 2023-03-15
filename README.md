@@ -180,6 +180,7 @@ Basic Commands(Options):
 
 Timer Commands:
   timer <minutes>    start a <minutes> timer
+  timer open         opens the timer website
   start <minutes>    start mob session in wip branch and a <minutes> timer
   break <minutes>    start a <minutes> break timer
 

@@ -315,7 +315,7 @@ func execute(command string, parameter []string, configuration config.Configurat
 		status(configuration)
 	case "t", "timer":
 		if len(parameter) > 0 {
-			if parameter[0] == "--open" || parameter[0] == "-o" {
+			if parameter[0] == "open" || parameter[0] == "o" {
 				if err := openTimerInBrowser(configuration); err != nil {
 					say.Error(fmt.Sprintf("Could not open webtimer: %s", err.Error()))
 				}

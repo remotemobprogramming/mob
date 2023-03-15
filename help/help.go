@@ -33,6 +33,7 @@ Basic Commands with Options:
 
 Timer Commands:
   timer <minutes>    Start <minutes> minutes timer
+  timer open		 Opens the timer website
   start <minutes>    Start mob session in wip branch and a <minutes> timer
   break <minutes>    Start <minutes> break timer
 
