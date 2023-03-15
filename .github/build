@@ -2,7 +2,11 @@
 set -eux
 
 PROJECT_NAME=$(basename $GITHUB_REPOSITORY)
-NAME="${PROJECT_NAME}_${VERSION}_${GOOS}_${GOARCH}"
+ARCH=${GOARCH}
+if [ $GOOS == 'darwin' ]; then
+  ARCH="universal"
+fi
+NAME="${PROJECT_NAME}_${VERSION}_${GOOS}_${ARCH}"
 
 EXT=''
 
