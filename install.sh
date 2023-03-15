@@ -4,6 +4,17 @@ user_arg=$1
 stream_cmd="curl -sL install.mob.sh"
 readme="https://mob.sh"
 
+determine_arch() {
+  case "$(uname -s)" in
+  Darwin)
+    echo "universal"
+    ;;
+  *)
+    echo "amd64"
+    ;;
+  esac
+}
+
 determine_os() {
   case "$(uname -s)" in
   Darwin)
@@ -105,7 +116,7 @@ check_access_rights() {
 install_remote_binary() {
   echo "installing latest 'mob' release from GitHub to $target..."
   url=$(curl -s https://api.github.com/repos/remotemobprogramming/mob/releases/latest |
-    grep "browser_download_url.*mob_.*$(determine_os)_amd64\.$(determine_ending)" |
+    grep "browser_download_url.*mob_.*$(determine_os)_$(determine_arch)\.$(determine_ending)" |
     cut -d ":" -f 2,3 |
     tr -d ' \"')
   curl -sSL "$url" | tar xz -C "$target" "$(determine_mob_binary)" && chmod +x "$target"/mob
