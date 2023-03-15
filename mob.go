@@ -10,6 +10,7 @@ import (
 	"fmt"
 	config "github.com/remotemobprogramming/mob/v4/configuration"
 	"github.com/remotemobprogramming/mob/v4/help"
+	"github.com/remotemobprogramming/mob/v4/open"
 	"github.com/remotemobprogramming/mob/v4/say"
 	"io/ioutil"
 	"net/http"
@@ -26,7 +27,7 @@ import (
 )
 
 const (
-	versionNumber     = "4.3.1"
+	versionNumber     = "4.4.0"
 	minimumGitVersion = "2.13.0"
 )
 
@@ -314,8 +315,14 @@ func execute(command string, parameter []string, configuration config.Configurat
 		status(configuration)
 	case "t", "timer":
 		if len(parameter) > 0 {
-			timer := parameter[0]
-			startTimer(timer, configuration)
+			if parameter[0] == "open" || parameter[0] == "o" {
+				if err := openTimerInBrowser(configuration); err != nil {
+					say.Error(fmt.Sprintf("Could not open webtimer: %s", err.Error()))
+				}
+			} else {
+				timer := parameter[0]
+				startTimer(timer, configuration)
+			}
 		} else if configuration.Timer != "" {
 			startTimer(configuration.Timer, configuration)
 		} else {
@@ -342,6 +349,22 @@ func execute(command string, parameter []string, configuration config.Configurat
 	default:
 		help.Help(configuration)
 	}
+}
+
+func openTimerInBrowser(configuration config.Configuration) error {
+	timerurl := configuration.TimerUrl
+	if timerurl == "" {
+		return fmt.Errorf("Timer url is not configured")
+	}
+	if configuration.TimerRoom != "" {
+		if !strings.HasSuffix(configuration.TimerUrl, "/") {
+			timerurl += "/"
+		}
+		timerurl += configuration.TimerRoom
+	} else {
+		say.Warning("Timer Room is not configured. To open specific room please configure timer room variable.")
+	}
+	return open.OpenInBrowser(timerurl)
 }
 
 func helpRequested(parameter []string) bool {
