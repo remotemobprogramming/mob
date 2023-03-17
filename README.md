@@ -2,8 +2,8 @@
 
 ![mob Logo](logo.svg)
 <p align="center">
-  <a href="https://github.com/remotemobprogramming/mob/actions?query=workflow%3ATest">
-    <img alt="Test Workflow" src="https://img.shields.io/github/workflow/status/remotemobprogramming/mob/Test" /></a>
+  <a href="https://github.com/remotemobprogramming/mob/actions/workflows/ci.yaml?query=branch%3Amain">
+    <img alt="Test Workflow" src="https://img.shields.io/github/actions/workflow/status/remotemobprogramming/mob/ci.yaml?branch=main"></a>
   <a href="https://github.com/remotemobprogramming/mob/graphs/contributors">
     <img alt="Contributors" src="https://img.shields.io/github/contributors/remotemobprogramming/mob" /></a>
   <a href="https://github.com/remotemobprogramming/mob/releases">
