@@ -1,1 +1,3 @@
 MOB_TIMER_ROOM="mob"
+MOB_TIMER_URL="http://localhost:8080/"
+MOB_TIMER_INSECURE=true

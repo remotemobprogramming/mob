@@ -9,6 +9,7 @@ import (
 	"errors"
 	"fmt"
 	config "github.com/remotemobprogramming/mob/v4/configuration"
+	"github.com/remotemobprogramming/mob/v4/goal"
 	"github.com/remotemobprogramming/mob/v4/help"
 	"github.com/remotemobprogramming/mob/v4/open"
 	"github.com/remotemobprogramming/mob/v4/say"
@@ -328,6 +329,8 @@ func execute(command string, parameter []string, configuration config.Configurat
 		} else {
 			help.Help(configuration)
 		}
+	case "g", "goal":
+		goal.Goal(configuration, parameter)
 	case "break":
 		if len(parameter) > 0 {
 			startBreakTimer(parameter[0], configuration)
