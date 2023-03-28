@@ -250,10 +250,12 @@ func main() {
 	if isGit() {
 		projectRootDir = gitRootDir()
 	}
-	if hasNoCommits() {
+
+	if !hasCommits() {
 		say.Error("Git repository does not have any commits yet. Please create an initial commit.")
 		exit(1)
 	}
+
 	configuration := config.ReadConfiguration(projectRootDir)
 	say.Debug("Args '" + strings.Join(os.Args, " ") + "'")
 	currentCliName := currentCliName(os.Args[0])
@@ -276,10 +278,10 @@ func main() {
 	execute(command, parameters, configuration)
 }
 
-func hasNoCommits() bool {
-	_, _, err := runCommandSilent("git", "rev-list", "-n", "1", "HEAD")
-	return err != nil
-
+func hasCommits() bool {
+	commitCount := silentgit("rev-list", "--all", "--count")
+	println(commitCount)
+	return commitCount != "0"
 }
 
 func currentCliName(argZero string) string {
