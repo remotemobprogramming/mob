@@ -280,7 +280,6 @@ func main() {
 
 func hasCommits() bool {
 	commitCount := silentgit("rev-list", "--all", "--count")
-	println(commitCount)
 	return commitCount != "0"
 }
 
