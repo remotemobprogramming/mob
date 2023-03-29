@@ -126,6 +126,24 @@ func TestVersion(t *testing.T) {
 	assertOutputContains(t, output, versionNumber)
 }
 
+func TestHasCommits(t *testing.T) {
+	_, _ = setup(t)
+
+	commits := hasCommits()
+
+	equals(t, true, commits)
+}
+
+func TestHasCommits_NoCommits(t *testing.T) {
+	tempDir = t.TempDir()
+	setWorkingDir(tempDir)
+	git("init")
+
+	commits := hasCommits()
+
+	equals(t, false, commits)
+}
+
 func TestNextNotMobProgramming(t *testing.T) {
 	output, configuration := setup(t)
 
