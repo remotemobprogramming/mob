@@ -1749,7 +1749,7 @@ func TestGitVersionCompare(t *testing.T) {
 }
 
 func gitStatus() GitStatus {
-	shortStatus := silentgit("status", "--short")
+	shortStatus := silentgit("status", "--porcelain")
 	statusLines := strings.Split(shortStatus, "\n")
 	var statusMap = make(GitStatus)
 	for _, line := range statusLines {
@@ -2065,6 +2065,8 @@ func createRemoteRepository(path string) {
 	git("--bare", "init")
 	say.Debug("before symbolic-ref")
 	git("symbolic-ref", "HEAD", "refs/heads/"+branch)
+	// see bug #346 changes the output of git status --short
+	git("config", "--local", "status.branch", "true")
 	say.Debug("finished")
 }
 
@@ -2081,6 +2083,8 @@ func cloneRepository(path, remoteDirectory string) {
 	git("clone", "--origin", "origin", "file://"+remoteDirectory, ".")
 	git("config", "--local", "user.name", name)
 	git("config", "--local", "user.email", name+"@example.com")
+	// see bug #346 changes the output of git status --short
+	git("config", "--local", "status.branch", "true")
 }
 
 func cloneRepositoryWithSymlink(path, gitDirectory, remoteDirectory string) {
