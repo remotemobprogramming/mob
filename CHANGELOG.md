@@ -1,3 +1,6 @@
+# 4.4.1
+- Fix: mob.sh now works correctly if git option `status.branch` is set to `true`
+
 # 4.4.0
 - Feature: `mob timer open` opens the timer website in your default web browser. If you specified `MOB_TIMER_ROOM` it will automatically open the specific timer page.
 - Feature: mob.sh is now built as a mac universal app and therefore supports Apple Silicon natively. 
