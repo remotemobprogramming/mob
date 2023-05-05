@@ -8,6 +8,7 @@ import (
 	"github.com/remotemobprogramming/mob/v4/test"
 	"io/ioutil"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"reflect"
 	"runtime"
@@ -1746,6 +1747,45 @@ func TestGitVersionCompare(t *testing.T) {
 	equals(t, true, (&GitVersion{1, 2, 3}).Less(GitVersion{5, 2, 3}))
 	equals(t, true, (&GitVersion{1, 2, 3}).Less(GitVersion{1, 5, 3}))
 	equals(t, true, (&GitVersion{1, 2, 3}).Less(GitVersion{1, 2, 5}))
+}
+
+func TestMobExecutableVersion(t *testing.T) {
+	workingDir = t.TempDir()
+	assertMobExecutableDoesNotFail(t, workingDir, "version")
+}
+
+func TestMobExecutableHelp(t *testing.T) {
+	workingDir = t.TempDir()
+	assertMobExecutableDoesNotFail(t, workingDir, "help")
+}
+
+func TestMobExecutableMoo(t *testing.T) {
+	workingDir = t.TempDir()
+	assertMobExecutableDoesNotFail(t, workingDir, "moo")
+}
+
+func TestMobExecutableConfig(t *testing.T) {
+	workingDir = t.TempDir()
+	assertMobExecutableDoesNotFail(t, workingDir, "config")
+}
+
+func assertMobExecutableDoesNotFail(t *testing.T, workingDir string, command string) {
+	binName := "mob"
+	dir, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	cmdPath := filepath.Join(dir, binName)
+
+	cmd := exec.Command(cmdPath, command)
+	cmd.Dir = workingDir
+
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		println(string(out))
+		t.Fatal(err)
+	}
 }
 
 func gitStatus() GitStatus {

@@ -250,11 +250,10 @@ func main() {
 	projectRootDir := ""
 	if isGit() {
 		projectRootDir = gitRootDir()
-	}
-
-	if !hasCommits() {
-		say.Error("Git repository does not have any commits yet. Please create an initial commit.")
-		exit(1)
+		if !hasCommits() {
+			say.Error("Git repository does not have any commits yet. Please create an initial commit.")
+			exit(1)
+		}
 	}
 
 	configuration := config.ReadConfiguration(projectRootDir)
