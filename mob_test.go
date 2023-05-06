@@ -8,7 +8,6 @@ import (
 	"github.com/remotemobprogramming/mob/v4/test"
 	"io/ioutil"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"reflect"
 	"runtime"
@@ -1749,43 +1748,47 @@ func TestGitVersionCompare(t *testing.T) {
 	equals(t, true, (&GitVersion{1, 2, 3}).Less(GitVersion{1, 2, 5}))
 }
 
-func TestMobExecutableVersion(t *testing.T) {
-	workingDir = t.TempDir()
-	assertMobExecutableDoesNotFail(t, workingDir, "version")
+func TestMobConfigWorksOutsideOfGitRepository(t *testing.T) {
+	output := runMob(t, t.TempDir(), "config")
+
+	assertOutputNotContains(t, output, "ERROR")
+	assertOutputContains(t, output, "MOB_CLI_NAME=\"mob\"")
 }
 
-func TestMobExecutableHelp(t *testing.T) {
-	workingDir = t.TempDir()
-	assertMobExecutableDoesNotFail(t, workingDir, "help")
+func TestMobHelpWorksOutsideOfGitRepository(t *testing.T) {
+	output := runMob(t, t.TempDir(), "help")
+
+	assertOutputNotContains(t, output, "ERROR")
+	assertOutputContains(t, output, "Basic Commands:")
 }
 
-func TestMobExecutableMoo(t *testing.T) {
-	workingDir = t.TempDir()
-	assertMobExecutableDoesNotFail(t, workingDir, "moo")
+func TestMobShowsHelpIfCommandIsUnknownAndOutsideOfGitRepository(t *testing.T) {
+	output := runMob(t, t.TempDir(), "unknown")
+
+	assertOutputNotContains(t, output, "ERROR")
+	assertOutputContains(t, output, "Basic Commands:")
 }
 
-func TestMobExecutableConfig(t *testing.T) {
-	workingDir = t.TempDir()
-	assertMobExecutableDoesNotFail(t, workingDir, "config")
+func TestMobMooWorksOutsideOfGitRepository(t *testing.T) {
+	output := runMob(t, t.TempDir(), "help")
+
+	assertOutputNotContains(t, output, "ERROR")
+	assertOutputContains(t, output, "moo")
 }
 
-func assertMobExecutableDoesNotFail(t *testing.T, workingDir string, command string) {
-	binName := "mob"
-	dir, err := os.Getwd()
-	if err != nil {
-		t.Fatal(err)
-	}
+func TestMobVersionWorksOutsideOfGitRepository(t *testing.T) {
+	output := runMob(t, t.TempDir(), "version")
 
-	cmdPath := filepath.Join(dir, binName)
+	assertOutputNotContains(t, output, "ERROR")
+	assertOutputContains(t, output, "v"+versionNumber)
+}
 
-	cmd := exec.Command(cmdPath, command)
-	cmd.Dir = workingDir
-
-	out, err := cmd.CombinedOutput()
-	if err != nil {
-		println(string(out))
-		t.Fatal(err)
-	}
+func runMob(t *testing.T, workingDir string, args ...string) *string {
+	setWorkingDir(workingDir)
+	output := captureOutput(t)
+	newArgs := append([]string{"mob"}, args...)
+	run(newArgs)
+	return output
 }
 
 func gitStatus() GitStatus {
