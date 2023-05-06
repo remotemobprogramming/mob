@@ -1720,6 +1720,30 @@ func TestOpenTimerInBrowserError(t *testing.T) {
 	assertError(t, err, "Timer url is not configured")
 }
 
+func TestMobClean(t *testing.T) {
+	_, configuration := setup(t)
+
+	setWorkingDir(tempDir + "/alice")
+	start(configuration)
+	createFile(t, "file1.txt", "abc")
+	next(configuration)
+
+	setWorkingDir(tempDir + "/bob")
+	start(configuration)
+	createFile(t, "file2.txt", "def")
+	next(configuration)
+
+	setWorkingDir(tempDir + "/alice")
+	start(configuration)
+	createFile(t, "file3.txt", "ghi")
+	done(configuration)
+
+	setWorkingDir(tempDir + "/bob")
+	clean(configuration)
+
+	assertNoMobSessionBranches(t, configuration, "mob-session")
+}
+
 func TestGitVersionParse(t *testing.T) {
 	// Check real examples
 	equals(t, GitVersion{2, 34, 1}, parseGitVersion("git version 2.34.1"))
