@@ -1772,6 +1772,49 @@ func TestGitVersionCompare(t *testing.T) {
 	equals(t, true, (&GitVersion{1, 2, 3}).Less(GitVersion{1, 2, 5}))
 }
 
+func TestMobConfigWorksOutsideOfGitRepository(t *testing.T) {
+	output := runMob(t, t.TempDir(), "config")
+
+	assertOutputNotContains(t, output, "ERROR")
+	assertOutputContains(t, output, "MOB_CLI_NAME=\"mob\"")
+}
+
+func TestMobHelpWorksOutsideOfGitRepository(t *testing.T) {
+	output := runMob(t, t.TempDir(), "help")
+
+	assertOutputNotContains(t, output, "ERROR")
+	assertOutputContains(t, output, "Basic Commands:")
+}
+
+func TestMobShowsHelpIfCommandIsUnknownAndOutsideOfGitRepository(t *testing.T) {
+	output := runMob(t, t.TempDir(), "unknown")
+
+	assertOutputNotContains(t, output, "ERROR")
+	assertOutputContains(t, output, "Basic Commands:")
+}
+
+func TestMobMooWorksOutsideOfGitRepository(t *testing.T) {
+	output := runMob(t, t.TempDir(), "help")
+
+	assertOutputNotContains(t, output, "ERROR")
+	assertOutputContains(t, output, "moo")
+}
+
+func TestMobVersionWorksOutsideOfGitRepository(t *testing.T) {
+	output := runMob(t, t.TempDir(), "version")
+
+	assertOutputNotContains(t, output, "ERROR")
+	assertOutputContains(t, output, "v"+versionNumber)
+}
+
+func runMob(t *testing.T, workingDir string, args ...string) *string {
+	setWorkingDir(workingDir)
+	output := captureOutput(t)
+	newArgs := append([]string{"mob"}, args...)
+	run(newArgs)
+	return output
+}
+
 func gitStatus() GitStatus {
 	shortStatus := silentgit("status", "--porcelain")
 	statusLines := strings.Split(shortStatus, "\n")

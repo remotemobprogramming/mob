@@ -230,7 +230,11 @@ func stringContains(list []string, element string) bool {
 }
 
 func main() {
-	say.TurnOnDebuggingByArgs(os.Args)
+	run(os.Args)
+}
+
+func run(args []string) {
+	say.TurnOnDebuggingByArgs(args)
 	say.Debug(runtime.Version())
 
 	versionString := gitVersion()
@@ -250,22 +254,21 @@ func main() {
 	projectRootDir := ""
 	if isGit() {
 		projectRootDir = gitRootDir()
-	}
-
-	if !hasCommits() {
-		say.Error("Git repository does not have any commits yet. Please create an initial commit.")
-		exit(1)
+		if !hasCommits() {
+			say.Error("Git repository does not have any commits yet. Please create an initial commit.")
+			exit(1)
+		}
 	}
 
 	configuration := config.ReadConfiguration(projectRootDir)
-	say.Debug("Args '" + strings.Join(os.Args, " ") + "'")
-	currentCliName := currentCliName(os.Args[0])
+	say.Debug("Args '" + strings.Join(args, " ") + "'")
+	currentCliName := currentCliName(args[0])
 	if currentCliName != configuration.CliName {
 		say.Debug("Updating cli name to " + currentCliName)
 		configuration.CliName = currentCliName
 	}
 
-	command, parameters, configuration := config.ParseArgs(os.Args, configuration)
+	command, parameters, configuration := config.ParseArgs(args, configuration)
 	say.Debug("command '" + command + "'")
 	say.Debug("parameters '" + strings.Join(parameters, " ") + "'")
 	say.Debug("version " + versionNumber)
