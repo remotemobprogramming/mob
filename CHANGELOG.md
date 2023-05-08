@@ -1,3 +1,9 @@
+# 4.4.2
+- Fix: `mob config`, `mob help`, `mob moo` and `mob version` are now working outside of git repositories again
+- Fix: `mob clean` now works correctly
+
+Thanks to @danilo-bc and @jrdodds for reporting these bugs!
+
 # 4.4.1
 - Fix: mob.sh now works correctly if git option `status.branch` is set to `true`
 
