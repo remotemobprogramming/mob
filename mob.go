@@ -389,7 +389,7 @@ func helpRequested(parameter []string) bool {
 }
 
 func clean(configuration config.Configuration) {
-	git("fetch", configuration.RemoteName)
+	git("fetch", configuration.RemoteName, "--prune")
 
 	currentBranch := gitCurrentBranch()
 	localBranches := gitBranches()
