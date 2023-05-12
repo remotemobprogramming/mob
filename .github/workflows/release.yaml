@@ -56,7 +56,7 @@ jobs:
         if: matrix.os == 'darwin' || matrix.os == 'linux'
         id: shasum
         run: |
-          echo ::set-output name=sha_${{matrix.os}}::"$(shasum -a 256 *.tar.gz | awk '{printf $1}')"
+          echo "sha=\"$(shasum -a 256 *.tar.gz | awk '{printf $1}')\"" >> $GITHUB_OUTPUT
       - name: Set up Homebrew
         if: matrix.os == 'darwin'
         id: set-up-homebrew
