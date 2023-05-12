@@ -1,0 +1,33 @@
+name: virustotal
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      -
+        name: Checkout
+        uses: actions/checkout@v3
+      -
+        name: Set up Go
+        uses: actions/setup-go@v3
+        with:
+          go-version: '~1.16.0'
+      -
+        name: Build
+        run: |
+          GOOS=windows GOARCH=amd64 go build -o ./mob-virustotal-windows.exe -v -ldflags "-s -w"
+          GOOS=linux GOARCH=amd64 go build -o ./mob-virustotal-linux -v -ldflags "-s -w"
+          GOOS=darwin GOARCH=amd64 go build -o ./mob-virustotal-macos-amd -v -ldflags "-s -w"
+          GOOS=darwin GOARCH=arm64 go build -o ./mob-virustotal-macos-arm -v -ldflags "-s -w"
+      -
+        name: VirusTotal Scan
+        uses: crazy-max/ghaction-virustotal@v3
+        with:
+          vt_api_key: ${{ secrets.VT_API_KEY }}
+          files: |
+            ./mob-virustotal-windows.exe
+            ./mob-virustotal-linux
+            ./mob-virustotal-macos-amd
+            ./mob-virustotal-macos-arm
