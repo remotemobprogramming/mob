@@ -35,6 +35,12 @@ jobs:
           GOARCH=amd64 go build -o mob_amd64 && GOARCH=arm64 go build -o mob_arm64 && lipo -create -output mob mob_amd64 mob_arm64
         env:
           GOOS: ${{ matrix.os }}
+      - name: VirusTotal Scan
+        uses: crazy-max/ghaction-virustotal@v3
+        with:
+          vt_api_key: ${{ secrets.VT_API_KEY }}
+          update_release_body: true
+          files: ./mob${{ matrix.os == 'windows' && '.exe' || '' }}
       - name: Create release artifacts using .github/build
         run: .github/build
         env:
