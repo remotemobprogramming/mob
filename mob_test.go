@@ -1396,6 +1396,54 @@ func TestStartNextPushManualCommits(t *testing.T) {
 	assertFileExist(t, "example.txt")
 }
 
+func TestStartBranchWithUncommitedChangesFixWithBranch(t *testing.T) {
+	output, _ := setup(t)
+
+	setWorkingDir(tempDir + "/local")
+
+	createFile(t, "uncommited.txt", "contentIrrelevant")
+	runMob(t, tempDir+"/local", "start", "-b", "green")
+
+	assertOutputContains(t, output, "mob start --branch green --include-uncommitted-changes")
+}
+
+func TestStartBranchEnvWithUncommitedChangesFixWithoutBranch(t *testing.T) {
+	output, _ := setup(t)
+
+	setWorkingDir(tempDir + "/local")
+	os.Setenv("MOB_WIP_BRANCH_QUALIFIER", "red")
+	createFile(t, "uncommited.txt", "contentIrrelevant")
+	runMob(t, tempDir+"/local", "start")
+
+	os.Unsetenv("MOB_WIP_BRANCH_QUALIFIER")
+	assertOutputContains(t, output, "mob start --include-uncommitted-changes")
+}
+
+func TestStartCreateBranchWithUncommitedChangesFixWithBranch(t *testing.T) {
+	output, _ := setup(t)
+
+	setWorkingDir(tempDir + "/local")
+
+	git("checkout", "-b", "unpushedBranch")
+	createFile(t, "uncommited.txt", "contentIrrelevant")
+	runMob(t, tempDir+"/local", "start", "--create", "-b", "green")
+
+	assertOutputContains(t, output, "mob start --create --branch green --include-uncommitted-changes")
+}
+
+func TestStartCreateBranchEnvWithUncommitedChangesFixWithoutBranch(t *testing.T) {
+	output, _ := setup(t)
+
+	setWorkingDir(tempDir + "/local")
+	os.Setenv("MOB_WIP_BRANCH_QUALIFIER", "red")
+	git("checkout", "-b", "unpushedBranch")
+	createFile(t, "uncommited.txt", "contentIrrelevant")
+	runMob(t, tempDir+"/local", "start", "--create")
+
+	os.Unsetenv("MOB_WIP_BRANCH_QUALIFIER")
+	assertOutputContains(t, output, "mob start --create --include-uncommitted-changes")
+}
+
 func TestStartNextPushManualCommitsFeatureBranch(t *testing.T) {
 	_, configuration := setup(t)
 
@@ -1773,46 +1821,49 @@ func TestGitVersionCompare(t *testing.T) {
 }
 
 func TestMobConfigWorksOutsideOfGitRepository(t *testing.T) {
-	output := runMob(t, t.TempDir(), "config")
+	output := captureOutput(t)
+	runMob(t, t.TempDir(), "config")
 
 	assertOutputNotContains(t, output, "ERROR")
 	assertOutputContains(t, output, "MOB_CLI_NAME=\"mob\"")
 }
 
 func TestMobHelpWorksOutsideOfGitRepository(t *testing.T) {
-	output := runMob(t, t.TempDir(), "help")
+	output := captureOutput(t)
+	runMob(t, t.TempDir(), "help")
 
 	assertOutputNotContains(t, output, "ERROR")
 	assertOutputContains(t, output, "Basic Commands:")
 }
 
 func TestMobShowsHelpIfCommandIsUnknownAndOutsideOfGitRepository(t *testing.T) {
-	output := runMob(t, t.TempDir(), "unknown")
+	output := captureOutput(t)
+	runMob(t, t.TempDir(), "unknown")
 
 	assertOutputNotContains(t, output, "ERROR")
 	assertOutputContains(t, output, "Basic Commands:")
 }
 
 func TestMobMooWorksOutsideOfGitRepository(t *testing.T) {
-	output := runMob(t, t.TempDir(), "help")
+	output := captureOutput(t)
+	runMob(t, t.TempDir(), "help")
 
 	assertOutputNotContains(t, output, "ERROR")
 	assertOutputContains(t, output, "moo")
 }
 
 func TestMobVersionWorksOutsideOfGitRepository(t *testing.T) {
-	output := runMob(t, t.TempDir(), "version")
+	output := captureOutput(t)
+	runMob(t, t.TempDir(), "version")
 
 	assertOutputNotContains(t, output, "ERROR")
 	assertOutputContains(t, output, "v"+versionNumber)
 }
 
-func runMob(t *testing.T, workingDir string, args ...string) *string {
+func runMob(t *testing.T, workingDir string, args ...string) {
 	setWorkingDir(workingDir)
-	output := captureOutput(t)
 	newArgs := append([]string{"mob"}, args...)
 	run(newArgs)
-	return output
 }
 
 func gitStatus() GitStatus {
@@ -1832,13 +1883,13 @@ func gitStatus() GitStatus {
 func setup(t *testing.T) (output *string, configuration config.Configuration) {
 	configuration = config.GetDefaultConfiguration()
 	configuration.NextStay = false
-	output = captureOutput(t)
 	createTestbed(t, configuration)
 	assertOnBranch(t, "master")
 	equals(t, []string{"master"}, gitBranches())
 	equals(t, []string{"origin/master"}, gitRemoteBranches())
 	assertNoMobSessionBranches(t, configuration, "mob-session")
 	abortRunningTimers()
+	output = captureOutput(t)
 	return output, configuration
 }
 
