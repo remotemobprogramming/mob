@@ -41,7 +41,11 @@ func openCommandFor(c config.Configuration, filepath string) (string, []string) 
 	if !c.IsOpenCommandGiven() {
 		return "", []string{}
 	}
-	split := strings.Split(injectCommandWithMessage(c.OpenCommand, filepath), " ")
+	filepathWithoutSpaces := strings.ReplaceAll(filepath, " ", "&spc&")
+	split := strings.Split(injectCommandWithMessage(c.OpenCommand, filepathWithoutSpaces), " ")
+	for i := 0; i < len(split); i++ {
+		split[i] = strings.ReplaceAll(split[i], "&spc&", " ")
+	}
 	return split[0], split[1:]
 }
 
@@ -938,6 +942,9 @@ func openLastModifiedFileIfPresent(configuration config.Configuration) {
 		return
 	}
 	lastModifiedFile := split[1]
+	if strings.Contains(lastModifiedFile, "\"") {
+		lastModifiedFile, _ = strconv.Unquote(lastModifiedFile)
+	}
 	if lastModifiedFile == "" {
 		say.Debug("Could not find last modified file in commit message")
 		return
