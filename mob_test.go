@@ -894,6 +894,27 @@ func TestStartNextStay_OpenLastModifiedFile(t *testing.T) {
 	})
 }
 
+func TestStartNextStay_OpenLastModifiedFile_WhenLastModifiedFilePathContainsSpaces(t *testing.T) {
+	_, configuration := setup(t)
+	configuration.NextStay = true
+	if runtime.GOOS == "windows" {
+		configuration.OpenCommand = "cmd.exe /C type nul > %s-1"
+	} else {
+		configuration.OpenCommand = "touch %s-1"
+	}
+
+	start(configuration)
+	createFile(t, "file with spaces.txt", "contentIrrelevant")
+	assertOnBranch(t, "mob-session")
+	next(configuration)
+
+	start(configuration)
+
+	assertGitStatus(t, GitStatus{
+		"file with spaces.txt-1": "??",
+	})
+}
+
 func TestRunOutput(t *testing.T) {
 	_, configuration := setup(t)
 
@@ -1893,7 +1914,7 @@ func gitStatus() GitStatus {
 			continue
 		}
 		file := strings.Fields(line)
-		statusMap[file[1]] = file[0]
+		statusMap[strings.Join(file[1:], " ")] = file[0]
 	}
 	return statusMap
 }
