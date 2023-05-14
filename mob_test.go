@@ -1913,8 +1913,12 @@ func gitStatus() GitStatus {
 		if len(line) == 0 {
 			continue
 		}
-		file := strings.Fields(line)
-		statusMap[strings.Join(file[1:], " ")] = file[0]
+		fields := strings.Fields(line)
+		file := strings.Join(fields[1:], " ")
+		if strings.HasPrefix(file, "\"") {
+			file, _ = strconv.Unquote(file)
+		}
+		statusMap[file] = fields[0]
 	}
 	return statusMap
 }

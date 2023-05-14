@@ -942,7 +942,7 @@ func openLastModifiedFileIfPresent(configuration config.Configuration) {
 		return
 	}
 	lastModifiedFile := split[1]
-	if strings.Contains(lastModifiedFile, "\"") {
+	if strings.HasPrefix(lastModifiedFile, "\"") {
 		lastModifiedFile, _ = strconv.Unquote(lastModifiedFile)
 	}
 	if lastModifiedFile == "" {
