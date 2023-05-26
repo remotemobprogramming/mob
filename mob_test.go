@@ -1411,11 +1411,10 @@ func TestStartBranchEnvWithUncommitedChangesFixWithoutBranch(t *testing.T) {
 	output, _ := setup(t)
 
 	setWorkingDir(tempDir + "/local")
-	os.Setenv("MOB_WIP_BRANCH_QUALIFIER", "red")
+	t.Setenv("MOB_WIP_BRANCH_QUALIFIER", "red")
 	createFile(t, "uncommited.txt", "contentIrrelevant")
 	runMob(t, tempDir+"/local", "start")
 
-	os.Unsetenv("MOB_WIP_BRANCH_QUALIFIER")
 	assertOutputContains(t, output, "mob start --include-uncommitted-changes")
 }
 
