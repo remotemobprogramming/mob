@@ -27,7 +27,7 @@ import (
 )
 
 const (
-	versionNumber     = "4.4.2"
+	versionNumber     = "4.4.3"
 	minimumGitVersion = "2.13.0"
 )
 

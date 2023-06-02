@@ -1,3 +1,8 @@
+# 4.4.3
+- Fix: mob.sh now specifies the remote ref when pushing to allow for custom `git config push.default` settings such as `tracking`
+
+Thanks to @jstoneham for fixing the bug!
+
 # 4.4.2
 - Fix: `mob config`, `mob help`, `mob moo` and `mob version` are now working outside of git repositories again
 - Fix: `mob clean` now works correctly
