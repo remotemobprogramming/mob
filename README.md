@@ -89,6 +89,15 @@ On [Nix](http://nixos.org) through declarative installation
 }
 ```
 
+On NetBSD, macOS, SmartOS, Linux, FreeBSD, OpenBSD, and more, via [pkgsrc](https://pkgsrc.org):
+```bash
+# if there's a binary package for your platform
+pkgin install mob
+
+# otherwise, for any platform
+cd pkgsrc/devel/mob && bmake install clean
+```
+
 On Ubuntu there's an EXPERIMENTAL [snap](https://snapcraft.io/mob-sh) package with a known limitation (ssh-agent not working):
 
 ```bash
