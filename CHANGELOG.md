@@ -1,7 +1,8 @@
 # 4.4.3
 - Fix: mob.sh now specifies the remote ref when pushing to allow for custom `git config push.default` settings such as `tracking`
+- Fix: Improves the suggested command when you have uncommitted changes on an attempt to open a custom wip branch using `mob start -b green`
 
-Thanks to @jstoneham for fixing the bug!
+Thanks to @jstoneham for fixing the bug with using a custom `push.default` setting!
 
 # 4.4.2
 - Fix: `mob config`, `mob help`, `mob moo` and `mob version` are now working outside of git repositories again
