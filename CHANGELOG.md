@@ -1,6 +1,7 @@
 # 4.4.3
 - Fix: mob.sh now specifies the remote ref when pushing to allow for custom `git config push.default` settings such as `tracking`
 - Fix: Improves the suggested command when you have uncommitted changes on an attempt to open a custom wip branch using `mob start -b green`
+- mob.sh now uses the go version 1.20.x
 
 Thanks to @jstoneham for fixing the bug with using a custom `push.default` setting!
 
