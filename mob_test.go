@@ -387,6 +387,16 @@ func TestStartNextWithBranchContainingHyphen(t *testing.T) {
 	next(configuration)
 }
 
+func TestStartWithPushDefaultTracking(t *testing.T) {
+	_, configuration := setup(t)
+	createFileAndCommitIt(t, "example.txt", "asdf", "asdf")
+	git("push", "origin", "master")
+	git("config", "push.default", "tracking")
+
+	start(configuration)
+	assertMobSessionBranches(t, configuration, "mob-session")
+}
+
 func TestReset(t *testing.T) {
 	output, configuration := setup(t)
 
