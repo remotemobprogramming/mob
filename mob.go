@@ -33,6 +33,7 @@ const (
 
 var (
 	workingDir                 = ""
+	args                       []string
 	GitPassthroughStderrStdout = false // hack to get git hooks to print to stdout/stderr
 )
 
@@ -233,7 +234,8 @@ func main() {
 	run(os.Args)
 }
 
-func run(args []string) {
+func run(osArgs []string) {
+	args = osArgs
 	say.TurnOnDebuggingByArgs(args)
 	say.Debug(runtime.Version())
 
@@ -818,11 +820,7 @@ func start(configuration config.Configuration) error {
 		say.Info("cannot start; clean working tree required")
 		sayUnstagedChangesInfo()
 		sayUntrackedFilesInfo()
-		if configuration.StartCreate {
-			say.Fix("To start, including uncommitted changes and create the remote branch, use", configuration.Mob("start --create --include-uncommitted-changes"))
-		} else {
-			say.Fix("To start, including uncommitted changes, use", configuration.Mob("start --include-uncommitted-changes"))
-		}
+		sayFixUncommitedChanges(configuration)
 		return errors.New("cannot start; clean working tree required")
 	}
 
@@ -878,6 +876,36 @@ func start(configuration config.Configuration) error {
 	openLastModifiedFileIfPresent(configuration)
 
 	return nil // no error
+}
+
+func sayFixUncommitedChanges(configuration config.Configuration) {
+	fixCommand := configuration.CliName + " start"
+	instruction := "To start, including uncommitted changes, use"
+	if configuration.StartCreate {
+		instruction = "To start, including uncommitted changes and create the remote branch, use"
+		fixCommand += " --create"
+	}
+	if containsAny(args, "-b", "--branch") && configuration.WipBranchQualifier != "" {
+		fixCommand += " --branch " + configuration.WipBranchQualifier
+	}
+	fixCommand += " --include-uncommitted-changes"
+
+	say.Fix(instruction, fixCommand)
+}
+
+func branchParameter(configuration config.Configuration) bool {
+	return containsAny(args, "-b", "--branch") && configuration.WipBranchQualifier != ""
+}
+
+func containsAny(list []string, elements ...string) bool {
+	for _, value := range list {
+		for _, element := range elements {
+			if value == element {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 func createRemoteBranch(configuration config.Configuration, currentBaseBranch Branch) {
