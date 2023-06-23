@@ -1,3 +1,6 @@
+# 4.4.5
+- Fix: version
+
 # 4.4.4
 - Fix: missing SHA in Arch PKGBUILD
 - Fix: missing glibc on older linux version
