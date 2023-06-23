@@ -10,6 +10,7 @@ jobs:
     env:
       GOARCH: amd64
       GOOS: ${{ matrix.os }}
+      CGO_ENABLED: 0
     name: release
     runs-on: ${{ matrix.os == 'darwin' && 'macos-latest' || 'ubuntu-latest'}}
     outputs:
