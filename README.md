@@ -414,11 +414,22 @@ For your name to show up in the room at timer.mob.sh you must set a timer value 
 Mob can simply be uninstalled by removing the installed binary (at least if it was installed via the http://install.mob.sh script). 
 
 ### Linux
-    rm /usr/local/bin/mob
+
+```bash
+rm /usr/local/bin/mob
+```
+
 ### Windows (Git Bash)
-    rm ~/bin/mob.exe
+
+```bash
+rm ~/bin/mob.exe
+```
+
 ### MacOS
-    brew uninstall remotemobprogramming/brew/mob
+
+```bash
+brew uninstall remotemobprogramming/brew/mob
+```
 
 ## How to contribute
 
