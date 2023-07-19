@@ -6,7 +6,6 @@ import (
 	"github.com/remotemobprogramming/mob/v4/open"
 	"github.com/remotemobprogramming/mob/v4/say"
 	"github.com/remotemobprogramming/mob/v4/test"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -2044,7 +2043,7 @@ func createFile(t *testing.T, filename string, content string) (pathToFile strin
 func createFileInPath(t *testing.T, path, filename, content string) (pathToFile string) {
 	contentAsBytes := []byte(content)
 	pathToFile = path + "/" + filename
-	err := ioutil.WriteFile(pathToFile, contentAsBytes, 0644)
+	err := os.WriteFile(pathToFile, contentAsBytes, 0644)
 	if err != nil {
 		failWithFailure(t, "creating file "+filename+" with content "+content, "error")
 	}
