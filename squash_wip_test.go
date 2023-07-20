@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	config "github.com/remotemobprogramming/mob/v4/configuration"
-	"io/ioutil"
 	"os"
 	"strings"
 	"testing"
@@ -405,7 +404,7 @@ new file
 
 	squashWipGitEditor(input, config.GetDefaultConfiguration())
 
-	result, _ := ioutil.ReadFile(input)
+	result, _ := os.ReadFile(input)
 	equals(t, expected, string(result))
 }
 
@@ -431,7 +430,7 @@ squash c51a56d manual commit
 
 	squashWipGitSequenceEditor(input, config.GetDefaultConfiguration())
 
-	result, _ := ioutil.ReadFile(input)
+	result, _ := os.ReadFile(input)
 	equals(t, expected, string(result))
 }
 

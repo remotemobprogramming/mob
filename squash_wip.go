@@ -4,7 +4,6 @@ import (
 	config "github.com/remotemobprogramming/mob/v4/configuration"
 	"github.com/remotemobprogramming/mob/v4/say"
 	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -104,7 +103,7 @@ func squashWipGitSequenceEditor(fileName string, configuration config.Configurat
 
 func replaceFileContents(fileName string, replacer Replacer) {
 	file, _ := os.OpenFile(fileName, os.O_RDWR, 0666)
-	input, err := ioutil.ReadAll(file)
+	input, err := io.ReadAll(file)
 	if err != nil {
 		panic(err)
 	}

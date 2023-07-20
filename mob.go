@@ -12,7 +12,7 @@ import (
 	"github.com/remotemobprogramming/mob/v4/help"
 	"github.com/remotemobprogramming/mob/v4/open"
 	"github.com/remotemobprogramming/mob/v4/say"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/url"
 	"os"
@@ -764,7 +764,7 @@ func sendRequest(requestBody []byte, requestMethod string, requestUrl string, di
 		return fmt.Errorf("failed to make the http request: %w", responseErr)
 	}
 	defer response.Body.Close()
-	body, responseReadingErr := ioutil.ReadAll(response.Body)
+	body, responseReadingErr := io.ReadAll(response.Body)
 	if responseReadingErr != nil {
 		return fmt.Errorf("failed to read the http response: %w", responseReadingErr)
 	}

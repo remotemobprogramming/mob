@@ -3,7 +3,7 @@ package test
 import (
 	"fmt"
 	"github.com/remotemobprogramming/mob/v4/say"
-	"io/ioutil"
+	"os"
 	"path/filepath"
 	"reflect"
 	"runtime"
@@ -44,7 +44,7 @@ func failWithFailureMessage(t *testing.T, message string) {
 func CreateFile(t *testing.T, filename string, content string) (pathToFile string) {
 	contentAsBytes := []byte(content)
 	pathToFile = workingDir + "/" + filename
-	err := ioutil.WriteFile(pathToFile, contentAsBytes, 0644)
+	err := os.WriteFile(pathToFile, contentAsBytes, 0644)
 	if err != nil {
 		failWithFailure(t, "creating file "+filename+" with content "+content, "error")
 	}
