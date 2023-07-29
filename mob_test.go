@@ -237,6 +237,16 @@ func TestStart(t *testing.T) {
 	assertMobSessionBranches(t, configuration, "mob-session")
 }
 
+func TestStartDespiteGitHook(t *testing.T) {
+	_, configuration := setup(t)
+	createExecutableFileInPath(t, workingDir+"/.git/hooks", "pre-commit", "#!/bin/sh\necho 'boo'\nexit 1\n")
+
+	start(configuration)
+
+	assertOnBranch(t, "mob-session")
+	assertMobSessionBranches(t, configuration, "mob-session")
+}
+
 func TestStartWithCISkip(t *testing.T) {
 	_, configuration := setup(t)
 
@@ -2044,6 +2054,16 @@ func createFileInPath(t *testing.T, path, filename, content string) (pathToFile 
 	contentAsBytes := []byte(content)
 	pathToFile = path + "/" + filename
 	err := os.WriteFile(pathToFile, contentAsBytes, 0644)
+	if err != nil {
+		failWithFailure(t, "creating file "+filename+" with content "+content, "error")
+	}
+	return
+}
+
+func createExecutableFileInPath(t *testing.T, path, filename, content string) (pathToFile string) {
+	contentAsBytes := []byte(content)
+	pathToFile = path + "/" + filename
+	err := os.WriteFile(pathToFile, contentAsBytes, 0755)
 	if err != nil {
 		failWithFailure(t, "creating file "+filename+" with content "+content, "error")
 	}
