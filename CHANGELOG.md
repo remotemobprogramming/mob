@@ -1,3 +1,14 @@
+# 4.4.6
+
+- Fix: Able to open last modified file with space in path
+- Fix: `start` ignores git hooks
+- Removes deprecated io/ioutil
+- Improves uninstallation instructions
+
+Thanks to @dkbnz for improving the uninstallation instructions
+Thank you @testwill for removing the deprecated ioutil
+Thank you @kriber82 for allowing filenames with spaces
+
 # 4.4.5
 - Fix: version
 
