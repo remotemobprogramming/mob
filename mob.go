@@ -833,7 +833,7 @@ func start(configuration config.Configuration) error {
 
 	if !currentBaseBranch.hasRemoteBranch(configuration) && !configuration.StartCreate {
 		say.Error("Remote branch " + currentBaseBranch.remote(configuration).String() + " is missing")
-		say.Fix("To start and and create the remote branch", "mob start --create")
+		say.Fix("To start and create the remote branch", "mob start --create")
 		return errors.New("remote branch is missing")
 	}
 
