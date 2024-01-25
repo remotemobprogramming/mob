@@ -5,7 +5,6 @@ import (
 	config "github.com/remotemobprogramming/mob/v4/configuration"
 	"github.com/remotemobprogramming/mob/v4/open"
 	"github.com/remotemobprogramming/mob/v4/say"
-	"github.com/remotemobprogramming/mob/v4/test"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -1724,58 +1723,6 @@ func TestHelpRequested(t *testing.T) {
 	equals(t, true, helpRequested([]string{"s", "10", "-h"}))
 }
 
-func TestAbortTimerIfNewTimerIsStarted(t *testing.T) {
-	_, configuration := setup(t)
-	startTimer("10", configuration)
-	assertSingleTimerProcess(t)
-
-	startTimer("10", configuration)
-
-	assertSingleTimerProcess(t)
-	abortRunningTimers()
-}
-
-func assertSingleTimerProcess(t *testing.T) {
-	test.Await(t, func() bool { return 1 == len(findMobTimerProcessIds()) }, "exactly 1 mob timer process found")
-}
-
-func assertNoTimerProcess(t *testing.T) {
-	test.Await(t, func() bool { return 0 == len(findMobTimerProcessIds()) }, "no mob timer process found")
-}
-
-func TestAbortBreakTimerIfNewBreakTimerIsStarted(t *testing.T) {
-	_, configuration := setup(t)
-	startBreakTimer("10", configuration)
-	assertSingleTimerProcess(t)
-
-	startBreakTimer("10", configuration)
-
-	assertSingleTimerProcess(t)
-	abortRunningTimers()
-}
-
-func TestAbortTimerIfMobNext(t *testing.T) {
-	_, configuration := setup(t)
-	start(configuration)
-	startTimer("10", configuration)
-	assertSingleTimerProcess(t)
-
-	next(configuration)
-
-	assertNoTimerProcess(t)
-}
-
-func TestAbortTimerIfMobDone(t *testing.T) {
-	_, configuration := setup(t)
-	start(configuration)
-	startTimer("10", configuration)
-	assertSingleTimerProcess(t)
-
-	done(configuration)
-
-	assertNoTimerProcess(t)
-}
-
 func TestOpenTimerInBrowserWithTimerRoom(t *testing.T) {
 	mockOpenInBrowser()
 	output, configuration := setup(t)
@@ -1931,7 +1878,6 @@ func setup(t *testing.T) (output *string, configuration config.Configuration) {
 	equals(t, []string{"master"}, gitBranches())
 	equals(t, []string{"origin/master"}, gitRemoteBranches())
 	assertNoMobSessionBranches(t, configuration, "mob-session")
-	abortRunningTimers()
 	output = captureOutput(t)
 	return output, configuration
 }
