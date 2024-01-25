@@ -1,3 +1,6 @@
+# 4.4.7
+- Removes feature which cancels running timers as this can lead to longer rotations if the codebase is switched. The way it was implemented is also not ideal for virus detection.
+
 # 4.4.6
 
 - Fix: Able to open last modified file with space in path
