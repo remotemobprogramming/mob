@@ -1,4 +1,4 @@
-# 4.4.7
+# 4.5.6
 - Removes feature which cancels running timers as this can lead to longer rotations if the codebase is switched. The way it was implemented is also not ideal for virus detection.
 
 # 4.4.6
