@@ -1,5 +1,9 @@
 # 4.5.0
 - Removes feature which cancels running timers as this can lead to longer rotations if the codebase is switched. The way it was implemented is also not ideal for virus detection.
+- Correct typo in the hint for creating a remote branch 
+
+Thank you @clemlatz for finding and fixing the typo
+Thank you @stefanscheidt for updating the readme on the build and install from source instructions
 
 # 4.4.6
 
