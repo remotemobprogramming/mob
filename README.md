@@ -320,7 +320,7 @@ Just set the configuration option `MOB_TIMER_ROOM_USE_WIP_BRANCH_QUALIFIER=true`
 When you are rotating the typist, you often need to open the file, which the previous typist has modified last.
 Mob supports you and can automate this step. You just need the configuration option `MOB_OPEN_COMMAND` with the command to open a file in your preferred IDE. 
 
-For example if you want use IntelliJ the configuration option would look like this: `MOB_OPEN_COMMAND=idea %s`
+For example if you want use IntelliJ the configuration option would look like this: `MOB_OPEN_COMMAND="idea %s"`
 
 ## More on Installation
 
