@@ -26,5 +26,7 @@ func showActiveMobSessions(configuration config.Configuration, currentBaseBranch
 			time := silentgit("log", "-1", "--pretty=format:(%ar)", wipBranch)
 			say.WithPrefix(wipBranch+" "+time, "  - ")
 		}
+	} else {
+		say.Info("no remote wip branches detected!")
 	}
 }
