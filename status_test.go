@@ -41,7 +41,7 @@ func TestStatusWithMoreThan5LinesOfLog(t *testing.T) {
 func TestStatusDetectsWipBranches(t *testing.T) {
 	output, configuration := setup(t)
 	start(configuration)
-	git("switch", "master")
+	git("checkout", "master")
 
 	status(configuration)
 
