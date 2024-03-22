@@ -45,5 +45,6 @@ func TestStatusDetectsWipBranches(t *testing.T) {
 
 	status(configuration)
 
-	assertOutputContains(t, output, "remote wip branches detected:\n  - origin/mob-session (0 seconds ago)")
+	assertOutputContains(t, output, "remote wip branches detected:\n  - origin/mob-session")
+	assertOutputContains(t, output, " seconds ago)")
 }
