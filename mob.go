@@ -27,7 +27,7 @@ import (
 )
 
 const (
-	versionNumber     = "4.5.0"
+	versionNumber     = "4.5.1"
 	minimumGitVersion = "2.13.0"
 )
 
@@ -887,16 +887,6 @@ func warnForActiveWipBranches(configuration config.Configuration, currentBaseBra
 	}
 }
 
-func showActiveMobSessions(configuration config.Configuration, currentBaseBranch Branch) {
-	existingWipBranches := getWipBranchesForBaseBranch(currentBaseBranch, configuration)
-	if len(existingWipBranches) > 0 {
-		say.Info("remote wip branches detected:")
-		for _, wipBranch := range existingWipBranches {
-			say.WithPrefix(wipBranch, "  - ")
-		}
-	}
-}
-
 func sayUntrackedFilesInfo() {
 	untrackedFiles := getUntrackedFiles()
 	hasUntrackedFiles := len(untrackedFiles) > 0
@@ -1187,19 +1177,6 @@ func squashOrCommit(configuration config.Configuration) string {
 		return "--squash"
 	} else {
 		return "--commit"
-	}
-}
-
-func status(configuration config.Configuration) {
-	if isMobProgramming(configuration) {
-		currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), gitBranches(), configuration)
-		say.Info("you are on wip branch " + currentWipBranch.String() + " (base branch " + currentBaseBranch.String() + ")")
-
-		sayLastCommitsList(currentBaseBranch.String(), currentWipBranch.String())
-	} else {
-		currentBaseBranch, _ := determineBranches(gitCurrentBranch(), gitBranches(), configuration)
-		say.Info("you are on base branch '" + currentBaseBranch.String() + "'")
-		showActiveMobSessions(configuration, currentBaseBranch)
 	}
 }
 
