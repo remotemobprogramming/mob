@@ -20,6 +20,7 @@ Basic Commands with Options:
     [--include-uncommitted-changes|-i]   Move uncommitted changes to wip branch
     [--branch|-b <branch-postfix>]       Set wip branch to 'mob/<base-branch>` + configuration.WipBranchQualifierSeparator + `<branch-postfix>'
     [--create]                           Create the remote branch
+    [--room <room-name>]                 Set room name for timer.mob.sh once
   next
     [--stay|-s]                          Stay on wip branch (default)
     [--return-to-base-branch|-r]         Return to base branch
@@ -32,10 +33,12 @@ Basic Commands with Options:
     [--branch|-b <branch-postfix>]       Set wip branch to 'mob/<base-branch>` + configuration.WipBranchQualifierSeparator + `<branch-postfix>'
 
 Timer Commands:
-  timer <minutes>    Start <minutes> minutes timer
-  timer open		 Opens the timer website
-  start <minutes>    Start mob session in wip branch and a <minutes> timer
-  break <minutes>    Start <minutes> break timer
+  timer <minutes>           Start a <minutes> timer
+    [--room <room-name>]    Set room name for timer.mob.sh once
+  timer open                Opens the timer website
+    [--room <room-name>]    Set room name for timer.mob.sh once
+  start <minutes>           Start mob session in wip branch and a <minutes> timer
+  break <minutes>           Start a <minutes> break timer
 
 Short Commands (Options and descriptions as above):
   s                  Alias for 'start'

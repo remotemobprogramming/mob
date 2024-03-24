@@ -144,6 +144,12 @@ func ParseArgs(args []string, configuration Configuration) (command string, para
 			newConfiguration.StartCreate = true
 		case "--delete-remote-wip-branch":
 			newConfiguration.ResetDeleteRemoteWipBranch = true
+		case "--room":
+			if i+1 != len(args) {
+				newConfiguration.TimerRoom = args[i+1]
+			}
+			i++ // skip consumed parameter
+
 		default:
 			if i == 1 {
 				command = arg

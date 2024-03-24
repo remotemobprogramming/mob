@@ -72,6 +72,39 @@ func TestParseArgsMessage(t *testing.T) {
 	test.Equals(t, "ci-skip", configuration.WipCommitMessage)
 }
 
+func TestParseArgsStartRoom(t *testing.T) {
+	configuration := GetDefaultConfiguration()
+	test.Equals(t, configuration.WipBranchQualifier, "")
+
+	command, parameters, configuration := ParseArgs([]string{"mob", "start", "--room", "testroom"}, configuration)
+
+	test.Equals(t, "start", command)
+	test.Equals(t, "", strings.Join(parameters, ""))
+	test.Equals(t, "testroom", configuration.TimerRoom)
+}
+
+func TestParseArgsTimerRoom(t *testing.T) {
+	configuration := GetDefaultConfiguration()
+	test.Equals(t, configuration.WipBranchQualifier, "")
+
+	command, parameters, configuration := ParseArgs([]string{"mob", "timer", "10", "--room", "testroom"}, configuration)
+
+	test.Equals(t, "timer", command)
+	test.Equals(t, "10", strings.Join(parameters, ""))
+	test.Equals(t, "testroom", configuration.TimerRoom)
+}
+
+func TestParseArgsTimerOpenRoom(t *testing.T) {
+	configuration := GetDefaultConfiguration()
+	test.Equals(t, configuration.WipBranchQualifier, "")
+
+	command, parameters, configuration := ParseArgs([]string{"mob", "timer", "open", "--room", "testroom"}, configuration)
+
+	test.Equals(t, "timer", command)
+	test.Equals(t, "open", strings.Join(parameters, ""))
+	test.Equals(t, "testroom", configuration.TimerRoom)
+}
+
 func TestMobRemoteNameEnvironmentVariable(t *testing.T) {
 	configuration := setEnvVarAndParse("MOB_REMOTE_NAME", "GITHUB")
 	test.Equals(t, "GITHUB", configuration.RemoteName)
