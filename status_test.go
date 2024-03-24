@@ -4,6 +4,7 @@ import (
 	config "github.com/remotemobprogramming/mob/v4/configuration"
 	"strconv"
 	"testing"
+	"time"
 )
 
 func TestExecuteKicksOffStatus(t *testing.T) {
@@ -41,7 +42,10 @@ func TestStatusWithMoreThan5LinesOfLog(t *testing.T) {
 func TestStatusDetectsWipBranches(t *testing.T) {
 	output, configuration := setup(t)
 	start(configuration)
+	createFile(t, "test.txt", "contentIrrelevant")
+	next(configuration)
 	git("checkout", "master")
+	time.Sleep(2 * time.Second)
 
 	status(configuration)
 
