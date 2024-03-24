@@ -1,3 +1,6 @@
+# 4.5.1
+- Feature: Added cli option `--room` to set the room name of timer.mob.sh once
+
 # 4.5.0
 - Removes feature which cancels running timers as this can lead to longer rotations if the codebase is switched. The way it was implemented is also not ideal for virus detection.
 - Correct typo in the hint for creating a remote branch 
