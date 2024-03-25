@@ -304,9 +304,9 @@ func execute(command string, parameter []string, configuration config.Configurat
 		}
 		if len(parameter) > 0 {
 			timer := parameter[0]
-			startTimer(timer, configuration)
+			StartTimer(timer, configuration)
 		} else if configuration.Timer != "" {
-			startTimer(configuration.Timer, configuration)
+			StartTimer(configuration.Timer, configuration)
 		} else {
 			say.Info("It's now " + currentTime() + ". Happy collaborating! :)")
 		}
@@ -334,16 +334,16 @@ func execute(command string, parameter []string, configuration config.Configurat
 				}
 			} else {
 				timer := parameter[0]
-				startTimer(timer, configuration)
+				StartTimer(timer, configuration)
 			}
 		} else if configuration.Timer != "" {
-			startTimer(configuration.Timer, configuration)
+			StartTimer(configuration.Timer, configuration)
 		} else {
 			help.Help(configuration)
 		}
 	case "break":
 		if len(parameter) > 0 {
-			startBreakTimer(parameter[0], configuration)
+			StartBreakTimer(parameter[0], configuration)
 		} else {
 			help.Help(configuration)
 		}
