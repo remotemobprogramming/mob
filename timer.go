@@ -5,6 +5,7 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/json"
+	"errors"
 	"fmt"
 	config "github.com/remotemobprogramming/mob/v4/configuration"
 	"github.com/remotemobprogramming/mob/v4/say"
@@ -16,8 +17,17 @@ import (
 	"time"
 )
 
-func startTimer(timerInMinutes string, configuration config.Configuration) {
-	timeoutInMinutes := toMinutes(timerInMinutes)
+func StartTimer(timerInMinutes string, configuration config.Configuration) {
+	if err := startTimer(configuration.Timer, configuration); err != nil {
+		exit(1)
+	}
+}
+
+func startTimer(timerInMinutes string, configuration config.Configuration) error {
+	err, timeoutInMinutes := toMinutes(timerInMinutes)
+	if err != nil {
+		return err
+	}
 
 	timeoutInSeconds := timeoutInMinutes * 60
 	timeOfTimeout := time.Now().Add(time.Minute * time.Duration(timeoutInMinutes)).Format("15:04")
@@ -53,6 +63,7 @@ func startTimer(timerInMinutes string, configuration config.Configuration) {
 	}
 
 	say.Info("It's now " + currentTime() + ". " + fmt.Sprintf("%d min timer ends at approx. %s", timeoutInMinutes, timeOfTimeout) + ". Happy collaborating! :)")
+	return nil
 }
 
 func getMobTimerRoom(configuration config.Configuration) string {
@@ -80,8 +91,17 @@ func getMobTimerRoom(configuration config.Configuration) string {
 	return configuration.TimerRoom
 }
 
-func startBreakTimer(timerInMinutes string, configuration config.Configuration) {
-	timeoutInMinutes := toMinutes(timerInMinutes)
+func StartBreakTimer(timerInMinutes string, configuration config.Configuration) {
+	if err := startBreakTimer(configuration.Timer, configuration); err != nil {
+		exit(1)
+	}
+}
+
+func startBreakTimer(timerInMinutes string, configuration config.Configuration) error {
+	err, timeoutInMinutes := toMinutes(timerInMinutes)
+	if err != nil {
+		return err
+	}
 
 	timeoutInSeconds := timeoutInMinutes * 60
 	timeOfTimeout := time.Now().Add(time.Minute * time.Duration(timeoutInMinutes)).Format("15:04")
@@ -117,7 +137,8 @@ func startBreakTimer(timerInMinutes string, configuration config.Configuration) 
 		}
 	}
 
-	say.Info("It's now " + currentTime() + ". " + fmt.Sprintf("%d min break timer ends at approx. %s", timeoutInMinutes, timeOfTimeout) + ". Happy collaborating! :)")
+	say.Info("It's now " + currentTime() + ". " + fmt.Sprintf("%d min break timer ends at approx. %s", timeoutInMinutes, timeOfTimeout) + ". So take a break now! :)")
+	return nil
 }
 
 func getUserForMobTimer(userOverride string) string {
@@ -127,12 +148,13 @@ func getUserForMobTimer(userOverride string) string {
 	return userOverride
 }
 
-func toMinutes(timerInMinutes string) int {
-	timeoutInMinutes, _ := strconv.Atoi(timerInMinutes)
-	if timeoutInMinutes < 0 {
-		timeoutInMinutes = 0
+func toMinutes(timerInMinutes string) (error, int) {
+	timeoutInMinutes, err := strconv.Atoi(timerInMinutes)
+	if err != nil || timeoutInMinutes < 1 {
+		say.Error(fmt.Sprintf("The parameter must be an integer number greater then zero"))
+		return errors.New("The parameter must be an integer number greater then zero"), 0
 	}
-	return timeoutInMinutes
+	return nil, timeoutInMinutes
 }
 
 func httpPutTimer(timeoutInMinutes int, room string, user string, timerService string, disableSSLVerification bool) error {
