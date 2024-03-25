@@ -198,3 +198,21 @@ func sendRequest(requestBody []byte, requestMethod string, requestUrl string, di
 	}
 	return nil
 }
+
+func getSleepCommand(timeoutInSeconds int) string {
+	return fmt.Sprintf("sleep %d", timeoutInSeconds)
+}
+
+func getVoiceCommand(message string, voiceCommand string) string {
+	if len(voiceCommand) == 0 {
+		return ""
+	}
+	return injectCommandWithMessage(voiceCommand, message)
+}
+
+func getNotifyCommand(message string, notifyCommand string) string {
+	if len(notifyCommand) == 0 {
+		return ""
+	}
+	return injectCommandWithMessage(notifyCommand, message)
+}
