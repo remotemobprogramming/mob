@@ -451,10 +451,6 @@ func determineBranches(currentBranch Branch, localBranches []string, configurati
 	return
 }
 
-func getSleepCommand(timeoutInSeconds int) string {
-	return fmt.Sprintf("sleep %d", timeoutInSeconds)
-}
-
 func injectCommandWithMessage(command string, message string) string {
 	placeHolders := strings.Count(command, "%s")
 	if placeHolders > 1 {
@@ -465,20 +461,6 @@ func injectCommandWithMessage(command string, message string) string {
 		return fmt.Sprintf("%s %s", command, message)
 	}
 	return fmt.Sprintf(command, message)
-}
-
-func getVoiceCommand(message string, voiceCommand string) string {
-	if len(voiceCommand) == 0 {
-		return ""
-	}
-	return injectCommandWithMessage(voiceCommand, message)
-}
-
-func getNotifyCommand(message string, notifyCommand string) string {
-	if len(notifyCommand) == 0 {
-		return ""
-	}
-	return injectCommandWithMessage(notifyCommand, message)
 }
 
 func executeCommandsInBackgroundProcess(commands ...string) (err error) {
