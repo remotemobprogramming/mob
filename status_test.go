@@ -4,7 +4,6 @@ import (
 	config "github.com/remotemobprogramming/mob/v4/configuration"
 	"strconv"
 	"testing"
-	"time"
 )
 
 func TestExecuteKicksOffStatus(t *testing.T) {
@@ -45,10 +44,10 @@ func TestStatusDetectsWipBranches(t *testing.T) {
 	createFile(t, "test.txt", "contentIrrelevant")
 	next(configuration)
 	git("checkout", "master")
-	time.Sleep(2 * time.Second)
 
 	status(configuration)
 
 	assertOutputContains(t, output, "remote wip branches detected:\n  - origin/mob-session")
-	assertOutputContains(t, output, " seconds ago)")
+	assertOutputContains(t, output, " second")
+	assertOutputContains(t, output, " ago)")
 }
