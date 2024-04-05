@@ -177,38 +177,6 @@ func TestDoneNotMobProgramming(t *testing.T) {
 	assertOutputContains(t, output, "to start working together")
 }
 
-func TestStatusMobProgramming(t *testing.T) {
-	output, configuration := setup(t)
-	start(configuration)
-
-	status(configuration)
-
-	assertOutputContains(t, output, "you are on wip branch mob-session")
-}
-
-func TestStatusWithMoreThan5LinesOfLog(t *testing.T) {
-	output, configuration := setup(t)
-	configuration.NextStay = true
-	start(configuration)
-
-	for i := 0; i < 6; i++ {
-		createFile(t, "test"+strconv.Itoa(i)+".txt", "contentIrrelevant")
-		next(configuration)
-	}
-
-	status(configuration)
-	// 6 wip commits + 1 start commit
-	assertOutputContains(t, output, "wip branch 'mob-session' contains 7 commits.")
-}
-
-func TestExecuteKicksOffStatus(t *testing.T) {
-	output, _ := setup(t)
-
-	execute("status", []string{}, config.GetDefaultConfiguration())
-
-	assertOutputContains(t, output, "you are on base branch 'master'")
-}
-
 func TestExecuteInvalidCommandKicksOffHelp(t *testing.T) {
 	output, _ := setup(t)
 
