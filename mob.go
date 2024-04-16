@@ -300,7 +300,7 @@ func execute(command string, parameter []string, configuration config.Configurat
 	case "s", "start":
 		err := start(configuration)
 		if !isMobProgramming(configuration) || err != nil {
-			return
+			exit(1)
 		}
 		if len(parameter) > 0 {
 			timer := parameter[0]
