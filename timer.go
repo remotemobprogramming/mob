@@ -19,7 +19,7 @@ import (
 
 func StartTimer(timerInMinutes string, configuration config.Configuration) {
 	if err := startTimer(configuration.Timer, configuration); err != nil {
-		exit(1)
+		Exit(1)
 	}
 }
 
@@ -39,7 +39,7 @@ func startTimer(timerInMinutes string, configuration config.Configuration) error
 
 	if !startRemoteTimer && !startLocalTimer {
 		say.Error("No timer configured, not starting timer")
-		exit(1)
+		Exit(1)
 	}
 
 	if startRemoteTimer {
@@ -48,7 +48,7 @@ func startTimer(timerInMinutes string, configuration config.Configuration) error
 		if err != nil {
 			say.Error("remote timer couldn't be started")
 			say.Error(err.Error())
-			exit(1)
+			Exit(1)
 		}
 	}
 
@@ -58,7 +58,7 @@ func startTimer(timerInMinutes string, configuration config.Configuration) error
 		if err != nil {
 			say.Error(fmt.Sprintf("timer couldn't be started on your system (%s)", runtime.GOOS))
 			say.Error(err.Error())
-			exit(1)
+			Exit(1)
 		}
 	}
 
@@ -93,7 +93,7 @@ func getMobTimerRoom(configuration config.Configuration) string {
 
 func StartBreakTimer(timerInMinutes string, configuration config.Configuration) {
 	if err := startBreakTimer(configuration.Timer, configuration); err != nil {
-		exit(1)
+		Exit(1)
 	}
 }
 
@@ -113,7 +113,7 @@ func startBreakTimer(timerInMinutes string, configuration config.Configuration) 
 
 	if !startRemoteTimer && !startLocalTimer {
 		say.Error("No break timer configured, not starting break timer")
-		exit(1)
+		Exit(1)
 	}
 
 	if startRemoteTimer {
@@ -123,7 +123,7 @@ func startBreakTimer(timerInMinutes string, configuration config.Configuration) 
 		if err != nil {
 			say.Error("remote break timer couldn't be started")
 			say.Error(err.Error())
-			exit(1)
+			Exit(1)
 		}
 	}
 
@@ -133,7 +133,7 @@ func startBreakTimer(timerInMinutes string, configuration config.Configuration) 
 		if err != nil {
 			say.Error(fmt.Sprintf("break timer couldn't be started on your system (%s)", runtime.GOOS))
 			say.Error(err.Error())
-			exit(1)
+			Exit(1)
 		}
 	}
 

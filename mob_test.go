@@ -16,7 +16,8 @@ import (
 )
 
 var (
-	tempDir string
+	tempDir              string
+	originalExitFunction func(int)
 )
 
 type GitStatus = map[string]string
@@ -1488,6 +1489,7 @@ func TestStartNextPushManualCommits(t *testing.T) {
 
 func TestStartBranchWithUncommitedChangesFixWithBranch(t *testing.T) {
 	output, _ := setup(t)
+	mockExit()
 
 	setWorkingDir(tempDir + "/local")
 
@@ -1495,10 +1497,12 @@ func TestStartBranchWithUncommitedChangesFixWithBranch(t *testing.T) {
 	runMob(t, tempDir+"/local", "start", "-b", "green")
 
 	assertOutputContains(t, output, "mob start --branch green --include-uncommitted-changes")
+	resetExit()
 }
 
 func TestStartBranchEnvWithUncommitedChangesFixWithoutBranch(t *testing.T) {
 	output, _ := setup(t)
+	mockExit()
 
 	setWorkingDir(tempDir + "/local")
 	t.Setenv("MOB_WIP_BRANCH_QUALIFIER", "red")
@@ -1506,10 +1510,12 @@ func TestStartBranchEnvWithUncommitedChangesFixWithoutBranch(t *testing.T) {
 	runMob(t, tempDir+"/local", "start")
 
 	assertOutputContains(t, output, "mob start --include-uncommitted-changes")
+	resetExit()
 }
 
 func TestStartCreateBranchWithUncommitedChangesFixWithBranch(t *testing.T) {
 	output, _ := setup(t)
+	mockExit()
 
 	setWorkingDir(tempDir + "/local")
 
@@ -1518,10 +1524,12 @@ func TestStartCreateBranchWithUncommitedChangesFixWithBranch(t *testing.T) {
 	runMob(t, tempDir+"/local", "start", "--create", "-b", "green")
 
 	assertOutputContains(t, output, "mob start --create --branch green --include-uncommitted-changes")
+	resetExit()
 }
 
 func TestStartCreateBranchEnvWithUncommitedChangesFixWithoutBranch(t *testing.T) {
 	output, _ := setup(t)
+	mockExit()
 
 	setWorkingDir(tempDir + "/local")
 	os.Setenv("MOB_WIP_BRANCH_QUALIFIER", "red")
@@ -1531,6 +1539,7 @@ func TestStartCreateBranchEnvWithUncommitedChangesFixWithoutBranch(t *testing.T)
 
 	os.Unsetenv("MOB_WIP_BRANCH_QUALIFIER")
 	assertOutputContains(t, output, "mob start --create --include-uncommitted-changes")
+	resetExit()
 }
 
 func TestStartNextPushManualCommitsFeatureBranch(t *testing.T) {
@@ -1916,6 +1925,23 @@ func mockOpenInBrowser() {
 		fmt.Printf("call to mock OpenInBrowser with url: %s \n", url)
 		return nil
 	}
+}
+
+func mockExit() {
+	originalExitFunction = Exit
+	Exit = func(code int) {
+		defer func() {
+			if r := recover(); r != nil {
+				fmt.Printf("exit(%d)\n", code)
+			}
+		}()
+
+		panic(code)
+	}
+}
+
+func resetExit() {
+	Exit = originalExitFunction
 }
 
 func createTestbed(t *testing.T, configuration config.Configuration) {

@@ -240,14 +240,14 @@ func run(osArgs []string) {
 	if versionString == "" {
 		say.Error("'git' command was not found in PATH. It may be not installed. " +
 			"To learn how to install 'git' refer to https://git-scm.com/book/en/v2/Getting-Started-Installing-Git.")
-		exit(1)
+		Exit(1)
 	}
 
 	currentVersion := parseGitVersion(versionString)
 	if currentVersion.Less(parseGitVersion(minimumGitVersion)) {
 		say.Error(fmt.Sprintf("'git' command version '%s' is lower than the required minimum version (%s). "+
 			"Please update your 'git' installation!", versionString, minimumGitVersion))
-		exit(1)
+		Exit(1)
 	}
 
 	projectRootDir := ""
@@ -255,7 +255,7 @@ func run(osArgs []string) {
 		projectRootDir = gitRootDir()
 		if !hasCommits() {
 			say.Error("Git repository does not have any commits yet. Please create an initial commit.")
-			exit(1)
+			Exit(1)
 		}
 	}
 
@@ -300,7 +300,7 @@ func execute(command string, parameter []string, configuration config.Configurat
 	case "s", "start":
 		err := start(configuration)
 		if !isMobProgramming(configuration) || err != nil {
-			exit(1)
+			Exit(1)
 		}
 		if len(parameter) > 0 {
 			timer := parameter[0]
@@ -455,7 +455,7 @@ func injectCommandWithMessage(command string, message string) string {
 	placeHolders := strings.Count(command, "%s")
 	if placeHolders > 1 {
 		say.Error(fmt.Sprintf("Too many placeholders (%d) in format command string: %s", placeHolders, command))
-		exit(1)
+		Exit(1)
 	}
 	if placeHolders == 0 {
 		return fmt.Sprintf("%s %s", command, message)
@@ -1108,7 +1108,7 @@ func silentgit(args ...string) string {
 			say.Error(output)
 			say.Error(err.Error())
 		}
-		exit(1)
+		Exit(1)
 	}
 	return strings.TrimSpace(output)
 }
@@ -1153,7 +1153,7 @@ func git(args ...string) {
 			say.Error(output)
 			say.Error(err.Error())
 		}
-		exit(1)
+		Exit(1)
 	} else {
 		say.Indented(commandString)
 	}
@@ -1170,7 +1170,7 @@ func gitIgnoreFailure(args ...string) error {
 	if err != nil {
 		if !isGit() {
 			say.Error("expecting the current working directory to be a git repository.")
-			exit(1)
+			Exit(1)
 		} else {
 			say.Warning(commandString)
 			say.Warning(output)
@@ -1269,6 +1269,6 @@ func startCommand(name string, args ...string) (string, error) {
 	return commandString, err
 }
 
-var exit = func(code int) {
+var Exit = func(code int) {
 	os.Exit(code)
 }
