@@ -221,7 +221,7 @@ func TestStartWithCISkip(t *testing.T) {
 
 	assertOnBranch(t, "mob-session")
 	assertMobSessionBranches(t, configuration, "mob-session")
-	assertCommitLogContainsMessage(t, "mob-session", configuration.StartCommitMessage)
+	assertCommitLogNotContainsMessage(t, "mob-session", configuration.StartCommitMessage)
 }
 
 func TestStartWithMultipleExistingBranches(t *testing.T) {
@@ -944,6 +944,99 @@ func TestStartDoneWithMobDoneSquash(t *testing.T) {
 	assertNoMobSessionBranches(t, configuration, "mob-session")
 }
 
+func TestStartDoneWithMobDoneSquashWithOldEmptyMobStartCommit(t *testing.T) {
+	_, configuration := setup(t)
+	configuration.DoneSquash = config.Squash
+
+	start(configuration)
+	assertOnBranch(t, "mob-session")
+	assertCommitsOnBranch(t, 1, "mob-session")
+
+	git("commit", gitHooksOption(configuration), "--allow-empty", "-m", configuration.StartCommitMessage)
+	git("push")
+	assertCommitsOnBranch(t, 2, "mob-session")
+
+	createFile(t, "test1.txt", "contentIrrelevant")
+	next(configuration)
+	assertCommitsOnBranch(t, 3, "mob-session")
+
+	start(configuration)
+	createFile(t, "test2.txt", "contentIrrelevant")
+
+	done(configuration)
+
+	assertOnBranch(t, "master")
+	assertGitStatus(t, GitStatus{
+		"test1.txt": "A",
+		"test2.txt": "A",
+	})
+	assertCommitsOnBranch(t, 1, "master")
+	assertNoMobSessionBranches(t, configuration, "mob-session")
+}
+
+func TestStartDoneWithMobDoneNoSquashWithOldEmptyMobStartCommit(t *testing.T) {
+	_, configuration := setup(t)
+	configuration.DoneSquash = config.NoSquash
+
+	start(configuration)
+	assertOnBranch(t, "mob-session")
+	assertCommitsOnBranch(t, 1, "mob-session")
+
+	git("commit", gitHooksOption(configuration), "--allow-empty", "-m", configuration.StartCommitMessage)
+	git("push")
+	assertCommitsOnBranch(t, 2, "mob-session")
+
+	createFile(t, "test1.txt", "contentIrrelevant")
+	next(configuration)
+	assertCommitsOnBranch(t, 3, "mob-session")
+
+	start(configuration)
+	createFile(t, "test2.txt", "contentIrrelevant")
+
+	done(configuration)
+
+	assertOnBranch(t, "master")
+	assertGitStatus(t, GitStatus{
+		"test2.txt": "A",
+	})
+	assertCommitsOnBranch(t, 3, "master")
+	assertNoMobSessionBranches(t, configuration, "mob-session")
+}
+
+func TestStartDoneWithMobDoneSquashWipWithOldEmptyMobStartCommit(t *testing.T) {
+	_, configuration := setup(t)
+	configuration.DoneSquash = config.SquashWip
+
+	start(configuration)
+	assertOnBranch(t, "mob-session")
+	assertCommitsOnBranch(t, 1, "mob-session")
+
+	git("commit", gitHooksOption(configuration), "--allow-empty", "-m", configuration.StartCommitMessage)
+	git("push")
+	assertCommitsOnBranch(t, 2, "mob-session")
+
+	manualCommit(t, configuration, "test1.txt", "test1")
+	assertCommitsOnBranch(t, 3, "mob-session")
+
+	start(configuration)
+	createFile(t, "test2.txt", "contentIrrelevant")
+	next(configuration)
+	assertCommitsOnBranch(t, 4, "mob-session")
+
+	start(configuration)
+	createFile(t, "test3.txt", "contentIrrelevant")
+
+	done(configuration)
+
+	assertOnBranch(t, "master")
+	assertGitStatus(t, GitStatus{
+		"test2.txt": "A",
+		"test3.txt": "A",
+	})
+	assertCommitsOnBranch(t, 2, "master")
+	assertNoMobSessionBranches(t, configuration, "mob-session")
+}
+
 func TestStartDoneWithMobDoneBugMergeTwice(t *testing.T) {
 	output, configuration := setup(t)
 
@@ -1020,17 +1113,14 @@ func TestStartDonePublishingOneManualCommit(t *testing.T) {
 
 	start(configuration)
 	assertOnBranch(t, "mob-session")
-	// should be 2 commits on mob-session so far
-	// 1 commit from setup() and 1 commit from ci-skip commit when mob start
-
 	createFileAndCommitIt(t, "example.txt", "contentIrrelevant", "[manual-commit-1] publish this commit to master")
-	assertCommits(t, 3)
+	assertCommits(t, 2)
 
 	done(configuration) // without squash (configuration)
 
 	assertOnBranch(t, "master")
 	assertCleanGitStatus(t)
-	assertCommitsOnBranch(t, 3, "master")
+	assertCommitsOnBranch(t, 2, "master")
 	assertCommitLogContainsMessage(t, "master", "[manual-commit-1] publish this commit to master")
 	assertCommitsOnBranch(t, 1, "origin/master")
 	assertNoMobSessionBranches(t, configuration, "mob-session")
@@ -1042,11 +1132,8 @@ func TestStartDoneSquashTheOneManualCommit(t *testing.T) {
 
 	start(configuration)
 	assertOnBranch(t, "mob-session")
-	// should be 2 commits on mob-session so far
-	// 1 commit from setup() and 1 commit from ci-skip commit when mob start
-
 	createFileAndCommitIt(t, "example.txt", "contentIrrelevant", "[manual-commit-1] publish this commit to master")
-	assertCommits(t, 3)
+	assertCommits(t, 2)
 
 	done(configuration)
 
@@ -1081,8 +1168,6 @@ func TestStartDoneNoSquashWithUncommittedChanges(t *testing.T) {
 	configuration.DoneSquash = config.NoSquash
 
 	start(configuration)
-	// should be 2 commits on mob-session so far
-	// 1 commit from setup() and 1 commit from ci-skip commit when mob start
 	createFile(t, "example.txt", "content")
 
 	done(configuration) // without squash (configuration)
@@ -1091,7 +1176,7 @@ func TestStartDoneNoSquashWithUncommittedChanges(t *testing.T) {
 	assertGitStatus(t, GitStatus{
 		"example.txt": "A",
 	})
-	assertCommitsOnBranch(t, 2, "master")
+	assertCommitsOnBranch(t, 1, "master")
 	assertCommitsOnBranch(t, 1, "origin/master")
 	assertNoMobSessionBranches(t, configuration, "mob-session")
 }
@@ -1120,7 +1205,7 @@ func TestStartDoneSquashWipPublishingOneManualCommit(t *testing.T) {
 func TestStartDoneSquashWipWithUncommittedChanges(t *testing.T) {
 	_, configuration := setup(t)
 
-	start(configuration) // should be 1 commit on mob-session so far
+	start(configuration)
 	createFile(t, "example.txt", "contentIrrelevant")
 
 	configuration.DoneSquash = config.SquashWip
@@ -1366,13 +1451,11 @@ func TestNothingToCommitCreatesNoCommits(t *testing.T) {
 
 	setWorkingDir(tempDir + "/local")
 	start(configuration)
-	// should be 2 commits on mob-session so far
-	// 1 commit from setup() and 1 commit from ci-skip commit when mob start
-	assertCommits(t, 2)
+	assertCommits(t, 1)
 
 	setWorkingDir(tempDir + "/localother")
 	start(configuration)
-	assertCommits(t, 2)
+	assertCommits(t, 1)
 
 	setWorkingDir(tempDir + "/local")
 	next(configuration)
@@ -1382,11 +1465,11 @@ func TestNothingToCommitCreatesNoCommits(t *testing.T) {
 
 	setWorkingDir(tempDir + "/local")
 	start(configuration)
-	assertCommits(t, 2)
+	assertCommits(t, 1)
 
 	setWorkingDir(tempDir + "/localother")
 	start(configuration)
-	assertCommits(t, 2)
+	assertCommits(t, 1)
 }
 
 func TestStartNextPushManualCommits(t *testing.T) {
@@ -1574,7 +1657,7 @@ func TestDoneSquashWipStartCommit(t *testing.T) {
 	start(configuration)
 	createFile(t, "file1.txt", "contentIrrelevant")
 	next(configuration)
-	assertCommitsOnBranch(t, 3, "mob-session")
+	assertCommitsOnBranch(t, 2, "mob-session")
 	done(configuration)
 	assertCommitsOnBranch(t, 1, "master")
 }
@@ -1587,9 +1670,9 @@ func TestDoneNoSquashStartCommit(t *testing.T) {
 	start(configuration)
 	createFile(t, "file1.txt", "contentIrrelevant")
 	next(configuration)
-	assertCommitsOnBranch(t, 3, "mob-session")
+	assertCommitsOnBranch(t, 2, "mob-session")
 	done(configuration)
-	assertCommitsOnBranch(t, 3, "master")
+	assertCommitsOnBranch(t, 2, "master")
 }
 
 func TestStartAndNextInSubdir(t *testing.T) {
@@ -1935,6 +2018,13 @@ func assertCommitLogContainsMessage(t *testing.T, branchName string, commitMessa
 	logMessages := silentgit("log", branchName, "--oneline")
 	if !strings.Contains(logMessages, commitMessage) {
 		failWithFailure(t, "git log contains '"+commitMessage+"'", logMessages)
+	}
+}
+
+func assertCommitLogNotContainsMessage(t *testing.T, branchName string, commitMessage string) {
+	logMessages := silentgit("log", branchName, "--oneline")
+	if strings.Contains(logMessages, commitMessage) {
+		failWithFailure(t, "git log does not contain '"+commitMessage+"'", logMessages)
 	}
 }
 

@@ -157,7 +157,6 @@ func TestSquashWipCommits_acceptanceWithDroppingStartCommit(t *testing.T) {
 		"second manual commit",
 		"first manual commit",
 		configuration.WipCommitMessage,
-		configuration.StartCommitMessage,
 	}, commitsOnCurrentBranch(configuration))
 
 	squashWip(configuration)
@@ -186,7 +185,6 @@ func TestCommitsOnCurrentBranch(t *testing.T) {
 	equals(t, []string{
 		configuration.WipCommitMessage,
 		"on branch",
-		configuration.StartCommitMessage,
 	}, commits)
 }
 

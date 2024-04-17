@@ -34,8 +34,7 @@ func TestStatusWithMoreThan5LinesOfLog(t *testing.T) {
 	}
 
 	status(configuration)
-	// 6 wip commits + 1 start commit
-	assertOutputContains(t, output, "wip branch 'mob-session' contains 7 commits.")
+	assertOutputContains(t, output, "wip branch 'mob-session' contains 6 commits.")
 }
 
 func TestStatusDetectsWipBranches(t *testing.T) {
