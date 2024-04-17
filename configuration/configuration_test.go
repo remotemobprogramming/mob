@@ -200,8 +200,7 @@ func TestParseRequireCommitMessageEnvVariables(t *testing.T) {
 	test.Equals(t, true, configuration.RequireCommitMessage)
 }
 
-func TestReadConfigurationFromFileOverrideEverything(t *testing.T) {
-	say.TurnOnDebugging()
+func TestReadUserConfigurationFromFileOverrideEverything(t *testing.T) {
 	tempDir = t.TempDir()
 	test.SetWorkingDir(tempDir)
 
@@ -210,6 +209,7 @@ func TestReadConfigurationFromFileOverrideEverything(t *testing.T) {
 		MOB_REMOTE_NAME="gitlab"
 		MOB_WIP_COMMIT_MESSAGE="team next"
 		MOB_START_COMMIT_MESSAGE="mob: start"
+		MOB_SKIP_CI_PUSH_OPTION_ENABLED=false
 		MOB_REQUIRE_COMMIT_MESSAGE=true
 		MOB_VOICE_COMMAND="whisper \"%s\""
 		MOB_VOICE_MESSAGE="team next"
@@ -235,6 +235,7 @@ func TestReadConfigurationFromFileOverrideEverything(t *testing.T) {
 	test.Equals(t, "gitlab", actualConfiguration.RemoteName)
 	test.Equals(t, "team next", actualConfiguration.WipCommitMessage)
 	test.Equals(t, "mob: start", actualConfiguration.StartCommitMessage)
+	test.Equals(t, false, actualConfiguration.SkipCiPushOptionEnabled)
 	test.Equals(t, true, actualConfiguration.RequireCommitMessage)
 	test.Equals(t, "whisper \"%s\"", actualConfiguration.VoiceCommand)
 	test.Equals(t, "team next", actualConfiguration.VoiceMessage)
@@ -258,6 +259,73 @@ func TestReadConfigurationFromFileOverrideEverything(t *testing.T) {
 	test.CreateFile(t, ".mob", "\nMOB_TIMER_ROOM=\"Room\\\"\\\"_42\"\n")
 	actualConfiguration1 := parseUserConfiguration(GetDefaultConfiguration(), tempDir+"/.mob")
 	test.Equals(t, "Room\"\"_42", actualConfiguration1.TimerRoom)
+}
+
+func TestReadProjectConfigurationFromFileOverrideEverything(t *testing.T) {
+	output := test.CaptureOutput(t)
+	tempDir = t.TempDir()
+	test.SetWorkingDir(tempDir)
+
+	test.CreateFile(t, ".mob", `
+		MOB_CLI_NAME="team"
+		MOB_REMOTE_NAME="gitlab"
+		MOB_WIP_COMMIT_MESSAGE="team next"
+		MOB_START_COMMIT_MESSAGE="mob: start"
+		MOB_SKIP_CI_PUSH_OPTION_ENABLED=false
+		MOB_REQUIRE_COMMIT_MESSAGE=true
+		MOB_VOICE_COMMAND="whisper \"%s\""
+		MOB_VOICE_MESSAGE="team next"
+		MOB_NOTIFY_COMMAND="/usr/bin/osascript -e 'display notification \"%s!!!\"'"
+		MOB_NOTIFY_MESSAGE="team next"
+		MOB_NEXT_STAY=false
+		MOB_START_CREATE=true
+		MOB_WIP_BRANCH_QUALIFIER="green"
+		MOB_WIP_BRANCH_QUALIFIER_SEPARATOR="---"
+		MOB_WIP_BRANCH_PREFIX="ensemble/"
+		MOB_DONE_SQUASH=no-squash
+		MOB_OPEN_COMMAND="idea %s"
+		MOB_TIMER="123"
+		MOB_TIMER_ROOM="Room_42"
+		MOB_TIMER_ROOM_USE_WIP_BRANCH_QUALIFIER=true
+		MOB_TIMER_LOCAL=false
+		MOB_TIMER_USER="Mona"
+		MOB_TIMER_URL="https://timer.innoq.io/"
+		MOB_STASH_NAME="team-stash-name"
+	`)
+	actualConfiguration := parseProjectConfiguration(GetDefaultConfiguration(), tempDir+"/.mob")
+	test.Equals(t, "team", actualConfiguration.CliName)
+	test.Equals(t, "gitlab", actualConfiguration.RemoteName)
+	test.Equals(t, "team next", actualConfiguration.WipCommitMessage)
+	test.Equals(t, "mob: start", actualConfiguration.StartCommitMessage)
+	test.Equals(t, false, actualConfiguration.SkipCiPushOptionEnabled)
+	test.Equals(t, true, actualConfiguration.RequireCommitMessage)
+	test.NotEquals(t, "whisper \"%s\"", actualConfiguration.VoiceCommand)
+	test.NotEquals(t, "team next", actualConfiguration.VoiceMessage)
+	test.NotEquals(t, "/usr/bin/osascript -e 'display notification \"%s!!!\"'", actualConfiguration.NotifyCommand)
+	test.NotEquals(t, "team next", actualConfiguration.NotifyMessage)
+	test.Equals(t, false, actualConfiguration.NextStay)
+	test.Equals(t, true, actualConfiguration.StartCreate)
+	test.Equals(t, "green", actualConfiguration.WipBranchQualifier)
+	test.Equals(t, "---", actualConfiguration.WipBranchQualifierSeparator)
+	test.Equals(t, "ensemble/", actualConfiguration.WipBranchPrefix)
+	test.Equals(t, NoSquash, actualConfiguration.DoneSquash)
+	test.NotEquals(t, "idea %s", actualConfiguration.OpenCommand)
+	test.Equals(t, "123", actualConfiguration.Timer)
+	test.Equals(t, "Room_42", actualConfiguration.TimerRoom)
+	test.Equals(t, true, actualConfiguration.TimerRoomUseWipBranchQualifier)
+	test.Equals(t, false, actualConfiguration.TimerLocal)
+	test.Equals(t, "Mona", actualConfiguration.TimerUser)
+	test.Equals(t, "https://timer.innoq.io/", actualConfiguration.TimerUrl)
+	test.Equals(t, "team-stash-name", actualConfiguration.StashName)
+
+	test.CreateFile(t, ".mob", "\nMOB_TIMER_ROOM=\"Room\\\"\\\"_42\"\n")
+	actualConfiguration1 := parseUserConfiguration(GetDefaultConfiguration(), tempDir+"/.mob")
+	test.Equals(t, "Room\"\"_42", actualConfiguration1.TimerRoom)
+	test.AssertOutputContains(t, output, "Skipped overwriting key MOB_VOICE_COMMAND from project/.mob file out of security reasons!")
+	test.AssertOutputContains(t, output, "Skipped overwriting key MOB_VOICE_MESSAGE from project/.mob file out of security reasons!")
+	test.AssertOutputContains(t, output, "Skipped overwriting key MOB_NOTIFY_COMMAND from project/.mob file out of security reasons!")
+	test.AssertOutputContains(t, output, "Skipped overwriting key MOB_NOTIFY_MESSAGE from project/.mob file out of security reasons!")
+	test.AssertOutputContains(t, output, "Skipped overwriting key MOB_OPEN_COMMAND from project/.mob file out of security reasons!")
 }
 
 func TestReadConfigurationFromFileWithNonBooleanQuotedDoneSquashValue(t *testing.T) {

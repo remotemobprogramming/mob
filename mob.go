@@ -735,15 +735,16 @@ func startNewMobSession(configuration config.Configuration) {
 
 	say.Info("starting new session from " + currentBaseBranch.remote(configuration).String())
 	git("checkout", "-B", currentWipBranch.Name, currentBaseBranch.remote(configuration).Name)
-	gitPush(gitHooksOption(configuration), "--set-upstream", configuration.RemoteName, currentWipBranch.Name+":"+currentWipBranch.Name)
+	gitWithoutEmptyStrings(append(gitPushArgs(configuration), gitHooksOption(configuration), "--set-upstream", configuration.RemoteName, currentWipBranch.Name+":"+currentWipBranch.Name)...)
 }
 
-func gitPush(args ...string) {
-	gitWithoutEmptyStrings(pushArgs(args)...)
-}
-
-func pushArgs(args []string) []string {
-	return append([]string{"push"}, deleteEmptyStrings(args)...)
+func gitPushArgs(c config.Configuration) []string {
+	pushArgs := []string{"push"}
+	if c.SkipCiPushOptionEnabled {
+		return pushArgs
+	} else {
+		return append(pushArgs, "--push-option", "ci.skip")
+	}
 }
 
 func getUntrackedFiles() string {
