@@ -1,6 +1,6 @@
 # Fast git handover with mob
 
-![mob Logo](logo.svg)
+![mob Logo](logo-def.svg)
 <p align="center">
   <a href="https://github.com/remotemobprogramming/mob/actions/workflows/ci.yaml?query=branch%3Amain">
     <img alt="Test Workflow" src="https://img.shields.io/github/actions/workflow/status/remotemobprogramming/mob/ci.yaml?branch=main"></a>
