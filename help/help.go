@@ -59,6 +59,7 @@ Other
   moo                Moo!
 
 Add '--debug' to any option to enable verbose logging.
+Need more help? Join the community at slack.mob.sh
 `
 	say.Say(output)
 }
