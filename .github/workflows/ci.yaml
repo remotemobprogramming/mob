@@ -12,7 +12,7 @@ jobs:
             git-version: 2.20.0
     runs-on: ${{ matrix.os }}
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
     - name: Install old git version (macOS)
       if: ${{ matrix.os == 'macos-latest' && matrix.git-version != 'latest'}}
       run: |
@@ -33,7 +33,7 @@ jobs:
         sudo make install install-info
     - name: Show git version
       run: git version
-    - name: Use Go 1.20.x
+    - name: Use Go 1.22.x
       uses: actions/setup-go@v5
       with:
         go-version: '1.22'
