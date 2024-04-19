@@ -26,7 +26,7 @@ Fast [git handover](https://www.remotemobprogramming.org/#git-handover) for remo
 - **mob** is on 'assess' in the [Thoughtworks Technology Radar](https://twitter.com/simonharrer/status/1453372354097205253?s=20)
 - **mob** has [VSCode integration](https://marketplace.visualstudio.com/items?itemName=alessandrosangalli.mob-vscode-gui)
 
-![diagram how mob works](diagram.svg)
+![diagram how mob works](diagram_def.svg)
 
 ## What people say about mob
 
