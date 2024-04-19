@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"github.com/remotemobprogramming/mob/v4/say"
 	"os"
-	"os/user"
 	"runtime"
 	"strconv"
 	"strings"
@@ -101,8 +100,8 @@ func ReadConfiguration(gitRootDir string) Configuration {
 	configuration := GetDefaultConfiguration()
 	configuration = parseEnvironmentVariables(configuration)
 
-	currentUser, _ := user.Current()
-	userConfigurationPath := currentUser.HomeDir + "/.mob"
+	userHomeDir, _ := os.UserHomeDir()
+	userConfigurationPath := userHomeDir + "/.mob"
 	configuration = parseUserConfiguration(configuration, userConfigurationPath)
 	if gitRootDir != "" {
 		configuration = parseProjectConfiguration(configuration, gitRootDir+"/.mob")
