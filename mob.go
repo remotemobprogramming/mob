@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	config "github.com/remotemobprogramming/mob/v4/configuration"
+	"github.com/remotemobprogramming/mob/v4/goal"
 	"github.com/remotemobprogramming/mob/v4/help"
 	"github.com/remotemobprogramming/mob/v4/open"
 	"github.com/remotemobprogramming/mob/v4/say"
@@ -355,6 +356,8 @@ func execute(command string, parameter []string, configuration config.Configurat
 		} else if len(parameter) > 1 && parameter[0] == "--git-sequence-editor" {
 			squashWipGitSequenceEditor(parameter[1], configuration)
 		}
+	case "g", "goal":
+		goal.Goal(configuration, parameter)
 	case "version", "--version", "-v":
 		version()
 	case "help", "--help", "-h":

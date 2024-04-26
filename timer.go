@@ -1,17 +1,12 @@
 package main
 
 import (
-	"bytes"
-	"crypto/tls"
-	"crypto/x509"
 	"encoding/json"
 	"errors"
 	"fmt"
 	config "github.com/remotemobprogramming/mob/v4/configuration"
+	"github.com/remotemobprogramming/mob/v4/httpclient"
 	"github.com/remotemobprogramming/mob/v4/say"
-	"io"
-	"net/http"
-	"net/url"
 	"runtime"
 	"strconv"
 	"time"
@@ -162,7 +157,8 @@ func httpPutTimer(timeoutInMinutes int, room string, user string, timerService s
 		"timer": timeoutInMinutes,
 		"user":  user,
 	})
-	return sendRequest(putBody, "PUT", timerService+room, disableSSLVerification)
+	_, err := httpclient.SendRequest(putBody, "PUT", timerService+room, disableSSLVerification)
+	return err
 }
 
 func httpPutBreakTimer(timeoutInMinutes int, room string, user string, timerService string, disableSSLVerification bool) error {
@@ -170,55 +166,8 @@ func httpPutBreakTimer(timeoutInMinutes int, room string, user string, timerServ
 		"breaktimer": timeoutInMinutes,
 		"user":       user,
 	})
-	return sendRequest(putBody, "PUT", timerService+room, disableSSLVerification)
-}
-
-func sendRequest(requestBody []byte, requestMethod string, requestUrl string, disableSSLVerification bool) error {
-	say.Info(requestMethod + " " + requestUrl + " " + string(requestBody))
-
-	responseBody := bytes.NewBuffer(requestBody)
-	request, requestCreationError := http.NewRequest(requestMethod, requestUrl, responseBody)
-
-	httpClient := http.DefaultClient
-	if disableSSLVerification {
-		transCfg := &http.Transport{
-			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-		}
-		httpClient = &http.Client{Transport: transCfg}
-	}
-
-	if requestCreationError != nil {
-		return fmt.Errorf("failed to create the http request object: %w", requestCreationError)
-	}
-
-	request.Header.Set("Content-Type", "application/json")
-	response, responseErr := httpClient.Do(request)
-	if e, ok := responseErr.(*url.Error); ok {
-		switch e.Err.(type) {
-		case x509.UnknownAuthorityError:
-			say.Error("The timer.mob.sh SSL certificate is signed by an unknown authority!")
-			say.Fix("HINT: You can ignore that by adding MOB_TIMER_INSECURE=true to your configuration or environment.",
-				"echo MOB_TIMER_INSECURE=true >> ~/.mob")
-			return fmt.Errorf("failed, to amke the http request: %w", responseErr)
-
-		default:
-			return fmt.Errorf("failed to make the http request: %w", responseErr)
-
-		}
-	}
-
-	if responseErr != nil {
-		return fmt.Errorf("failed to make the http request: %w", responseErr)
-	}
-	defer response.Body.Close()
-	body, responseReadingErr := io.ReadAll(response.Body)
-	if responseReadingErr != nil {
-		return fmt.Errorf("failed to read the http response: %w", responseReadingErr)
-	}
-	if string(body) != "" {
-		say.Info(string(body))
-	}
-	return nil
+	_, err := httpclient.SendRequest(putBody, "PUT", timerService+room, disableSSLVerification)
+	return err
 }
 
 func getSleepCommand(timeoutInSeconds int) string {
