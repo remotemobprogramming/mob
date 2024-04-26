@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"crypto/tls"
 	"crypto/x509"
+	"errors"
 	"fmt"
 	"github.com/remotemobprogramming/mob/v4/say"
 	"io/ioutil"
@@ -41,29 +42,31 @@ func SendRequest(requestBody []byte, requestMethod string, requestUrl string, di
 
 	request.Header.Set("Content-Type", "application/json")
 	response, responseErr := httpClient.Do(request)
-	defer response.Body.Close()
-	bodyBytes, responseReadingErr := ioutil.ReadAll(response.Body)
-	body := string(bodyBytes)
-	if responseReadingErr != nil {
-		return "", fmt.Errorf("failed to read the http response: %w", responseReadingErr)
-	}
-
 	if e, ok := responseErr.(*url.Error); ok {
 		switch e.Err.(type) {
 		case x509.UnknownAuthorityError:
 			say.Error("The timer.mob.sh SSL certificate is signed by an unknown authority!")
 			say.Fix("HINT: You can ignore that by adding MOB_TIMER_INSECURE=true to your configuration or environment.",
 				"echo MOB_TIMER_INSECURE=true >> ~/.mob")
-			return body, fmt.Errorf("failed, to make the http request: %w", responseErr)
+			return "", fmt.Errorf("failed, to make the http request: %w", responseErr)
 
 		default:
-			return body, fmt.Errorf("failed to make the http request: %w", responseErr)
+			return "", fmt.Errorf("failed to make the http request: %w", responseErr)
 
 		}
 	}
 
 	if responseErr != nil {
-		return body, fmt.Errorf("failed to make the http request: %w", responseErr)
+		return "", fmt.Errorf("failed to make the http request: %w", responseErr)
+	}
+	if response.StatusCode >= 300 {
+		return "", errors.New("got an error from the server: " + requestUrl + " " + response.Status)
+	}
+	defer response.Body.Close()
+	bodyBytes, responseReadingErr := ioutil.ReadAll(response.Body)
+	body := string(bodyBytes)
+	if responseReadingErr != nil {
+		return "", fmt.Errorf("failed to read the http response: %w", responseReadingErr)
 	}
 	if string(body) != "" {
 		say.Info(body)
