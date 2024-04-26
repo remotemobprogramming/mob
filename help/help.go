@@ -31,6 +31,9 @@ Basic Commands with Options:
     [--squash-wip]                       Squash wip commits from wip branch, maintaining manual commits
   reset
     [--branch|-b <branch-postfix>]       Set wip branch to 'mob/<base-branch>` + configuration.WipBranchQualifierSeparator + `<branch-postfix>'
+  goal 									 Gives you the current goal of your timer.mob.sh room
+	[<your-goal>]						 Sets the goal of your timer.mob.sh room
+	[--delete]							 Deletes the goal of your timer.mob.sh room
 
 Timer Commands:
   timer <minutes>           Start a <minutes> timer
