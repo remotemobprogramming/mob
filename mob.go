@@ -528,7 +528,7 @@ func start(configuration config.Configuration) error {
 		say.Info("cannot start; clean working tree required")
 		sayUnstagedChangesInfo()
 		sayUntrackedFilesInfo()
-		sayFixUncommitedChanges(configuration)
+		sayFixUncommittedChanges(configuration)
 		return errors.New("cannot start; clean working tree required")
 	}
 
@@ -586,19 +586,31 @@ func start(configuration config.Configuration) error {
 	return nil // no error
 }
 
-func sayFixUncommitedChanges(configuration config.Configuration) {
-	fixCommand := configuration.CliName + " start"
-	instruction := "To start, including uncommitted changes, use"
+func sayFixUncommittedChanges(configuration config.Configuration) {
+	var instruction string
 	if configuration.StartCreate {
 		instruction = "To start, including uncommitted changes and create the remote branch, use"
-		fixCommand += " --create"
+	} else {
+		instruction = "To start, including uncommitted changes, use"
 	}
-	if containsAny(args, "-b", "--branch") && configuration.WipBranchQualifier != "" {
-		fixCommand += " --branch " + configuration.WipBranchQualifier
-	}
-	fixCommand += " --include-uncommitted-changes"
+
+	fixCommand := configuration.CliName + " start" + createFix(configuration) + branchFix(configuration) + " --include-uncommitted-changes"
 
 	say.Fix(instruction, fixCommand)
+}
+
+func createFix(configuration config.Configuration) string {
+	if configuration.StartCreate {
+		return " --create"
+	}
+	return ""
+}
+
+func branchFix(configuration config.Configuration) string {
+	if branchParameter(configuration) {
+		return " --branch " + configuration.WipBranchQualifier
+	}
+	return ""
 }
 
 func branchParameter(configuration config.Configuration) bool {
