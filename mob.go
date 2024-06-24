@@ -1138,6 +1138,7 @@ func gitWithoutEmptyStrings(args ...string) {
 }
 
 func git(args ...string) {
+	say.Indented("git " + strings.Join(args, " "))
 	commandString, output, err := "", "", error(nil)
 	if GitPassthroughStderrStdout {
 		commandString, output, err = runCommand("git", args...)
@@ -1154,8 +1155,6 @@ func git(args ...string) {
 			say.Error(err.Error())
 		}
 		Exit(1)
-	} else {
-		say.Indented(commandString)
 	}
 }
 
