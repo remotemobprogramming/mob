@@ -1,5 +1,18 @@
-# 4.5.1
+# 5.0.0
+- Feature: You can now set Goals
+- Feature: Can make use of the git push-option "ci.skip"
+- Feature: Prints Git Commands before they are finished for faster feedback
 - Feature: Added cli option `--room` to set the room name of timer.mob.sh once
+- Feature: Adds a hint to `mob status` when there is no remote branch
+- Feature: `mob status` shows the duration of wip branches
+- Fix: --squash-wip now squashes the start commit as well
+- Fix: Fixes a bug with timers smaller than 1
+- Windows Performance is improved due to use of `os.UserHomeDir()`
+- Upgrade to go 1.22
+
+Thank you @schmonz for fixing the build on non-Linux Unix systems
+Thank you @jmbockhorst for improving windows performance
+Thank you @michael-mader for improving our readme
 
 # 4.5.0
 - Removes feature which cancels running timers as this can lead to longer rotations if the codebase is switched. The way it was implemented is also not ideal for virus detection.
