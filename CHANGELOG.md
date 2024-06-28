@@ -1,11 +1,12 @@
 # 5.0.0
-- Feature: You can now set Goals
+- Feature: You can now set goals
 - Feature: Can make use of the git push-option "ci.skip"
-- Feature: Prints Git Commands before they are finished for faster feedback
+- Removed: `mob start` does not create an emtpy commit on a new wip branch anymore
+- Feature: Prints git commands before they are finished for faster feedback
 - Feature: Added cli option `--room` to set the room name of timer.mob.sh once
-- Feature: Adds a hint to `mob status` when there is no remote branch
+- Feature: `mob status` shows a hint if there is no remote branch
 - Feature: `mob status` shows the duration of wip branches
-- Fix: --squash-wip now squashes the start commit as well
+- Fix: `mob done --squash-wip` now squashes the start commit as well
 - Fix: Fixes a bug with timers smaller than 1
 - Windows Performance is improved due to use of `os.UserHomeDir()`
 - Upgrade to go 1.22
