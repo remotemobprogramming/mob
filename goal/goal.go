@@ -34,7 +34,7 @@ func Goal(configuration config.Configuration, parameter []string) {
 
 func goal(configuration config.Configuration, parameter []string) error {
 	if configuration.TimerRoom == "" {
-		return errors.New("No room sepcified. Set MOB_TIMER_ROOM to your timer.mob.sh room in .mob file.")
+		return errors.New("No room specified. Set MOB_TIMER_ROOM to your timer.mob.sh room in .mob file.")
 	}
 	var err error
 	if len(parameter) <= 0 {
@@ -113,6 +113,9 @@ func getGoalHttp(room string, timerService string, disableSslVerification bool) 
 	}
 	if response.StatusCode >= 300 {
 		return "", errors.New("got an error while requesting it: " + url + " " + response.Status)
+	}
+	if response.StatusCode == 204 {
+		return "", nil
 	}
 	body, err := io.ReadAll(response.Body)
 	if err != nil {
