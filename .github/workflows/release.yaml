@@ -14,7 +14,6 @@ jobs:
           - os: windows-latest
             goos: windows
     env:
-      GOARCH: amd64
       GOOS: ${{ matrix.goos }}
       CGO_ENABLED: 0
     name: release
@@ -36,6 +35,7 @@ jobs:
         run: go build -o mob${{ matrix.goos == 'windows' && '.exe' || '' }}
         env:
           GOOS: ${{ matrix.goos }}
+          GOARCH: amd64
       - name: Build macOS universal
         if: ${{ matrix.goos == 'darwin' }}
         run: >
