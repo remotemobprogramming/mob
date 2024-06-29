@@ -210,6 +210,7 @@ Short Commands (Options and descriptions as above):
   d                  alias for 'done'
   b                  alias for 'branch'
   t                  alias for 'timer'
+  g                  Alias for 'goal'
 
 Get more information:
   status             show the status of the current session

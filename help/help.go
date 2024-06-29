@@ -49,6 +49,7 @@ Short Commands (Options and descriptions as above):
   d                  Alias for 'done'
   b                  Alias for 'branch'
   t                  Alias for 'timer'
+  g                  Alias for 'goal'
 
 Get more information:
   status             Show status of the current session
