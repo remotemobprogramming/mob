@@ -6,13 +6,19 @@ jobs:
   release:
     strategy:
       matrix:
-        os: [linux, darwin, windows]
+        include:
+          - os: ubuntu-latest
+            goos: linux
+          - os: macos-latest
+            goos: darwin
+          - os: windows-latest
+            goos: windows
     env:
       GOARCH: amd64
-      GOOS: ${{ matrix.os }}
+      GOOS: ${{ matrix.goos }}
       CGO_ENABLED: 0
     name: release
-    runs-on: ${{ matrix.os == 'darwin' && 'macos-latest' || 'ubuntu-latest'}}
+    runs-on: ${{ matrix.os }}
     outputs:
       sha_linux: ${{ steps.shasum.outputs.sha_linux }}
     steps:
@@ -24,24 +30,24 @@ jobs:
       - name: Test
         run: go test
         env:
-          GOOS: ${{ matrix.os == 'darwin' && 'darwin' || 'linux'}}
-      - name: Build ${{matrix.os}} amd64
-        if: ${{ matrix.os != 'darwin' }}
-        run: go build -o mob${{ matrix.os == 'windows' && '.exe' || '' }}
+          GOOS: ${{ matrix.goos }}
+      - name: Build ${{ matrix.goos }} amd64
+        if: ${{ matrix.goos != 'darwin' }}
+        run: go build -o mob${{ matrix.goos == 'windows' && '.exe' || '' }}
         env:
-          GOOS: ${{ matrix.os }}
+          GOOS: ${{ matrix.goos }}
       - name: Build macOS universal
-        if: ${{ matrix.os == 'darwin' }}
+        if: ${{ matrix.goos == 'darwin' }}
         run: >
           GOARCH=amd64 go build -o mob_amd64 && GOARCH=arm64 go build -o mob_arm64 && lipo -create -output mob mob_amd64 mob_arm64
         env:
-          GOOS: ${{ matrix.os }}
+          GOOS: ${{ matrix.goos }}
       - name: VirusTotal Scan
         uses: crazy-max/ghaction-virustotal@v3
         with:
           vt_api_key: ${{ secrets.VT_API_KEY }}
           update_release_body: true
-          files: ./mob${{ matrix.os == 'windows' && '.exe' || '' }}
+          files: ./mob${{ matrix.goos == 'windows' && '.exe' || '' }}
       - name: Create release artifacts using .github/build
         run: .github/build
         env:
@@ -54,16 +60,16 @@ jobs:
           tag: ${{ github.event.release.tag_name }}
           file_glob: true
       - name: Set SHA
-        if: matrix.os == 'darwin' || matrix.os == 'linux'
+        if: matrix.goos == 'darwin' || matrix.goos == 'linux'
         id: shasum
         run: |
-          echo "sha_${{matrix.os}}=\"$(shasum -a 256 *.tar.gz | awk '{printf $1}')\"" >> $GITHUB_OUTPUT
+          echo "sha_${{ matrix.goos }}=\"$(shasum -a 256 *.tar.gz | awk '{printf $1}')\"" >> $GITHUB_OUTPUT
       - name: Set up Homebrew
-        if: matrix.os == 'darwin'
+        if: matrix.goos == 'darwin'
         id: set-up-homebrew
         uses: Homebrew/actions/setup-homebrew@master
       - name: Bump homebrew formula
-        if: matrix.os == 'darwin'
+        if: matrix.goos == 'darwin'
         env:
           HOMEBREW_GITHUB_API_TOKEN: ${{ secrets.HOMEBREW }}
         run: |
