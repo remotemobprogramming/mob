@@ -39,3 +39,5 @@ jobs:
         go-version: '1.22'
     - name: Test
       run: go test -test.v
+      env:
+        GOARCH: amd64
