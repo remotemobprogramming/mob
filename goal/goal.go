@@ -36,23 +36,16 @@ func goal(configuration config.Configuration, parameter []string) error {
 	if configuration.TimerRoom == "" {
 		return errors.New("No room sepcified. Set MOB_TIMER_ROOM to your timer.mob.sh room in .mob file.")
 	}
-	if len(parameter) > 0 {
-		if parameter[0] == "--delete" {
-			err := deleteCurrentGoal(configuration)
-			if err != nil {
-				return err
-			}
-		} else {
-			err := setNewGoal(configuration, strings.Join(parameter, " "))
-			if err != nil {
-				return err
-			}
-		}
+	var err error
+	if len(parameter) <= 0 {
+		err = showGoal(configuration)
+	} else if parameter[0] == "--delete" {
+		err = deleteCurrentGoal(configuration)
 	} else {
-		err := showGoal(configuration)
-		if err != nil {
-			return err
-		}
+		err = setNewGoal(configuration, strings.Join(parameter, " "))
+	}
+	if err != nil {
+		return err
 	}
 	return nil
 }
