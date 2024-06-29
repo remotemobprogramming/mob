@@ -51,6 +51,7 @@ jobs:
       - name: Create release artifacts using .github/build
         run: .github/build
         env:
+          GOARCH: amd64
           VERSION: ${{ github.event.release.tag_name }}
       - name: Upload artifacts to release
         uses: svenstaro/upload-release-action@v2
