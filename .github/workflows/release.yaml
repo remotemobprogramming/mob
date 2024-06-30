@@ -9,10 +9,10 @@ jobs:
         include:
           - os: ubuntu-latest
             goos: linux
+          - os: ubuntu-latest
+            goos: windows
           - os: macos-latest
             goos: darwin
-          - os: windows-latest
-            goos: windows
     env:
       GOOS: ${{ matrix.goos }}
       CGO_ENABLED: 0
