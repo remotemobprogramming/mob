@@ -19,16 +19,18 @@ jobs:
           SHA_LINUX=$(cat checksum.txt)
           echo "SHA_LINUX=$SHA_LINUX" >> $GITHUB_ENV
 
+      - name: Set VERSION_NUMBER
+        run: |
+          PKGVER=${{ env.VERSION }}
+          PKGVER=${PKGVER#v} # Strip 'v' at the start
+          echo "PKGVER=${PKGVER}" >> $GITHUB_ENV
+
       - name: Create PKGBUILD
         run: |
           mkdir -p ./aur/${{ env.PACKAGE_NAME }}/
-          # Strip the leading "v" from the version
-          VERSION_NUMBER=${{ env.VERSION }}
-          VERSION_NUMBER=${VERSION_NUMBER#v} # Strip 'v' at the start
-          echo "Version number for PKGBUILD is $VERSION_NUMBER"
           cat > ./aur/${{ env.PACKAGE_NAME }}/PKGBUILD << 'EOF'
           pkgname=${{ env.PACKAGE_NAME }}
-          pkgver=$VERSION_NUMBER
+          pkgver=${{ env.PKGVER }}
           pkgrel=1
           pkgdesc="Fast git handover with mob"
           arch=('x86_64')
@@ -57,6 +59,7 @@ jobs:
         uses: KSXGitHub/github-actions-deploy-aur@v2.2.5
         with:
           pkgname: ${{ env.PACKAGE_NAME }}
+          pkgver: ${{ env.PKGVER }}
           pkgbuild: ./aur/${{ env.PACKAGE_NAME }}/PKGBUILD
           commit_username: ${{ secrets.AUR_USERNAME }}
           commit_email: ${{ secrets.AUR_EMAIL }}
