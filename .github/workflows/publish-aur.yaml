@@ -23,10 +23,10 @@ jobs:
         run: |
           mkdir -p ./aur/${{ env.PACKAGE_NAME }}/
           # Strip the leading "v" from the version
-          VERSION_NUMBER=${{ env.VERSION }} # Using string replacement in YAML
+          VERSION_NUMBER=${{ env.VERSION }}
           VERSION_NUMBER=${VERSION_NUMBER#v} # Strip 'v' at the start
           echo "Version number for PKGBUILD is $VERSION_NUMBER"
-          cat > ./aur/${{ env.PACKAGE_NAME }}/PKGBUILD << EOF
+          cat > ./aur/${{ env.PACKAGE_NAME }}/PKGBUILD << 'EOF'
           pkgname=${{ env.PACKAGE_NAME }}
           pkgver=$VERSION_NUMBER
           pkgrel=1
