@@ -21,9 +21,9 @@ jobs:
 
       - name: Set VERSION_NUMBER
         run: |
-          PKGVER=${{ env.VERSION }}
-          PKGVER=${PKGVER#v} # Strip 'v' at the start
-          echo "PKGVER=${PKGVER}" >> $GITHUB_ENV
+          PKGVER="${{ env.VERSION }}"
+          PKGVER="${PKGVER#v}"  # Strip 'v' at the start
+          echo "PKGVER=$PKGVER" >> $GITHUB_ENV
 
       - name: Create PKGBUILD
         run: |
