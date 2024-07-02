@@ -1,0 +1,63 @@
+name: Publish to AUR
+
+on:
+  workflow_dispatch:
+
+jobs:
+  publish-aur:
+    runs-on: ubuntu-latest
+    env:
+      PACKAGE_NAME: mobsh-bin
+      VERSION: v5.0.0  # Set this to the tag name of the release
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download checksum file
+        run: |
+          wget -O checksum.txt https://github.com/remotemobprogramming/mob/releases/download/${{ env.VERSION }}/mob_${{ env.VERSION }}_linux_amd64_sha256_checksum.txt
+          SHA_LINUX=$(cat checksum.txt)
+          echo "SHA_LINUX=$SHA_LINUX" >> $GITHUB_ENV
+
+      - name: Create PKGBUILD
+        run: |
+          mkdir -p ./aur/${{ env.PACKAGE_NAME }}/
+          # Strip the leading "v" from the version
+          VERSION_NUMBER="${{ env.VERSION }}".replace(/^v/, '') 
+          cat > ./aur/${{ env.PACKAGE_NAME }}/PKGBUILD << EOF
+          pkgname=${{ env.PACKAGE_NAME }}
+          pkgver=$VERSION_NUMBER
+          pkgrel=1
+          pkgdesc="Fast git handover with mob"
+          arch=('x86_64')
+          url="https://github.com/${{ github.repository }}"
+          license=('MIT')
+          depends=("git")
+          optdepends=('espeak-ng-espeak: Multi-lingual software speech synthesizer'
+                      'mbrola-voices-us1: An American English female voice for the MBROLA synthesizer')
+          provides=('mobsh')
+          conflicts=('mobsh' 'mob')
+          source_x86_64=("https://github.com/remotemobprogramming/mob/releases/download/${{ env.VERSION }}/mob_${{ env.VERSION }}_linux_amd64.tar.gz")
+          sha256sums_x86_64=("${{ env.SHA_LINUX }}")
+          package() {
+          install -D -m644 "LICENSE" "\$pkgdir/usr/share/licenses/\$pkgname/LICENSE"
+              install -D -m755 mob_linux_amd64 "\$pkgdir/usr/bin/mob"
+          }
+          EOF
+
+      - name: Store PKGBUILD as an artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: PKGBUILD
+          path: ./aur/${{ env.PACKAGE_NAME }}/PKGBUILD
+
+      - name: Publish AUR package
+        uses: KSXGitHub/github-actions-deploy-aur@v2.2.5
+        with:
+          pkgname: ${{ env.PACKAGE_NAME }}
+          pkgbuild: ./aur/${{ env.PACKAGE_NAME }}/PKGBUILD
+          commit_username: ${{ secrets.AUR_USERNAME }}
+          commit_email: ${{ secrets.AUR_EMAIL }}
+          ssh_private_key: ${{ secrets.AUR_SSH_PRIVATE_KEY }}
+          commit_message: "Update AUR package for ${{ env.VERSION }}"
+          ssh_keyscan_types: rsa,ecdsa,ed25519
