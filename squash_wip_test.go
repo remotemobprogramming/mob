@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	config "github.com/remotemobprogramming/mob/v4/configuration"
+	config "github.com/remotemobprogramming/mob/v5/configuration"
 	"os"
 	"strings"
 	"testing"

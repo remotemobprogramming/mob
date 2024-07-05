@@ -1,3 +1,8 @@
+# 5.0.1
+- Fix: The configuration option `MOB_SKIP_CI_PUSH_OPTION_ENABLED` now works correctly
+
+Thank you @stefanscheidt for reporting this issue
+
 # 5.0.0
 - Feature: You can now set goals
 - Feature: Can make use of the git push-option "ci.skip"

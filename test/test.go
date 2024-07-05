@@ -2,7 +2,7 @@ package test
 
 import (
 	"fmt"
-	"github.com/remotemobprogramming/mob/v4/say"
+	"github.com/remotemobprogramming/mob/v5/say"
 	"os"
 	"path/filepath"
 	"reflect"

@@ -2,9 +2,9 @@ package main
 
 import (
 	"fmt"
-	config "github.com/remotemobprogramming/mob/v4/configuration"
-	"github.com/remotemobprogramming/mob/v4/open"
-	"github.com/remotemobprogramming/mob/v4/say"
+	config "github.com/remotemobprogramming/mob/v5/configuration"
+	"github.com/remotemobprogramming/mob/v5/open"
+	"github.com/remotemobprogramming/mob/v5/say"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -152,8 +152,8 @@ func TestNextNotMobProgramming(t *testing.T) {
 }
 
 func TestRequireCommitMessage(t *testing.T) {
-	output, _ := setup(t)
-	configuration := config.GetDefaultConfiguration()
+	output, configuration := setup(t)
+	configuration.NextStay = true
 	configuration.RequireCommitMessage = true
 	start(configuration)
 
@@ -216,13 +216,29 @@ func TestStartDespiteGitHook(t *testing.T) {
 }
 
 func TestStartWithCISkip(t *testing.T) {
-	_, configuration := setup(t)
+	output, configuration := setup(t)
+	configuration.SkipCiPushOptionEnabled = true
+	mockExit()
+
+	start(configuration)
+
+	assertOutputContains(t, output, "git push --push-option ci.skip --no-verify --set-upstream origin mob-session:mob-session")
+	assertOutputContains(t, output, "Disable the push option ci.skip in your .mob file or set the expected environment variable")
+	assertOutputContains(t, output, "export MOB_SKIP_CI_PUSH_OPTION_ENABLED=false")
+	resetExit()
+}
+
+func TestStartWithOutCISkip(t *testing.T) {
+	output, configuration := setup(t)
+	configuration.SkipCiPushOptionEnabled = false
 
 	start(configuration)
 
 	assertOnBranch(t, "mob-session")
 	assertMobSessionBranches(t, configuration, "mob-session")
 	assertCommitLogNotContainsMessage(t, "mob-session", configuration.StartCommitMessage)
+	assertOutputNotContains(t, output, "--push-option ci.skip")
+
 }
 
 func TestStartWithMultipleExistingBranches(t *testing.T) {
@@ -1901,6 +1917,8 @@ func gitStatus() GitStatus {
 
 func setup(t *testing.T) (output *string, configuration config.Configuration) {
 	configuration = config.GetDefaultConfiguration()
+	// Test setup does not support push options
+	configuration.SkipCiPushOptionEnabled = false
 	configuration.NextStay = false
 	createTestbed(t, configuration)
 	assertOnBranch(t, "master")

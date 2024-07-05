@@ -1,8 +1,8 @@
 package help
 
 import (
-	config "github.com/remotemobprogramming/mob/v4/configuration"
-	"github.com/remotemobprogramming/mob/v4/say"
+	config "github.com/remotemobprogramming/mob/v5/configuration"
+	"github.com/remotemobprogramming/mob/v5/say"
 )
 
 func Help(configuration config.Configuration) {

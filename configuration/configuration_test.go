@@ -2,8 +2,8 @@ package configuration
 
 import (
 	"fmt"
-	"github.com/remotemobprogramming/mob/v4/say"
-	"github.com/remotemobprogramming/mob/v4/test"
+	"github.com/remotemobprogramming/mob/v5/say"
+	"github.com/remotemobprogramming/mob/v5/test"
 	"os"
 	"strings"
 	"testing"
