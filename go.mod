@@ -1,3 +1,3 @@
-module github.com/remotemobprogramming/mob/v4
+module github.com/remotemobprogramming/mob/v5
 
 go 1.22

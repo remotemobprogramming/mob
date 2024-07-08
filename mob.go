@@ -4,11 +4,11 @@ import (
 	"bufio"
 	"errors"
 	"fmt"
-	config "github.com/remotemobprogramming/mob/v4/configuration"
-	"github.com/remotemobprogramming/mob/v4/goal"
-	"github.com/remotemobprogramming/mob/v4/help"
-	"github.com/remotemobprogramming/mob/v4/open"
-	"github.com/remotemobprogramming/mob/v4/say"
+	config "github.com/remotemobprogramming/mob/v5/configuration"
+	"github.com/remotemobprogramming/mob/v5/goal"
+	"github.com/remotemobprogramming/mob/v5/help"
+	"github.com/remotemobprogramming/mob/v5/open"
+	"github.com/remotemobprogramming/mob/v5/say"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -21,7 +21,7 @@ import (
 )
 
 const (
-	versionNumber     = "5.0.0"
+	versionNumber     = "5.0.1"
 	minimumGitVersion = "2.13.0"
 )
 
@@ -755,11 +755,10 @@ func startNewMobSession(configuration config.Configuration) {
 
 func gitPushArgs(c config.Configuration) []string {
 	pushArgs := []string{"push"}
-	if c.SkipCiPushOptionEnabled {
+	if !c.SkipCiPushOptionEnabled {
 		return pushArgs
-	} else {
-		return append(pushArgs, "--push-option", "ci.skip")
 	}
+	return append(pushArgs, "--push-option", "ci.skip")
 }
 
 func getUntrackedFiles() string {
@@ -1153,9 +1152,14 @@ func git(args ...string) {
 		if !isGit() {
 			say.Error("expecting the current working directory to be a git repository.")
 		} else {
-			say.Error(commandString)
-			say.Error(output)
-			say.Error(err.Error())
+			if strings.Contains(output, "does not support push options") {
+				say.Error("The receiving end does not support push options")
+				say.Fix("Disable the push option ci.skip in your .mob file or set the expected environment variable", "export MOB_SKIP_CI_PUSH_OPTION_ENABLED=false")
+			} else {
+				say.Error(commandString)
+				say.Error(output)
+				say.Error(err.Error())
+			}
 		}
 		Exit(1)
 	}

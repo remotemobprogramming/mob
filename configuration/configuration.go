@@ -2,7 +2,7 @@ package configuration
 
 import (
 	"bufio"
-	"github.com/remotemobprogramming/mob/v4/say"
+	"github.com/remotemobprogramming/mob/v5/say"
 	"os"
 	"runtime"
 	"strconv"
