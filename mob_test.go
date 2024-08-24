@@ -2113,8 +2113,12 @@ func createFileInPath(t *testing.T, path, filename, content string) (pathToFile 
 func createExecutableFileInPath(t *testing.T, path, filename, content string) (pathToFile string) {
 	contentAsBytes := []byte(content)
 	pathToFile = path + "/" + filename
-	err := os.WriteFile(pathToFile, contentAsBytes, 0755)
-	if err != nil {
+	err1 := os.MkdirAll(path, 0755)
+	if err1 != nil {
+		failWithFailure(t, "creating folder "+path, "error")
+	}
+	err2 := os.WriteFile(pathToFile, contentAsBytes, 0755)
+	if err2 != nil {
 		failWithFailure(t, "creating file "+filename+" with content "+content, "error")
 	}
 	return
