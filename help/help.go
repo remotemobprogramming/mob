@@ -20,6 +20,7 @@ Basic Commands with Options:
     [--include-uncommitted-changes|-i]   Move uncommitted changes to wip branch
     [--branch|-b <branch-postfix>]       Set wip branch to 'mob/<base-branch>` + configuration.WipBranchQualifierSeparator + `<branch-postfix>'
     [--create]                           Create the remote branch
+	[--join|-j]                          Join existing wip branch
     [--room <room-name>]                 Set room name for timer.mob.sh once
   next
     [--stay|-s]                          Stay on wip branch (default)

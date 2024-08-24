@@ -1,3 +1,7 @@
+# 5.1.0
+- Feature: Adds new flag `--join` for `mob start` to join an existing session
+  `mob start --join` (#437)
+
 # 5.0.1
 - Fix: The configuration option `MOB_SKIP_CI_PUSH_OPTION_ENABLED` now works correctly
 

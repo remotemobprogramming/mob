@@ -538,6 +538,11 @@ func start(configuration config.Configuration) error {
 	git("fetch", configuration.RemoteName, "--prune")
 	currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), gitBranches(), configuration)
 
+	if !currentWipBranch.hasRemoteBranch(configuration) && configuration.StartJoin {
+		say.Error("Remote wip branch " + currentWipBranch.remote(configuration).String() + " is missing")
+		return errors.New("remote wip branch is missing")
+	}
+
 	if !currentBaseBranch.hasRemoteBranch(configuration) && !configuration.StartCreate {
 		say.Error("Remote branch " + currentBaseBranch.remote(configuration).String() + " is missing")
 		say.Fix("To start and create the remote branch", "mob start --create")

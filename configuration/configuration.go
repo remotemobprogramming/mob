@@ -29,7 +29,8 @@ type Configuration struct {
 	NotifyMessage                  string // override with MOB_NOTIFY_MESSAGE
 	NextStay                       bool   // override with MOB_NEXT_STAY
 	StartIncludeUncommittedChanges bool
-	StartCreate                    bool   // override with MOB_START_CREATE variable
+	StartCreate                    bool // override with MOB_START_CREATE variable
+	StartJoin                      bool
 	StashName                      string // override with MOB_STASH_NAME
 	WipBranchQualifier             string // override with MOB_WIP_BRANCH_QUALIFIER
 	WipBranchQualifierSeparator    string // override with MOB_WIP_BRANCH_QUALIFIER_SEPARATOR
@@ -143,6 +144,8 @@ func ParseArgs(args []string, configuration Configuration) (command string, para
 			newConfiguration.DoneSquash = SquashWip
 		case "--create":
 			newConfiguration.StartCreate = true
+		case "--join", "-j":
+			newConfiguration.StartJoin = true
 		case "--delete-remote-wip-branch":
 			newConfiguration.ResetDeleteRemoteWipBranch = true
 		case "--room":

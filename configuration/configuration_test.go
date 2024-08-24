@@ -39,6 +39,26 @@ func TestParseArgsStartCreate(t *testing.T) {
 	test.Equals(t, true, configuration.StartCreate)
 }
 
+func TestParseArgsStartJoin(t *testing.T) {
+	configuration := GetDefaultConfiguration()
+
+	command, parameters, configuration := ParseArgs([]string{"mob", "start", "--join"}, configuration)
+
+	test.Equals(t, "start", command)
+	test.Equals(t, "", strings.Join(parameters, ""))
+	test.Equals(t, true, configuration.StartJoin)
+}
+
+func TestParseArgsStartJoinShort(t *testing.T) {
+	configuration := GetDefaultConfiguration()
+
+	command, parameters, configuration := ParseArgs([]string{"mob", "start", "-j"}, configuration)
+
+	test.Equals(t, "start", command)
+	test.Equals(t, "", strings.Join(parameters, ""))
+	test.Equals(t, true, configuration.StartJoin)
+}
+
 func TestParseArgsDoneNoSquash(t *testing.T) {
 	configuration := GetDefaultConfiguration()
 	test.Equals(t, Squash, configuration.DoneSquash)
