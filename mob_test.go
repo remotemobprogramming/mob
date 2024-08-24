@@ -390,6 +390,14 @@ func TestStartWithPushDefaultTracking(t *testing.T) {
 	assertMobSessionBranches(t, configuration, "mob-session")
 }
 
+func TestStartWithJoiningNonExistingSession(t *testing.T) {
+	_, configuration := setup(t)
+	assertOnBranch(t, "master")
+	configuration.StartJoin = true
+	start(configuration)
+	assertOnBranch(t, "master")
+}
+
 func TestReset(t *testing.T) {
 	output, configuration := setup(t)
 
