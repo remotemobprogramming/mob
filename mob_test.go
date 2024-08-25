@@ -2111,8 +2111,10 @@ func createFileInPath(t *testing.T, path, filename, content string) (pathToFile 
 }
 
 func createExecutableFileInPath(t *testing.T, path, filename, content string) (pathToFile string) {
-	contentAsBytes := []byte(content)
+	ensureDirectoryExists(t, path)
+
 	pathToFile = path + "/" + filename
+	contentAsBytes := []byte(content)
 	err := os.WriteFile(pathToFile, contentAsBytes, 0755)
 	if err != nil {
 		failWithFailure(t, "creating file "+filename+" with content "+content, "error")
@@ -2120,17 +2122,16 @@ func createExecutableFileInPath(t *testing.T, path, filename, content string) (p
 	return
 }
 
-func createDirectory(t *testing.T, directory string) (pathToFile string) {
-	return createDirectoryInPath(t, workingDir, directory)
+func createDirectory(t *testing.T, directory string) (pathToDirectory string) {
+	return ensureDirectoryExists(t, workingDir+"/"+directory)
 }
 
-func createDirectoryInPath(t *testing.T, path, directory string) (pathToFile string) {
-	pathToFile = path + "/" + directory
-	err := os.Mkdir(pathToFile, 0755)
+func ensureDirectoryExists(t *testing.T, path string) (pathToDirectory string) {
+	err := os.MkdirAll(path, 0755)
 	if err != nil {
-		failWithFailure(t, "creating directory "+pathToFile, "error")
+		failWithFailure(t, "creating folder "+path, "error")
 	}
-	return
+	return path
 }
 
 func removeFile(t *testing.T, path string) {
