@@ -1,3 +1,6 @@
+# 5.1.1
+- Fix: `mob break 5` is now correctly parsed
+
 # 5.1.0
 - Feature: Adds new flag `--join` for `mob start` to join an existing session
   `mob start --join` (#437)
