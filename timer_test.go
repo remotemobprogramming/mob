@@ -63,6 +63,17 @@ func TestTimer(t *testing.T) {
 	assertOutputContains(t, output, "Happy collaborating! :)")
 }
 
+func TestTimerExportFunction(t *testing.T) {
+	output, configuration := setup(t)
+	configuration.NotifyCommand = ""
+	configuration.VoiceCommand = ""
+
+	StartTimer("1", configuration)
+
+	assertOutputContains(t, output, "1 min timer ends at approx.")
+	assertOutputContains(t, output, "Happy collaborating! :)")
+}
+
 func TestBreakTimerNumberLessThen1(t *testing.T) {
 	output, configuration := setup(t)
 
@@ -90,5 +101,16 @@ func TestBreakTimer(t *testing.T) {
 
 	assertNoError(t, err)
 	assertOutputContains(t, output, "1 min break timer ends at approx.")
+	assertOutputContains(t, output, "So take a break now! :)")
+}
+
+func TestBreakTimerExportFunction(t *testing.T) {
+	output, configuration := setup(t)
+	configuration.NotifyCommand = ""
+	configuration.VoiceCommand = ""
+
+	StartBreakTimer("5", configuration)
+
+	assertOutputContains(t, output, "5 min break timer ends at approx.")
 	assertOutputContains(t, output, "So take a break now! :)")
 }

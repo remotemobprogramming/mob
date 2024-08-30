@@ -87,7 +87,7 @@ func getMobTimerRoom(configuration config.Configuration) string {
 }
 
 func StartBreakTimer(timerInMinutes string, configuration config.Configuration) {
-	if err := startBreakTimer(configuration.Timer, configuration); err != nil {
+	if err := startBreakTimer(timerInMinutes, configuration); err != nil {
 		Exit(1)
 	}
 }
