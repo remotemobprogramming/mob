@@ -380,30 +380,30 @@ Show your current configuration with `mob config`:
 
 ```toml
 MOB_CLI_NAME="mob"
-MOB_REMOTE_NAME="origin"
-MOB_WIP_COMMIT_MESSAGE="mob next [ci-skip] [ci skip] [skip ci]"
-MOB_START_COMMIT_MESSAGE="mob start [ci-skip] [ci skip] [skip ci]"
-MOB_SKIP_CI_PUSH_OPTION_ENABLED=true
+MOB_DONE_SQUASH=squash
 MOB_GIT_HOOKS_ENABLED=false
-MOB_REQUIRE_COMMIT_MESSAGE=false
-MOB_VOICE_COMMAND="say \"%s\""
-MOB_VOICE_MESSAGE="mob next"
+MOB_NEXT_STAY=true
 MOB_NOTIFY_COMMAND="/usr/bin/osascript -e 'display notification \"%s\"'"
 MOB_NOTIFY_MESSAGE="mob next"
-MOB_NEXT_STAY=true
+MOB_OPEN_COMMAND="idea %s"
+MOB_REMOTE_NAME="origin"
+MOB_REQUIRE_COMMIT_MESSAGE=false
+MOB_SKIP_CI_PUSH_OPTION_ENABLED=true
+MOB_START_COMMIT_MESSAGE="mob start [ci-skip] [ci skip] [skip ci]"
 MOB_START_CREATE=false
 MOB_STASH_NAME="mob-stash-name"
-MOB_WIP_BRANCH_QUALIFIER=""
-MOB_WIP_BRANCH_QUALIFIER_SEPARATOR="-"
-MOB_WIP_BRANCH_PREFIX="mob/"
-MOB_DONE_SQUASH=squash
-MOB_OPEN_COMMAND="idea %s"
-MOB_TIMER=""
-MOB_TIMER_ROOM="mob"
-MOB_TIMER_ROOM_USE_WIP_BRANCH_QUALIFIER=false
 MOB_TIMER_LOCAL=true
-MOB_TIMER_USER="sh"
+MOB_TIMER_ROOM_USE_WIP_BRANCH_QUALIFIER=false
+MOB_TIMER_ROOM="mob"
 MOB_TIMER_URL="https://timer.mob.sh/"
+MOB_TIMER_USER="sh"
+MOB_TIMER=""
+MOB_VOICE_COMMAND="say \"%s\""
+MOB_VOICE_MESSAGE="mob next"
+MOB_WIP_BRANCH_PREFIX="mob/"
+MOB_WIP_BRANCH_QUALIFIER_SEPARATOR="-"
+MOB_WIP_BRANCH_QUALIFIER=""
+MOB_WIP_COMMIT_MESSAGE="mob next [ci-skip] [ci skip] [skip ci]"
 ```
 
 Override default value permanently via a `.mob` file in your user home or in your git project repository root. (recommended)
