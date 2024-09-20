@@ -1,6 +1,9 @@
 # 5.2.0
 - Feature: `mob done` now pulls when someone else already did `done`
 
+# 5.2.0
+- Feature: `mob done` now pulls when someone else already did `done`
+
 # 5.1.1
 - Fix: `mob break 5` is now correctly parsed
 
