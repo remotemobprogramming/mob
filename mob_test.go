@@ -1695,6 +1695,27 @@ func TestDoneSquashWipStartCommit(t *testing.T) {
 	assertCommitsOnBranch(t, 1, "master")
 }
 
+func TestDonePullsIfAlreadyDone(t *testing.T) {
+	_, configuration := setup(t)
+	configuration.NextStay = true
+
+	setWorkingDir(tempDir + "/bob")
+	start(configuration)
+	createFile(t, "example.txt", "contentIrrelevant")
+	next(configuration)
+
+	setWorkingDir(tempDir + "/alice")
+	start(configuration)
+	done(configuration)
+	git("commit", "-am", "\"mob done by Alice\"")
+	git("push")
+
+	setWorkingDir(tempDir + "/bob")
+	done(configuration)
+
+	assertFileExist(t, "example.txt")
+}
+
 func TestDoneNoSquashStartCommit(t *testing.T) {
 	_, configuration := setup(t)
 	configuration.NextStay = true

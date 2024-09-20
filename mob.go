@@ -971,6 +971,7 @@ func done(configuration config.Configuration) {
 	} else {
 		git("checkout", baseBranch.Name)
 		git("branch", "-D", wipBranch.Name)
+		git("pull", "--ff-only")
 		say.Info("someone else already ended your session")
 	}
 }
