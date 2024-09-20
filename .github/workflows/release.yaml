@@ -125,7 +125,7 @@ jobs:
 
           EOF
       - name: Store PKGBUILD as an artifact
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: PKGBUILD
           path: ./aur/${{ env.PACKAGE_NAME }}/PKGBUILD

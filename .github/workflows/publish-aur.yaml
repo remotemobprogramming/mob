@@ -8,7 +8,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       PACKAGE_NAME: mobsh-bin
-      VERSION: v5.0.0  # Set this to the tag name of the release
+      VERSION: v5.2.0  # Set this to the tag name of the release
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -50,7 +50,7 @@ jobs:
           EOF
 
       - name: Store PKGBUILD as an artifact
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: PKGBUILD
           path: ./aur/${{ env.PACKAGE_NAME }}/PKGBUILD
