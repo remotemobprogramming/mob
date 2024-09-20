@@ -103,6 +103,46 @@ func TestParseArgsStartRoom(t *testing.T) {
 	test.Equals(t, "testroom", configuration.TimerRoom)
 }
 
+func TestParseArgsIncludeUncommitedChanges(t *testing.T) {
+	configuration := GetDefaultConfiguration()
+
+	command, parameters, configuration := ParseArgs([]string{"mob", "start", "--include-uncommitted-changes"}, configuration)
+
+	test.Equals(t, "start", command)
+	test.Equals(t, 0, len(parameters))
+	test.Equals(t, true, configuration.StartIncludeUncommittedChanges)
+}
+
+func TestParseArgsIncludeUncommitedChangesShort(t *testing.T) {
+	configuration := GetDefaultConfiguration()
+
+	command, parameters, configuration := ParseArgs([]string{"mob", "start", "-i"}, configuration)
+
+	test.Equals(t, "start", command)
+	test.Equals(t, 0, len(parameters))
+	test.Equals(t, true, configuration.StartIncludeUncommittedChanges)
+}
+
+func TestParseArgsDiscardUncommitedChanges(t *testing.T) {
+	configuration := GetDefaultConfiguration()
+
+	command, parameters, configuration := ParseArgs([]string{"mob", "start", "--discard-uncommitted-changes"}, configuration)
+
+	test.Equals(t, "start", command)
+	test.Equals(t, 0, len(parameters))
+	test.Equals(t, true, configuration.StartDiscardUncommittedChanges)
+}
+
+func TestParseArgsDiscardUncommitedChangesShort(t *testing.T) {
+	configuration := GetDefaultConfiguration()
+
+	command, parameters, configuration := ParseArgs([]string{"mob", "start", "-d"}, configuration)
+
+	test.Equals(t, "start", command)
+	test.Equals(t, 0, len(parameters))
+	test.Equals(t, true, configuration.StartDiscardUncommittedChanges)
+}
+
 func TestParseArgsTimerRoom(t *testing.T) {
 	configuration := GetDefaultConfiguration()
 	test.Equals(t, configuration.WipBranchQualifier, "")

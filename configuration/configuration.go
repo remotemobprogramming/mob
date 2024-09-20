@@ -28,6 +28,7 @@ type Configuration struct {
 	NotifyCommand                  string // override with MOB_NOTIFY_COMMAND
 	NotifyMessage                  string // override with MOB_NOTIFY_MESSAGE
 	NextStay                       bool   // override with MOB_NEXT_STAY
+	StartDiscardUncommittedChanges bool
 	StartIncludeUncommittedChanges bool
 	StartCreate                    bool // override with MOB_START_CREATE variable
 	StartJoin                      bool
@@ -118,6 +119,8 @@ func ParseArgs(args []string, configuration Configuration) (command string, para
 	for i := 1; i < len(args); i++ {
 		arg := args[i]
 		switch arg {
+		case "--discard-uncommitted-changes", "-d":
+			newConfiguration.StartDiscardUncommittedChanges = true
 		case "--include-uncommitted-changes", "-i":
 			newConfiguration.StartIncludeUncommittedChanges = true
 		case "--debug":
@@ -193,6 +196,7 @@ func GetDefaultConfiguration() Configuration {
 		NotifyMessage:                  "mob next",
 		NextStay:                       true,
 		RequireCommitMessage:           false,
+		StartDiscardUncommittedChanges: false,
 		StartIncludeUncommittedChanges: false,
 		StartCreate:                    false,
 		WipBranchQualifier:             "",
