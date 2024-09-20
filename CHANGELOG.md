@@ -1,3 +1,8 @@
+# 5.3.0
+- Feature: `mob start --discard-uncommitted-changes` allows to discard uncommitted changes and then starting a new mob session
+
+Thank you @stefanscheidt for this feature request
+
 # 5.2.0
 - Feature: `mob done` now pulls when someone else already did `done`
 
