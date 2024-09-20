@@ -2295,7 +2295,7 @@ func cloneRepositoryWithSymlink(path, gitDirectory, remoteDirectory string) {
 	}
 	err = os.Symlink(gitDirectory, filepath.FromSlash(path+"/.git"))
 	if err != nil {
-		say.Error("Could not create smylink from " + gitDirectory + " to " + path + "/.git")
+		say.Error("Could not create symlink from " + gitDirectory + " to " + path + "/.git")
 		say.Error(err.Error())
 		return
 	}
