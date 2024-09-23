@@ -15,6 +15,12 @@ const (
 	SquashWip = "squash-wip"
 )
 
+const (
+	IncludeChanges = "include-changes"
+	DiscardChanges = "discard-changes"
+	FailWithError  = "fail-with-error"
+)
+
 type Configuration struct {
 	CliName                        string // override with MOB_CLI_NAME
 	RemoteName                     string // override with MOB_REMOTE_NAME
@@ -28,8 +34,7 @@ type Configuration struct {
 	NotifyCommand                  string // override with MOB_NOTIFY_COMMAND
 	NotifyMessage                  string // override with MOB_NOTIFY_MESSAGE
 	NextStay                       bool   // override with MOB_NEXT_STAY
-	StartDiscardUncommittedChanges bool
-	StartIncludeUncommittedChanges bool
+	HandleUncommittedChanges       string
 	StartCreate                    bool // override with MOB_START_CREATE variable
 	StartJoin                      bool
 	StashName                      string // override with MOB_STASH_NAME
@@ -120,9 +125,9 @@ func ParseArgs(args []string, configuration Configuration) (command string, para
 		arg := args[i]
 		switch arg {
 		case "--discard-uncommitted-changes", "-d":
-			newConfiguration.StartDiscardUncommittedChanges = true
+			newConfiguration.HandleUncommittedChanges = DiscardChanges
 		case "--include-uncommitted-changes", "-i":
-			newConfiguration.StartIncludeUncommittedChanges = true
+			newConfiguration.HandleUncommittedChanges = IncludeChanges
 		case "--debug":
 			// ignore this, already parsed
 		case "--stay", "-s":
@@ -184,33 +189,32 @@ func GetDefaultConfiguration() Configuration {
 
 	}
 	return Configuration{
-		CliName:                        "mob",
-		RemoteName:                     "origin",
-		WipCommitMessage:               "mob next [ci-skip] [ci skip] [skip ci]",
-		StartCommitMessage:             "mob start [ci-skip] [ci skip] [skip ci]",
-		SkipCiPushOptionEnabled:        true,
-		GitHooksEnabled:                false,
-		VoiceCommand:                   voiceCommand,
-		VoiceMessage:                   "mob next",
-		NotifyCommand:                  notifyCommand,
-		NotifyMessage:                  "mob next",
-		NextStay:                       true,
-		RequireCommitMessage:           false,
-		StartDiscardUncommittedChanges: false,
-		StartIncludeUncommittedChanges: false,
-		StartCreate:                    false,
-		WipBranchQualifier:             "",
-		WipBranchQualifierSeparator:    "-",
-		DoneSquash:                     Squash,
-		OpenCommand:                    "",
-		Timer:                          "",
-		TimerLocal:                     true,
-		TimerRoom:                      "",
-		TimerUser:                      "",
-		TimerUrl:                       "https://timer.mob.sh/",
-		WipBranchPrefix:                "mob/",
-		StashName:                      "mob-stash-name",
-		ResetDeleteRemoteWipBranch:     false,
+		CliName:                     "mob",
+		RemoteName:                  "origin",
+		WipCommitMessage:            "mob next [ci-skip] [ci skip] [skip ci]",
+		StartCommitMessage:          "mob start [ci-skip] [ci skip] [skip ci]",
+		SkipCiPushOptionEnabled:     true,
+		GitHooksEnabled:             false,
+		VoiceCommand:                voiceCommand,
+		VoiceMessage:                "mob next",
+		NotifyCommand:               notifyCommand,
+		NotifyMessage:               "mob next",
+		NextStay:                    true,
+		RequireCommitMessage:        false,
+		HandleUncommittedChanges:    FailWithError,
+		StartCreate:                 false,
+		WipBranchQualifier:          "",
+		WipBranchQualifierSeparator: "-",
+		DoneSquash:                  Squash,
+		OpenCommand:                 "",
+		Timer:                       "",
+		TimerLocal:                  true,
+		TimerRoom:                   "",
+		TimerUser:                   "",
+		TimerUrl:                    "https://timer.mob.sh/",
+		WipBranchPrefix:             "mob/",
+		StashName:                   "mob-stash-name",
+		ResetDeleteRemoteWipBranch:  false,
 	}
 }
 

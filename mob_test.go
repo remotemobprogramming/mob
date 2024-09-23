@@ -532,7 +532,7 @@ func TestCleanMissingBaseBranch(t *testing.T) {
 
 func TestStartUnstagedChanges(t *testing.T) {
 	output, configuration := setup(t)
-	configuration.StartIncludeUncommittedChanges = false
+	configuration.HandleUncommittedChanges = config.FailWithError
 	createFile(t, "test.txt", "contentIrrelevant")
 
 	start(configuration)
@@ -545,7 +545,7 @@ func TestStartUnstagedChanges(t *testing.T) {
 
 func TestStartIncludeUnstagedChanges(t *testing.T) {
 	_, configuration := setup(t)
-	configuration.StartIncludeUncommittedChanges = true
+	configuration.HandleUncommittedChanges = config.IncludeChanges
 	createFile(t, "test.txt", "contentIrrelevant")
 
 	start(configuration)
@@ -556,7 +556,7 @@ func TestStartIncludeUnstagedChanges(t *testing.T) {
 
 func TestStartDiscardUnstagedChanges(t *testing.T) {
 	_, configuration := setup(t)
-	configuration.StartDiscardUncommittedChanges = true
+	configuration.HandleUncommittedChanges = config.DiscardChanges
 	createFile(t, "test.txt", "contentIrrelevant")
 
 	start(configuration)
@@ -568,7 +568,7 @@ func TestStartDiscardUnstagedChanges(t *testing.T) {
 
 func TestStartIncludeUnstagedChangesInNewWorkingDirectory(t *testing.T) {
 	output, configuration := setup(t)
-	configuration.StartIncludeUncommittedChanges = true
+	configuration.HandleUncommittedChanges = config.IncludeChanges
 	createDirectory(t, "subdirnew")
 	setWorkingDir(tempDir + "/local/subdirnew")
 	createFile(t, "test.txt", "contentIrrelevant")
@@ -600,7 +600,7 @@ func TestBranch(t *testing.T) {
 
 func TestStartIncludeUntrackedFiles(t *testing.T) {
 	_, configuration := setup(t)
-	configuration.StartIncludeUncommittedChanges = true
+	configuration.HandleUncommittedChanges = config.IncludeChanges
 	createFile(t, "example.txt", "contentIrrelevant")
 
 	start(configuration)
@@ -610,7 +610,7 @@ func TestStartIncludeUntrackedFiles(t *testing.T) {
 
 func TestStartUntrackedFiles(t *testing.T) {
 	_, configuration := setup(t)
-	configuration.StartIncludeUncommittedChanges = false
+	configuration.HandleUncommittedChanges = config.FailWithError
 	createFile(t, "example.txt", "contentIrrelevant")
 
 	start(configuration)
@@ -683,7 +683,7 @@ func TestStartCreateIncludeUncommitedChangesOnUnpushedFeatureBranchWithUncommite
 	createFile(t, "file.txt", "contentIrrelevant")
 
 	configuration.StartCreate = true
-	configuration.StartIncludeUncommittedChanges = true
+	configuration.HandleUncommittedChanges = config.IncludeChanges
 	start(configuration)
 
 	assertOnBranch(t, "mob/feature1")
@@ -695,7 +695,7 @@ func TestStartCreateIncludeUncommitedChangesOnUnpushedFeatureBranchWithUncommite
 	createFile(t, "file.txt", "contentIrrelevant")
 
 	configuration.StartCreate = true
-	configuration.StartIncludeUncommittedChanges = true
+	configuration.HandleUncommittedChanges = config.IncludeChanges
 	configuration.WipBranchQualifier = "green"
 	start(configuration)
 

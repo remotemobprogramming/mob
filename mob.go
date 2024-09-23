@@ -527,7 +527,7 @@ func deleteRemoteWipBranch(configuration config.Configuration) {
 
 func start(configuration config.Configuration) error {
 	uncommittedChanges := hasUncommittedChanges()
-	if uncommittedChanges && !configuration.StartIncludeUncommittedChanges && !configuration.StartDiscardUncommittedChanges {
+	if uncommittedChanges && configuration.HandleUncommittedChanges == config.FailWithError {
 		say.Info("cannot start; clean working tree required")
 		sayUnstagedChangesInfo()
 		sayUntrackedFilesInfo()
@@ -557,22 +557,16 @@ func start(configuration config.Configuration) error {
 		return errors.New("cannot start; unpushed changes on base branch must be pushed upstream")
 	}
 
-	if uncommittedChanges && configuration.StartIncludeUncommittedChanges && configuration.StartDiscardUncommittedChanges {
-		errorMessage := "The options '--include-uncommitted-changes' (-i) and '--discard-uncommitted-changes' (-d) cannot be used together as they are mutually exclusive. Please choose either to include or discard uncommitted changes, but not both."
-		say.Error(errorMessage)
-		return errors.New(errorMessage)
-	}
-	if uncommittedChanges && configuration.StartDiscardUncommittedChanges {
+	if uncommittedChanges && configuration.HandleUncommittedChanges == config.DiscardChanges {
 		git("reset", "--hard")
 	}
 
-	if uncommittedChanges && configuration.StartIncludeUncommittedChanges && silentgit("ls-tree", "-r", "HEAD", "--full-name", "--name-only", ".") == "" {
-		say.Error("cannot start; current working dir is an uncommitted subdir")
-		say.Fix("to fix this, go to the parent directory and try again", "cd ..")
-		return errors.New("cannot start; current working dir is an uncommitted subdir")
-	}
-
-	if uncommittedChanges && configuration.StartIncludeUncommittedChanges {
+	if uncommittedChanges && configuration.HandleUncommittedChanges == config.IncludeChanges {
+		if silentgit("ls-tree", "-r", "HEAD", "--full-name", "--name-only", ".") == "" {
+			say.Error("cannot start; current working dir is an uncommitted subdir")
+			say.Fix("to fix this, go to the parent directory and try again", "cd ..")
+			return errors.New("cannot start; current working dir is an uncommitted subdir")
+		}
 		git("stash", "push", "--include-untracked", "--message", configuration.StashName)
 		say.Info("uncommitted changes were stashed. If an error occurs later on, you can recover them with 'git stash pop'.")
 	}
@@ -589,7 +583,7 @@ func start(configuration config.Configuration) error {
 		startNewMobSession(configuration)
 	}
 
-	if uncommittedChanges && configuration.StartIncludeUncommittedChanges {
+	if uncommittedChanges && configuration.HandleUncommittedChanges == config.IncludeChanges {
 		stashes := silentgit("stash", "list")
 		stash := findStashByName(stashes, configuration.StashName)
 		git("stash", "pop", stash)

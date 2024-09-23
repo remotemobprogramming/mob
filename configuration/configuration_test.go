@@ -103,6 +103,16 @@ func TestParseArgsStartRoom(t *testing.T) {
 	test.Equals(t, "testroom", configuration.TimerRoom)
 }
 
+func TestDefaultConfigurationHandleUncommitedChanges(t *testing.T) {
+	configuration := GetDefaultConfiguration()
+
+	command, parameters, configuration := ParseArgs([]string{"mob", "start"}, configuration)
+
+	test.Equals(t, "start", command)
+	test.Equals(t, 0, len(parameters))
+	test.Equals(t, FailWithError, configuration.HandleUncommittedChanges)
+}
+
 func TestParseArgsIncludeUncommitedChanges(t *testing.T) {
 	configuration := GetDefaultConfiguration()
 
@@ -110,7 +120,7 @@ func TestParseArgsIncludeUncommitedChanges(t *testing.T) {
 
 	test.Equals(t, "start", command)
 	test.Equals(t, 0, len(parameters))
-	test.Equals(t, true, configuration.StartIncludeUncommittedChanges)
+	test.Equals(t, IncludeChanges, configuration.HandleUncommittedChanges)
 }
 
 func TestParseArgsIncludeUncommitedChangesShort(t *testing.T) {
@@ -120,7 +130,7 @@ func TestParseArgsIncludeUncommitedChangesShort(t *testing.T) {
 
 	test.Equals(t, "start", command)
 	test.Equals(t, 0, len(parameters))
-	test.Equals(t, true, configuration.StartIncludeUncommittedChanges)
+	test.Equals(t, IncludeChanges, configuration.HandleUncommittedChanges)
 }
 
 func TestParseArgsDiscardUncommitedChanges(t *testing.T) {
@@ -130,7 +140,7 @@ func TestParseArgsDiscardUncommitedChanges(t *testing.T) {
 
 	test.Equals(t, "start", command)
 	test.Equals(t, 0, len(parameters))
-	test.Equals(t, true, configuration.StartDiscardUncommittedChanges)
+	test.Equals(t, DiscardChanges, configuration.HandleUncommittedChanges)
 }
 
 func TestParseArgsDiscardUncommitedChangesShort(t *testing.T) {
@@ -140,7 +150,7 @@ func TestParseArgsDiscardUncommitedChangesShort(t *testing.T) {
 
 	test.Equals(t, "start", command)
 	test.Equals(t, 0, len(parameters))
-	test.Equals(t, true, configuration.StartDiscardUncommittedChanges)
+	test.Equals(t, DiscardChanges, configuration.HandleUncommittedChanges)
 }
 
 func TestParseArgsTimerRoom(t *testing.T) {
@@ -226,10 +236,6 @@ func boolToInterface(actual func(Configuration) bool) func(c Configuration) inte
 
 func (c Configuration) GetMobDoneSquash() string {
 	return c.DoneSquash
-}
-
-func (c Configuration) GetMobStartIncludeUncommittedChanges() bool {
-	return c.StartIncludeUncommittedChanges
 }
 
 func (c Configuration) GetMobStartCreateRemoteBranch() bool {
