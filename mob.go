@@ -21,7 +21,7 @@ import (
 )
 
 const (
-	versionNumber     = "5.2.0"
+	versionNumber     = "5.3.0"
 	minimumGitVersion = "2.13.0"
 )
 
@@ -527,7 +527,7 @@ func deleteRemoteWipBranch(configuration config.Configuration) {
 
 func start(configuration config.Configuration) error {
 	uncommittedChanges := hasUncommittedChanges()
-	if uncommittedChanges && !configuration.StartIncludeUncommittedChanges {
+	if uncommittedChanges && configuration.HandleUncommittedChanges == config.FailWithError {
 		say.Info("cannot start; clean working tree required")
 		sayUnstagedChangesInfo()
 		sayUntrackedFilesInfo()
@@ -557,13 +557,16 @@ func start(configuration config.Configuration) error {
 		return errors.New("cannot start; unpushed changes on base branch must be pushed upstream")
 	}
 
-	if uncommittedChanges && silentgit("ls-tree", "-r", "HEAD", "--full-name", "--name-only", ".") == "" {
-		say.Error("cannot start; current working dir is an uncommitted subdir")
-		say.Fix("to fix this, go to the parent directory and try again", "cd ..")
-		return errors.New("cannot start; current working dir is an uncommitted subdir")
+	if uncommittedChanges && configuration.HandleUncommittedChanges == config.DiscardChanges {
+		git("reset", "--hard")
 	}
 
-	if uncommittedChanges {
+	if uncommittedChanges && configuration.HandleUncommittedChanges == config.IncludeChanges {
+		if silentgit("ls-tree", "-r", "HEAD", "--full-name", "--name-only", ".") == "" {
+			say.Error("cannot start; current working dir is an uncommitted subdir")
+			say.Fix("to fix this, go to the parent directory and try again", "cd ..")
+			return errors.New("cannot start; current working dir is an uncommitted subdir")
+		}
 		git("stash", "push", "--include-untracked", "--message", configuration.StashName)
 		say.Info("uncommitted changes were stashed. If an error occurs later on, you can recover them with 'git stash pop'.")
 	}
@@ -580,7 +583,7 @@ func start(configuration config.Configuration) error {
 		startNewMobSession(configuration)
 	}
 
-	if uncommittedChanges && configuration.StartIncludeUncommittedChanges {
+	if uncommittedChanges && configuration.HandleUncommittedChanges == config.IncludeChanges {
 		stashes := silentgit("stash", "list")
 		stash := findStashByName(stashes, configuration.StashName)
 		git("stash", "pop", stash)
@@ -595,16 +598,22 @@ func start(configuration config.Configuration) error {
 }
 
 func sayFixUncommittedChanges(configuration config.Configuration) {
-	var instruction string
+	var instructionInclude string
+	var instructionDiscard string
 	if configuration.StartCreate {
-		instruction = "To start, including uncommitted changes and create the remote branch, use"
+		instructionInclude = "To start, including uncommitted changes and create the remote branch, use"
+		instructionDiscard = "To start, discarding uncommitted changes and create the remote branch, use"
 	} else {
-		instruction = "To start, including uncommitted changes, use"
+		instructionInclude = "To start, including uncommitted changes, use"
+		instructionDiscard = "To start, discarding uncommitted changes, use"
 	}
 
-	fixCommand := configuration.CliName + " start" + createFix(configuration) + branchFix(configuration) + " --include-uncommitted-changes"
+	fixCommandStart := configuration.CliName + " start" + createFix(configuration) + branchFix(configuration)
+	fixCommandInclude := fixCommandStart + " --include-uncommitted-changes"
+	fixCommandDiscard := fixCommandStart + " --discard-uncommitted-changes"
 
-	say.Fix(instruction, fixCommand)
+	say.Fix(instructionInclude, fixCommandInclude)
+	say.Fix(instructionDiscard, fixCommandDiscard)
 }
 
 func createFix(configuration config.Configuration) string {

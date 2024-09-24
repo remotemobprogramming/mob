@@ -532,7 +532,7 @@ func TestCleanMissingBaseBranch(t *testing.T) {
 
 func TestStartUnstagedChanges(t *testing.T) {
 	output, configuration := setup(t)
-	configuration.StartIncludeUncommittedChanges = false
+	configuration.HandleUncommittedChanges = config.FailWithError
 	createFile(t, "test.txt", "contentIrrelevant")
 
 	start(configuration)
@@ -540,11 +540,12 @@ func TestStartUnstagedChanges(t *testing.T) {
 	assertOnBranch(t, "master")
 	assertNoMobSessionBranches(t, configuration, "mob-session")
 	assertOutputContains(t, output, "mob start --include-uncommitted-changes")
+	assertOutputContains(t, output, "mob start --discard-uncommitted-changes")
 }
 
 func TestStartIncludeUnstagedChanges(t *testing.T) {
 	_, configuration := setup(t)
-	configuration.StartIncludeUncommittedChanges = true
+	configuration.HandleUncommittedChanges = config.IncludeChanges
 	createFile(t, "test.txt", "contentIrrelevant")
 
 	start(configuration)
@@ -553,9 +554,21 @@ func TestStartIncludeUnstagedChanges(t *testing.T) {
 	assertMobSessionBranches(t, configuration, "mob-session")
 }
 
+func TestStartDiscardUnstagedChanges(t *testing.T) {
+	_, configuration := setup(t)
+	configuration.HandleUncommittedChanges = config.DiscardChanges
+	createFile(t, "test.txt", "contentIrrelevant")
+
+	start(configuration)
+
+	assertOnBranch(t, "mob-session")
+	assertMobSessionBranches(t, configuration, "mob-session")
+	assertCleanGitStatus(t)
+}
+
 func TestStartIncludeUnstagedChangesInNewWorkingDirectory(t *testing.T) {
 	output, configuration := setup(t)
-	configuration.StartIncludeUncommittedChanges = true
+	configuration.HandleUncommittedChanges = config.IncludeChanges
 	createDirectory(t, "subdirnew")
 	setWorkingDir(tempDir + "/local/subdirnew")
 	createFile(t, "test.txt", "contentIrrelevant")
@@ -587,7 +600,7 @@ func TestBranch(t *testing.T) {
 
 func TestStartIncludeUntrackedFiles(t *testing.T) {
 	_, configuration := setup(t)
-	configuration.StartIncludeUncommittedChanges = true
+	configuration.HandleUncommittedChanges = config.IncludeChanges
 	createFile(t, "example.txt", "contentIrrelevant")
 
 	start(configuration)
@@ -597,7 +610,7 @@ func TestStartIncludeUntrackedFiles(t *testing.T) {
 
 func TestStartUntrackedFiles(t *testing.T) {
 	_, configuration := setup(t)
-	configuration.StartIncludeUncommittedChanges = false
+	configuration.HandleUncommittedChanges = config.FailWithError
 	createFile(t, "example.txt", "contentIrrelevant")
 
 	start(configuration)
@@ -625,6 +638,7 @@ func TestStartOnUnpushedFeatureBranchWithUncommitedChanges(t *testing.T) {
 
 	assertOnBranch(t, "feature1")
 	assertOutputContains(t, output, "mob start --include-uncommitted-changes")
+	assertOutputContains(t, output, "mob start --discard-uncommitted-changes")
 }
 
 func TestStartCreateOnUnpushedFeatureBranch(t *testing.T) {
@@ -660,6 +674,7 @@ func TestStartCreateOnUnpushedFeatureBranchWithUncommitedChanges(t *testing.T) {
 
 	assertOutputContains(t, output, "To start, including uncommitted changes and create the remote branch, use")
 	assertOutputContains(t, output, "mob start --create --include-uncommitted-changes")
+	assertOutputContains(t, output, "mob start --create --discard-uncommitted-changes")
 }
 
 func TestStartCreateIncludeUncommitedChangesOnUnpushedFeatureBranchWithUncommitedChanges(t *testing.T) {
@@ -668,7 +683,7 @@ func TestStartCreateIncludeUncommitedChangesOnUnpushedFeatureBranchWithUncommite
 	createFile(t, "file.txt", "contentIrrelevant")
 
 	configuration.StartCreate = true
-	configuration.StartIncludeUncommittedChanges = true
+	configuration.HandleUncommittedChanges = config.IncludeChanges
 	start(configuration)
 
 	assertOnBranch(t, "mob/feature1")
@@ -680,7 +695,7 @@ func TestStartCreateIncludeUncommitedChangesOnUnpushedFeatureBranchWithUncommite
 	createFile(t, "file.txt", "contentIrrelevant")
 
 	configuration.StartCreate = true
-	configuration.StartIncludeUncommittedChanges = true
+	configuration.HandleUncommittedChanges = config.IncludeChanges
 	configuration.WipBranchQualifier = "green"
 	start(configuration)
 
@@ -1521,6 +1536,7 @@ func TestStartBranchWithUncommitedChangesFixWithBranch(t *testing.T) {
 	runMob(t, tempDir+"/local", "start", "-b", "green")
 
 	assertOutputContains(t, output, "mob start --branch green --include-uncommitted-changes")
+	assertOutputContains(t, output, "mob start --branch green --discard-uncommitted-changes")
 	resetExit()
 }
 
@@ -1534,6 +1550,7 @@ func TestStartBranchEnvWithUncommitedChangesFixWithoutBranch(t *testing.T) {
 	runMob(t, tempDir+"/local", "start")
 
 	assertOutputContains(t, output, "mob start --include-uncommitted-changes")
+	assertOutputContains(t, output, "mob start --discard-uncommitted-changes")
 	resetExit()
 }
 
@@ -1548,6 +1565,7 @@ func TestStartCreateBranchWithUncommitedChangesFixWithBranch(t *testing.T) {
 	runMob(t, tempDir+"/local", "start", "--create", "-b", "green")
 
 	assertOutputContains(t, output, "mob start --create --branch green --include-uncommitted-changes")
+	assertOutputContains(t, output, "mob start --create --branch green --discard-uncommitted-changes")
 	resetExit()
 }
 
@@ -1563,6 +1581,7 @@ func TestStartCreateBranchEnvWithUncommitedChangesFixWithoutBranch(t *testing.T)
 
 	os.Unsetenv("MOB_WIP_BRANCH_QUALIFIER")
 	assertOutputContains(t, output, "mob start --create --include-uncommitted-changes")
+	assertOutputContains(t, output, "mob start --create --discard-uncommitted-changes")
 	resetExit()
 }
 
