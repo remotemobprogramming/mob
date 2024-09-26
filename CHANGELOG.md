@@ -1,3 +1,6 @@
+# 5.3.1
+- Fix:  Added documentation for `mob start --discard-uncommitted-changes` in the `mob help` command
+
 # 5.3.0
 - Feature: `mob start --discard-uncommitted-changes` allows to discard uncommitted changes and then starting a new mob session
 

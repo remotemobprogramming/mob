@@ -175,6 +175,7 @@ Basic Commands:
 Basic Commands(Options):
   start [<minutes>]                      Start a <minutes> timer
     [--include-uncommitted-changes|-i]   Move uncommitted changes to wip branch
+    [--discard-uncommitted-changes|-d]   Discard uncommitted changes
     [--branch|-b <branch-postfix>]       Set wip branch to 'mob/<base-branch>-<branch-postfix>'
     [--create]                           Create the remote branch
     [--room <room-name>]                 Set room name for timer.mob.sh once
