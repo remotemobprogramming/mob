@@ -18,6 +18,7 @@ Basic Commands:
 Basic Commands with Options:
   start [<minutes>]                      Start <minutes> minutes timer
     [--include-uncommitted-changes|-i]   Move uncommitted changes to wip branch
+    [--discard-uncommitted-changes|-d]   Discard uncommitted changes
     [--branch|-b <branch-postfix>]       Set wip branch to 'mob/<base-branch>` + configuration.WipBranchQualifierSeparator + `<branch-postfix>'
     [--create]                           Create the remote branch
 	[--join|-j]                          Join existing wip branch
