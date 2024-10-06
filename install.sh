@@ -175,7 +175,12 @@ check_say() {
 
 check_installation_path() {
   location="$(command -v mob)"
-  if [ "$location" != "$target/mob" ] && [ "$location" != "" ]; then
+  target_location="$target/mob"
+  if [ "$(determine_os)" == "windows" ]; then
+    location="$(cygpath -m "$location")"
+    target_location="${target_location}.exe"
+  fi
+  if [ "$location" != "$target_location" ] && [ "$location" != "" ]; then
     echo "(!) The installation location doesn't match the location of the mob binary."
     echo "    This means that the binary that's used is not the binary that has just been installed"
     echo "    You probably want to delete the binary at $location"
