@@ -176,7 +176,7 @@ check_say() {
 check_installation_path() {
   location="$(command -v mob)"
   if [ "$(determine_os)" == "windows" ]; then
-    location=$(echo $location | sed -E 's|^/([a-zA-Z])|\U\1:|; s|/|/|g')
+    location=$(echo $location | sed -E 's|^/([a-zA-Z])|\U\1:|')
   fi
   if [ "$location" != "$target/mob" ] && [ "$location" != "" ]; then
     echo "(!) The installation location doesn't match the location of the mob binary."
