@@ -11,7 +11,7 @@ if not exist %target% (
     echo Directory %target% created.
 )
 
-go build mob.go
+go build
 copy mob.exe %target%
 echo 'mob.exe' installed to %target%
 
