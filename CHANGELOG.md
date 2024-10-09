@@ -1,5 +1,8 @@
+# 5.3.2
+- Fix: Removed wrong warning about diverging wip branch when joining a new session
+
 # 5.3.1
-- Fix:  Added documentation for `mob start --discard-uncommitted-changes` in the `mob help` command
+- Fix: Added documentation for `mob start --discard-uncommitted-changes` in the `mob help` command
 
 # 5.3.0
 - Feature: `mob start --discard-uncommitted-changes` allows to discard uncommitted changes and then starting a new mob session
