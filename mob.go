@@ -751,7 +751,7 @@ func startJoinMobSession(configuration config.Configuration) {
 	baseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), gitBranches(), configuration)
 
 	say.Info("joining existing session from " + currentWipBranch.remote(configuration).String())
-	if doBranchesDiverge(baseBranch.remote(configuration).Name, currentWipBranch.Name) {
+	if hasLocalBranch(currentWipBranch.Name) && doBranchesDiverge(baseBranch.remote(configuration).Name, currentWipBranch.Name) {
 		say.Warning("Careful, your wip branch (" + currentWipBranch.Name + ") diverges from your main branch (" + baseBranch.remote(configuration).Name + ") !")
 	}
 

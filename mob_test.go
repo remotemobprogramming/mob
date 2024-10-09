@@ -355,6 +355,19 @@ func TestStartWarnsOnDivergingWipBranch(t *testing.T) {
 	assertOutputContains(t, output, "Careful, your wip branch (mob-session) diverges from your main branch (origin/master) !")
 }
 
+func TestStartJoinDoesNotWarn(t *testing.T) {
+	output, configuration := setup(t)
+
+	start(configuration)
+	createFileAndCommitIt(t, "example.txt", "asdf", "asdf")
+	next(configuration)
+
+	setWorkingDir(tempDir + "/localother")
+	start(configuration)
+
+	assertOutputNotContains(t, output, "Careful, your wip branch (mob-session) diverges from your main branch (origin/master) !")
+}
+
 func TestStartNextOnFeatureWithBranch(t *testing.T) {
 	_, configuration := setup(t)
 	configuration.WipBranchQualifier = "green"
