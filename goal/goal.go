@@ -64,10 +64,8 @@ func putGoalHttp(goal string, configuration config.Configuration) error {
 	if err != nil {
 		return err
 	}
-
 	httpClient := httpclient.GetHttpClient(configuration.TimerInsecure)
 	_, err = httpclient.SendRequest(requestBody, "PUT", getGoalUrl(configuration), httpClient)
-
 	return err
 }
 
