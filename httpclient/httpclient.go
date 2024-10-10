@@ -22,19 +22,11 @@ func GetHttpClient(disableSSLVerification bool) *http.Client {
 	return http.DefaultClient
 }
 
-func SendRequest(requestBody []byte, requestMethod string, requestUrl string, disableSSLVerification bool) (string, error) {
+func SendRequest(requestBody []byte, requestMethod string, requestUrl string, httpClient *http.Client) (string, error) {
 	say.Info(requestMethod + " " + requestUrl + " " + string(requestBody))
 
 	responseBody := bytes.NewBuffer(requestBody)
 	request, requestCreationError := http.NewRequest(requestMethod, requestUrl, responseBody)
-
-	httpClient := http.DefaultClient
-	if disableSSLVerification {
-		transCfg := &http.Transport{
-			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-		}
-		httpClient = &http.Client{Transport: transCfg}
-	}
 
 	if requestCreationError != nil {
 		return "", fmt.Errorf("failed to create the http request object: %w", requestCreationError)
@@ -72,14 +64,4 @@ func SendRequest(requestBody []byte, requestMethod string, requestUrl string, di
 		say.Info(body)
 	}
 	return body, nil
-}
-
-func getHttpClient(disableSSLVerification bool) *http.Client {
-	if disableSSLVerification {
-		transCfg := &http.Transport{
-			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-		}
-		return &http.Client{Transport: transCfg}
-	}
-	return http.DefaultClient
 }
