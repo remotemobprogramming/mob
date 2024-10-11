@@ -21,7 +21,7 @@ import (
 )
 
 const (
-	versionNumber     = "5.3.2"
+	versionNumber     = "5.3.3"
 	minimumGitVersion = "2.13.0"
 )
 
@@ -115,6 +115,19 @@ func (branch Branch) hasRemoteBranch(configuration config.Configuration) bool {
 
 	for i := 0; i < len(remoteBranches); i++ {
 		if remoteBranches[i] == remoteBranch {
+			return true
+		}
+	}
+
+	return false
+}
+
+func (branch Branch) hasLocalBranch(localBranches []string) bool {
+	say.Debug("Local Branches: " + strings.Join(localBranches, "\n"))
+	say.Debug("Local Branch: " + branch.Name)
+
+	for i := 0; i < len(localBranches); i++ {
+		if localBranches[i] == branch.Name {
 			return true
 		}
 	}
@@ -536,7 +549,9 @@ func start(configuration config.Configuration) error {
 	}
 
 	git("fetch", configuration.RemoteName, "--prune")
-	currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), gitBranches(), configuration)
+	currentBranch := gitCurrentBranch()
+	localBranches := gitBranches()
+	currentBaseBranch, currentWipBranch := determineBranches(currentBranch, localBranches, configuration)
 
 	if !currentWipBranch.hasRemoteBranch(configuration) && configuration.StartJoin {
 		say.Error("Remote wip branch " + currentWipBranch.remote(configuration).String() + " is missing")
@@ -550,6 +565,11 @@ func start(configuration config.Configuration) error {
 	}
 
 	createRemoteBranch(configuration, currentBaseBranch)
+
+	if !currentBaseBranch.hasLocalBranch(localBranches) {
+		silentgit("checkout", "-b", currentBaseBranch.Name)
+		silentgit("checkout", currentBranch.Name)
+	}
 
 	if currentBaseBranch.hasUnpushedCommits(configuration) {
 		say.Error("cannot start; unpushed changes on base branch must be pushed upstream")

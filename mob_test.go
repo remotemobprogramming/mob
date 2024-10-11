@@ -1884,6 +1884,27 @@ func TestMobClean(t *testing.T) {
 	assertNoMobSessionBranches(t, configuration, "mob-session")
 }
 
+func TestMobStartOnWipBranchWithoutCheckedOutBaseBranchWithoutHyphens(t *testing.T) {
+	output, configuration := setup(t)
+
+	setWorkingDir(tempDir + "/alice")
+	git("switch", "-C", "basebranchwithouthyphen")
+	configuration.StartCreate = true
+	start(configuration)
+	assertOnBranch(t, "mob/basebranchwithouthyphen")
+	createFile(t, "file1.txt", "abc")
+	next(configuration)
+	assertOnBranch(t, "basebranchwithouthyphen")
+
+	setWorkingDir(tempDir + "/bob")
+	git("switch", "-C", "mob/basebranchwithouthyphen")
+	configuration.StartCreate = false
+
+	assertNoError(t, start(configuration))
+	assertOnBranch(t, "mob/basebranchwithouthyphen")
+	assertOutputContains(t, output, "joining existing session from origin/mob/basebranchwithouthyphen")
+}
+
 func TestGitVersionParse(t *testing.T) {
 	// Check real examples
 	equals(t, GitVersion{2, 34, 1}, parseGitVersion("git version 2.34.1"))
@@ -2093,7 +2114,7 @@ func setWorkingDir(dir string) {
 
 func assertNoError(t *testing.T, err error) {
 	if err != nil {
-		failWithFailure(t, err, nil)
+		failWithFailure(t, nil, err)
 	}
 
 }
