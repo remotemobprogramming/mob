@@ -1888,7 +1888,7 @@ func TestMobStartOnWipBranchWithoutCheckedOutBaseBranchWithoutHyphens(t *testing
 	output, configuration := setup(t)
 
 	setWorkingDir(tempDir + "/alice")
-	git("switch", "-C", "basebranchwithouthyphen")
+	git("checkout", "-b", "basebranchwithouthyphen")
 	configuration.StartCreate = true
 	start(configuration)
 	assertOnBranch(t, "mob/basebranchwithouthyphen")
@@ -1897,7 +1897,7 @@ func TestMobStartOnWipBranchWithoutCheckedOutBaseBranchWithoutHyphens(t *testing
 	assertOnBranch(t, "basebranchwithouthyphen")
 
 	setWorkingDir(tempDir + "/bob")
-	git("switch", "-C", "mob/basebranchwithouthyphen")
+	git("checkout", "-b", "mob/basebranchwithouthyphen")
 	configuration.StartCreate = false
 
 	assertNoError(t, start(configuration))
