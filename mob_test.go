@@ -1903,6 +1903,10 @@ func TestMobStartOnWipBranchWithoutCheckedOutBaseBranchWithoutHyphens(t *testing
 	assertNoError(t, start(configuration))
 	assertOnBranch(t, "mob/basebranchwithouthyphen")
 	assertOutputContains(t, output, "joining existing session from origin/mob/basebranchwithouthyphen")
+
+	createFile(t, "file2.txt", "abc")
+	done(configuration)
+	assertOnBranch(t, "basebranchwithouthyphen")
 }
 
 func TestGitVersionParse(t *testing.T) {

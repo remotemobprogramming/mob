@@ -566,12 +566,7 @@ func start(configuration config.Configuration) error {
 
 	createRemoteBranch(configuration, currentBaseBranch)
 
-	if !currentBaseBranch.hasLocalBranch(localBranches) {
-		silentgit("checkout", "-b", currentBaseBranch.Name)
-		silentgit("checkout", currentBranch.Name)
-	}
-
-	if currentBaseBranch.hasUnpushedCommits(configuration) {
+	if currentBaseBranch.hasLocalBranch(localBranches) && currentBaseBranch.hasUnpushedCommits(configuration) {
 		say.Error("cannot start; unpushed changes on base branch must be pushed upstream")
 		say.Fix("to fix this, push those commits and try again", "git push "+configuration.RemoteName+" "+currentBaseBranch.String())
 		return errors.New("cannot start; unpushed changes on base branch must be pushed upstream")
@@ -610,7 +605,7 @@ func start(configuration config.Configuration) error {
 	}
 
 	say.Info("you are on wip branch '" + currentWipBranch.String() + "' (base branch '" + currentBaseBranch.String() + "')")
-	sayLastCommitsList(currentBaseBranch.String(), currentWipBranch.String())
+	sayLastCommitsList(currentBaseBranch, currentWipBranch, configuration)
 
 	openLastModifiedFileIfPresent(configuration)
 
@@ -1021,12 +1016,16 @@ func squashOrCommit(configuration config.Configuration) string {
 	}
 }
 
-func sayLastCommitsList(currentBaseBranch string, currentWipBranch string) {
-	commitsBaseWipBranch := currentBaseBranch + ".." + currentWipBranch
-	log := silentgit("--no-pager", "log", commitsBaseWipBranch, "--pretty=format:%h %cr <%an>", "--abbrev-commit")
+func sayLastCommitsList(currentBaseBranch Branch, currentWipBranch Branch, configuration config.Configuration) {
+	commitsBaseWipBranch := currentBaseBranch.String() + ".." + currentWipBranch.String()
+	log, err := silentgitignorefailure("--no-pager", "log", commitsBaseWipBranch, "--pretty=format:%h %cr <%an>", "--abbrev-commit")
+	if err != nil {
+		commitsBaseWipBranch = currentBaseBranch.remote(configuration).String() + ".." + currentWipBranch.String()
+		log = silentgit("--no-pager", "log", commitsBaseWipBranch, "--pretty=format:%h %cr <%an>", "--abbrev-commit")
+	}
 	lines := strings.Split(log, "\n")
 	if len(lines) > 5 {
-		say.Info("wip branch '" + currentWipBranch + "' contains " + strconv.Itoa(len(lines)) + " commits. The last 5 were:")
+		say.Info("wip branch '" + currentWipBranch.String() + "' contains " + strconv.Itoa(len(lines)) + " commits. The last 5 were:")
 		lines = lines[:5]
 	}
 	ReverseSlice(lines)
@@ -1094,7 +1093,8 @@ func doBranchesDiverge(ancestor string, successor string) bool {
 }
 
 func gitUserName() string {
-	return silentgitignorefailure("config", "--get", "user.name")
+	output, _ := silentgitignorefailure("config", "--get", "user.name")
+	return output
 }
 
 func gitUserEmail() string {
@@ -1150,13 +1150,13 @@ func silentgit(args ...string) string {
 	return strings.TrimSpace(output)
 }
 
-func silentgitignorefailure(args ...string) string {
+func silentgitignorefailure(args ...string) (string, error) {
 	_, output, err := runCommandSilent("git", args...)
 
 	if err != nil {
-		return ""
+		return "", err
 	}
-	return strings.TrimSpace(output)
+	return strings.TrimSpace(output), nil
 }
 
 func deleteEmptyStrings(s []string) []string {
@@ -1225,7 +1225,8 @@ func gitIgnoreFailure(args ...string) error {
 }
 
 func gitCommitHash() string {
-	return silentgitignorefailure("rev-parse", "HEAD")
+	output, _ := silentgitignorefailure("rev-parse", "HEAD")
+	return output
 }
 
 func gitVersion() string {
