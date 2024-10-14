@@ -175,7 +175,7 @@ check_say() {
 
 check_installation_path() {
   location="$(command -v mob)"
-  if [ "$(determine_os)" == "windows" ]; then
+  if [ "$(determine_os)" = "windows" ]; then
     location=$(echo $location | sed -E 's|^/([a-zA-Z])|\U\1:|')
   fi
   if [ "$location" != "$target/mob" ] && [ "$location" != "" ]; then
