@@ -64,8 +64,8 @@ func putGoalHttp(goal string, configuration config.Configuration) error {
 	if err != nil {
 		return err
 	}
-	httpClient := httpclient.GetHttpClient(configuration.TimerInsecure)
-	_, err = httpclient.SendRequest(requestBody, "PUT", getGoalUrl(configuration), httpClient)
+	client := httpclient.CreateHttpClient(configuration.TimerInsecure)
+	_, err = client.SendRequest(requestBody, "PUT", getGoalUrl(configuration))
 	return err
 }
 
@@ -88,8 +88,8 @@ func deleteGoalHttp(room string, user string, timerService string, disableSslVer
 	if err != nil {
 		return err
 	}
-	httpClient := httpclient.GetHttpClient(disableSslVerification)
-	_, err = httpclient.SendRequest(requestBody, "DELETE", timerService+room+"/goal", httpClient)
+	client := httpclient.CreateHttpClient(disableSslVerification)
+	_, err = client.SendRequest(requestBody, "DELETE", timerService+room+"/goal")
 	return err
 }
 
@@ -108,7 +108,7 @@ func showGoal(configuration config.Configuration) error {
 }
 func getGoalHttp(room string, timerService string, disableSslVerification bool) (string, error) {
 	url := timerService + room + "/goal"
-	response, err := httpclient.GetHttpClient(disableSslVerification).Get(url)
+	response, err := httpclient.GetNetHttpClient(disableSslVerification).Get(url)
 	if err != nil {
 		say.Debug(err.Error())
 		return "", err

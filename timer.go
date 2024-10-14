@@ -157,8 +157,8 @@ func httpPutTimer(timeoutInMinutes int, room string, user string, timerService s
 		"timer": timeoutInMinutes,
 		"user":  user,
 	})
-	httpClient := httpclient.GetHttpClient(disableSSLVerification)
-	_, err := httpclient.SendRequest(putBody, "PUT", timerService+room, httpClient)
+	client := httpclient.CreateHttpClient(disableSSLVerification)
+	_, err := client.SendRequest(putBody, "PUT", timerService+room)
 	return err
 }
 
@@ -167,8 +167,8 @@ func httpPutBreakTimer(timeoutInMinutes int, room string, user string, timerServ
 		"breaktimer": timeoutInMinutes,
 		"user":       user,
 	})
-	httpClient := httpclient.GetHttpClient(disableSSLVerification)
-	_, err := httpclient.SendRequest(putBody, "PUT", timerService+room, httpClient)
+	client := httpclient.CreateHttpClient(disableSSLVerification)
+	_, err := client.SendRequest(putBody, "PUT", timerService+room)
 	return err
 }
 
