@@ -12,7 +12,21 @@ import (
 	"net/url"
 )
 
-func GetHttpClient(disableSSLVerification bool) *http.Client {
+type Client interface {
+	SendRequest(method string, url string, body []byte) error
+}
+
+type HttpClient struct {
+	netHttpClient *http.Client
+}
+
+func CreateHttpClient(disableSSLVerification bool) HttpClient {
+	return HttpClient{
+		netHttpClient: GetNetHttpClient(disableSSLVerification),
+	}
+}
+
+func GetNetHttpClient(disableSSLVerification bool) *http.Client {
 	if disableSSLVerification {
 		transCfg := &http.Transport{
 			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
@@ -22,7 +36,7 @@ func GetHttpClient(disableSSLVerification bool) *http.Client {
 	return http.DefaultClient
 }
 
-func SendRequest(requestBody []byte, requestMethod string, requestUrl string, httpClient *http.Client) (string, error) {
+func (c HttpClient) SendRequest(requestBody []byte, requestMethod string, requestUrl string) (string, error) {
 	say.Info(requestMethod + " " + requestUrl + " " + string(requestBody))
 
 	responseBody := bytes.NewBuffer(requestBody)
@@ -33,7 +47,7 @@ func SendRequest(requestBody []byte, requestMethod string, requestUrl string, ht
 	}
 
 	request.Header.Set("Content-Type", "application/json")
-	response, responseErr := httpClient.Do(request)
+	response, responseErr := c.netHttpClient.Do(request)
 	if e, ok := responseErr.(*url.Error); ok {
 		switch e.Err.(type) {
 		case x509.UnknownAuthorityError:
