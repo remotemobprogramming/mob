@@ -10,7 +10,7 @@ func status(configuration config.Configuration) {
 		currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), gitBranches(), configuration)
 		say.Info("you are on wip branch " + currentWipBranch.String() + " (base branch " + currentBaseBranch.String() + ")")
 
-		sayLastCommitsList(currentBaseBranch.String(), currentWipBranch.String())
+		sayLastCommitsList(currentBaseBranch, currentWipBranch, configuration)
 	} else {
 		currentBaseBranch, _ := determineBranches(gitCurrentBranch(), gitBranches(), configuration)
 		say.Info("you are on base branch '" + currentBaseBranch.String() + "'")
