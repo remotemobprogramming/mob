@@ -122,7 +122,8 @@ func (branch Branch) hasRemoteBranch(configuration config.Configuration) bool {
 	return false
 }
 
-func (branch Branch) hasLocalBranch(localBranches []string) bool {
+func (branch Branch) hasLocalBranch() bool {
+	localBranches := gitBranches()
 	say.Debug("Local Branches: " + strings.Join(localBranches, "\n"))
 	say.Debug("Local Branch: " + branch.Name)
 
@@ -529,7 +530,7 @@ func deleteRemoteWipBranch(configuration config.Configuration) {
 	currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), gitBranches(), configuration)
 
 	git("checkout", currentBaseBranch.String())
-	if hasLocalBranch(currentWipBranch.String()) {
+	if currentWipBranch.hasLocalBranch() {
 		git("branch", "--delete", "--force", currentWipBranch.String())
 	}
 	if currentWipBranch.hasRemoteBranch(configuration) {
@@ -550,8 +551,7 @@ func start(configuration config.Configuration) error {
 
 	git("fetch", configuration.RemoteName, "--prune")
 	currentBranch := gitCurrentBranch()
-	localBranches := gitBranches()
-	currentBaseBranch, currentWipBranch := determineBranches(currentBranch, localBranches, configuration)
+	currentBaseBranch, currentWipBranch := determineBranches(currentBranch, gitBranches(), configuration)
 
 	if !currentWipBranch.hasRemoteBranch(configuration) && configuration.StartJoin {
 		say.Error("Remote wip branch " + currentWipBranch.remote(configuration).String() + " is missing")
@@ -566,7 +566,7 @@ func start(configuration config.Configuration) error {
 
 	createRemoteBranch(configuration, currentBaseBranch)
 
-	if currentBaseBranch.hasLocalBranch(localBranches) && currentBaseBranch.hasUnpushedCommits(configuration) {
+	if currentBaseBranch.hasLocalBranch() && currentBaseBranch.hasUnpushedCommits(configuration) {
 		say.Error("cannot start; unpushed changes on base branch must be pushed upstream")
 		say.Fix("to fix this, push those commits and try again", "git push "+configuration.RemoteName+" "+currentBaseBranch.String())
 		return errors.New("cannot start; unpushed changes on base branch must be pushed upstream")
@@ -766,7 +766,7 @@ func startJoinMobSession(configuration config.Configuration) {
 	baseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), gitBranches(), configuration)
 
 	say.Info("joining existing session from " + currentWipBranch.remote(configuration).String())
-	if hasLocalBranch(currentWipBranch.Name) && doBranchesDiverge(baseBranch.remote(configuration).Name, currentWipBranch.Name) {
+	if currentWipBranch.hasLocalBranch() && doBranchesDiverge(baseBranch.remote(configuration).Name, currentWipBranch.Name) {
 		say.Warning("Careful, your wip branch (" + currentWipBranch.Name + ") diverges from your main branch (" + baseBranch.remote(configuration).Name + ") !")
 	}
 
@@ -1055,20 +1055,6 @@ func isMobProgramming(configuration config.Configuration) bool {
 	_, currentWipBranch := determineBranches(currentBranch, gitBranches(), configuration)
 	say.Debug("current branch " + currentBranch.String() + " and currentWipBranch " + currentWipBranch.String())
 	return currentWipBranch == currentBranch
-}
-
-func hasLocalBranch(localBranch string) bool {
-	localBranches := gitBranches()
-	say.Debug("Local Branches: " + strings.Join(localBranches, "\n"))
-	say.Debug("Local Branch: " + localBranch)
-
-	for i := 0; i < len(localBranches); i++ {
-		if localBranches[i] == localBranch {
-			return true
-		}
-	}
-
-	return false
 }
 
 func gitBranches() []string {

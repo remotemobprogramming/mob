@@ -2255,33 +2255,35 @@ func assertOutputNotContains(t *testing.T, output *string, notContains string) {
 	}
 }
 
-func assertMobSessionBranches(t *testing.T, configuration config.Configuration, branch string) {
-	if !newBranch(branch).hasRemoteBranch(configuration) {
-		failWithFailure(t, newBranch(branch).remote(configuration).Name, "none")
+func assertMobSessionBranches(t *testing.T, configuration config.Configuration, branchName string) {
+	branch := newBranch(branchName)
+	if !branch.hasRemoteBranch(configuration) {
+		failWithFailure(t, branch.remote(configuration).Name, "none")
 	}
-	if !hasLocalBranch(branch) {
-		failWithFailure(t, branch, "none")
+	if !branch.hasLocalBranch() {
+		failWithFailure(t, branchName, "none")
 	}
 }
 
 func assertLocalBranch(t *testing.T, branch string) {
-	if !hasLocalBranch(branch) {
+	if !newBranch(branch).hasLocalBranch() {
 		failWithFailure(t, branch, "none")
 	}
 }
 
 func assertNoLocalBranch(t *testing.T, branch string) {
-	if hasLocalBranch(branch) {
+	if newBranch(branch).hasLocalBranch() {
 		failWithFailure(t, branch, "none")
 	}
 }
 
-func assertNoMobSessionBranches(t *testing.T, configuration config.Configuration, branch string) {
-	if newBranch(branch).hasRemoteBranch(configuration) {
-		failWithFailure(t, "none", newBranch(branch).remote(configuration).Name)
+func assertNoMobSessionBranches(t *testing.T, configuration config.Configuration, branchName string) {
+	branch := newBranch(branchName)
+	if branch.hasRemoteBranch(configuration) {
+		failWithFailure(t, "none", branch.remote(configuration).Name)
 	}
-	if hasLocalBranch(branch) {
-		failWithFailure(t, "none", branch)
+	if branch.hasLocalBranch() {
+		failWithFailure(t, "none", branchName)
 	}
 }
 
