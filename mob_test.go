@@ -1884,6 +1884,31 @@ func TestMobClean(t *testing.T) {
 	assertNoMobSessionBranches(t, configuration, "mob-session")
 }
 
+func TestMobStartOnWipBranchWithoutCheckedOutBaseBranchWithoutHyphens(t *testing.T) {
+	output, configuration := setup(t)
+
+	setWorkingDir(tempDir + "/alice")
+	git("checkout", "-b", "basebranchwithouthyphen")
+	configuration.StartCreate = true
+	start(configuration)
+	assertOnBranch(t, "mob/basebranchwithouthyphen")
+	createFile(t, "file1.txt", "abc")
+	next(configuration)
+	assertOnBranch(t, "basebranchwithouthyphen")
+
+	setWorkingDir(tempDir + "/bob")
+	git("checkout", "-b", "mob/basebranchwithouthyphen")
+	configuration.StartCreate = false
+
+	assertNoError(t, start(configuration))
+	assertOnBranch(t, "mob/basebranchwithouthyphen")
+	assertOutputContains(t, output, "joining existing session from origin/mob/basebranchwithouthyphen")
+
+	createFile(t, "file2.txt", "abc")
+	done(configuration)
+	assertOnBranch(t, "basebranchwithouthyphen")
+}
+
 func TestGitVersionParse(t *testing.T) {
 	// Check real examples
 	equals(t, GitVersion{2, 34, 1}, parseGitVersion("git version 2.34.1"))
@@ -2093,7 +2118,7 @@ func setWorkingDir(dir string) {
 
 func assertNoError(t *testing.T, err error) {
 	if err != nil {
-		failWithFailure(t, err, nil)
+		failWithFailure(t, nil, err)
 	}
 
 }
@@ -2230,33 +2255,35 @@ func assertOutputNotContains(t *testing.T, output *string, notContains string) {
 	}
 }
 
-func assertMobSessionBranches(t *testing.T, configuration config.Configuration, branch string) {
-	if !newBranch(branch).hasRemoteBranch(configuration) {
-		failWithFailure(t, newBranch(branch).remote(configuration).Name, "none")
+func assertMobSessionBranches(t *testing.T, configuration config.Configuration, branchName string) {
+	branch := newBranch(branchName)
+	if !branch.hasRemoteBranch(configuration) {
+		failWithFailure(t, branch.remote(configuration).Name, "none")
 	}
-	if !hasLocalBranch(branch) {
-		failWithFailure(t, branch, "none")
+	if !branch.hasLocalBranch() {
+		failWithFailure(t, branchName, "none")
 	}
 }
 
 func assertLocalBranch(t *testing.T, branch string) {
-	if !hasLocalBranch(branch) {
+	if !newBranch(branch).hasLocalBranch() {
 		failWithFailure(t, branch, "none")
 	}
 }
 
 func assertNoLocalBranch(t *testing.T, branch string) {
-	if hasLocalBranch(branch) {
+	if newBranch(branch).hasLocalBranch() {
 		failWithFailure(t, branch, "none")
 	}
 }
 
-func assertNoMobSessionBranches(t *testing.T, configuration config.Configuration, branch string) {
-	if newBranch(branch).hasRemoteBranch(configuration) {
-		failWithFailure(t, "none", newBranch(branch).remote(configuration).Name)
+func assertNoMobSessionBranches(t *testing.T, configuration config.Configuration, branchName string) {
+	branch := newBranch(branchName)
+	if branch.hasRemoteBranch(configuration) {
+		failWithFailure(t, "none", branch.remote(configuration).Name)
 	}
-	if hasLocalBranch(branch) {
-		failWithFailure(t, "none", branch)
+	if branch.hasLocalBranch() {
+		failWithFailure(t, "none", branchName)
 	}
 }
 
