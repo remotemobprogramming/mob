@@ -1,10 +1,13 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
+	"github.com/remotemobprogramming/mob/v5/ask"
 	config "github.com/remotemobprogramming/mob/v5/configuration"
 	"github.com/remotemobprogramming/mob/v5/open"
 	"github.com/remotemobprogramming/mob/v5/say"
+	"io"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -416,7 +419,7 @@ func TestReset(t *testing.T) {
 
 	reset(configuration)
 
-	assertOutputContains(t, output, "mob reset --delete-remote-wip-branch")
+	assertOutputContains(t, output, "Executing this command deletes the mob branch for everyone. Are you sure you want to continue? (Y/n)")
 }
 
 func TestResetDeleteRemoteWipBranch(t *testing.T) {
@@ -435,10 +438,11 @@ func TestResetCommit(t *testing.T) {
 	createFile(t, "example.txt", "contentIrrelevant")
 	next(configuration)
 	assertMobSessionBranches(t, configuration, "mob-session")
+	simulateUserInput("y")
 
 	reset(configuration)
 
-	assertOutputContains(t, output, "mob reset --delete-remote-wip-branch")
+	assertOutputContains(t, output, "Executing this command deletes the mob branch for everyone. Are you sure you want to continue? (Y/n)")
 	assertMobSessionBranches(t, configuration, "mob-session")
 }
 
@@ -463,10 +467,12 @@ func TestResetCommitBranch(t *testing.T) {
 	createFile(t, "example.txt", "contentIrrelevant")
 	next(configuration)
 	assertMobSessionBranches(t, configuration, "mob/master-green")
+	simulateUserInput("n")
 
 	reset(configuration)
 
-	assertOutputContains(t, output, "mob reset --delete-remote-wip-branch")
+	assertOutputContains(t, output, "Executing this command deletes the mob branch for everyone. Are you sure you want to continue? (Y/n)")
+	assertOutputContains(t, output, "Aborted")
 	assertMobSessionBranches(t, configuration, "mob/master-green")
 }
 
@@ -2013,6 +2019,12 @@ func setup(t *testing.T) (output *string, configuration config.Configuration) {
 	assertNoMobSessionBranches(t, configuration, "mob-session")
 	output = captureOutput(t)
 	return output, configuration
+}
+
+func simulateUserInput(a string) {
+	ask.ReadFromConsole = func(reader io.Reader) *bufio.Reader {
+		return bufio.NewReader(strings.NewReader(a))
+	}
 }
 
 func captureOutput(t *testing.T) *string {
