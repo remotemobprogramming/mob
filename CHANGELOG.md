@@ -1,3 +1,6 @@
+# 5.3.4
+- Feature: Add shortcut for `mob start --create` as `mob start -c`.
+
 # 5.3.3
 - Fix: `mob start` now functions correctly on WIP branches when the base branch is not checked out, applicable to branch names that do not contain a `-` character.
 
