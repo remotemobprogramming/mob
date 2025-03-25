@@ -39,6 +39,16 @@ func TestParseArgsStartCreate(t *testing.T) {
 	test.Equals(t, true, configuration.StartCreate)
 }
 
+func TestParseArgsStartCreateShort(t *testing.T) {
+	configuration := GetDefaultConfiguration()
+
+	command, parameters, configuration := ParseArgs([]string{"mob", "start", "-c"}, configuration)
+
+	test.Equals(t, "start", command)
+	test.Equals(t, "", strings.Join(parameters, ""))
+	test.Equals(t, true, configuration.StartCreate)
+}
+
 func TestParseArgsStartJoin(t *testing.T) {
 	configuration := GetDefaultConfiguration()
 

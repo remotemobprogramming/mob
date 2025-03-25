@@ -150,7 +150,7 @@ func ParseArgs(args []string, configuration Configuration) (command string, para
 			newConfiguration.DoneSquash = NoSquash
 		case "--squash-wip":
 			newConfiguration.DoneSquash = SquashWip
-		case "--create":
+		case "--create", "-c":
 			newConfiguration.StartCreate = true
 		case "--join", "-j":
 			newConfiguration.StartJoin = true

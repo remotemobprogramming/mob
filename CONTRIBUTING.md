@@ -15,12 +15,14 @@ Running single test files during development is probably easiest in your IDE.
 To check if all tests are passing, simply run
 
 ```
-$ go test -v
+$ go test ./...
 ```
 
-To do some manual testing, you can install the new binary to `/usr/local/bin/`:
+To do some manual testing, you can run it in this repository or install the new binary to `/usr/local/bin/`:
 
 ```
+$ go run .
+OR
 $ ./install
 ```
 
