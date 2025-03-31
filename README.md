@@ -46,17 +46,14 @@ Fast [git handover](https://www.remotemobprogramming.org/#git-handover) for remo
 The recommended way to install mob is as a binary via the provided install script:
 
 ```bash
-# works for macOS, linux, and even on windows in git bash
+# Works for macOS, Linux, and even on Windows in Git Bash
 curl -sL install.mob.sh | sh
 ```
 
-On macOS via homebrew:
+On macOS via Homebrew:
 
 ```bash
-brew install remotemobprogramming/brew/mob
-
-# upgrade to latest version
-brew upgrade remotemobprogramming/brew/mob
+brew install mob
 ```
 
 On Windows via [Scoop](https://scoop.sh/):
@@ -65,7 +62,7 @@ On Windows via [Scoop](https://scoop.sh/):
 scoop install mob
 ```
 
-or via [Chocolatey](https://chocolatey.org/)
+or via [Chocolatey](https://chocolatey.org/):
 
 ```bash
 choco install mob
@@ -77,7 +74,7 @@ On Arch Linux via yay:
 yay -S mobsh-bin
 ```
 
-On [Nix](http://nixos.org) through declarative installation
+On [Nix](http://nixos.org) through declarative installation:
 
 ```nix
 { pkgs, ... }:
@@ -91,11 +88,12 @@ On [Nix](http://nixos.org) through declarative installation
 ```
 
 On NetBSD, macOS, SmartOS, Linux, FreeBSD, OpenBSD, and more, via [pkgsrc](https://pkgsrc.org):
+
 ```bash
-# if there's a binary package for your platform
+# If there's a binary package for your platform
 pkgin install mob
 
-# otherwise, for any platform
+# Otherwise, for any platform
 cd pkgsrc/devel/mob && bmake install clean
 ```
 
