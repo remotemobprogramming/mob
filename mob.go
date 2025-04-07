@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"errors"
 	"fmt"
+	"github.com/remotemobprogramming/mob/v5/ask"
 	config "github.com/remotemobprogramming/mob/v5/configuration"
 	"github.com/remotemobprogramming/mob/v5/goal"
 	"github.com/remotemobprogramming/mob/v5/help"
@@ -519,8 +520,8 @@ func moo(configuration config.Configuration) {
 func reset(configuration config.Configuration) {
 	if configuration.ResetDeleteRemoteWipBranch {
 		deleteRemoteWipBranch(configuration)
-	} else {
-		say.Fix("Executing this command deletes the mob branch for everyone. If you're sure you want that, use", configuration.Mob("reset --delete-remote-wip-branch"))
+	} else if ask.YesNo("Executing this command deletes the mob branch for everyone. Are you sure you want to continue? (Y/n)") {
+		deleteRemoteWipBranch(configuration)
 	}
 }
 
