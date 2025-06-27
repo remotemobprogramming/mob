@@ -550,8 +550,9 @@ func start(configuration config.Configuration) error {
 	}
 
 	currentBranch := gitCurrentBranch()
-	git("fetch", configuration.RemoteName, currentBranch.Name)
-
+	if !configuration.StartCreate {
+		git("fetch", configuration.RemoteName, currentBranch.Name)
+	}
 	currentBaseBranch, currentWipBranch := determineBranches(currentBranch, gitBranches(), configuration)
 
 	if !currentWipBranch.hasRemoteBranch(configuration) && configuration.StartJoin {
