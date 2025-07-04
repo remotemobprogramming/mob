@@ -297,8 +297,8 @@ func run(osArgs []string) {
 }
 
 func hasCommits() bool {
-	commitCount := silentgit("rev-list", "--all", "--count")
-	return commitCount != "0"
+	_, err := silentgitignorefailure("rev-parse", "--verify", "HEAD")
+	return (err == nil)
 }
 
 func currentCliName(argZero string) string {
