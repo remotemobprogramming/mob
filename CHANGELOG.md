@@ -1,3 +1,6 @@
+# 5.4.1
+- Fix: `mob next` now correctly handles filenames with spaces when determining the last modified file for the open command.
+
 # 5.4.0
 - Feature: Add shortcut for `mob start --create` as `mob start -c`.
 

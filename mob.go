@@ -21,7 +21,7 @@ import (
 )
 
 const (
-	versionNumber     = "5.4.0"
+	versionNumber     = "5.4.1"
 	minimumGitVersion = "2.13.0"
 )
 
@@ -881,7 +881,17 @@ func getPathOfLastModifiedFile() string {
 	}
 
 	for _, file := range files {
-		absoluteFilepath := rootDir + "/" + file
+		unquotedFile := file
+		if strings.HasPrefix(file, "\"") {
+			var err error
+			unquotedFile, err = strconv.Unquote(file)
+			if err != nil {
+				say.Warning("Could not unquote filename from git: " + file)
+				say.Warning(err.Error())
+				continue
+			}
+		}
+		absoluteFilepath := rootDir + "/" + unquotedFile
 		say.Debug(absoluteFilepath)
 		info, err := os.Stat(absoluteFilepath)
 		if err != nil {

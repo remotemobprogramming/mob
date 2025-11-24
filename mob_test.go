@@ -859,6 +859,19 @@ func TestStartNextStay_WriteLastModifiedFileInCommit_WhenFileIsModifiedAndWorkin
 	equals(t, silentgit("log", "--format=%B", "-n", "1", "HEAD"), configuration.WipCommitMessage+"\n\nlastFile:file1.txt")
 }
 
+func TestStartNextStay_WriteLastModifiedFileInCommit_WhenFilenameContainsSpaces(t *testing.T) {
+	_, configuration := setup(t)
+	configuration.NextStay = true
+	start(configuration)
+	createFile(t, "file with spaces.txt", "contentIrrelevant")
+	assertOnBranch(t, "mob-session")
+
+	next(configuration)
+
+	equals(t, silentgit("log", "--format=%B", "-n", "1", "HEAD"), configuration.WipCommitMessage+"\n\nlastFile:\"file with spaces.txt\"")
+	assertOnBranch(t, "mob-session")
+}
+
 func TestStartNextStay_DoNotWriteLastModifiedFileInCommit_WhenFileIsDeleted(t *testing.T) {
 	_, configuration := setup(t)
 	configuration.NextStay = true
@@ -2415,4 +2428,19 @@ func getSymlinkGitDirectory(path string) string {
 
 func getSymlinkDirectory(path string) string {
 	return path + "/local-symlink"
+}
+
+func TestGetPathOfLastModifiedFile_HandlesFilenamesWithSpaces(t *testing.T) {
+	_, configuration := setup(t)
+	configuration.NextStay = true
+
+	start(configuration)
+	createFile(t, "file with spaces.txt", "content")
+
+	git("add", "--all")
+	lastFile := getPathOfLastModifiedFile()
+
+	if !strings.Contains(lastFile, "file with spaces.txt") {
+		t.Errorf("Expected lastFile to contain the spaced filename, got: %s", lastFile)
+	}
 }
