@@ -199,5 +199,5 @@ Die Funktion `buildTimers(configuration)` erstellt basierend auf der Konfigurati
   - Aufrufe in `mob.go` anpassen: `timer.OpenTimerInBrowser(configuration)` / `timer.Moo(configuration)`
 
 - [ ] **Schritt 8: Aufräumen**
-  - Nicht mehr benötigte Hilfsfunktionen in `timer.go` und `mob.go` entfernen (z.B. `httpPutTimer`, `httpPutBreakTimer`, alte `executeCommandsInBackgroundProcess`)
+  - Verwaiste Funktionen in `timer.go` und `mob.go` entfernen, deren Logik nun in `RemoteTimer.Start()` bzw. `LocalTimer.Start()` lebt (z.B. `httpPutTimer`, `httpPutBreakTimer` → zusammengeführt in `RemoteTimer.Start()`)
   - Alle Tests ausführen und sicherstellen dass nichts kaputt ist
