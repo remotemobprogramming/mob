@@ -12,7 +12,7 @@ Die bestehende Timer-Implementierung in `mob` soll hinter einem klar definierten
 |---|---|
 | `timer.go` | Kernlogik: `startTimer()`, `startBreakTimer()`, lokale + remote Timer-Logik, Hilfsfunktionen |
 | `mob.go:484-501` | `executeCommandsInBackgroundProcess()` – führt Shell-Befehle im Hintergrund aus |
-| `mob.go:385-399` | `openTimerInBrowser()` – öffnet Remote-Timer im Browser (bleibt unverändert, nicht Teil des Interfaces) |
+| `mob.go:385-399` | `openTimerInBrowser()` – öffnet Remote-Timer im Browser (wandert ins `timer`-Package, aber nicht Teil des Interfaces) |
 | `mob.go:303-365` | Command-Routing: `case "s","start"`, `case "t","timer"`, `case "break"` rufen `StartTimer`/`StartBreakTimer` auf |
 | `mob.go:460-481` | `injectCommandWithMessage()` – Hilfs-Funktion für Command-Templates |
 | `mob.go:503-505` | `currentTime()` – Hilfsfunktion |
@@ -60,7 +60,8 @@ type Timer interface {
 - **`TimerType` als Parameter**: Statt zwei Methoden (`StartTimer`/`StartBreakTimer`) wird der Typ als Parameter übergeben. Das vermeidet die aktuelle Code-Duplizierung und hält das Interface schlank.
 - **`Configuration` als Parameter**: Die gesamte Configuration wird übergeben statt einzelner Felder. So hat jede Implementierung Zugriff auf alle relevanten Config-Werte (der `RemoteTimer` braucht z.B. `TimerRoom`, `TimerUser`, `TimerUrl`, `TimerInsecure`; der `LocalTimer` braucht `VoiceCommand`, `VoiceMessage`, `NotifyCommand`, `NotifyMessage`). Neue Implementierungen können auf weitere Config-Felder zugreifen, ohne dass das Interface angepasst werden muss.
 - **Kein `Stop()`**: Der aktuelle Timer hat keine Stop-Funktionalität (der Hintergrund-Prozess läuft einfach aus). Falls zukünftig benötigt, kann das Interface erweitert werden.
-- **`openTimerInBrowser()` ist NICHT Teil des Interfaces**: Diese Funktion bleibt separat in `mob.go`, da sie nur für den Remote-Timer relevant ist und keine generische Timer-Operation darstellt.
+- **`openTimerInBrowser()` ist NICHT Teil des Interfaces**: Die Funktion wandert ins `timer`-Package (gehört thematisch dazu), wird aber nicht im Interface abgebildet, da sie nur für den Remote-Timer relevant ist.
+- **`moo()` wandert ins `timer`-Package**: Auch `moo()` ist Timer-Funktionalität (Voice-Ausgabe). Sie wandert als exportierte Funktion `Moo()` ins `timer`-Package, ist aber ebenfalls nicht Teil des Interfaces.
 
 ### Implementierungen
 
@@ -151,8 +152,9 @@ Die Funktion `buildTimers(configuration)` erstellt basierend auf der Konfigurati
 ### Entschiedene Design-Fragen
 
 1. **Neues Package `timer/`** – Ja, das Interface und die Implementierungen kommen in ein eigenes `timer/`-Package.
-2. **`openTimerInBrowser()` bleibt separat** – Ist nicht Teil des Interfaces, bleibt in `mob.go`.
-3. **`executeCommandsInBackgroundProcess()` wird ins `timer`-Package kopiert** – Die Funktion wird auch von `moo()` in `mob.go` genutzt, daher kopieren statt verschieben. Die Kopie im `timer`-Package wird vom `LocalTimer` verwendet.
+2. **`openTimerInBrowser()` wandert ins `timer`-Package** – Gehört thematisch zum Timer, wird aber nicht im Interface abgebildet. Wird als exportierte Funktion `OpenTimerInBrowser()` bereitgestellt.
+3. **`moo()` wandert ins `timer`-Package** – Nutzt `executeCommandsInBackgroundProcess` und `getVoiceCommand`, die beide im `timer`-Package leben. Wird als exportierte Funktion `Moo()` bereitgestellt.
+4. **`executeCommandsInBackgroundProcess()` wird ins `timer`-Package verschoben** (nicht kopiert) – Da `moo()` ebenfalls ins `timer`-Package wandert, gibt es keinen Nutzer mehr in `mob.go`. Die Funktion wird verschoben.
 
 ## Umsetzungsschritte
 
@@ -164,9 +166,9 @@ Die Funktion `buildTimers(configuration)` erstellt basierend auf der Konfigurati
 - [ ] **Schritt 2: `LocalTimer`-Struct im `timer`-Package erstellen**
   - `timer/local.go`: `LocalTimer` struct (ohne eigene Felder)
   - `Start()`-Methode implementieren: bestehende Logik aus `startTimer()` / `startBreakTimer()` extrahieren (sleep + voice + notify + echo)
-  - `executeCommandsInBackgroundProcess()` aus `mob.go` ins `timer`-Package kopieren (Original bleibt in `mob.go` wegen `moo()`)
+  - `executeCommandsInBackgroundProcess()` aus `mob.go` ins `timer`-Package **verschieben** (nicht kopieren – `moo()` wandert ebenfalls hierher)
   - `getSleepCommand()`, `getVoiceCommand()`, `getNotifyCommand()` ins `timer`-Package verschieben
-  - `injectCommandWithMessage()` ins `timer`-Package kopieren (wird von Voice/Notify gebraucht)
+  - `injectCommandWithMessage()` ins `timer`-Package verschieben
 
 - [ ] **Schritt 3: `RemoteTimer`-Struct im `timer`-Package erstellen**
   - `timer/remote.go`: `RemoteTimer` struct (ohne eigene Felder)
@@ -191,7 +193,11 @@ Die Funktion `buildTimers(configuration)` erstellt basierend auf der Konfigurati
   - Sicherstellen, dass alle bestehenden Tests weiterhin grün sind
   - Neue Tests für `LocalTimer` und `RemoteTimer` separat schreiben
 
-- [ ] **Schritt 7: Aufräumen**
-  - Nicht mehr benötigte Hilfsfunktionen in `timer.go` entfernen (z.B. `httpPutTimer`, `httpPutBreakTimer`)
-  - Sicherstellen, dass `openTimerInBrowser()` in `mob.go` weiterhin funktioniert
+- [ ] **Schritt 7: `openTimerInBrowser()` und `moo()` ins `timer`-Package verschieben**
+  - `openTimerInBrowser()` als exportierte Funktion `OpenTimerInBrowser()` ins `timer`-Package verschieben
+  - `moo()` als exportierte Funktion `Moo()` ins `timer`-Package verschieben
+  - Aufrufe in `mob.go` anpassen: `timer.OpenTimerInBrowser(configuration)` / `timer.Moo(configuration)`
+
+- [ ] **Schritt 8: Aufräumen**
+  - Nicht mehr benötigte Hilfsfunktionen in `timer.go` und `mob.go` entfernen (z.B. `httpPutTimer`, `httpPutBreakTimer`, alte `executeCommandsInBackgroundProcess`)
   - Alle Tests ausführen und sicherstellen dass nichts kaputt ist
