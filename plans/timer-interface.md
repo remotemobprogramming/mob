@@ -12,7 +12,7 @@ Die bestehende Timer-Implementierung in `mob` soll hinter einem klar definierten
 |---|---|
 | `timer.go` | Kernlogik: `startTimer()`, `startBreakTimer()`, lokale + remote Timer-Logik, Hilfsfunktionen |
 | `mob.go:484-501` | `executeCommandsInBackgroundProcess()` – führt Shell-Befehle im Hintergrund aus |
-| `mob.go:385-399` | `openTimerInBrowser()` – öffnet Remote-Timer im Browser |
+| `mob.go:385-399` | `openTimerInBrowser()` – öffnet Remote-Timer im Browser (bleibt unverändert, nicht Teil des Interfaces) |
 | `mob.go:303-365` | Command-Routing: `case "s","start"`, `case "t","timer"`, `case "break"` rufen `StartTimer`/`StartBreakTimer` auf |
 | `mob.go:460-481` | `injectCommandWithMessage()` – Hilfs-Funktion für Command-Templates |
 | `mob.go:503-505` | `currentTime()` – Hilfsfunktion |
@@ -47,10 +47,10 @@ const (
 )
 
 // Timer definiert das Interface für Timer-Implementierungen.
+// Die Configuration wird übergeben, damit jede Implementierung auf die
+// für sie relevanten Felder zugreifen kann (z.B. TimerRoom, VoiceCommand, etc.)
 type Timer interface {
-    // Start startet einen Timer mit der gegebenen Dauer und dem gegebenen Typ.
-    // Die message wird bei Ablauf des Timers angezeigt/gesprochen.
-    Start(durationMinutes int, timerType TimerType, message string) error
+    Start(durationMinutes int, timerType TimerType, configuration config.Configuration) error
 }
 ```
 
@@ -58,8 +58,9 @@ type Timer interface {
 
 - **Ein Interface, eine Methode**: `Start()` ist die einzige Operation, die beide Timer-Typen (lokal und remote) gemeinsam haben. Ein minimales Interface ist leichter zu implementieren.
 - **`TimerType` als Parameter**: Statt zwei Methoden (`StartTimer`/`StartBreakTimer`) wird der Typ als Parameter übergeben. Das vermeidet die aktuelle Code-Duplizierung und hält das Interface schlank.
-- **`message` als Parameter**: Die Nachricht (`"mob next"` / `"mob start"`) wird von außen übergeben, nicht hardcoded.
+- **`Configuration` als Parameter**: Die gesamte Configuration wird übergeben statt einzelner Felder. So hat jede Implementierung Zugriff auf alle relevanten Config-Werte (der `RemoteTimer` braucht z.B. `TimerRoom`, `TimerUser`, `TimerUrl`, `TimerInsecure`; der `LocalTimer` braucht `VoiceCommand`, `VoiceMessage`, `NotifyCommand`, `NotifyMessage`). Neue Implementierungen können auf weitere Config-Felder zugreifen, ohne dass das Interface angepasst werden muss.
 - **Kein `Stop()`**: Der aktuelle Timer hat keine Stop-Funktionalität (der Hintergrund-Prozess läuft einfach aus). Falls zukünftig benötigt, kann das Interface erweitert werden.
+- **`openTimerInBrowser()` ist NICHT Teil des Interfaces**: Diese Funktion bleibt separat in `mob.go`, da sie nur für den Remote-Timer relevant ist und keine generische Timer-Operation darstellt.
 
 ### Implementierungen
 
@@ -68,33 +69,55 @@ type Timer interface {
 ```go
 // timer/local.go
 
-type LocalTimer struct {
-    VoiceCommand  string
-    NotifyCommand string
-}
+type LocalTimer struct{}
 
-func (t *LocalTimer) Start(durationMinutes int, timerType TimerType, message string) error {
-    // Bisherige Logik aus startTimer()/startBreakTimer():
-    // executeCommandsInBackgroundProcess(sleep, voice, notify, echo)
+func (t *LocalTimer) Start(durationMinutes int, timerType TimerType, configuration config.Configuration) error {
+    timeoutInSeconds := durationMinutes * 60
+
+    message := configuration.VoiceMessage   // "mob next"
+    if timerType == TimerTypeBreak {
+        message = "mob start"
+    }
+
+    return executeCommandsInBackgroundProcess(
+        getSleepCommand(timeoutInSeconds),
+        getVoiceCommand(message, configuration.VoiceCommand),
+        getNotifyCommand(message, configuration.NotifyCommand),
+        "echo \"mobTimer\"",
+    )
 }
 ```
+
+Der `LocalTimer` benötigt keine eigenen Felder – alles kommt aus der `Configuration`.
 
 #### 2. `RemoteTimer` (bestehende Logik)
 
 ```go
 // timer/remote.go
 
-type RemoteTimer struct {
-    Room                   string
-    User                   string
-    TimerService           string
-    DisableSSLVerification bool
-}
+type RemoteTimer struct{}
 
-func (t *RemoteTimer) Start(durationMinutes int, timerType TimerType, message string) error {
-    // Bisherige Logik: httpPutTimer() / httpPutBreakTimer()
+func (t *RemoteTimer) Start(durationMinutes int, timerType TimerType, configuration config.Configuration) error {
+    room := getMobTimerRoom(configuration)
+    user := getUserForMobTimer(configuration.TimerUser)
+
+    // JSON-Body je nach TimerType: "timer" oder "breaktimer"
+    timerKey := "timer"
+    if timerType == TimerTypeBreak {
+        timerKey = "breaktimer"
+    }
+
+    putBody, _ := json.Marshal(map[string]interface{}{
+        timerKey: durationMinutes,
+        "user":   user,
+    })
+    client := httpclient.CreateHttpClient(configuration.TimerInsecure)
+    _, err := client.SendRequest(putBody, "PUT", configuration.TimerUrl+room)
+    return err
 }
 ```
+
+Der `RemoteTimer` liest `TimerRoom`, `TimerUser`, `TimerUrl` und `TimerInsecure` direkt aus der Configuration.
 
 ### Nutzung in `timer.go` (nach Refactoring)
 
@@ -112,44 +135,48 @@ func startTimer(timerInMinutes string, configuration config.Configuration) error
     }
 
     for _, t := range timers {
-        if err := t.Start(timeoutInMinutes, timer.TimerTypeNormal, configuration.VoiceMessage); err != nil {
+        if err := t.Start(timeoutInMinutes, timer.TimerTypeNormal, configuration); err != nil {
             return err
         }
     }
 
-    // User-Feedback wie bisher
+    timeOfTimeout := time.Now().Add(time.Minute * time.Duration(timeoutInMinutes)).Format("15:04")
+    say.Info("It's now " + currentTime() + ". " + fmt.Sprintf("%d min timer ends at approx. %s", timeoutInMinutes, timeOfTimeout) + ". Happy collaborating! :)")
+    return nil
 }
 ```
 
-Die Funktion `buildTimers(configuration)` erstellt basierend auf der Konfiguration die passenden `Timer`-Implementierungen (0..n).
+Die Funktion `buildTimers(configuration)` erstellt basierend auf der Konfiguration die passenden `Timer`-Implementierungen (0..n). `startBreakTimer` nutzt dieselbe Logik mit `timer.TimerTypeBreak`.
 
-## Offene Design-Fragen
+### Entschiedene Design-Fragen
 
-1. **Neues Package `timer/` oder im `main`-Package belassen?** – Ein eigenes Package fördert Entkopplung, erfordert aber ggf. dass `executeCommandsInBackgroundProcess` verschoben oder exportiert wird.
-2. **Soll `openTimerInBrowser()` Teil des Interfaces sein?** – Aktuell ist es nur für den Remote-Timer relevant. Es könnte als optionale Methode (zweites Interface) oder separat bleiben.
-3. **Soll `executeCommandsInBackgroundProcess()` ins `timer`-Package verschoben werden?** – Diese Funktion ist aktuell in `mob.go` und wird nur vom lokalen Timer genutzt. Logisch gehört sie zum lokalen Timer.
+1. **Neues Package `timer/`** – Ja, das Interface und die Implementierungen kommen in ein eigenes `timer/`-Package.
+2. **`openTimerInBrowser()` bleibt separat** – Ist nicht Teil des Interfaces, bleibt in `mob.go`.
+3. **`executeCommandsInBackgroundProcess()` wird ins `timer`-Package kopiert** – Die Funktion wird auch von `moo()` in `mob.go` genutzt, daher kopieren statt verschieben. Die Kopie im `timer`-Package wird vom `LocalTimer` verwendet.
 
 ## Umsetzungsschritte
 
-- [ ] **Schritt 1: `Timer`-Interface definieren**
-  - Neues Package `timer/` anlegen (oder im `main`-Package definieren, je nach Entscheidung zu Frage 1)
-  - Interface `Timer` mit `Start(durationMinutes int, timerType TimerType, message string) error` erstellen
+- [ ] **Schritt 1: `timer/`-Package anlegen und Interface definieren**
+  - Neues Package `timer/` erstellen
+  - `timer/timer.go`: Interface `Timer` mit `Start(durationMinutes int, timerType TimerType, configuration config.Configuration) error`
   - `TimerType`-Enum definieren (`TimerTypeNormal`, `TimerTypeBreak`)
 
-- [ ] **Schritt 2: `LocalTimer`-Struct erstellen**
-  - Struct mit den benötigten Feldern: `VoiceCommand`, `NotifyCommand`, `VoiceMessage`, `NotifyMessage`
+- [ ] **Schritt 2: `LocalTimer`-Struct im `timer`-Package erstellen**
+  - `timer/local.go`: `LocalTimer` struct (ohne eigene Felder)
   - `Start()`-Methode implementieren: bestehende Logik aus `startTimer()` / `startBreakTimer()` extrahieren (sleep + voice + notify + echo)
-  - `executeCommandsInBackgroundProcess()`, `getSleepCommand()`, `getVoiceCommand()`, `getNotifyCommand()` in den Kontext des LocalTimer verschieben
-  - `injectCommandWithMessage()` mitnehmen (wird von Voice/Notify gebraucht)
+  - `executeCommandsInBackgroundProcess()` aus `mob.go` ins `timer`-Package kopieren (Original bleibt in `mob.go` wegen `moo()`)
+  - `getSleepCommand()`, `getVoiceCommand()`, `getNotifyCommand()` ins `timer`-Package verschieben
+  - `injectCommandWithMessage()` ins `timer`-Package kopieren (wird von Voice/Notify gebraucht)
 
-- [ ] **Schritt 3: `RemoteTimer`-Struct erstellen**
-  - Struct mit Feldern: `Room`, `User`, `TimerService`, `DisableSSLVerification`
+- [ ] **Schritt 3: `RemoteTimer`-Struct im `timer`-Package erstellen**
+  - `timer/remote.go`: `RemoteTimer` struct (ohne eigene Felder)
   - `Start()`-Methode implementieren: bestehende Logik aus `httpPutTimer()` / `httpPutBreakTimer()` extrahieren
   - `httpPutTimer()` und `httpPutBreakTimer()` zu einer Methode zusammenführen (Unterscheidung über `TimerType`)
+  - `getMobTimerRoom()` und `getUserForMobTimer()` ins `timer`-Package verschieben
 
 - [ ] **Schritt 4: Builder/Factory-Funktion erstellen**
-  - `buildTimers(configuration) []Timer` implementieren
-  - Entscheidet basierend auf `TimerLocal` und `TimerRoom` welche Timer-Implementierungen erstellt werden
+  - `buildTimers(configuration) []timer.Timer` implementieren (in `timer.go` oder im `timer`-Package)
+  - Entscheidet basierend auf `TimerLocal` und `TimerRoom`/`getMobTimerRoom()` welche Timer-Implementierungen erstellt werden
   - Ersetzt die bisherige `if startRemoteTimer` / `if startLocalTimer` Logik
 
 - [ ] **Schritt 5: `startTimer()` und `startBreakTimer()` refactoren**
@@ -165,7 +192,6 @@ Die Funktion `buildTimers(configuration)` erstellt basierend auf der Konfigurati
   - Neue Tests für `LocalTimer` und `RemoteTimer` separat schreiben
 
 - [ ] **Schritt 7: Aufräumen**
-  - Nicht mehr benötigte Hilfsfunktionen in `mob.go` entfernen oder verschieben
-  - `openTimerInBrowser()` ggf. dem `RemoteTimer` zuordnen
-  - Sicherstellen, dass die Konfiguration sauber an die Timer-Structs übergeben wird
+  - Nicht mehr benötigte Hilfsfunktionen in `timer.go` entfernen (z.B. `httpPutTimer`, `httpPutBreakTimer`)
+  - Sicherstellen, dass `openTimerInBrowser()` in `mob.go` weiterhin funktioniert
   - Alle Tests ausführen und sicherstellen dass nichts kaputt ist
