@@ -46,7 +46,112 @@ mob/
 
 ---
 
-## 2. Ziel-Packagestruktur (Vision)
+## 2. Geteilte Infrastruktur-Funktionen: Wo gehoeren sie hin?
+
+Das Hauptproblem bei der Restructurierung ist, dass viele Funktionen im `main`-Package
+von mehreren Bereichen gleichzeitig genutzt werden. Hier die Analyse:
+
+### Schicht 1: Rohe Kommando-Ausfuehrung
+
+| Funktion | Genutzt von | Ziel-Package |
+|----------|-------------|--------------|
+| `runCommandSilent(name, args...)` | `silentgit()`, `doBranchesDiverge()`, `gitVersion()`, `isGit()` | `git/` |
+| `runCommand(name, args...)` | `git()`, `gitIgnoreFailure()` | `git/` |
+| `startCommand(name, args...)` | `executeCommandsInBackgroundProcess()`, `openLastModifiedFileIfPresent()` | bleibt in `main` |
+| `executeCommandsInBackgroundProcess(cmds...)` | `timer.go` (2x), `moo()` | bleibt in `main` |
+
+**Entscheidung**: `runCommand` und `runCommandSilent` gehen ins `git/`-Package, weil sie
+*ausschliesslich* fuer Git-Kommandos verwendet werden. `startCommand` und
+`executeCommandsInBackgroundProcess` starten Nicht-Git-Prozesse (Timer-Sleep, Voice-Commands,
+IDE-Open) und bleiben daher in `main`. Wenn `timer/` spaeter ein eigenes Package wird,
+bekommen diese Funktionen einen eigenen Platz (z.B. `process/` oder als Parameter uebergeben).
+
+### Schicht 2: Git-Wrapper
+
+| Funktion | Genutzt von | Ziel-Package |
+|----------|-------------|--------------|
+| `git(args...)` | mob.go (30x), squash_wip.go (4x), Tests (60x+) | `git/` |
+| `silentgit(args...)` | mob.go (20x), status.go, squash_wip.go (3x), Tests | `git/` |
+| `gitIgnoreFailure(args...)` | mob.go:done() | `git/` |
+| `gitWithoutEmptyStrings(args...)` | mob.go (4x) | `git/` |
+| `silentgitignorefailure(args...)` | mob.go (3x) | `git/` |
+| `gitHooksOption(c)` | mob.go (5x), squash_wip.go (2x) | `git/` |
+
+**Design**: Diese Funktionen werden Methoden auf einem `git.Context`-Struct, das den
+globalen Zustand kapselt:
+
+```go
+package git
+
+type Context struct {
+    WorkingDir              string
+    PassthroughStderrStdout bool  // fuer Git-Hooks
+}
+
+func (g *Context) Run(args ...string)                    { ... }  // vorher: git()
+func (g *Context) Silent(args ...string) string          { ... }  // vorher: silentgit()
+func (g *Context) IgnoreFailure(args ...string) error    { ... }  // vorher: gitIgnoreFailure()
+```
+
+### Schicht 3: Git-Info-Funktionen
+
+| Funktion | Genutzt von | Ziel-Package |
+|----------|-------------|--------------|
+| `gitCurrentBranch()` | mob.go (8x), timer.go, status.go | `git/` |
+| `gitBranches()` | mob.go (8x), timer.go, status.go, Branch-Methoden | `git/` |
+| `gitRemoteBranches()` | mob.go, Branch-Methoden | `git/` |
+| `gitUserName()` | mob.go:showNext(), timer.go | `git/` |
+| `gitUserEmail()` | coauthors.go | `git/` |
+| `isGit()` | mob.go:run(), timer.go, Fehlerbehandlung | `git/` |
+| `gitRootDir()` | mob.go (3x) | `git/` |
+| `gitDir()` | mob.go:done() | `git/` |
+| `hasCommits()` | mob.go:run() | `git/` |
+| `doBranchesDiverge(a, b)` | mob.go:startJoinMobSession() | `git/` |
+
+**Design**: Werden ebenfalls Methoden auf `git.Context`:
+
+```go
+func (g *Context) CurrentBranch() string       { ... }
+func (g *Context) Branches() []string          { ... }
+func (g *Context) RemoteBranches() []string    { ... }
+func (g *Context) UserName() string            { ... }
+func (g *Context) UserEmail() string           { ... }
+func (g *Context) IsGitRepo() bool             { ... }
+func (g *Context) RootDir() string             { ... }
+```
+
+### Querschnitt: Utility-Funktionen
+
+| Funktion | Genutzt von | Ziel-Package |
+|----------|-------------|--------------|
+| `injectCommandWithMessage(cmd, msg)` | mob.go:openCommandFor(), timer.go (2x) | bleibt in `main` (spaeter eigenes Utility-Package oder wird Parameter) |
+| `stringContains(list, element)` | mob.go, Branch-Methoden | wird durch `slices.Contains()` ersetzt (Go 1.21+) oder geht mit Branch nach `branch/` |
+| `deleteEmptyStrings(s)` | mob.go:gitWithoutEmptyStrings() | geht mit nach `git/` |
+| `ReverseSlice(s)` | mob.go:sayLastCommitsList() | bleibt in `main` |
+
+### Zusammenfassung: Globaler Zustand
+
+| Variable | Aktuell | Ziel |
+|----------|---------|------|
+| `workingDir` | Globale Variable in main | Feld in `git.Context.WorkingDir` |
+| `GitPassthroughStderrStdout` | Globale Variable in main | Feld in `git.Context.PassthroughStderrStdout` |
+| `args` | Globale Variable in main | Lokale Variable in `run()`, nur noch fuer CLI-Parsing |
+| `Exit` | Globale `var` in main | Bleibt als globale var oder wird Parameter im `git.Context` |
+
+### Uebergangsphase
+
+Wichtig: Beim Extrahieren von `git/` koennen Funktionen wie `startCommand` und
+`executeCommandsInBackgroundProcess` zunaechst in `main` bleiben. Sie werden erst
+beim Extrahieren von `timer/` relevant. Die Strategie ist:
+
+1. `git/`-Package nimmt alles Git-spezifische auf
+2. `main` behaelt vorerst die Nicht-Git-Prozesse (`startCommand`, `executeCommandsInBackgroundProcess`)
+3. `timer/` bekommt spaeter `executeCommandsInBackgroundProcess` als Dependency injected
+4. `injectCommandWithMessage` wandert entweder nach `timer/` oder wird inline aufgeloest
+
+---
+
+## 3. Ziel-Packagestruktur (Vision)
 
 ```
 mob/
@@ -85,38 +190,44 @@ mob/
 ### Abhaengigkeits-Hierarchie (von unten nach oben)
 
 ```
-say, configuration, httpclient, open     (Basis-Infrastruktur, existiert bereits)
+say, configuration, httpclient, open       (Basis-Infrastruktur, existiert bereits)
          |
-    findnext                              (reiner Algorithmus, keine Abhaengigkeiten)
+    findnext                                (reiner Algorithmus, keine Abhaengigkeiten)
          |
-       git/                               (Git-Kommando-Ausfuehrung, abhaengig von say)
+       git/                                 (Git-Kommando-Ausfuehrung, kapselt workingDir)
+       (git.Context struct)                 (abhaengig von: say)
          |
-      branch/                             (Domaenen-Modell, abhaengig von git/, configuration)
+      branch/                               (Domaenen-Modell)
+                                            (abhaengig von: git/, configuration)
          |
-  coauthor/, squash/, timer/              (Features, abhaengig von git/, branch/, configuration)
+  coauthor/, squash/, timer/                (Feature-Module)
+                                            (abhaengig von: git/, branch/, configuration)
          |
-     session/                             (Applikations-Logik, orchestriert alles)
+     session/                               (Applikations-Logik, orchestriert alles)
+                                            (abhaengig von: allen obigen Packages)
          |
-      main.go                             (Entry-Point, CLI-Routing)
+      main.go                               (Entry-Point, CLI-Routing)
+                                            (behaelt: startCommand, executeCommandsInBackground,
+                                             injectCommandWithMessage bis spaetere Extraktion)
 ```
 
 ---
 
-## 3. Reihenfolge der Extraktion
+## 4. Reihenfolge der Extraktion
 
-| Schritt | Package      | Komplexitaet | Begruendung |
-|---------|-------------|-------------|-------------|
-| **1**   | `findnext/` | Sehr niedrig | Reiner Algorithmus, null externe Abhaengigkeiten, eigene Tests |
-| 2       | `coauthor/` | Niedrig      | Weitgehend eigenstaendig, eine Git-Abhaengigkeit (gitUserEmail) |
-| 3       | `git/`      | Mittel-Hoch  | Infrastruktur-Layer, erfordert Refactoring des globalen Zustands |
-| 4       | `branch/`   | Mittel       | Domaenen-Modell, nach git/-Extraktion moeglich |
-| 5       | `squash/`   | Mittel       | Feature-Modul, abhaengig von git/ und branch/ |
-| 6       | `timer/`    | Niedrig      | Feature-Modul, nach git/-Extraktion einfach |
-| 7       | `session/`  | Hoch         | Orchestrierung, letzter Schritt, alles andere muss fertig sein |
+| Schritt | Package      | Komplexitaet | Was passiert mit geteilten Funktionen? |
+|---------|-------------|-------------|----------------------------------------|
+| **1**   | `findnext/` | Sehr niedrig | Keine geteilten Funktionen betroffen |
+| 2       | `coauthor/` | Niedrig      | `gitUserEmail()` wird als Parameter uebergeben |
+| 3       | `git/`      | Mittel-Hoch  | `runCommand*`, `git()`, `silentgit()`, alle Git-Info-Fns wandern hierher. `git.Context` kapselt `workingDir` + `GitPassthroughStderrStdout`. `startCommand` + `executeCommandsInBackgroundProcess` + `injectCommandWithMessage` bleiben vorerst in main |
+| 4       | `branch/`   | Mittel       | `Branch` struct + Methoden. Bekommt `git.Context` als Abhaengigkeit |
+| 5       | `squash/`   | Mittel       | Bekommt `git.Context` als Abhaengigkeit |
+| 6       | `timer/`    | Niedrig      | Bekommt `executeCommandsInBackgroundProcess` + `injectCommandWithMessage` als Dependency injected oder diese wandern in ein kleines `process/`-Package |
+| 7       | `session/`  | Hoch         | Orchestriert alles. `main.go` wird zum reinen Entry-Point |
 
 ---
 
-## 4. Erster Schritt: Package `findnext/` extrahieren
+## 5. Erster Schritt: Package `findnext/` extrahieren
 
 ### Warum `findnext/` als erstes?
 
@@ -218,7 +329,7 @@ mob/
 
 ---
 
-## 5. Ausblick: Zweiter Schritt (`coauthor/`)
+## 6. Ausblick: Zweiter Schritt (`coauthor/`)
 
 Nach erfolgreichem Abschluss von Schritt 1 waere die Extraktion von `coauthor/` der logische naechste Schritt:
 
@@ -239,7 +350,7 @@ func CollectCoauthorsFromWipCommits(file *os.File, currentUserEmail string) []Au
 
 ---
 
-## 6. Prinzipien fuer die gesamte Umstrukturierung
+## 7. Prinzipien fuer die gesamte Umstrukturierung
 
 1. **Bottom-Up**: Immer zuerst die Teile extrahieren, die keine Abhaengigkeiten nach "oben" haben
 2. **Ein Package pro Schritt**: Jeder Schritt ist ein eigener, testbarer Commit
