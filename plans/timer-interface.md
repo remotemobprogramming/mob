@@ -158,17 +158,21 @@ Die Funktion `buildTimers(configuration)` erstellt basierend auf der Konfigurati
 
 ## Umsetzungsschritte
 
-- [ ] **Schritt 1: `timer/`-Package anlegen und Interface definieren**
+- [ ] **Schritt 1: `timer/`-Package anlegen, Interface definieren und Hilfsfunktionen verschieben**
   - Neues Package `timer/` erstellen
   - `timer/timer.go`: Interface `Timer` mit `Start(durationMinutes int, timerType TimerType, configuration config.Configuration) error`
   - `TimerType`-Enum definieren (`TimerTypeNormal`, `TimerTypeBreak`)
+  - `openTimerInBrowser()` als exportierte Funktion `OpenTimerInBrowser()` ins `timer`-Package verschieben
+  - `moo()` als exportierte Funktion `Moo()` ins `timer`-Package verschieben
+  - `executeCommandsInBackgroundProcess()` aus `mob.go` ins `timer`-Package verschieben (kann nun verschoben statt kopiert werden, da `moo()` bereits hier lebt)
+  - `getSleepCommand()`, `getVoiceCommand()`, `getNotifyCommand()` ins `timer`-Package verschieben
+  - `injectCommandWithMessage()` ins `timer`-Package verschieben
+  - Aufrufe in `mob.go` anpassen: `timer.OpenTimerInBrowser(configuration)` / `timer.Moo(configuration)`
 
 - [ ] **Schritt 2: `LocalTimer`-Struct im `timer`-Package erstellen**
   - `timer/local.go`: `LocalTimer` struct (ohne eigene Felder)
   - `Start()`-Methode implementieren: bestehende Logik aus `startTimer()` / `startBreakTimer()` extrahieren (sleep + voice + notify + echo)
-  - `executeCommandsInBackgroundProcess()` aus `mob.go` ins `timer`-Package **verschieben** (nicht kopieren – `moo()` wandert ebenfalls hierher)
-  - `getSleepCommand()`, `getVoiceCommand()`, `getNotifyCommand()` ins `timer`-Package verschieben
-  - `injectCommandWithMessage()` ins `timer`-Package verschieben
+  - Nutzt die bereits im `timer`-Package vorhandenen Hilfsfunktionen (`executeCommandsInBackgroundProcess`, `getSleepCommand`, etc.)
 
 - [ ] **Schritt 3: `RemoteTimer`-Struct im `timer`-Package erstellen**
   - `timer/remote.go`: `RemoteTimer` struct (ohne eigene Felder)
@@ -193,11 +197,6 @@ Die Funktion `buildTimers(configuration)` erstellt basierend auf der Konfigurati
   - Sicherstellen, dass alle bestehenden Tests weiterhin grün sind
   - Neue Tests für `LocalTimer` und `RemoteTimer` separat schreiben
 
-- [ ] **Schritt 7: `openTimerInBrowser()` und `moo()` ins `timer`-Package verschieben**
-  - `openTimerInBrowser()` als exportierte Funktion `OpenTimerInBrowser()` ins `timer`-Package verschieben
-  - `moo()` als exportierte Funktion `Moo()` ins `timer`-Package verschieben
-  - Aufrufe in `mob.go` anpassen: `timer.OpenTimerInBrowser(configuration)` / `timer.Moo(configuration)`
-
-- [ ] **Schritt 8: Aufräumen**
+- [ ] **Schritt 7: Aufräumen**
   - Verwaiste Funktionen in `timer.go` und `mob.go` entfernen, deren Logik nun in `RemoteTimer.Start()` bzw. `LocalTimer.Start()` lebt (z.B. `httpPutTimer`, `httpPutBreakTimer` → zusammengeführt in `RemoteTimer.Start()`)
   - Alle Tests ausführen und sicherstellen dass nichts kaputt ist
