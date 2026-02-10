@@ -154,7 +154,7 @@ Die Funktion `buildTimers(configuration)` erstellt basierend auf der Konfigurati
 1. **Neues Package `timer/`** – Ja, das Interface und die Implementierungen kommen in ein eigenes `timer/`-Package.
 2. **`openTimerInBrowser()` wandert ins `timer`-Package** – Gehört thematisch zum Timer, wird aber nicht im Interface abgebildet. Wird als exportierte Funktion `OpenTimerInBrowser()` bereitgestellt.
 3. **`moo()` wandert ins `timer`-Package** – Nutzt `executeCommandsInBackgroundProcess` und `getVoiceCommand`, die beide im `timer`-Package leben. Wird als exportierte Funktion `Moo()` bereitgestellt.
-4. **`executeCommandsInBackgroundProcess()` wird ins `timer`-Package verschoben** (nicht kopiert) – Da `moo()` ebenfalls ins `timer`-Package wandert, gibt es keinen Nutzer mehr in `mob.go`. Die Funktion wird verschoben.
+4. **`executeCommandsInBackgroundProcess()` wird im `timer`-Package neu implementiert** (ohne `workingDir`/`startCommand`) – Die Original-Funktion in `mob.go` nutzt `startCommand()`, das an ein globales `workingDir` gebunden ist (relevant für Git-Befehle). Der lokale Timer braucht kein `workingDir` – daher bekommt das `timer`-Package eine eigene, schlanke Version, die direkt `exec.Command` nutzt. Das Original in `mob.go` bleibt für `openLastModifiedFileOfLastCommit()` etc. bestehen.
 
 ## Umsetzungsschritte
 
@@ -164,7 +164,7 @@ Die Funktion `buildTimers(configuration)` erstellt basierend auf der Konfigurati
   - `TimerType`-Enum definieren (`TimerTypeNormal`, `TimerTypeBreak`)
   - `openTimerInBrowser()` als exportierte Funktion `OpenTimerInBrowser()` ins `timer`-Package verschieben
   - `moo()` als exportierte Funktion `Moo()` ins `timer`-Package verschieben
-  - `executeCommandsInBackgroundProcess()` aus `mob.go` ins `timer`-Package verschieben (kann nun verschoben statt kopiert werden, da `moo()` bereits hier lebt)
+  - `executeCommandsInBackgroundProcess()` im `timer`-Package neu implementieren: eigene schlanke Version ohne `workingDir`/`startCommand()`, nutzt direkt `exec.Command` (Original bleibt in `mob.go` für andere Zwecke bestehen)
   - `getSleepCommand()`, `getVoiceCommand()`, `getNotifyCommand()` ins `timer`-Package verschieben
   - `injectCommandWithMessage()` ins `timer`-Package verschieben
   - Aufrufe in `mob.go` anpassen: `timer.OpenTimerInBrowser(configuration)` / `timer.Moo(configuration)`
