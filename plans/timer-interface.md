@@ -16,6 +16,8 @@ Die bestehende Timer-Implementierung in `mob` soll hinter einem klar definierten
 | `mob.go:303-365` | Command-Routing: `case "s","start"`, `case "t","timer"`, `case "break"` rufen `StartTimer`/`StartBreakTimer` auf |
 | `mob.go:460-481` | `injectCommandWithMessage()` – Hilfs-Funktion für Command-Templates |
 | `mob.go:503-505` | `currentTime()` – Hilfsfunktion |
+| `mob.go:1134-1309` | Git-Funktionen: `silentgit()`, `git()`, `runCommandSilent()`, `runCommand()`, `startCommand()` etc. |
+| `mob.go:29-32` | Globale Variablen: `workingDir`, `GitPassthroughStderrStdout` |
 | `configuration/configuration.go:177-219` | Default-Konfiguration: `VoiceCommand`, `NotifyCommand`, `TimerLocal`, `TimerUrl`, `TimerRoom`, etc. |
 | `timer_test.go` | Tests für Timer-Funktionen |
 
@@ -58,7 +60,7 @@ type Timer interface {
 
 - **Ein Interface, eine Methode**: `Start()` ist die einzige Operation, die beide Timer-Typen (lokal und remote) gemeinsam haben. Ein minimales Interface ist leichter zu implementieren.
 - **`TimerType` als Parameter**: Statt zwei Methoden (`StartTimer`/`StartBreakTimer`) wird der Typ als Parameter übergeben. Das vermeidet die aktuelle Code-Duplizierung und hält das Interface schlank.
-- **`Configuration` als Parameter**: Die gesamte Configuration wird übergeben statt einzelner Felder. So hat jede Implementierung Zugriff auf alle relevanten Config-Werte (der `RemoteTimer` braucht z.B. `TimerRoom`, `TimerUser`, `TimerUrl`, `TimerInsecure`; der `LocalTimer` braucht `VoiceCommand`, `VoiceMessage`, `NotifyCommand`, `NotifyMessage`). Neue Implementierungen können auf weitere Config-Felder zugreifen, ohne dass das Interface angepasst werden muss.
+- **`Configuration` als Parameter**: Die gesamte Configuration wird übergeben statt einzelner Felder. So hat jede Implementierung Zugriff auf alle relevanten Config-Werte (der `RemoteTimer` braucht z.B. `TimerUrl`, `TimerInsecure`; der `LocalTimer` braucht `VoiceCommand`, `VoiceMessage`, `NotifyCommand`, `NotifyMessage`). Neue Implementierungen können auf weitere Config-Felder zugreifen, ohne dass das Interface angepasst werden muss.
 - **Kein `Stop()`**: Der aktuelle Timer hat keine Stop-Funktionalität (der Hintergrund-Prozess läuft einfach aus). Falls zukünftig benötigt, kann das Interface erweitert werden.
 - **`openTimerInBrowser()` ist NICHT Teil des Interfaces**: Die Funktion wandert ins `timer`-Package (gehört thematisch dazu), wird aber nicht im Interface abgebildet, da sie nur für den Remote-Timer relevant ist.
 - **`moo()` wandert ins `timer`-Package**: Auch `moo()` ist Timer-Funktionalität (Voice-Ausgabe). Sie wandert als exportierte Funktion `Moo()` ins `timer`-Package, ist aber ebenfalls nicht Teil des Interfaces.
@@ -96,12 +98,12 @@ Der `LocalTimer` benötigt keine eigenen Felder – alles kommt aus der `Configu
 ```go
 // timer/remote.go
 
-type RemoteTimer struct{}
+type RemoteTimer struct {
+    Room string   // vorab aufgelöst in main (via getMobTimerRoom)
+    User string   // vorab aufgelöst in main (via getUserForMobTimer)
+}
 
 func (t *RemoteTimer) Start(durationMinutes int, timerType TimerType, configuration config.Configuration) error {
-    room := getMobTimerRoom(configuration)
-    user := getUserForMobTimer(configuration.TimerUser)
-
     // JSON-Body je nach TimerType: "timer" oder "breaktimer"
     timerKey := "timer"
     if timerType == TimerTypeBreak {
@@ -110,15 +112,15 @@ func (t *RemoteTimer) Start(durationMinutes int, timerType TimerType, configurat
 
     putBody, _ := json.Marshal(map[string]interface{}{
         timerKey: durationMinutes,
-        "user":   user,
+        "user":   t.User,
     })
     client := httpclient.CreateHttpClient(configuration.TimerInsecure)
-    _, err := client.SendRequest(putBody, "PUT", configuration.TimerUrl+room)
+    _, err := client.SendRequest(putBody, "PUT", configuration.TimerUrl+t.Room)
     return err
 }
 ```
 
-Der `RemoteTimer` liest `TimerRoom`, `TimerUser`, `TimerUrl` und `TimerInsecure` direkt aus der Configuration.
+Der `RemoteTimer` bekommt `Room` und `User` als Struct-Felder. Diese werden **in `main` aufgelöst** (vor dem Timer-Start), da die Auflösung Git-Funktionen und Mob-Domain-Logik (`determineBranches`, `Branch.IsWipBranch`) benötigt. So muss das `timer`-Package weder `Branch` noch das `git`-Package kennen.
 
 ### Nutzung in `timer.go` (nach Refactoring)
 
@@ -155,48 +157,164 @@ Die Funktion `buildTimers(configuration)` erstellt basierend auf der Konfigurati
 2. **`openTimerInBrowser()` wandert ins `timer`-Package** – Gehört thematisch zum Timer, wird aber nicht im Interface abgebildet. Wird als exportierte Funktion `OpenTimerInBrowser()` bereitgestellt.
 3. **`moo()` wandert ins `timer`-Package** – Nutzt `executeCommandsInBackgroundProcess` und `getVoiceCommand`, die beide im `timer`-Package leben. Wird als exportierte Funktion `Moo()` bereitgestellt.
 4. **`executeCommandsInBackgroundProcess()` wird im `timer`-Package neu implementiert** (ohne `workingDir`/`startCommand`) – Die Original-Funktion in `mob.go` nutzt `startCommand()`, das an ein globales `workingDir` gebunden ist (relevant für Git-Befehle). Der lokale Timer braucht kein `workingDir` – daher bekommt das `timer`-Package eine eigene, schlanke Version, die direkt `exec.Command` nutzt. Das Original in `mob.go` bleibt für `openLastModifiedFileOfLastCommit()` etc. bestehen.
+5. **`getMobTimerRoom()` bleibt in `main`** – Die Funktion nutzt `isGit()`, `gitCurrentBranch()`, `determineBranches()` und `Branch.IsWipBranch()` – alles Mob-Domain-Logik, die Git-Zugriff benötigt. Der aufgelöste Room-String wird dem `RemoteTimer` als Struct-Feld übergeben. Ebenso wird `getUserForMobTimer()` in `main` aufgelöst und als `User`-Feld übergeben.
+6. **`Branch` bleibt in `main`** (Variante 1) – Branch ist ein Mob-Domain-Typ. Das `timer`-Package braucht ihn nicht (Room/User werden vorher aufgelöst). Die 4 git-abhängigen Branch-Methoden (`hasRemoteBranch`, `hasLocalBranch`, `hasUnpushedCommits`, `hasLocalCommits`) bekommen einen `*git.GitClient` Parameter. Aufwand minimal (~11 Aufrufstellen).
+7. **Neues `git`-Package** – Alle Git-Befehle werden in einem `git`-Package gekapselt. Statt globalem `workingDir` wird ein `GitClient`-Struct verwendet. Das `git`-Package ist ein Leaf-Package ohne Abhängigkeit auf `config` oder Mob-Domain-Logik.
+
+## Architektur: `git`-Package
+
+### Design
+
+```go
+package git
+
+// GitClient kapselt alle Git-Operationen. workingDir bestimmt,
+// in welchem Verzeichnis die Git-Befehle ausgeführt werden.
+type GitClient struct {
+    workingDir              string
+    passthroughStderrStdout bool
+}
+
+func NewGitClient(workingDir string) *GitClient {
+    return &GitClient{workingDir: workingDir}
+}
+
+func (g *GitClient) SetPassthroughStderrStdout(enabled bool) {
+    g.passthroughStderrStdout = enabled
+}
+```
+
+### Was wandert ins `git`-Package?
+
+**Execution Layer** (unexportiert – nur intern genutzt):
+- `runCommandSilent(name string, args ...string) (string, string, error)`
+- `runCommand(name string, args ...string) (string, string, error)`
+- `startCommand(name string, args ...string) (string, error)`
+
+**Git-Executors** (exportiert):
+- `SilentGit(args ...string) string`
+- `SilentGitIgnoreFailure(args ...string) (string, error)`
+- `Git(args ...string)`
+- `GitWithoutEmptyStrings(args ...string)`
+- `GitIgnoreFailure(args ...string) error`
+
+**Git-Queries** (exportiert):
+- `CurrentBranch() string` (gibt Branch-Name als String zurück, `main` erstellt daraus ein `Branch`-Objekt)
+- `Branches() []string`
+- `RemoteBranches() []string`
+- `UserName() string`
+- `UserEmail() string`
+- `RootDir() string`
+- `Dir() string`
+- `Version() string`
+- `CommitHash() string`
+
+**Git-State-Checks** (exportiert):
+- `IsGit() bool`
+- `HasCommits() bool`
+- `IsNothingToCommit() bool`
+- `HasUncommittedChanges() bool`
+- `DoBranchesDiverge(ancestor, successor string) bool`
+- `HasRemoteBranch(branchName, remoteName string) bool` (bisher `Branch.hasRemoteBranch`)
+- `HasLocalBranch(branchName string) bool` (bisher `Branch.hasLocalBranch`)
+- `HasUnpushedCommits(branchName, remoteBranchName string) bool` (bisher `Branch.hasUnpushedCommits`)
+
+**Git-Helpers** (exportiert):
+- `GetUntrackedFiles() string`
+- `GetUnstagedChanges() string`
+- `GetChangesOfLastCommit() string`
+- `GetCachedChanges() string`
+- `GetModifiedFiles(rootDir string) []string`
+
+### Was bleibt in `main`?
+
+- `Branch` struct und alle seine Methoden (reine String/Config-Logik)
+- `determineBranches()` (Mob-Domain-Logik)
+- `getMobTimerRoom()` (nutzt Git + Branch + determineBranches)
+- `getUserForMobTimer()` (nutzt GitClient.UserName)
+- `showNext()`, `sayLastCommitsList()` etc. (Mob-Domain-Logik die Git nutzt)
+- `makeWipCommit()`, `deleteRemoteWipBranch()` etc. (Mob-Workflow-Funktionen)
+
+### Migration in `main`
+
+In `mob.go` wird ein package-level `gitClient` erstellt und in `run()` initialisiert:
+
+```go
+var gitClient *git.GitClient
+
+func run(args) {
+    // ...
+    gitClient = git.NewGitClient(workingDir)
+    // ...
+}
+```
+
+Die bisherigen Aufrufe ändern sich minimal:
+- `silentgit("status", "--porcelain")` → `gitClient.SilentGit("status", "--porcelain")`
+- `gitCurrentBranch()` → `newBranch(gitClient.CurrentBranch())`
+- `branch.hasRemoteBranch(config)` → `gitClient.HasRemoteBranch(branch.remote(config).Name, branch.remote(config).Name)` (TODO: Signatur vereinfachen)
 
 ## Umsetzungsschritte
 
-- [ ] **Schritt 1: `timer/`-Package anlegen, Interface definieren und Hilfsfunktionen verschieben**
+- [ ] **Schritt 1: `git/`-Package anlegen und Git-Infrastruktur verschieben**
+  - Neues Package `git/` erstellen
+  - `git/git.go`: `GitClient` struct mit `NewGitClient(workingDir string)`
+  - Execution Layer verschieben: `runCommandSilent`, `runCommand`, `startCommand` als unexportierte Methoden auf `GitClient`
+  - Git-Executors verschieben: `SilentGit`, `SilentGitIgnoreFailure`, `Git`, `GitWithoutEmptyStrings`, `GitIgnoreFailure`
+  - Git-Queries verschieben: `CurrentBranch` (→ gibt `string` zurück), `Branches`, `RemoteBranches`, `UserName`, `UserEmail`, `RootDir`, `Dir`, `Version`, `CommitHash`
+  - Git-State-Checks verschieben: `IsGit`, `HasCommits`, `IsNothingToCommit`, `HasUncommittedChanges`, `DoBranchesDiverge`
+  - Branch-bezogene Git-Checks als GitClient-Methoden: `HasRemoteBranch(branchName, remoteName string)`, `HasLocalBranch(branchName string)`, `HasUnpushedCommits(branchName, remoteBranchName string)`
+  - Git-Helpers verschieben: `GetUntrackedFiles`, `GetUnstagedChanges`, `GetChangesOfLastCommit`, `GetCachedChanges`, `GetModifiedFiles`
+  - In `mob.go`: package-level `var gitClient *git.GitClient`, Initialisierung in `run()`
+  - Alle Aufrufstellen in `mob.go` und `timer.go` auf `gitClient.XYZ()` umstellen
+  - `Branch.hasRemoteBranch/hasLocalBranch/hasUnpushedCommits/hasLocalCommits` entfernen und durch `gitClient.HasRemoteBranch(...)` etc. ersetzen
+  - Globale Variable `workingDir` entfernen (lebt jetzt im GitClient)
+  - Globale Variable `GitPassthroughStderrStdout` durch `gitClient.SetPassthroughStderrStdout()` ersetzen
+  - Tests anpassen / sicherstellen dass alles kompiliert und grün ist
+
+- [ ] **Schritt 2: `timer/`-Package anlegen, Interface definieren und Hilfsfunktionen verschieben**
   - Neues Package `timer/` erstellen
   - `timer/timer.go`: Interface `Timer` mit `Start(durationMinutes int, timerType TimerType, configuration config.Configuration) error`
   - `TimerType`-Enum definieren (`TimerTypeNormal`, `TimerTypeBreak`)
   - `openTimerInBrowser()` als exportierte Funktion `OpenTimerInBrowser()` ins `timer`-Package verschieben
   - `moo()` als exportierte Funktion `Moo()` ins `timer`-Package verschieben
-  - `executeCommandsInBackgroundProcess()` im `timer`-Package neu implementieren: eigene schlanke Version ohne `workingDir`/`startCommand()`, nutzt direkt `exec.Command` (Original bleibt in `mob.go` für andere Zwecke bestehen)
+  - `executeCommandsInBackgroundProcess()` im `timer`-Package neu implementieren: eigene schlanke Version ohne `workingDir`/`startCommand()`, nutzt direkt `exec.Command` (Original in `mob.go` kann entfernt werden, da `moo()` der letzte Nutzer war – prüfen ob `startCommand` in mob.go noch anderweitig gebraucht wird)
   - `getSleepCommand()`, `getVoiceCommand()`, `getNotifyCommand()` ins `timer`-Package verschieben
   - `injectCommandWithMessage()` ins `timer`-Package verschieben
   - Aufrufe in `mob.go` anpassen: `timer.OpenTimerInBrowser(configuration)` / `timer.Moo(configuration)`
 
-- [ ] **Schritt 2: `LocalTimer`-Struct im `timer`-Package erstellen**
+- [ ] **Schritt 3: `LocalTimer`-Struct im `timer`-Package erstellen**
   - `timer/local.go`: `LocalTimer` struct (ohne eigene Felder)
   - `Start()`-Methode implementieren: bestehende Logik aus `startTimer()` / `startBreakTimer()` extrahieren (sleep + voice + notify + echo)
   - Nutzt die bereits im `timer`-Package vorhandenen Hilfsfunktionen (`executeCommandsInBackgroundProcess`, `getSleepCommand`, etc.)
 
-- [ ] **Schritt 3: `RemoteTimer`-Struct im `timer`-Package erstellen**
-  - `timer/remote.go`: `RemoteTimer` struct (ohne eigene Felder)
+- [ ] **Schritt 4: `RemoteTimer`-Struct im `timer`-Package erstellen**
+  - `timer/remote.go`: `RemoteTimer` struct mit `Room string` und `User string`
   - `Start()`-Methode implementieren: bestehende Logik aus `httpPutTimer()` / `httpPutBreakTimer()` extrahieren
   - `httpPutTimer()` und `httpPutBreakTimer()` zu einer Methode zusammenführen (Unterscheidung über `TimerType`)
-  - `getMobTimerRoom()` und `getUserForMobTimer()` ins `timer`-Package verschieben
+  - `getMobTimerRoom()` und `getUserForMobTimer()` bleiben in `main` – sie lösen Room/User auf und übergeben die Strings an `RemoteTimer{Room: room, User: user}`
 
-- [ ] **Schritt 4: Builder/Factory-Funktion erstellen**
-  - `buildTimers(configuration) []timer.Timer` implementieren (in `timer.go` oder im `timer`-Package)
-  - Entscheidet basierend auf `TimerLocal` und `TimerRoom`/`getMobTimerRoom()` welche Timer-Implementierungen erstellt werden
+- [ ] **Schritt 5: Builder/Factory-Funktion erstellen**
+  - `buildTimers(configuration) []timer.Timer` implementieren (in `timer.go`, bleibt in `main`)
+  - Löst Room/User vorab auf via `getMobTimerRoom()` / `getUserForMobTimer()`
+  - Erstellt `&timer.RemoteTimer{Room: room, User: user}` wenn Remote-Timer aktiv
+  - Erstellt `&timer.LocalTimer{}` wenn `TimerLocal=true`
   - Ersetzt die bisherige `if startRemoteTimer` / `if startLocalTimer` Logik
 
-- [ ] **Schritt 5: `startTimer()` und `startBreakTimer()` refactoren**
+- [ ] **Schritt 6: `startTimer()` und `startBreakTimer()` refactoren**
   - Gemeinsame Logik zusammenführen (die Funktionen sind zu ~90% identisch)
   - Interface-Aufrufe statt direkte Implementierung nutzen
   - Die Unterscheidung Normal/Break über `TimerType` abbilden
   - `StartTimer()` und `StartBreakTimer()` (exportierte Funktionen) beibehalten als öffentliche API
 
-- [ ] **Schritt 6: Tests anpassen**
+- [ ] **Schritt 7: Tests anpassen**
   - Bestehende Tests in `timer_test.go` anpassen
   - Mock-Implementation des `Timer`-Interfaces für Unit-Tests erstellen
   - Sicherstellen, dass alle bestehenden Tests weiterhin grün sind
   - Neue Tests für `LocalTimer` und `RemoteTimer` separat schreiben
 
-- [ ] **Schritt 7: Aufräumen**
+- [ ] **Schritt 8: Aufräumen**
   - Verwaiste Funktionen in `timer.go` und `mob.go` entfernen, deren Logik nun in `RemoteTimer.Start()` bzw. `LocalTimer.Start()` lebt (z.B. `httpPutTimer`, `httpPutBreakTimer` → zusammengeführt in `RemoteTimer.Start()`)
+  - `hasLocalCommits` auf Branch entfernen (unused)
+  - `gitUserEmail` entfernen falls weiterhin unused
   - Alle Tests ausführen und sicherstellen dass nichts kaputt ist
