@@ -1,6 +1,9 @@
-package main
+package findnext
 
-func findNextTypist(lastCommitters []string, gitUserName string) (nextTypist string, previousCommitters []string) {
+// FindNextTypist determines who should type next based on the commit history.
+// lastCommitters is the list of recent committers (most recent first).
+// gitUserName is the current git user's name.
+func FindNextTypist(lastCommitters []string, gitUserName string) (nextTypist string, previousCommitters []string) {
 	nextTypistNeverDifferentFromGitUser := true
 	numberOfLastCommitters := len(lastCommitters)
 	for i := 0; i < numberOfLastCommitters; i++ {
@@ -30,7 +33,7 @@ func findNextTypist(lastCommitters []string, gitUserName string) (nextTypist str
 		} else if numberOfPreviousCommitters > 2 {
 			// Pick the next typist from the list of previous committers only.
 			reversedPreviousCommitters := reverse(previousCommitters[:len(previousCommitters)-1])
-			nextTypist, _ = findNextTypist(reversedPreviousCommitters, reversedPreviousCommitters[0])
+			nextTypist, _ = FindNextTypist(reversedPreviousCommitters, reversedPreviousCommitters[0])
 		}
 	} else if nextTypistNeverDifferentFromGitUser {
 		// Someone mobs themselves. ;)

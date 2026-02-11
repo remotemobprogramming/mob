@@ -15,6 +15,7 @@ import (
 	"time"
 
 	config "github.com/remotemobprogramming/mob/v5/configuration"
+	"github.com/remotemobprogramming/mob/v5/findnext"
 	"github.com/remotemobprogramming/mob/v5/goal"
 	"github.com/remotemobprogramming/mob/v5/help"
 	"github.com/remotemobprogramming/mob/v5/open"
@@ -1118,7 +1119,7 @@ func showNext(configuration config.Configuration) {
 	if numberOfLines < 1 {
 		return
 	}
-	nextTypist, previousCommitters := findNextTypist(lines, gitUserName)
+	nextTypist, previousCommitters := findnext.FindNextTypist(lines, gitUserName)
 	if nextTypist != "" {
 		if len(previousCommitters) != 0 {
 			say.Info("Committers after your last commit: " + strings.Join(previousCommitters, ", "))
