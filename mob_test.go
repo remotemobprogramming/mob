@@ -1948,6 +1948,105 @@ func TestMobStartOnWipBranchWithoutCheckedOutBaseBranchWithoutHyphens(t *testing
 	assertOnBranch(t, "basebranchwithouthyphen")
 }
 
+func TestMobNextWithBaseBranchDeletedLocally(t *testing.T) {
+	output, configuration := setup(t)
+	mockExit()
+	defer resetExit()
+
+	// Person A: create branch "test" and push to origin
+	setWorkingDir(tempDir + "/local")
+	git("checkout", "-b", "test")
+	git("push", "origin", "test", "--set-upstream")
+	assertOnBranch(t, "test")
+
+	// Person A: start mob session on "test"
+	start(configuration)
+	assertOnBranch(t, "mob/test")
+
+	// Person A: create a file in the mob session
+	createFile(t, "mob-file.txt", "mob-content")
+
+	// Person A: hand over with mob next
+	next(configuration)
+	assertOnBranch(t, "test")
+
+	// Delete the base branch "test" locally, but keep it on origin
+	git("checkout", "master")
+	git("branch", "-d", "test")
+	assertNoLocalBranch(t, "test")
+
+	// Verify "test" still exists on origin
+	equals(t, true, newBranch("test").hasRemoteBranch(configuration))
+
+	// Now checkout mob/test (the wip branch, still exists locally)
+	git("checkout", "mob/test")
+	assertOnBranch(t, "mob/test")
+
+	// mob start should join the existing session even though
+	// the base branch "test" does not exist locally
+	assertNoError(t, start(configuration))
+	assertOnBranch(t, "mob/test")
+	assertFileExist(t, "mob-file.txt")
+
+	// After rejoining, create another file and do mob next.
+	// BUG: mob next currently fails when the base branch "test"
+	// does not exist locally because showNext() uses
+	// "git log test..mob/test" which fails since "test" is not
+	// a valid local ref. Without mockExit this would call
+	// os.Exit(1) and terminate the process.
+	// The fix should use origin/test as fallback or ensure
+	// the local base branch is created from remote.
+	createFile(t, "mob-file2.txt", "mob-content2")
+	next(configuration)
+	assertOutputNotContains(t, output, "ambiguous argument 'test..mob/test'")
+	assertOnBranch(t, "test")
+	assertLocalBranch(t, "test")
+}
+
+func TestMobNextWithoutLocalBaseBranchFromOtherClone(t *testing.T) {
+	output, configuration := setup(t)
+	mockExit()
+	defer resetExit()
+
+	// Person A: create branch "test" and push to origin
+	setWorkingDir(tempDir + "/local")
+	git("checkout", "-b", "test")
+	git("push", "origin", "test", "--set-upstream")
+
+	// Person A: start mob session, create a file, mob next
+	start(configuration)
+	createFile(t, "mob-file.txt", "mob-content")
+	next(configuration)
+	assertOnBranch(t, "test")
+
+	// Person B: fetch and directly checkout mob/test
+	// without ever having "test" as a local branch
+	setWorkingDir(tempDir + "/localother")
+	git("fetch")
+	git("checkout", "mob/test")
+	assertOnBranch(t, "mob/test")
+	assertNoLocalBranch(t, "test")
+
+	// Person B: mob start should join the session
+	assertNoError(t, start(configuration))
+	assertOnBranch(t, "mob/test")
+	assertFileExist(t, "mob-file.txt")
+
+	// Person B: create a file and do mob next.
+	// BUG: mob next currently fails when the base branch "test"
+	// never existed locally because showNext() uses
+	// "git log test..mob/test" which fails since "test" is not
+	// a valid local ref. Without mockExit this would call
+	// os.Exit(1) and terminate the process.
+	// The fix should use origin/test as fallback or ensure
+	// the local base branch is created from remote.
+	createFile(t, "mob-file2.txt", "mob-content2")
+	next(configuration)
+	assertOutputNotContains(t, output, "ambiguous argument 'test..mob/test'")
+	assertOnBranch(t, "test")
+	assertLocalBranch(t, "test")
+}
+
 func TestGitVersionParse(t *testing.T) {
 	// Check real examples
 	equals(t, GitVersion{2, 34, 1}, parseGitVersion("git version 2.34.1"))
