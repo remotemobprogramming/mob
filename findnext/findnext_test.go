@@ -3,7 +3,7 @@ package findnext
 import (
 	"testing"
 
-	mobtest "github.com/remotemobprogramming/mob/v5/test"
+	"github.com/remotemobprogramming/mob/v5/test"
 )
 
 func TestFindNextTypistNoCommits(t *testing.T) {
@@ -11,8 +11,8 @@ func TestFindNextTypistNoCommits(t *testing.T) {
 
 	nextTypist, history := FindNextTypist(lastCommitters, "alice")
 
-	mobtest.Equals(t, nextTypist, "")
-	mobtest.Equals(t, history, []string(nil))
+	test.Equals(t, nextTypist, "")
+	test.Equals(t, history, []string(nil))
 }
 
 func TestFindNextTypistOnFirstCommit(t *testing.T) {
@@ -20,8 +20,8 @@ func TestFindNextTypistOnFirstCommit(t *testing.T) {
 
 	nextTypist, history := FindNextTypist(lastCommitters, "alice")
 
-	mobtest.Equals(t, nextTypist, "")
-	mobtest.Equals(t, history, []string(nil))
+	test.Equals(t, nextTypist, "")
+	test.Equals(t, history, []string(nil))
 }
 
 func TestFindNextTypistStartingWithFirstCommitterTwice(t *testing.T) {
@@ -29,8 +29,8 @@ func TestFindNextTypistStartingWithFirstCommitterTwice(t *testing.T) {
 
 	nextTypist, history := FindNextTypist(lastCommitters, "alice")
 
-	mobtest.Equals(t, nextTypist, "")
-	mobtest.Equals(t, history, []string(nil))
+	test.Equals(t, nextTypist, "")
+	test.Equals(t, history, []string(nil))
 }
 
 func TestFindNextTypistOnlyCurrentCommitterInList(t *testing.T) {
@@ -38,8 +38,8 @@ func TestFindNextTypistOnlyCurrentCommitterInList(t *testing.T) {
 
 	nextTypist, history := FindNextTypist(lastCommitters, "alice")
 
-	mobtest.Equals(t, nextTypist, "")
-	mobtest.Equals(t, history, []string(nil))
+	test.Equals(t, nextTypist, "")
+	test.Equals(t, history, []string(nil))
 }
 
 func TestFindNextTypistCurrentCommitterAlternatingWithOneOtherPerson(t *testing.T) {
@@ -47,8 +47,8 @@ func TestFindNextTypistCurrentCommitterAlternatingWithOneOtherPerson(t *testing.
 
 	nextTypist, history := FindNextTypist(lastCommitters, "alice")
 
-	mobtest.Equals(t, nextTypist, "bob")
-	mobtest.Equals(t, history, []string{"bob", "alice"})
+	test.Equals(t, nextTypist, "bob")
+	test.Equals(t, history, []string{"bob", "alice"})
 }
 
 func TestFindNextTypistCommitterFirstSeenInFirstRound(t *testing.T) {
@@ -56,8 +56,8 @@ func TestFindNextTypistCommitterFirstSeenInFirstRound(t *testing.T) {
 
 	nextTypist, history := FindNextTypist(lastCommitters, "alice")
 
-	mobtest.Equals(t, nextTypist, "craig")
-	mobtest.Equals(t, history, []string(nil))
+	test.Equals(t, nextTypist, "craig")
+	test.Equals(t, history, []string(nil))
 }
 
 func TestFindNextTypistSecondCommitterFirstSeenRunningSession(t *testing.T) {
@@ -65,8 +65,8 @@ func TestFindNextTypistSecondCommitterFirstSeenRunningSession(t *testing.T) {
 
 	nextTypist, history := FindNextTypist(lastCommitters, "alice")
 
-	mobtest.Equals(t, nextTypist, "craig")
-	mobtest.Equals(t, history, []string(nil))
+	test.Equals(t, nextTypist, "craig")
+	test.Equals(t, history, []string(nil))
 }
 
 func TestFindNextTypistCurrentCommitterCommittedBefore(t *testing.T) {
@@ -74,8 +74,8 @@ func TestFindNextTypistCurrentCommitterCommittedBefore(t *testing.T) {
 
 	nextTypist, history := FindNextTypist(lastCommitters, "alice")
 
-	mobtest.Equals(t, nextTypist, "bob")
-	mobtest.Equals(t, history, []string{"bob", "alice"})
+	test.Equals(t, nextTypist, "bob")
+	test.Equals(t, history, []string{"bob", "alice"})
 }
 
 func TestFindNextTypistThreeCommitters(t *testing.T) {
@@ -83,8 +83,8 @@ func TestFindNextTypistThreeCommitters(t *testing.T) {
 
 	nextTypist, history := FindNextTypist(lastCommitters, "alice")
 
-	mobtest.Equals(t, nextTypist, "craig")
-	mobtest.Equals(t, history, []string{"craig", "bob", "alice"})
+	test.Equals(t, nextTypist, "craig")
+	test.Equals(t, history, []string{"craig", "bob", "alice"})
 }
 
 func TestFindNextTypistIgnoreMultipleCommitsFromSamePerson(t *testing.T) {
@@ -92,8 +92,8 @@ func TestFindNextTypistIgnoreMultipleCommitsFromSamePerson(t *testing.T) {
 
 	nextTypist, history := FindNextTypist(lastCommitters, "alice")
 
-	mobtest.Equals(t, nextTypist, "craig")
-	mobtest.Equals(t, history, []string{"craig", "bob", "alice"})
+	test.Equals(t, nextTypist, "craig")
+	test.Equals(t, history, []string{"craig", "bob", "alice"})
 }
 
 func TestFindNextTypistSuggestCommitterBeforeLastCommit(t *testing.T) {
@@ -101,8 +101,8 @@ func TestFindNextTypistSuggestCommitterBeforeLastCommit(t *testing.T) {
 
 	nextTypist, history := FindNextTypist(lastCommitters, "alice")
 
-	mobtest.Equals(t, nextTypist, "dan")
-	mobtest.Equals(t, history, []string{"craig", "bob", "alice"})
+	test.Equals(t, nextTypist, "dan")
+	test.Equals(t, history, []string{"craig", "bob", "alice"})
 }
 
 func TestFindNextTypistSuggestCommitterBeforeLastCommitInThreshold(t *testing.T) {
@@ -110,8 +110,8 @@ func TestFindNextTypistSuggestCommitterBeforeLastCommitInThreshold(t *testing.T)
 
 	nextTypist, history := FindNextTypist(lastCommitters, "alice")
 
-	mobtest.Equals(t, nextTypist, "erik")
-	mobtest.Equals(t, history, []string{"craig", "bob", "alice"})
+	test.Equals(t, nextTypist, "erik")
+	test.Equals(t, history, []string{"craig", "bob", "alice"})
 }
 
 func TestFindNextTypistIgnoreCommitterBeforeLastCommitOutsideThreshold(t *testing.T) {
@@ -119,6 +119,6 @@ func TestFindNextTypistIgnoreCommitterBeforeLastCommitOutsideThreshold(t *testin
 
 	nextTypist, history := FindNextTypist(lastCommitters, "alice")
 
-	mobtest.Equals(t, nextTypist, "craig")
-	mobtest.Equals(t, history, []string{"craig", "bob", "alice"})
+	test.Equals(t, nextTypist, "craig")
+	test.Equals(t, history, []string{"craig", "bob", "alice"})
 }
