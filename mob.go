@@ -1,14 +1,12 @@
 package main
 
 import (
-	"bufio"
 	"errors"
 	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"reflect"
-	"regexp"
 	"runtime"
 	"strconv"
 	"strings"
@@ -17,6 +15,7 @@ import (
 	"github.com/remotemobprogramming/mob/v5/coauthors"
 	config "github.com/remotemobprogramming/mob/v5/configuration"
 	"github.com/remotemobprogramming/mob/v5/findnext"
+	mobgit "github.com/remotemobprogramming/mob/v5/git"
 	"github.com/remotemobprogramming/mob/v5/goal"
 	"github.com/remotemobprogramming/mob/v5/help"
 	"github.com/remotemobprogramming/mob/v5/open"
@@ -29,9 +28,10 @@ const (
 )
 
 var (
-	workingDir                 = ""
-	args                       []string
-	GitPassthroughStderrStdout = false // hack to get git hooks to print to stdout/stderr
+	gitClient = &mobgit.Client{
+		Exit: func(code int) { os.Exit(code) },
+	}
+	args []string
 )
 
 func openCommandFor(c config.Configuration, filepath string) (string, []string) {
@@ -46,46 +46,10 @@ func openCommandFor(c config.Configuration, filepath string) (string, []string) 
 	return split[0], split[1:]
 }
 
-type GitVersion struct {
-	Major int
-	Minor int
-	Patch int
-}
+type GitVersion = mobgit.GitVersion
 
 func parseGitVersion(version string) GitVersion {
-	// The git version string can be customized, so we need a more complex regex, for example: git version 2.38.1.windows.1
-	// "git" and "version" are optional, and the version number can be x, x.y or x.y.z
-	r := regexp.MustCompile(`(?:git)?(?: version )?(?P<major>\d+)(?:\.(?P<minor>\d+)(?:\.(?P<patch>\d+))?)?`)
-	matches := r.FindStringSubmatch(version)
-	var v GitVersion
-	var err error
-	if len(matches) > r.SubexpIndex("major") {
-		v.Major, err = strconv.Atoi(matches[r.SubexpIndex("major")])
-		if err != nil {
-			v.Major = 0
-			return v
-		}
-	}
-	if len(matches) > r.SubexpIndex("minor") {
-		v.Minor, err = strconv.Atoi(matches[r.SubexpIndex("minor")])
-		if err != nil {
-			v.Minor = 0
-			return v
-		}
-	}
-	if len(matches) > r.SubexpIndex("patch") {
-		v.Patch, err = strconv.Atoi(matches[r.SubexpIndex("patch")])
-		if err != nil {
-			v.Patch = 0
-		}
-	}
-	return v
-}
-
-func (v GitVersion) Less(rhs GitVersion) bool {
-	return v.Major < rhs.Major ||
-		(v.Major == rhs.Major && v.Minor < rhs.Minor) ||
-		(v.Major == rhs.Major && v.Minor == rhs.Minor && v.Patch < rhs.Patch)
+	return mobgit.ParseVersion(version)
 }
 
 type Branch struct {
@@ -258,14 +222,14 @@ func run(osArgs []string) {
 	if versionString == "" {
 		say.Error("'git' command was not found in PATH. It may be not installed. " +
 			"To learn how to install 'git' refer to https://git-scm.com/book/en/v2/Getting-Started-Installing-Git.")
-		Exit(1)
+		gitClient.Exit(1)
 	}
 
 	currentVersion := parseGitVersion(versionString)
 	if currentVersion.Less(parseGitVersion(minimumGitVersion)) {
 		say.Error(fmt.Sprintf("'git' command version '%s' is lower than the required minimum version (%s). "+
 			"Please update your 'git' installation!", versionString, minimumGitVersion))
-		Exit(1)
+		gitClient.Exit(1)
 	}
 
 	projectRootDir := ""
@@ -273,7 +237,7 @@ func run(osArgs []string) {
 		projectRootDir = gitRootDir()
 		if !hasCommits() {
 			say.Error("Git repository does not have any commits yet. Please create an initial commit.")
-			Exit(1)
+			gitClient.Exit(1)
 		}
 	}
 
@@ -289,19 +253,18 @@ func run(osArgs []string) {
 	say.Debug("command '" + command + "'")
 	say.Debug("parameters '" + strings.Join(parameters, " ") + "'")
 	say.Debug("version " + versionNumber)
-	say.Debug("workingDir '" + workingDir + "'")
+	say.Debug("workingDir '" + gitClient.WorkingDir + "'")
 
 	// workaround until we have a better design
 	if configuration.GitHooksEnabled {
-		GitPassthroughStderrStdout = true
+		gitClient.PassthroughStderrStdout = true
 	}
 
 	execute(command, parameters, configuration)
 }
 
 func hasCommits() bool {
-	commitCount := silentgit("rev-list", "--all", "--count")
-	return commitCount != "0"
+	return gitClient.HasCommits()
 }
 
 func currentCliName(argZero string) string {
@@ -318,7 +281,7 @@ func execute(command string, parameter []string, configuration config.Configurat
 	case "s", "start":
 		err := start(configuration)
 		if !isMobProgramming(configuration) || err != nil {
-			Exit(1)
+			gitClient.Exit(1)
 		}
 		if len(parameter) > 0 {
 			timer := parameter[0]
@@ -475,7 +438,7 @@ func injectCommandWithMessage(command string, message string) string {
 	placeHolders := strings.Count(command, "%s")
 	if placeHolders > 1 {
 		say.Error(fmt.Sprintf("Too many placeholders (%d) in format command string: %s", placeHolders, command))
-		Exit(1)
+		gitClient.Exit(1)
 	}
 	if placeHolders == 0 {
 		return fmt.Sprintf("%s %s", command, message)
@@ -915,10 +878,10 @@ func getPathOfLastModifiedFile() string {
 // uses git status --porcelain. To work properly files have to be staged.
 func getModifiedFiles(rootDir string) []string {
 	say.Debug("Find modified files")
-	oldWorkingDir := workingDir
-	workingDir = rootDir
+	oldWorkingDir := gitClient.WorkingDir
+	gitClient.WorkingDir = rootDir
 	gitstatus := silentgit("status", "--porcelain")
-	workingDir = oldWorkingDir
+	gitClient.WorkingDir = oldWorkingDir
 	lines := strings.Split(gitstatus, "\n")
 	files := []string{}
 	for _, line := range lines {
@@ -938,11 +901,7 @@ func getModifiedFiles(rootDir string) []string {
 }
 
 func gitHooksOption(c config.Configuration) string {
-	if c.GitHooksEnabled {
-		return ""
-	} else {
-		return "--no-verify"
-	}
+	return mobgit.HooksOption(c)
 }
 
 func fetch(configuration config.Configuration) {
@@ -1014,11 +973,11 @@ func done(configuration config.Configuration) {
 }
 
 func gitDir() string {
-	return silentgit("rev-parse", "--absolute-git-dir")
+	return gitClient.Dir()
 }
 
 func gitRootDir() string {
-	return silentgit("rev-parse", "--show-toplevel")
+	return gitClient.RootDir()
 }
 
 func squashOrCommit(configuration config.Configuration) string {
@@ -1055,12 +1014,11 @@ func ReverseSlice(s interface{}) {
 }
 
 func isNothingToCommit() bool {
-	output := silentgit("status", "--porcelain")
-	return len(output) == 0
+	return gitClient.IsNothingToCommit()
 }
 
 func hasUncommittedChanges() bool {
-	return !isNothingToCommit()
+	return gitClient.HasUncommittedChanges()
 }
 
 func isMobProgramming(configuration config.Configuration) bool {
@@ -1071,33 +1029,27 @@ func isMobProgramming(configuration config.Configuration) bool {
 }
 
 func gitBranches() []string {
-	return strings.Split(silentgit("branch", "--format=%(refname:short)"), "\n")
+	return gitClient.Branches()
 }
 
 func gitRemoteBranches() []string {
-	return strings.Split(silentgit("branch", "--remotes", "--format=%(refname:short)"), "\n")
+	return gitClient.RemoteBranches()
 }
 
 func gitCurrentBranch() Branch {
-	// upgrade to branch --show-current when git v2.21 is more widely spread
-	return newBranch(silentgit("rev-parse", "--abbrev-ref", "HEAD"))
+	return newBranch(gitClient.CurrentBranch())
 }
 
 func doBranchesDiverge(ancestor string, successor string) bool {
-	_, _, err := runCommandSilent("git", "merge-base", "--is-ancestor", ancestor, successor)
-	if err == nil {
-		return false
-	}
-	return true
+	return gitClient.DoBranchesDiverge(ancestor, successor)
 }
 
 func gitUserName() string {
-	output, _ := silentgitignorefailure("config", "--get", "user.name")
-	return output
+	return gitClient.UserName()
 }
 
 func gitUserEmail() string {
-	return silentgit("config", "--get", "user.email")
+	return gitClient.UserEmail()
 }
 
 func showNext(configuration config.Configuration) {
@@ -1134,93 +1086,23 @@ func version() {
 }
 
 func silentgit(args ...string) string {
-	commandString, output, err := runCommandSilent("git", args...)
-
-	if err != nil {
-		if !isGit() {
-			say.Error("expecting the current working directory to be a git repository.")
-		} else {
-			say.Error(commandString)
-			say.Error(output)
-			say.Error(err.Error())
-		}
-		Exit(1)
-	}
-	return strings.TrimSpace(output)
+	return gitClient.Silent(args...)
 }
 
 func silentgitignorefailure(args ...string) (string, error) {
-	_, output, err := runCommandSilent("git", args...)
-
-	if err != nil {
-		return "", err
-	}
-	return strings.TrimSpace(output), nil
-}
-
-func deleteEmptyStrings(s []string) []string {
-	var r []string
-	for _, str := range s {
-		if str != "" {
-			r = append(r, str)
-		}
-	}
-	return r
+	return gitClient.SilentIgnoreFailure(args...)
 }
 
 func gitWithoutEmptyStrings(args ...string) {
-	argsWithoutEmptyStrings := deleteEmptyStrings(args)
-	git(argsWithoutEmptyStrings...)
+	gitClient.RunWithoutEmptyStrings(args...)
 }
 
 func git(args ...string) {
-	say.Indented("git " + strings.Join(args, " "))
-	commandString, output, err := "", "", error(nil)
-	if GitPassthroughStderrStdout {
-		commandString, output, err = runCommand("git", args...)
-	} else {
-		commandString, output, err = runCommandSilent("git", args...)
-	}
-
-	if err != nil {
-		if !isGit() {
-			say.Error("expecting the current working directory to be a git repository.")
-		} else {
-			if strings.Contains(output, "does not support push options") {
-				say.Error("The receiving end does not support push options")
-				say.Fix("Disable the push option ci.skip in your .mob file or set the expected environment variable", "export MOB_SKIP_CI_PUSH_OPTION_ENABLED=false")
-			} else {
-				say.Error(commandString)
-				say.Error(output)
-				say.Error(err.Error())
-			}
-		}
-		Exit(1)
-	}
+	gitClient.Run(args...)
 }
 
 func gitIgnoreFailure(args ...string) error {
-	commandString, output, err := "", "", error(nil)
-	if GitPassthroughStderrStdout {
-		commandString, output, err = runCommand("git", args...)
-	} else {
-		commandString, output, err = runCommandSilent("git", args...)
-	}
-
-	if err != nil {
-		if !isGit() {
-			say.Error("expecting the current working directory to be a git repository.")
-			Exit(1)
-		} else {
-			say.Warning(commandString)
-			say.Warning(output)
-			say.Warning(err.Error())
-			return err
-		}
-	}
-
-	say.Indented(commandString)
-	return nil
+	return gitClient.RunIgnoreFailure(args...)
 }
 
 func gitCommitHash() string {
@@ -1229,87 +1111,20 @@ func gitCommitHash() string {
 }
 
 func gitVersion() string {
-	_, output, err := runCommandSilent("git", "--version")
-	if err != nil {
-		say.Debug("gitVersion encountered an error: " + err.Error())
-		return ""
-	}
-	return strings.TrimSpace(output)
+	return gitClient.Version()
 }
 
 func isGit() bool {
-	_, _, err := runCommandSilent("git", "rev-parse")
-	return err == nil
-}
-
-func runCommandSilent(name string, args ...string) (string, string, error) {
-	command := exec.Command(name, args...)
-	if len(workingDir) > 0 {
-		command.Dir = workingDir
-	}
-	commandString := strings.Join(command.Args, " ")
-	say.Debug("Running command <" + commandString + "> in silent mode, capturing combined output")
-	outputBytes, err := command.CombinedOutput()
-	output := string(outputBytes)
-	say.Debug(output)
-	return commandString, output, err
-}
-
-func runCommand(name string, args ...string) (string, string, error) {
-	command := exec.Command(name, args...)
-	if len(workingDir) > 0 {
-		command.Dir = workingDir
-	}
-	commandString := strings.Join(command.Args, " ")
-	say.Debug("Running command <" + commandString + "> passing output through")
-
-	stdout, _ := command.StdoutPipe()
-	command.Stderr = command.Stdout
-	errStart := command.Start()
-	if errStart != nil {
-		return commandString, "", errStart
-	}
-
-	output := ""
-
-	stdoutscanner := bufio.NewScanner(stdout)
-	lineEnded := true
-	stdoutscanner.Split(bufio.ScanBytes)
-	for stdoutscanner.Scan() {
-		character := stdoutscanner.Text()
-		if character == "\n" {
-			lineEnded = true
-		} else {
-			if lineEnded {
-				say.PrintToConsole("  ")
-				lineEnded = false
-			}
-		}
-		say.PrintToConsole(character)
-		output += character
-	}
-
-	errWait := command.Wait()
-	if errWait != nil {
-		say.Debug(output)
-		return commandString, output, errWait
-	}
-
-	say.Debug(output)
-	return commandString, output, nil
+	return gitClient.IsRepo()
 }
 
 func startCommand(name string, args ...string) (string, error) {
 	command := exec.Command(name, args...)
-	if len(workingDir) > 0 {
-		command.Dir = workingDir
+	if len(gitClient.WorkingDir) > 0 {
+		command.Dir = gitClient.WorkingDir
 	}
 	commandString := strings.Join(command.Args, " ")
 	say.Debug("Starting command " + commandString)
 	err := command.Start()
 	return commandString, err
-}
-
-var Exit = func(code int) {
-	os.Exit(code)
 }

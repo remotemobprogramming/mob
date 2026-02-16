@@ -14,7 +14,7 @@ import (
 
 func StartTimer(timerInMinutes string, configuration config.Configuration) {
 	if err := startTimer(timerInMinutes, configuration); err != nil {
-		Exit(1)
+		gitClient.Exit(1)
 	}
 }
 
@@ -34,7 +34,7 @@ func startTimer(timerInMinutes string, configuration config.Configuration) error
 
 	if !startRemoteTimer && !startLocalTimer {
 		say.Error("No timer configured, not starting timer")
-		Exit(1)
+		gitClient.Exit(1)
 	}
 
 	if startRemoteTimer {
@@ -43,7 +43,7 @@ func startTimer(timerInMinutes string, configuration config.Configuration) error
 		if err != nil {
 			say.Error("remote timer couldn't be started")
 			say.Error(err.Error())
-			Exit(1)
+			gitClient.Exit(1)
 		}
 	}
 
@@ -53,7 +53,7 @@ func startTimer(timerInMinutes string, configuration config.Configuration) error
 		if err != nil {
 			say.Error(fmt.Sprintf("timer couldn't be started on your system (%s)", runtime.GOOS))
 			say.Error(err.Error())
-			Exit(1)
+			gitClient.Exit(1)
 		}
 	}
 
@@ -88,7 +88,7 @@ func getMobTimerRoom(configuration config.Configuration) string {
 
 func StartBreakTimer(timerInMinutes string, configuration config.Configuration) {
 	if err := startBreakTimer(timerInMinutes, configuration); err != nil {
-		Exit(1)
+		gitClient.Exit(1)
 	}
 }
 
@@ -108,7 +108,7 @@ func startBreakTimer(timerInMinutes string, configuration config.Configuration) 
 
 	if !startRemoteTimer && !startLocalTimer {
 		say.Error("No break timer configured, not starting break timer")
-		Exit(1)
+		gitClient.Exit(1)
 	}
 
 	if startRemoteTimer {
@@ -118,7 +118,7 @@ func startBreakTimer(timerInMinutes string, configuration config.Configuration) 
 		if err != nil {
 			say.Error("remote break timer couldn't be started")
 			say.Error(err.Error())
-			Exit(1)
+			gitClient.Exit(1)
 		}
 	}
 
@@ -128,7 +128,7 @@ func startBreakTimer(timerInMinutes string, configuration config.Configuration) 
 		if err != nil {
 			say.Error(fmt.Sprintf("break timer couldn't be started on your system (%s)", runtime.GOOS))
 			say.Error(err.Error())
-			Exit(1)
+			gitClient.Exit(1)
 		}
 	}
 
