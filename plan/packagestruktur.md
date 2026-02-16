@@ -77,20 +77,20 @@ bekommen diese Funktionen einen eigenen Platz (z.B. `process/` oder als Paramete
 | `silentgitignorefailure(args...)` | mob.go (3x) | `git/` |
 | `gitHooksOption(c)` | mob.go (5x), squash_wip.go (2x) | `git/` |
 
-**Design**: Diese Funktionen werden Methoden auf einem `git.Context`-Struct, das den
+**Design**: Diese Funktionen werden Methoden auf einem `git.Client`-Struct, das den
 globalen Zustand kapselt:
 
 ```go
 package git
 
-type Context struct {
+type Client struct {
     WorkingDir              string
     PassthroughStderrStdout bool  // fuer Git-Hooks
 }
 
-func (g *Context) Run(args ...string)                    { ... }  // vorher: git()
-func (g *Context) Silent(args ...string) string          { ... }  // vorher: silentgit()
-func (g *Context) IgnoreFailure(args ...string) error    { ... }  // vorher: gitIgnoreFailure()
+func (g *Client) Run(args ...string)                    { ... }  // vorher: git()
+func (g *Client) Silent(args ...string) string          { ... }  // vorher: silentgit()
+func (g *Client) IgnoreFailure(args ...string) error    { ... }  // vorher: gitIgnoreFailure()
 ```
 
 ### Schicht 3: Git-Info-Funktionen
@@ -108,16 +108,16 @@ func (g *Context) IgnoreFailure(args ...string) error    { ... }  // vorher: git
 | `hasCommits()` | mob.go:run() | `git/` |
 | `doBranchesDiverge(a, b)` | mob.go:startJoinMobSession() | `git/` |
 
-**Design**: Werden ebenfalls Methoden auf `git.Context`:
+**Design**: Werden ebenfalls Methoden auf `git.Client`:
 
 ```go
-func (g *Context) CurrentBranch() string       { ... }
-func (g *Context) Branches() []string          { ... }
-func (g *Context) RemoteBranches() []string    { ... }
-func (g *Context) UserName() string            { ... }
-func (g *Context) UserEmail() string           { ... }
-func (g *Context) IsGitRepo() bool             { ... }
-func (g *Context) RootDir() string             { ... }
+func (g *Client) CurrentBranch() string       { ... }
+func (g *Client) Branches() []string          { ... }
+func (g *Client) RemoteBranches() []string    { ... }
+func (g *Client) UserName() string            { ... }
+func (g *Client) UserEmail() string           { ... }
+func (g *Client) IsGitRepo() bool             { ... }
+func (g *Client) RootDir() string             { ... }
 ```
 
 ### Querschnitt: Utility-Funktionen
@@ -133,10 +133,10 @@ func (g *Context) RootDir() string             { ... }
 
 | Variable | Aktuell | Ziel |
 |----------|---------|------|
-| `workingDir` | Globale Variable in main | Feld in `git.Context.WorkingDir` |
-| `GitPassthroughStderrStdout` | Globale Variable in main | Feld in `git.Context.PassthroughStderrStdout` |
+| `workingDir` | Globale Variable in main | Feld in `git.Client.WorkingDir` |
+| `GitPassthroughStderrStdout` | Globale Variable in main | Feld in `git.Client.PassthroughStderrStdout` |
 | `args` | Globale Variable in main | Lokale Variable in `run()`, nur noch fuer CLI-Parsing |
-| `Exit` | Globale `var` in main | Bleibt als globale var oder wird Parameter im `git.Context` |
+| `Exit` | Globale `var` in main | Bleibt als globale var oder wird Parameter im `git.Client` |
 
 ### Uebergangsphase
 
@@ -195,7 +195,7 @@ say, configuration, httpclient, open       (Basis-Infrastruktur, existiert berei
     findnext                                (reiner Algorithmus, keine Abhaengigkeiten)
          |
        git/                                 (Git-Kommando-Ausfuehrung, kapselt workingDir)
-       (git.Context struct)                 (abhaengig von: say)
+       (git.Client struct)                 (abhaengig von: say)
          |
       branch/                               (Domaenen-Modell)
                                             (abhaengig von: git/, configuration)
@@ -219,9 +219,9 @@ say, configuration, httpclient, open       (Basis-Infrastruktur, existiert berei
 |---------|-------------|-------------|----------------------------------------|
 | **1**   | `findnext/` | Sehr niedrig | Keine geteilten Funktionen betroffen |
 | 2       | `coauthor/` | Niedrig      | `gitUserEmail()` wird als Parameter uebergeben |
-| 3       | `git/`      | Mittel-Hoch  | `runCommand*`, `git()`, `silentgit()`, alle Git-Info-Fns wandern hierher. `git.Context` kapselt `workingDir` + `GitPassthroughStderrStdout`. `startCommand` + `executeCommandsInBackgroundProcess` + `injectCommandWithMessage` bleiben vorerst in main |
-| 4       | `branch/`   | Mittel       | `Branch` struct + Methoden. Bekommt `git.Context` als Abhaengigkeit |
-| 5       | `squash/`   | Mittel       | Bekommt `git.Context` als Abhaengigkeit |
+| 3       | `git/`      | Mittel-Hoch  | `runCommand*`, `git()`, `silentgit()`, alle Git-Info-Fns wandern hierher. `git.Client` kapselt `workingDir` + `GitPassthroughStderrStdout`. `startCommand` + `executeCommandsInBackgroundProcess` + `injectCommandWithMessage` bleiben vorerst in main |
+| 4       | `branch/`   | Mittel       | `Branch` struct + Methoden. Bekommt `git.Client` als Abhaengigkeit |
+| 5       | `squash/`   | Mittel       | Bekommt `git.Client` als Abhaengigkeit |
 | 6       | `timer/`    | Niedrig      | Bekommt `executeCommandsInBackgroundProcess` + `injectCommandWithMessage` als Dependency injected oder diese wandern in ein kleines `process/`-Package |
 | 7       | `session/`  | Hoch         | Orchestriert alles. `main.go` wird zum reinen Entry-Point |
 
@@ -659,9 +659,9 @@ mob/
 ### Warum `git/` als drittes?
 
 1. **Fundamentale Infrastruktur**: Alle verbleibenden Extraktionen (`branch/`, `squash/`, `timer/`, `session/`) haengen von Git-Funktionen ab. Ohne `git/` als eigenstaendiges Package kann keiner dieser Schritte sauber umgesetzt werden.
-2. **Eliminiert globalen Zustand**: Die globalen Variablen `workingDir` und `GitPassthroughStderrStdout` werden in einem `git.Context`-Struct gekapselt - der wichtigste Schritt zur Entflechtung des Codes.
+2. **Eliminiert globalen Zustand**: Die globalen Variablen `workingDir` und `GitPassthroughStderrStdout` werden in einem `git.Client`-Struct gekapselt - der wichtigste Schritt zur Entflechtung des Codes.
 3. **Klare Schichtentrennung**: Trennt die "wie fuehre ich Git-Kommandos aus?"-Infrastruktur von der "was mache ich mit Git?"-Geschaeftslogik.
-4. **Exit-Handling wird testbar**: `Exit` wird von einer globalen Variable zum injizierbaren Feld auf `git.Context`, was die Testbarkeit verbessert.
+4. **Exit-Handling wird testbar**: `Exit` wird von einer globalen Variable zum injizierbaren Feld auf `git.Client`, was die Testbarkeit verbessert.
 
 ### Analyse der aktuellen Funktionen
 
@@ -714,9 +714,9 @@ mob/
 
 | Variable | Zeile | Aktuell | Ziel |
 |----------|-------|---------|------|
-| `workingDir` | 32 | `var workingDir = ""` | `Context.WorkingDir` |
-| `GitPassthroughStderrStdout` | 34 | `var GitPassthroughStderrStdout = false` | `Context.PassthroughStderrStdout` |
-| `Exit` | 1313-1315 | `var Exit = func(code int) { os.Exit(code) }` | `Context.Exit` |
+| `workingDir` | 32 | `var workingDir = ""` | `Client.WorkingDir` |
+| `GitPassthroughStderrStdout` | 34 | `var GitPassthroughStderrStdout = false` | `Client.PassthroughStderrStdout` |
+| `Exit` | 1313-1315 | `var Exit = func(code int) { os.Exit(code) }` | `Client.Exit` |
 
 #### Was NICHT in `git/` wandert
 
@@ -732,7 +732,7 @@ mob/
 
 ### Uebergangsstrategie: Duenne Wrapper in `main`
 
-**Kernentscheidung**: Um den Diff minimal und die Aenderung sicher zu halten, bleiben in `main` *duenne Wrapper-Funktionen* bestehen, die an `git.Context` delegieren.
+**Kernentscheidung**: Um den Diff minimal und die Aenderung sicher zu halten, bleiben in `main` *duenne Wrapper-Funktionen* bestehen, die an `git.Client` delegieren.
 
 **Warum Wrapper statt sofortiger Umbenennung?**
 
@@ -742,21 +742,21 @@ mob/
 4. **Jeder nachfolgende Extraktionsschritt** (branch/, squash/, timer/) entfernt natuerlich die Wrapper, da die extrahierten Packages `git/` direkt importieren.
 5. Am Ende von Schritt 7 (session/) sind alle Wrapper verschwunden und koennen geloescht werden.
 
-**Ausnahme `gitCurrentBranch()`**: Diese Funktion gibt aktuell `Branch` zurueck. Da `Branch` in main bleibt und `git/` nicht von main importieren kann (zirkulaere Abhaengigkeit), gibt die `git.Context`-Methode `CurrentBranch()` einen `string` zurueck. Der Wrapper in main wickelt das in `newBranch()` ein:
+**Ausnahme `gitCurrentBranch()`**: Diese Funktion gibt aktuell `Branch` zurueck. Da `Branch` in main bleibt und `git/` nicht von main importieren kann (zirkulaere Abhaengigkeit), gibt die `git.Client`-Methode `CurrentBranch()` einen `string` zurueck. Der Wrapper in main wickelt das in `newBranch()` ein:
 
 ```go
 // In git/ package
-func (g *Context) CurrentBranch() string {
+func (g *Client) CurrentBranch() string {
     return g.Silent("rev-parse", "--abbrev-ref", "HEAD")
 }
 
 // In main package (duenner Wrapper)
 func gitCurrentBranch() Branch {
-    return newBranch(gitCtx.CurrentBranch())
+    return newBranch(gitClient.CurrentBranch())
 }
 ```
 
-### Design des `git.Context`
+### Design des `git.Client`
 
 ```go
 package git
@@ -771,9 +771,9 @@ import (
     "strings"
 )
 
-// Context kapselt den Zustand fuer Git-Operationen.
+// Client kapselt den Zustand fuer Git-Operationen.
 // Ersetzt die globalen Variablen workingDir, GitPassthroughStderrStdout und Exit.
-type Context struct {
+type Client struct {
     WorkingDir              string
     PassthroughStderrStdout bool
     Exit                    func(int)
@@ -781,43 +781,43 @@ type Context struct {
 
 // --- Schicht 1: Rohe Kommando-Ausfuehrung ---
 
-func (g *Context) runCommandSilent(name string, args ...string) (string, string, error) { ... }
-func (g *Context) runCommand(name string, args ...string) (string, string, error) { ... }
+func (g *Client) runCommandSilent(name string, args ...string) (string, string, error) { ... }
+func (g *Client) runCommand(name string, args ...string) (string, string, error) { ... }
 
 // --- Schicht 2: Git-Wrapper ---
 
-func (g *Context) Run(args ...string)                       { ... }  // vorher: git()
-func (g *Context) Silent(args ...string) string             { ... }  // vorher: silentgit()
-func (g *Context) SilentIgnoreFailure(args ...string) (string, error) { ... }
-func (g *Context) RunWithoutEmptyStrings(args ...string)    { ... }  // vorher: gitWithoutEmptyStrings()
-func (g *Context) RunIgnoreFailure(args ...string) error    { ... }  // vorher: gitIgnoreFailure()
+func (g *Client) Run(args ...string)                       { ... }  // vorher: git()
+func (g *Client) Silent(args ...string) string             { ... }  // vorher: silentgit()
+func (g *Client) SilentIgnoreFailure(args ...string) (string, error) { ... }
+func (g *Client) RunWithoutEmptyStrings(args ...string)    { ... }  // vorher: gitWithoutEmptyStrings()
+func (g *Client) RunIgnoreFailure(args ...string) error    { ... }  // vorher: gitIgnoreFailure()
 func HooksOption(c config.Configuration) string             { ... }  // vorher: gitHooksOption()
 
 // --- Schicht 3: Git-Info-Abfragen ---
 
-func (g *Context) CurrentBranch() string                    { ... }  // gibt string zurueck, nicht Branch
-func (g *Context) Branches() []string                       { ... }
-func (g *Context) RemoteBranches() []string                 { ... }
-func (g *Context) UserName() string                         { ... }
-func (g *Context) UserEmail() string                        { ... }
-func (g *Context) IsRepo() bool                             { ... }  // vorher: isGit()
-func (g *Context) RootDir() string                          { ... }
-func (g *Context) Dir() string                              { ... }  // vorher: gitDir()
-func (g *Context) HasCommits() bool                         { ... }
-func (g *Context) DoBranchesDiverge(a, b string) bool       { ... }
-func (g *Context) Version() string                          { ... }  // vorher: gitVersion()
-func (g *Context) IsNothingToCommit() bool                  { ... }
-func (g *Context) HasUncommittedChanges() bool              { ... }
+func (g *Client) CurrentBranch() string                    { ... }  // gibt string zurueck, nicht Branch
+func (g *Client) Branches() []string                       { ... }
+func (g *Client) RemoteBranches() []string                 { ... }
+func (g *Client) UserName() string                         { ... }
+func (g *Client) UserEmail() string                        { ... }
+func (g *Client) IsRepo() bool                             { ... }  // vorher: isGit()
+func (g *Client) RootDir() string                          { ... }
+func (g *Client) Dir() string                              { ... }  // vorher: gitDir()
+func (g *Client) HasCommits() bool                         { ... }
+func (g *Client) DoBranchesDiverge(a, b string) bool       { ... }
+func (g *Client) Version() string                          { ... }  // vorher: gitVersion()
+func (g *Client) IsNothingToCommit() bool                  { ... }
+func (g *Client) HasUncommittedChanges() bool              { ... }
 ```
 
-**Hinweis zu `HooksOption`**: Diese Funktion ist eine *reine Funktion* (keine Seiteneffekte, kein Context-Zugriff). Sie wird daher als Package-Level-Funktion exportiert, nicht als Methode auf Context.
+**Hinweis zu `HooksOption`**: Diese Funktion ist eine *reine Funktion* (keine Seiteneffekte, kein Client-Zugriff). Sie wird daher als Package-Level-Funktion exportiert, nicht als Methode auf Client.
 
 ### Umgang mit `Exit`
 
-`Exit` wird ein Feld auf `git.Context`:
+`Exit` wird ein Feld auf `git.Client`:
 
 ```go
-type Context struct {
+type Client struct {
     // ...
     Exit func(int)
 }
@@ -826,7 +826,7 @@ type Context struct {
 **In Produktion** wird `Exit` mit `os.Exit` initialisiert:
 
 ```go
-gitCtx = &git.Context{
+gitClient = &git.Client{
     Exit: func(code int) { os.Exit(code) },
 }
 ```
@@ -835,15 +835,15 @@ gitCtx = &git.Context{
 
 ```go
 // vorher: Exit = func(code int) { panic(code) }
-// nachher: gitCtx.Exit = func(code int) { panic(code) }
+// nachher: gitClient.Exit = func(code int) { panic(code) }
 ```
 
 Die bestehenden Hilfsfunktionen `mockExit()` und `resetExit()` in `mob_test.go` werden minimal angepasst:
 
 ```go
 func mockExit() {
-    originalExitFunction = gitCtx.Exit
-    gitCtx.Exit = func(code int) {
+    originalExitFunction = gitClient.Exit
+    gitClient.Exit = func(code int) {
         defer func() {
             if r := recover(); r != nil {
                 fmt.Printf("exit(%d)\n", code)
@@ -854,7 +854,7 @@ func mockExit() {
 }
 
 func resetExit() {
-    gitCtx.Exit = originalExitFunction
+    gitClient.Exit = originalExitFunction
 }
 ```
 
@@ -862,17 +862,17 @@ func resetExit() {
 
 Die **Test-Aenderungen sind minimal** dank der Wrapper-Strategie:
 
-1. **`setWorkingDir(dir)`** wird angepasst, um `gitCtx.WorkingDir` zu setzen:
+1. **`setWorkingDir(dir)`** wird angepasst, um `gitClient.WorkingDir` zu setzen:
    ```go
    func setWorkingDir(dir string) {
-       gitCtx.WorkingDir = dir
+       gitClient.WorkingDir = dir
        say.Say("\n===== cd " + dir)
    }
    ```
 
-2. **`createTestbed()`** setzt `gitCtx.WorkingDir = ""` statt `workingDir = ""`.
+2. **`createTestbed()`** setzt `gitClient.WorkingDir = ""` statt `workingDir = ""`.
 
-3. **`mockExit()` / `resetExit()`** verwenden `gitCtx.Exit` statt der globalen `Exit`-Variable.
+3. **`mockExit()` / `resetExit()`** verwenden `gitClient.Exit` statt der globalen `Exit`-Variable.
 
 4. **Alle 76 `git(...)`-Aufrufe und 13 `silentgit(...)`-Aufrufe** in Tests bleiben unveraendert, da sie die Wrapper in main nutzen.
 
@@ -882,12 +882,12 @@ Die **Test-Aenderungen sind minimal** dank der Wrapper-Strategie:
 
 Neues Verzeichnis `git/` mit Datei `git.go` erstellen.
 
-#### Schritt 3.2: Context-Struct und Kommando-Ausfuehrung verschieben
+#### Schritt 3.2: Client-Struct und Kommando-Ausfuehrung verschieben
 
-`runCommand()` und `runCommandSilent()` aus `mob.go` in `git/git.go` verschieben und als unexportierte Methoden auf `Context` implementieren. Die Methoden verwenden `g.WorkingDir` statt der globalen `workingDir`-Variable.
+`runCommand()` und `runCommandSilent()` aus `mob.go` in `git/git.go` verschieben und als unexportierte Methoden auf `Client` implementieren. Die Methoden verwenden `g.WorkingDir` statt der globalen `workingDir`-Variable.
 
 ```go
-func (g *Context) runCommandSilent(name string, args ...string) (string, string, error) {
+func (g *Client) runCommandSilent(name string, args ...string) (string, string, error) {
     command := exec.Command(name, args...)
     if len(g.WorkingDir) > 0 {
         command.Dir = g.WorkingDir
@@ -898,10 +898,10 @@ func (g *Context) runCommandSilent(name string, args ...string) (string, string,
 
 #### Schritt 3.3: Git-Wrapper-Methoden verschieben
 
-`git()`, `silentgit()`, `silentgitignorefailure()`, `gitWithoutEmptyStrings()`, `gitIgnoreFailure()` als Methoden auf `Context` implementieren. Sie verwenden `g.PassthroughStderrStdout` statt der globalen Variable und `g.Exit` statt der globalen `Exit`-Variable.
+`git()`, `silentgit()`, `silentgitignorefailure()`, `gitWithoutEmptyStrings()`, `gitIgnoreFailure()` als Methoden auf `Client` implementieren. Sie verwenden `g.PassthroughStderrStdout` statt der globalen Variable und `g.Exit` statt der globalen `Exit`-Variable.
 
 ```go
-func (g *Context) Run(args ...string) {
+func (g *Client) Run(args ...string) {
     say.Indented("git " + strings.Join(args, " "))
     commandString, output, err := "", "", error(nil)
     if g.PassthroughStderrStdout {
@@ -922,23 +922,23 @@ func (g *Context) Run(args ...string) {
 
 #### Schritt 3.4: Git-Info-Methoden verschieben
 
-Alle Git-Info-Funktionen als Methoden auf `Context` implementieren. `CurrentBranch()` gibt `string` statt `Branch` zurueck (da `Branch` in main bleibt):
+Alle Git-Info-Funktionen als Methoden auf `Client` implementieren. `CurrentBranch()` gibt `string` statt `Branch` zurueck (da `Branch` in main bleibt):
 
 ```go
-func (g *Context) CurrentBranch() string {
+func (g *Client) CurrentBranch() string {
     return g.Silent("rev-parse", "--abbrev-ref", "HEAD")
 }
 
-func (g *Context) Branches() []string {
+func (g *Client) Branches() []string {
     return strings.Split(g.Silent("branch", "--format=%(refname:short)"), "\n")
 }
 
-func (g *Context) IsNothingToCommit() bool {
+func (g *Client) IsNothingToCommit() bool {
     output := g.Silent("status", "--porcelain")
     return len(output) == 0
 }
 
-func (g *Context) HasUncommittedChanges() bool {
+func (g *Client) HasUncommittedChanges() bool {
     return !g.IsNothingToCommit()
 }
 ```
@@ -957,54 +957,54 @@ func (g *Context) HasUncommittedChanges() bool {
 
 #### Schritt 3.7: Package-Level-Variable und Wrapper in main erstellen
 
-In `mob.go` eine Package-Level-Variable `gitCtx` anlegen und duenne Wrapper erstellen:
+In `mob.go` eine Package-Level-Variable `gitClient` anlegen und duenne Wrapper erstellen:
 
 ```go
-// Package-Level Git-Context (ersetzt globale Variablen workingDir, GitPassthroughStderrStdout, Exit)
-var gitCtx = &git.Context{
+// Package-Level Git-Client (ersetzt globale Variablen workingDir, GitPassthroughStderrStdout, Exit)
+var gitClient = &git.Client{
     Exit: func(code int) { os.Exit(code) },
 }
 
 // --- Duenne Wrapper (werden in Schritten 4-7 schrittweise entfernt) ---
 
-func git(args ...string)                         { gitCtx.Run(args...) }
-func silentgit(args ...string) string            { return gitCtx.Silent(args...) }
-func silentgitignorefailure(args ...string) (string, error) { return gitCtx.SilentIgnoreFailure(args...) }
-func gitWithoutEmptyStrings(args ...string)      { gitCtx.RunWithoutEmptyStrings(args...) }
-func gitIgnoreFailure(args ...string) error      { return gitCtx.RunIgnoreFailure(args...) }
+func git(args ...string)                         { gitClient.Run(args...) }
+func silentgit(args ...string) string            { return gitClient.Silent(args...) }
+func silentgitignorefailure(args ...string) (string, error) { return gitClient.SilentIgnoreFailure(args...) }
+func gitWithoutEmptyStrings(args ...string)      { gitClient.RunWithoutEmptyStrings(args...) }
+func gitIgnoreFailure(args ...string) error      { return gitClient.RunIgnoreFailure(args...) }
 func gitHooksOption(c config.Configuration) string { return git.HooksOption(c) }
 
-func gitCurrentBranch() Branch                   { return newBranch(gitCtx.CurrentBranch()) }
-func gitBranches() []string                      { return gitCtx.Branches() }
-func gitRemoteBranches() []string                { return gitCtx.RemoteBranches() }
-func gitUserName() string                        { return gitCtx.UserName() }
-func gitUserEmail() string                       { return gitCtx.UserEmail() }
-func isGit() bool                                { return gitCtx.IsRepo() }
-func gitRootDir() string                         { return gitCtx.RootDir() }
-func gitDir() string                             { return gitCtx.Dir() }
-func hasCommits() bool                           { return gitCtx.HasCommits() }
-func doBranchesDiverge(a, b string) bool         { return gitCtx.DoBranchesDiverge(a, b) }
-func gitVersion() string                         { return gitCtx.Version() }
-func isNothingToCommit() bool                    { return gitCtx.IsNothingToCommit() }
-func hasUncommittedChanges() bool                { return gitCtx.HasUncommittedChanges() }
+func gitCurrentBranch() Branch                   { return newBranch(gitClient.CurrentBranch()) }
+func gitBranches() []string                      { return gitClient.Branches() }
+func gitRemoteBranches() []string                { return gitClient.RemoteBranches() }
+func gitUserName() string                        { return gitClient.UserName() }
+func gitUserEmail() string                       { return gitClient.UserEmail() }
+func isGit() bool                                { return gitClient.IsRepo() }
+func gitRootDir() string                         { return gitClient.RootDir() }
+func gitDir() string                             { return gitClient.Dir() }
+func hasCommits() bool                           { return gitClient.HasCommits() }
+func doBranchesDiverge(a, b string) bool         { return gitClient.DoBranchesDiverge(a, b) }
+func gitVersion() string                         { return gitClient.Version() }
+func isNothingToCommit() bool                    { return gitClient.IsNothingToCommit() }
+func hasUncommittedChanges() bool                { return gitClient.HasUncommittedChanges() }
 ```
 
 In der `run()`-Funktion in `mob.go` wird die Initialisierung von `GitPassthroughStderrStdout` angepasst:
 
 ```go
 // vorher: GitPassthroughStderrStdout = true
-// nachher: gitCtx.PassthroughStderrStdout = true
+// nachher: gitClient.PassthroughStderrStdout = true
 ```
 
 #### Schritt 3.8: Tests anpassen
 
 Minimale Aenderungen in `mob_test.go`:
 
-1. `setWorkingDir()`: `workingDir = dir` -> `gitCtx.WorkingDir = dir`
-2. `createTestbed()`: `workingDir = ""` -> `gitCtx.WorkingDir = ""`
-3. `createTestbedIn()`: `workingDir = localDirectory` -> `gitCtx.WorkingDir = localDirectory`
-4. `mockExit()`: `Exit = func(...)` -> `gitCtx.Exit = func(...)`
-5. `resetExit()`: `Exit = originalExitFunction` -> `gitCtx.Exit = originalExitFunction`
+1. `setWorkingDir()`: `workingDir = dir` -> `gitClient.WorkingDir = dir`
+2. `createTestbed()`: `workingDir = ""` -> `gitClient.WorkingDir = ""`
+3. `createTestbedIn()`: `workingDir = localDirectory` -> `gitClient.WorkingDir = localDirectory`
+4. `mockExit()`: `Exit = func(...)` -> `gitClient.Exit = func(...)`
+5. `resetExit()`: `Exit = originalExitFunction` -> `gitClient.Exit = originalExitFunction`
 6. `originalExitFunction`-Variable: Typ aendern auf `func(int)`, Initialisierung anpassen
 
 Alle anderen Test-Aufrufe (`git(...)`, `silentgit(...)`, etc.) bleiben unveraendert.
@@ -1012,8 +1012,8 @@ Alle anderen Test-Aufrufe (`git(...)`, `silentgit(...)`, etc.) bleiben unveraend
 #### Schritt 3.9: Alte Funktionen und Variablen loeschen
 
 Aus `mob.go` entfernen:
-- Die globalen Variablen `workingDir`, `GitPassthroughStderrStdout` (durch `gitCtx`-Felder ersetzt)
-- Die globale Variable `Exit` (durch `gitCtx.Exit` ersetzt)
+- Die globalen Variablen `workingDir`, `GitPassthroughStderrStdout` (durch `gitClient`-Felder ersetzt)
+- Die globale Variable `Exit` (durch `gitClient.Exit` ersetzt)
 - Die Implementierungen von `runCommand()`, `runCommandSilent()` (jetzt in git/)
 - Die Implementierung von `deleteEmptyStrings()` (jetzt in git/)
 - `GitVersion` struct, `parseGitVersion()`, `Less()` (jetzt in git/)
@@ -1035,10 +1035,10 @@ Alle Tests muessen gruen sein. Insbesondere:
 
 ```
 mob/
-├── mob.go                    # gitCtx Variable, duenne Wrapper, kein globaler Zustand mehr
-│                             # (~20 Zeilen Wrapper + gitCtx-Initialisierung ersetzen ~230 Zeilen Implementierung)
+├── mob.go                    # gitClient Variable, duenne Wrapper, kein globaler Zustand mehr
+│                             # (~20 Zeilen Wrapper + gitClient-Initialisierung ersetzen ~230 Zeilen Implementierung)
 ├── git/                      # NEU
-│   └── git.go                # Context struct, Run(), Silent(), alle Git-Info-Methoden,
+│   └── git.go                # Client struct, Run(), Silent(), alle Git-Info-Methoden,
 │                             # GitVersion, HooksOption(), ~230 Zeilen
 ├── squash_wip.go             # Unveraendert (nutzt Wrapper in main)
 ├── timer.go                  # Unveraendert (nutzt Wrapper in main)
@@ -1052,28 +1052,28 @@ mob/
 
 | Funktion (alt, in main) | Methode (neu, in git/) | Aenderung |
 |--------------------------|------------------------|-----------|
-| `git(args...)` | `Context.Run(args...)` | Methode auf Context |
-| `silentgit(args...)` | `Context.Silent(args...)` | Methode auf Context |
-| `silentgitignorefailure(args...)` | `Context.SilentIgnoreFailure(args...)` | Methode auf Context |
-| `gitWithoutEmptyStrings(args...)` | `Context.RunWithoutEmptyStrings(args...)` | Methode auf Context |
-| `gitIgnoreFailure(args...)` | `Context.RunIgnoreFailure(args...)` | Methode auf Context |
+| `git(args...)` | `Client.Run(args...)` | Methode auf Client |
+| `silentgit(args...)` | `Client.Silent(args...)` | Methode auf Client |
+| `silentgitignorefailure(args...)` | `Client.SilentIgnoreFailure(args...)` | Methode auf Client |
+| `gitWithoutEmptyStrings(args...)` | `Client.RunWithoutEmptyStrings(args...)` | Methode auf Client |
+| `gitIgnoreFailure(args...)` | `Client.RunIgnoreFailure(args...)` | Methode auf Client |
 | `gitHooksOption(c)` | `HooksOption(c)` | Package-Level-Funktion |
-| `gitCurrentBranch() Branch` | `Context.CurrentBranch() string` | Rueckgabe `string` statt `Branch` |
-| `gitBranches()` | `Context.Branches()` | Methode auf Context |
-| `gitRemoteBranches()` | `Context.RemoteBranches()` | Methode auf Context |
-| `gitUserName()` | `Context.UserName()` | Methode auf Context |
-| `gitUserEmail()` | `Context.UserEmail()` | Methode auf Context |
-| `isGit()` | `Context.IsRepo()` | Methode auf Context, umbenannt |
-| `gitRootDir()` | `Context.RootDir()` | Methode auf Context |
-| `gitDir()` | `Context.Dir()` | Methode auf Context |
-| `hasCommits()` | `Context.HasCommits()` | Methode auf Context |
-| `doBranchesDiverge(a, b)` | `Context.DoBranchesDiverge(a, b)` | Methode auf Context |
-| `gitVersion()` | `Context.Version()` | Methode auf Context |
-| `isNothingToCommit()` | `Context.IsNothingToCommit()` | Methode auf Context |
-| `hasUncommittedChanges()` | `Context.HasUncommittedChanges()` | Methode auf Context |
-| `var workingDir` | `Context.WorkingDir` | Feld auf Context |
-| `var GitPassthroughStderrStdout` | `Context.PassthroughStderrStdout` | Feld auf Context |
-| `var Exit` | `Context.Exit` | Feld auf Context |
+| `gitCurrentBranch() Branch` | `Client.CurrentBranch() string` | Rueckgabe `string` statt `Branch` |
+| `gitBranches()` | `Client.Branches()` | Methode auf Client |
+| `gitRemoteBranches()` | `Client.RemoteBranches()` | Methode auf Client |
+| `gitUserName()` | `Client.UserName()` | Methode auf Client |
+| `gitUserEmail()` | `Client.UserEmail()` | Methode auf Client |
+| `isGit()` | `Client.IsRepo()` | Methode auf Client, umbenannt |
+| `gitRootDir()` | `Client.RootDir()` | Methode auf Client |
+| `gitDir()` | `Client.Dir()` | Methode auf Client |
+| `hasCommits()` | `Client.HasCommits()` | Methode auf Client |
+| `doBranchesDiverge(a, b)` | `Client.DoBranchesDiverge(a, b)` | Methode auf Client |
+| `gitVersion()` | `Client.Version()` | Methode auf Client |
+| `isNothingToCommit()` | `Client.IsNothingToCommit()` | Methode auf Client |
+| `hasUncommittedChanges()` | `Client.HasUncommittedChanges()` | Methode auf Client |
+| `var workingDir` | `Client.WorkingDir` | Feld auf Client |
+| `var GitPassthroughStderrStdout` | `Client.PassthroughStderrStdout` | Feld auf Client |
+| `var Exit` | `Client.Exit` | Feld auf Client |
 | `GitVersion` struct | `GitVersion` struct | Unveraendert, nur Package gewechselt |
 | `parseGitVersion()` | `ParseVersion()` | Exportiert |
 
@@ -1083,7 +1083,7 @@ Nach der `git/`-Extraktion aendern sich die Abhaengigkeiten fuer die Folge-Schri
 
 | Schritt | Package | Abhaengigkeit von git/ | Wrapper-Entfernung |
 |---------|---------|----------------------|-------------------|
-| 4 | `branch/` | `Branch`-Methoden importieren `git/` direkt, erhalten `*git.Context` als Feld oder Parameter | `gitCurrentBranch()`, `gitBranches()`, `gitRemoteBranches()`, `stringContains()` Wrapper werden entfernt |
+| 4 | `branch/` | `Branch`-Methoden importieren `git/` direkt, erhalten `*git.Client` als Feld oder Parameter | `gitCurrentBranch()`, `gitBranches()`, `gitRemoteBranches()`, `stringContains()` Wrapper werden entfernt |
 | 5 | `squash/` | Importiert `git/` direkt | `git()`, `silentgit()`, `gitHooksOption()` Wrapper in squash-relevanten Aufrufen werden entfernt |
 | 6 | `timer/` | Importiert `git/` direkt | `isGit()`, `gitCurrentBranch()`, `gitBranches()`, `gitUserName()` Wrapper werden entfernt |
 | 7 | `session/` | Importiert `git/` direkt | Alle verbleibenden Wrapper werden entfernt |
@@ -1094,7 +1094,7 @@ Nach der `git/`-Extraktion aendern sich die Abhaengigkeiten fuer die Folge-Schri
 - **Abwaertskompatibilitaet**: Keine oeffentliche API betroffen (alles intern)
 - **Testabdeckung**: Alle bestehenden Tests bleiben funktional durch Wrapper-Strategie
 - **Groesse**: ~230 Zeilen wandern in git/, ~30 Zeilen Wrapper + Variable in main, ~10 Zeilen Test-Anpassung
-- **Hauptrisiko**: Vergessene Stellen wo `workingDir` direkt gelesen wird (statt ueber `gitCtx.WorkingDir`)
+- **Hauptrisiko**: Vergessene Stellen wo `workingDir` direkt gelesen wird (statt ueber `gitClient.WorkingDir`)
 - **Mitigation**: `grep -r "workingDir" .` nach der Aenderung - darf nur noch in Wrapper/setWorkingDir vorkommen
 - **Rollback**: Maessig aufwendig (eine neue Datei loeschen, alte Funktionen wiederherstellen), aber durch Git trivial
 
@@ -1107,4 +1107,4 @@ Nach der `git/`-Extraktion aendern sich die Abhaengigkeiten fuer die Folge-Schri
 3. **Tests zuerst gruen**: Vor und nach jedem Schritt muessen alle Tests bestehen
 4. **Abhaengigkeiten als Parameter**: Statt globale Funktionen aufzurufen, Abhaengigkeiten explizit uebergeben
 5. **Kein Verhalten aendern**: Reine Struktur-Aenderung, keine funktionalen Aenderungen
-6. **Globalen Zustand schrittweise eliminieren**: `workingDir` und andere Globals werden spaeter durch ein `git.Context`-Objekt ersetzt
+6. **Globalen Zustand schrittweise eliminieren**: `workingDir` und andere Globals werden spaeter durch ein `git.Client`-Objekt ersetzt
