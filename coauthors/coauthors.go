@@ -15,7 +15,7 @@ import (
 // Author is a coauthor "Full Name <email>"
 type Author = string
 
-func CollectCoauthorsFromWipCommits(file *os.File, currentUserEmail string) []Author {
+func collectCoauthorsFromWipCommits(file *os.File, currentUserEmail string) []Author {
 	// Here we parse the SQUASH_MSG file for the list of authors on
 	// the WIP branch.  If this technique later turns out to be
 	// problematic, an alternative would be to instead fetch the
@@ -110,10 +110,10 @@ func AppendCoauthorsToSquashMsg(gitDir string, currentUserEmail string) error {
 	defer file.Close()
 
 	// read from repo/.git/SQUASH_MSG
-	coauthors := CollectCoauthorsFromWipCommits(file, currentUserEmail)
+	coauthors := collectCoauthorsFromWipCommits(file, currentUserEmail)
 
 	if len(coauthors) > 0 {
-		coauthorSuffix := CreateCommitMessage(coauthors)
+		coauthorSuffix := createCommitMessage(coauthors)
 
 		// append to repo/.git/SQUASH_MSG
 		writer := bufio.NewWriter(file)
@@ -124,7 +124,7 @@ func AppendCoauthorsToSquashMsg(gitDir string, currentUserEmail string) error {
 	return err
 }
 
-func CreateCommitMessage(coauthors []Author) string {
+func createCommitMessage(coauthors []Author) string {
 	commitMessage := "\n\n"
 	commitMessage += "# automatically added all co-authors from WIP commits\n"
 	commitMessage += "# add missing co-authors manually\n"

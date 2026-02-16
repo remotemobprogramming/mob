@@ -13,7 +13,7 @@ func TestCreateCommitMessage(t *testing.T) {
 Co-authored-by: Alice <alice@example.com>
 Co-authored-by: Bob <bob@example.com>
 `
-	actual := CreateCommitMessage([]Author{"Alice <alice@example.com>", "Bob <bob@example.com>"})
+	actual := createCommitMessage([]Author{"Alice <alice@example.com>", "Bob <bob@example.com>"})
 	if actual != expected {
 		t.Errorf("expected %q, got %q", expected, actual)
 	}
