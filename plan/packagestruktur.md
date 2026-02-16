@@ -329,24 +329,328 @@ mob/
 
 ---
 
-## 6. Ausblick: Zweiter Schritt (`coauthor/`)
+## 6. Zweiter Schritt: Package `coauthors/` extrahieren
 
-Nach erfolgreichem Abschluss von Schritt 1 waere die Extraktion von `coauthor/` der logische naechste Schritt:
+### Warum `coauthors/` als zweites?
 
-- `coauthors.go` ist weitgehend eigenstaendig
-- Einzige externe Abhaengigkeit: `gitUserEmail()` - kann als Parameter uebergeben werden
-- Hat eigene Tests (`coauthors_test.go`)
-- Aehnliches Vorgehen wie bei `findnext/`
+1. **Minimale Abhaengigkeiten**: Die einzige externe Abhaengigkeit ist `gitUserEmail()` aus `mob.go` und `say.Debug()` aus dem bereits bestehenden `say/`-Package. `gitUserEmail()` kann als Parameter injiziert werden.
+2. **Eigene Test-Datei**: `coauthors_test.go` enthaelt bereits Unit-Tests fuer die Kernfunktionen (`createCommitMessage`, `sortByLength`, `removeDuplicateValues`) sowie einen Integrationstest (`TestStartDoneCoAuthors`).
+3. **Klar abgegrenzter Fachbereich**: Co-Author-Tracking ist ein eigenstaendiges Feature - es parst WIP-Commit-Nachrichten und erzeugt `Co-authored-by:`-Trailer.
+4. **Aehnliches Muster wie `findnext/`**: Weitgehend reiner Algorithmus mit einer klar definierten Schnittstelle nach aussen.
 
-Die Signatur von `collectCoauthorsFromWipCommits` wuerde sich aendern:
+### Analyse der aktuellen Datei `coauthors.go`
+
+#### Funktionen und ihre Rollen
+
+| Funktion | Sichtbarkeit | Rolle | Abhaengigkeiten |
+|----------|-------------|-------|-----------------|
+| `collectCoauthorsFromWipCommits(file)` | intern | Orchestrierung: parst, filtert, dedupliziert, sortiert | `parseCoauthors`, `removeElementsContaining`, `removeDuplicateValues`, `sortByLength`, `gitUserEmail()`, `say.Debug` |
+| `parseCoauthors(file)` | intern | Parst `Co-authored-by:`/`Author:`-Zeilen aus einer Datei | `stripToAuthor` |
+| `stripToAuthor(line)` | intern | Extrahiert `Name <email>` aus einer Zeile | keine |
+| `sortByLength(slice)` | intern | Sortiert Strings nach Laenge | keine |
+| `removeElementsContaining(slice, filter)` | intern | Filtert Strings die `filter` enthalten | keine |
+| `removeDuplicateValues(slice)` | intern | Entfernt Duplikate (erhaelt Reihenfolge) | keine |
+| `appendCoauthorsToSquashMsg(gitDir)` | intern | Liest SQUASH_MSG, haengt Co-Author-Zeilen an | `collectCoauthorsFromWipCommits`, `createCommitMessage`, `say.Debug` |
+| `createCommitMessage(coauthors)` | intern | Erzeugt den Co-Author-Block als String | keine |
+
+#### Typ-Definition
 
 ```go
-// ALT (ruft intern gitUserEmail() auf):
-func collectCoauthorsFromWipCommits(file *os.File) []Author
-
-// NEU (bekommt die Email als Parameter):
-func CollectCoauthorsFromWipCommits(file *os.File, currentUserEmail string) []Author
+type Author = string
 ```
+
+`Author` ist ein Type-Alias fuer `string` im Format `"Full Name <email>"`. Er wird im neuen Package exportiert.
+
+#### Externe Abhaengigkeiten (die aufgeloest werden muessen)
+
+| Abhaengigkeit | Herkunft | Aufloesung |
+|---------------|----------|------------|
+| `gitUserEmail()` | `mob.go:1098` - ruft `silentgit("config", "--get", "user.email")` auf | Wird als Parameter an `CollectCoauthorsFromWipCommits` uebergeben |
+| `say.Debug()` | `say/`-Package (bereits eigenes Package) | Import bleibt, kein Problem |
+| `gitDir()` | `mob.go:1015` - ruft `silentgit("rev-parse", "--absolute-git-dir")` auf | Bleibt in `mob.go`; `AppendCoauthorsToSquashMsg` bekommt `gitDir` bereits als Parameter |
+
+#### Aufrufstelle in `mob.go`
+
+Es gibt genau **eine** Aufrufstelle in `mob.go:996`:
+
+```go
+err := appendCoauthorsToSquashMsg(gitDir())
+```
+
+Diese befindet sich in der `done()`-Funktion und wird aufgerufen, nachdem der WIP-Branch in den Base-Branch gesquashed wurde. `gitDir()` wird bereits als Parameter uebergeben - das ist ideal.
+
+### Konkrete Schritte
+
+#### Schritt 2.1: Package erstellen
+
+Neues Verzeichnis `coauthors/` mit Datei `coauthors.go` erstellen.
+
+#### Schritt 2.2: Code verschieben
+
+Aus `coauthors.go` (aktuell `package main`) in `coauthors/coauthors.go` verschieben:
+
+```go
+package coauthors
+
+import (
+	"bufio"
+	"fmt"
+	"github.com/remotemobprogramming/mob/v5/say"
+	"os"
+	"path"
+	"regexp"
+	"sort"
+	"strings"
+)
+
+// Author repraesentiert einen Co-Author im Format "Full Name <email>"
+type Author = string
+
+// AppendCoauthorsToSquashMsg liest die SQUASH_MSG-Datei im angegebenen gitDir,
+// parst die Co-Authors aus den WIP-Commits und haengt sie als Co-authored-by-Trailer an.
+func AppendCoauthorsToSquashMsg(gitDir string, currentUserEmail string) error {
+	squashMsgPath := path.Join(gitDir, "SQUASH_MSG")
+	say.Debug("opening " + squashMsgPath)
+	file, err := os.OpenFile(squashMsgPath, os.O_APPEND|os.O_RDWR, 0644)
+	if err != nil {
+		if os.IsNotExist(err) {
+			say.Debug(squashMsgPath + " does not exist")
+			return nil
+		}
+		return err
+	}
+
+	defer file.Close()
+
+	coauthors := CollectCoauthorsFromWipCommits(file, currentUserEmail)
+
+	if len(coauthors) > 0 {
+		coauthorSuffix := CreateCommitMessage(coauthors)
+
+		writer := bufio.NewWriter(file)
+		writer.WriteString(coauthorSuffix)
+		err = writer.Flush()
+	}
+
+	return err
+}
+
+// CollectCoauthorsFromWipCommits parst Co-Authors aus einer Datei (typischerweise SQUASH_MSG),
+// filtert den aktuellen User heraus, entfernt Duplikate und sortiert nach Namenlaenge.
+func CollectCoauthorsFromWipCommits(file *os.File, currentUserEmail string) []Author {
+	coauthors := parseCoauthors(file)
+	say.Debug("Parsed coauthors")
+	say.Debug(strings.Join(coauthors, ","))
+
+	coauthors = removeElementsContaining(coauthors, currentUserEmail)
+	say.Debug("Parsed coauthors without committer")
+	say.Debug(strings.Join(coauthors, ","))
+
+	coauthors = removeDuplicateValues(coauthors)
+	say.Debug("Unique coauthors without committer")
+	say.Debug(strings.Join(coauthors, ","))
+
+	sortByLength(coauthors)
+	say.Debug("Sorted unique coauthors without committer")
+	say.Debug(strings.Join(coauthors, ","))
+
+	return coauthors
+}
+
+// CreateCommitMessage erzeugt den Co-authored-by-Block fuer die Commit-Nachricht.
+func CreateCommitMessage(coauthors []Author) string {
+	commitMessage := "\n\n"
+	commitMessage += "# automatically added all co-authors from WIP commits\n"
+	commitMessage += "# add missing co-authors manually\n"
+	for _, coauthor := range coauthors {
+		commitMessage += fmt.Sprintf("Co-authored-by: %s\n", coauthor)
+	}
+	return commitMessage
+}
+
+// --- Unexportierte Hilfsfunktionen (bleiben im Package) ---
+
+func parseCoauthors(file *os.File) []Author {
+	var coauthors []Author
+	authorOrCoauthorMatcher := regexp.MustCompile("(?i).*(author)+.+<+.*>+")
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		line := scanner.Text()
+		if authorOrCoauthorMatcher.MatchString(line) {
+			author := stripToAuthor(line)
+			coauthors = append(coauthors, author)
+		}
+	}
+	return coauthors
+}
+
+func stripToAuthor(line string) Author {
+	return strings.TrimSpace(strings.Join(strings.Split(line, ":")[1:], ""))
+}
+
+func sortByLength(slice []string) {
+	sort.Slice(slice, func(i, j int) bool {
+		return len(slice[i]) < len(slice[j])
+	})
+}
+
+func removeElementsContaining(slice []string, containsFilter string) []string {
+	var result []string
+	for _, entry := range slice {
+		if !strings.Contains(entry, containsFilter) {
+			result = append(result, entry)
+		}
+	}
+	return result
+}
+
+func removeDuplicateValues(slice []string) []string {
+	var result []string
+	keys := make(map[string]bool)
+	for _, entry := range slice {
+		if _, value := keys[entry]; !value {
+			keys[entry] = true
+			result = append(result, entry)
+		}
+	}
+	return result
+}
+```
+
+Aenderungen gegenueber dem Original:
+- `package main` -> `package coauthors`
+- `appendCoauthorsToSquashMsg` -> `AppendCoauthorsToSquashMsg` (exportiert)
+- `collectCoauthorsFromWipCommits` -> `CollectCoauthorsFromWipCommits` (exportiert)
+- `createCommitMessage` -> `CreateCommitMessage` (exportiert)
+- **Neue Parameter**: `CollectCoauthorsFromWipCommits` und `AppendCoauthorsToSquashMsg` bekommen `currentUserEmail string` als Parameter statt intern `gitUserEmail()` aufzurufen
+- Alle Hilfsfunktionen (`parseCoauthors`, `stripToAuthor`, `sortByLength`, `removeElementsContaining`, `removeDuplicateValues`) bleiben unexportiert
+
+#### Schritt 2.3: Tests verschieben und anpassen
+
+Die Unit-Tests aus `coauthors_test.go` werden in `coauthors/coauthors_test.go` verschoben:
+
+```go
+package coauthors
+
+import "testing"
+
+func TestCreateCommitMessage(t *testing.T) {
+	// Nutzt jetzt exportierte Funktion CreateCommitMessage
+	expected := "\n\n# automatically added all co-authors from WIP commits\n# add missing co-authors manually\nCo-authored-by: Alice <alice@example.com>\nCo-authored-by: Bob <bob@example.com>\n"
+	actual := CreateCommitMessage([]Author{"Alice <alice@example.com>", "Bob <bob@example.com>"})
+	if actual != expected {
+		t.Errorf("expected %q, got %q", expected, actual)
+	}
+}
+
+func TestSortByLength(t *testing.T) {
+	slice := []string{"aa", "b"}
+	sortByLength(slice)
+	// sortByLength bleibt unexportiert, Test ist im gleichen Package moeglich
+	if slice[0] != "b" || slice[1] != "aa" {
+		t.Errorf("expected [b, aa], got %v", slice)
+	}
+}
+
+func TestRemoveDuplicateValues(t *testing.T) {
+	slice := []string{"aa", "b", "c", "b"}
+	actual := removeDuplicateValues(slice)
+	if len(actual) != 3 || actual[0] != "aa" || actual[1] != "b" || actual[2] != "c" {
+		t.Errorf("expected [aa, b, c], got %v", actual)
+	}
+}
+```
+
+**Hinweis zu den Tests**: Die Unit-Tests (`TestCreateCommitMessage`, `TestSortByLength`, `TestRemoveDuplicateValues`) koennen direkt ins neue Package verschoben werden, da sie keine externen Abhaengigkeiten haben. Sie nutzen aber aktuell die Hilfsfunktion `equals()` aus `mob_test.go` - diese muss entweder:
+- a) durch Standard-`testing`-Vergleiche ersetzt werden (empfohlen, da einfacher), oder
+- b) als Hilfsfunktion im neuen Test-File dupliziert werden.
+
+Der **Integrationstest** `TestStartDoneCoAuthors` bleibt in `mob_test.go` (bzw. `coauthors_test.go` im Root), da er die gesamte Session-Maschinerie (`start()`, `next()`, `done()`, `setWorkingDir()`, `createFile()`) benoetigt. Er testet das Zusammenspiel und wird nach Anpassung der Aufrufe in `mob.go` weiterhin funktionieren.
+
+#### Schritt 2.4: Aufrufer in `mob.go` anpassen
+
+In `mob.go` den Import hinzufuegen und die Aufrufstelle anpassen:
+
+```go
+import (
+	"github.com/remotemobprogramming/mob/v5/coauthors"
+)
+
+// In done(), mob.go:996
+// ALT:  err := appendCoauthorsToSquashMsg(gitDir())
+// NEU:  err := coauthors.AppendCoauthorsToSquashMsg(gitDir(), gitUserEmail())
+```
+
+Die Funktion `gitUserEmail()` bleibt in `mob.go` (sie wird spaeter ins `git/`-Package wandern).
+
+#### Schritt 2.5: Integrationstest anpassen
+
+`TestStartDoneCoAuthors` bleibt im Root-Package (da er `start()`, `next()`, `done()` benoetigt). Folgende Aenderungen sind noetig:
+- Keine Code-Aenderungen am Test selbst, da er `appendCoauthorsToSquashMsg` nicht direkt aufruft, sondern indirekt ueber `done()`. Die Aenderung in `done()` (Schritt 2.4) sorgt dafuer, dass der Test automatisch das neue Package nutzt.
+- Die Test-Datei im Root bleibt als `coauthors_test.go` bestehen, wird aber nur noch den Integrationstest enthalten:
+
+```go
+package main
+
+import (
+	"path/filepath"
+	"testing"
+)
+
+func TestStartDoneCoAuthors(t *testing.T) {
+	// ... unveraendert, da der Test indirekt ueber done() laeuft ...
+}
+```
+
+Die Unit-Tests (`TestCreateCommitMessage`, `TestSortByLength`, `TestRemoveDuplicateValues`) werden aus der Root-Datei entfernt, da sie ins neue Package gewandert sind.
+
+#### Schritt 2.6: Alte Datei bereinigen
+
+`coauthors.go` im Root-Verzeichnis wird geloescht. `coauthors_test.go` im Root-Verzeichnis wird auf den verbleibenden Integrationstest reduziert.
+
+#### Schritt 2.7: Tests ausfuehren
+
+```bash
+go test ./...
+```
+
+Alle Tests muessen gruen sein, bevor der Schritt als abgeschlossen gilt. Insbesondere:
+- `go test ./coauthors/` - Unit-Tests im neuen Package
+- `go test .` - Integrationstest `TestStartDoneCoAuthors` im Root-Package
+
+### Erwartetes Ergebnis nach Schritt 2
+
+```
+mob/
+├── mob.go                    # Import von coauthors, Aufruf angepasst (1 Zeile geaendert)
+├── coauthors_test.go         # NUR NOCH Integrationstest TestStartDoneCoAuthors
+├── coauthors.go              # GELOESCHT
+├── coauthors/                # NEU
+│   ├── coauthors.go          # AppendCoauthorsToSquashMsg(), CollectCoauthorsFromWipCommits(),
+│   │                         # CreateCommitMessage() + unexportierte Hilfsfunktionen
+│   └── coauthors_test.go     # Unit-Tests (CreateCommitMessage, sortByLength, removeDuplicateValues)
+├── findnext/                 # Bereits extrahiert (Schritt 1)
+│   ├── findnext.go
+│   └── findnext_test.go
+└── ... (Rest unveraendert)
+```
+
+### Signatur-Aenderungen im Ueberblick
+
+| Funktion (alt) | Funktion (neu) | Aenderung |
+|----------------|---------------|-----------|
+| `appendCoauthorsToSquashMsg(gitDir string) error` | `coauthors.AppendCoauthorsToSquashMsg(gitDir string, currentUserEmail string) error` | Exportiert + neuer Parameter `currentUserEmail` |
+| `collectCoauthorsFromWipCommits(file *os.File) []Author` | `coauthors.CollectCoauthorsFromWipCommits(file *os.File, currentUserEmail string) []Author` | Exportiert + neuer Parameter `currentUserEmail` |
+| `createCommitMessage(coauthors []Author) string` | `coauthors.CreateCommitMessage(coauthors []Author) string` | Exportiert |
+| `Author = string` (Typ-Alias) | `coauthors.Author = string` | Exportiert |
+
+### Risikobewertung
+
+- **Risiko**: Gering
+- **Abwaertskompatibilitaet**: Keine oeffentliche API betroffen (alles intern)
+- **Testabdeckung**: Bestehende Unit-Tests decken Kernlogik ab, Integrationstest deckt Zusammenspiel ab
+- **Einzige Stolperfalle**: Der Integrationstest `TestStartDoneCoAuthors` muss weiterhin im Root-Package laufen, da er `start()`, `next()`, `done()` etc. benoetigt. Das ist kein Problem, solange die Root-`coauthors_test.go` korrekt aufgeraeumt wird.
+- **Rollback**: Einfach rueckgaengig zu machen (eine Datei wiederherstellen, neues Verzeichnis loeschen)
 
 ---
 
