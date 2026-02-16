@@ -329,24 +329,157 @@ mob/
 
 ---
 
-## 6. Ausblick: Zweiter Schritt (`coauthor/`)
+## 6. Zweiter Schritt: Package `coauthor/` extrahieren
 
-Nach erfolgreichem Abschluss von Schritt 1 waere die Extraktion von `coauthor/` der logische naechste Schritt:
+### Warum `coauthor/` als zweites?
 
-- `coauthors.go` ist weitgehend eigenstaendig
-- Einzige externe Abhaengigkeit: `gitUserEmail()` - kann als Parameter uebergeben werden
-- Hat eigene Tests (`coauthors_test.go`)
-- Aehnliches Vorgehen wie bei `findnext/`
+1. **Weitgehend eigenstaendig**: Nur eine einzige externe Abhaengigkeit (`gitUserEmail()`)
+2. **Klare Fachlichkeit**: Co-Author-Tracking ist ein abgeschlossenes Feature
+3. **Eigene Tests**: 3 Unit-Tests + 1 Integrationstest
+4. **Mustererweiterung**: Zeigt erstmals, wie man eine Git-Abhaengigkeit als Parameter herausloest
 
-Die Signatur von `collectCoauthorsFromWipCommits` wuerde sich aendern:
+### Abhaengigkeits-Analyse
+
+#### Funktionen in `coauthors.go`
+
+| Funktion | Externe Abhaengigkeit | Aenderung noetig? |
+|----------|----------------------|-------------------|
+| `collectCoauthorsFromWipCommits(file)` | `gitUserEmail()` aus mob.go | Ja: Email als Parameter |
+| `appendCoauthorsToSquashMsg(gitDir)` | keine (gitDir kommt schon als String) | Nein |
+| `parseCoauthors(file)` | keine | Nein |
+| `createCommitMessage(coauthors)` | keine | Nein |
+| `stripToAuthor(line)` | keine | Nein |
+| `sortByLength(slice)` | keine | Nein |
+| `removeElementsContaining(slice, filter)` | keine | Nein |
+| `removeDuplicateValues(slice)` | keine | Nein |
+
+Abhaengigkeit auf `say`-Package: bleibt (Debug-Logging), ist bereits ein eigenes Package.
+
+#### Aufrufer (nur 1 Stelle)
+
+`mob.go:996`:
+```go
+err := appendCoauthorsToSquashMsg(gitDir())
+```
+
+#### Tests in `coauthors_test.go`
+
+| Test | Typ | Ziel |
+|------|-----|------|
+| `TestStartDoneCoAuthors` | Integrationstest (braucht `setup()`, `start()`, `done()`, etc.) | Bleibt in `main` (mob_test.go oder coauthors_test.go im main-Package) |
+| `TestCreateCommitMessage` | Unit-Test (rein) | Wandert nach `coauthor/` |
+| `TestSortByLength` | Unit-Test (rein) | Wandert nach `coauthor/` |
+| `TestRemoveDuplicateValues` | Unit-Test (rein) | Wandert nach `coauthor/` |
+
+### Konkrete Schritte
+
+#### Schritt 2.1: Package erstellen
+
+Neues Verzeichnis `coauthor/` mit Datei `coauthor.go` erstellen.
+
+#### Schritt 2.2: Code verschieben und Signatur anpassen
 
 ```go
-// ALT (ruft intern gitUserEmail() auf):
-func collectCoauthorsFromWipCommits(file *os.File) []Author
+package coauthor
 
-// NEU (bekommt die Email als Parameter):
-func CollectCoauthorsFromWipCommits(file *os.File, currentUserEmail string) []Author
+// Author is a coauthor "Full Name <email>"
+type Author = string
+
+// AppendCoauthorsToSquashMsg liest die SQUASH_MSG-Datei, extrahiert Co-Autoren
+// und haengt sie als Git-Trailer an.
+func AppendCoauthorsToSquashMsg(gitDir string, currentUserEmail string) error {
+    // ... bestehende Implementierung ...
+    // Ruft intern CollectCoauthorsFromWipCommits auf
+}
+
+// CollectCoauthorsFromWipCommits extrahiert Co-Autoren aus der SQUASH_MSG-Datei
+// und filtert den aktuellen User heraus.
+func CollectCoauthorsFromWipCommits(file *os.File, currentUserEmail string) []Author {
+    // ... bestehende Implementierung ...
+    // AENDERUNG: statt gitUserEmail() wird currentUserEmail verwendet
+}
+
+// CreateCommitMessage formatiert Co-Autoren als Git-Trailer-Block.
+func CreateCommitMessage(coauthors []Author) string { ... }
+
+// unexportierte Hilfsfunktionen
+func parseCoauthors(file *os.File) []Author { ... }
+func stripToAuthor(line string) Author { ... }
+func sortByLength(slice []string) { ... }
+func removeElementsContaining(slice []string, containsFilter string) []string { ... }
+func removeDuplicateValues(slice []string) []string { ... }
 ```
+
+Die zentrale Aenderung: `gitUserEmail()` wird nicht mehr intern aufgerufen, sondern
+`currentUserEmail` wird als Parameter durch `AppendCoauthorsToSquashMsg` durchgereicht:
+
+```go
+// ALT in appendCoauthorsToSquashMsg:
+coauthors := collectCoauthorsFromWipCommits(file)
+
+// NEU in AppendCoauthorsToSquashMsg:
+coauthors := CollectCoauthorsFromWipCommits(file, currentUserEmail)
+```
+
+#### Schritt 2.3: Unit-Tests verschieben
+
+`TestCreateCommitMessage`, `TestSortByLength`, `TestRemoveDuplicateValues`
+wandern nach `coauthor/coauthor_test.go`.
+
+`TestStartDoneCoAuthors` bleibt in `coauthors_test.go` im main-Package,
+da er die gesamte mob-Infrastruktur (`setup()`, `start()`, `done()`) benoetigt.
+
+#### Schritt 2.4: Aufrufer in mob.go anpassen
+
+```go
+import "github.com/remotemobprogramming/mob/v5/coauthor"
+
+// In done():
+// ALT:  err := appendCoauthorsToSquashMsg(gitDir())
+// NEU:  err := coauthor.AppendCoauthorsToSquashMsg(gitDir(), gitUserEmail())
+```
+
+#### Schritt 2.5: Integrationstest in main anpassen
+
+`TestStartDoneCoAuthors` bleibt in `coauthors_test.go` (main-Package).
+Er ruft `done()` auf, das intern `coauthor.AppendCoauthorsToSquashMsg` nutzt.
+Der Test selbst braucht keine Aenderung, da er nur das Endresultat
+(Inhalt der SQUASH_MSG) prueft.
+
+`TestCreateCommitMessage` muss im main-Package entfernt werden,
+da `createCommitMessage` nicht mehr dort existiert.
+
+#### Schritt 2.6: Alte Datei bereinigen
+
+`coauthors.go` aus dem Root loeschen. `coauthors_test.go` behaelt nur
+noch `TestStartDoneCoAuthors`.
+
+#### Schritt 2.7: Tests ausfuehren
+
+```bash
+go test ./...
+```
+
+### Erwartetes Ergebnis nach Schritt 2
+
+```
+mob/
+├── mob.go                    # Import von coauthor, done() ruft coauthor.AppendCoauthorsToSquashMsg(gitDir(), gitUserEmail())
+├── coauthor/                 # NEU
+│   ├── coauthor.go           # AppendCoauthorsToSquashMsg(), CollectCoauthorsFromWipCommits(), etc.
+│   └── coauthor_test.go      # Unit-Tests: TestCreateCommitMessage, TestSortByLength, TestRemoveDuplicateValues
+├── coauthors.go              # GELOESCHT (Code wandert nach coauthor/)
+├── coauthors_test.go         # NUR NOCH TestStartDoneCoAuthors (Integrationstest, bleibt in main)
+└── ... (Rest unveraendert)
+```
+
+### Risikobewertung
+
+- **Risiko**: Gering
+- **Einzige Design-Entscheidung**: `gitUserEmail()` wird zum Parameter statt internem Aufruf.
+  Das ist eine Verbesserung, da die Abhaengigkeit explizit wird.
+- **Integrationstest bleibt in main**: Sichert das Zusammenspiel weiterhin ab.
+- **Testabdeckung**: Unit-Tests + Integrationstest decken alles ab.
 
 ---
 
