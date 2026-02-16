@@ -1,20 +1,21 @@
-package main
+package coauthors
 
 import (
 	"bufio"
 	"fmt"
-	"github.com/remotemobprogramming/mob/v5/say"
 	"os"
 	"path"
 	"regexp"
 	"sort"
 	"strings"
+
+	"github.com/remotemobprogramming/mob/v5/say"
 )
 
 // Author is a coauthor "Full Name <email>"
 type Author = string
 
-func collectCoauthorsFromWipCommits(file *os.File) []Author {
+func CollectCoauthorsFromWipCommits(file *os.File, currentUserEmail string) []Author {
 	// Here we parse the SQUASH_MSG file for the list of authors on
 	// the WIP branch.  If this technique later turns out to be
 	// problematic, an alternative would be to instead fetch the
@@ -28,7 +29,7 @@ func collectCoauthorsFromWipCommits(file *os.File) []Author {
 	say.Debug("Parsed coauthors")
 	say.Debug(strings.Join(coauthors, ","))
 
-	coauthors = removeElementsContaining(coauthors, gitUserEmail())
+	coauthors = removeElementsContaining(coauthors, currentUserEmail)
 	say.Debug("Parsed coauthors without committer")
 	say.Debug(strings.Join(coauthors, ","))
 
@@ -93,7 +94,7 @@ func removeDuplicateValues(slice []string) []string {
 	return result
 }
 
-func appendCoauthorsToSquashMsg(gitDir string) error {
+func AppendCoauthorsToSquashMsg(gitDir string, currentUserEmail string) error {
 	squashMsgPath := path.Join(gitDir, "SQUASH_MSG")
 	say.Debug("opening " + squashMsgPath)
 	file, err := os.OpenFile(squashMsgPath, os.O_APPEND|os.O_RDWR, 0644)
@@ -109,10 +110,10 @@ func appendCoauthorsToSquashMsg(gitDir string) error {
 	defer file.Close()
 
 	// read from repo/.git/SQUASH_MSG
-	coauthors := collectCoauthorsFromWipCommits(file)
+	coauthors := CollectCoauthorsFromWipCommits(file, currentUserEmail)
 
 	if len(coauthors) > 0 {
-		coauthorSuffix := createCommitMessage(coauthors)
+		coauthorSuffix := CreateCommitMessage(coauthors)
 
 		// append to repo/.git/SQUASH_MSG
 		writer := bufio.NewWriter(file)
@@ -123,7 +124,7 @@ func appendCoauthorsToSquashMsg(gitDir string) error {
 	return err
 }
 
-func createCommitMessage(coauthors []Author) string {
+func CreateCommitMessage(coauthors []Author) string {
 	commitMessage := "\n\n"
 	commitMessage += "# automatically added all co-authors from WIP commits\n"
 	commitMessage += "# add missing co-authors manually\n"

@@ -14,6 +14,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/remotemobprogramming/mob/v5/coauthors"
 	config "github.com/remotemobprogramming/mob/v5/configuration"
 	"github.com/remotemobprogramming/mob/v5/findnext"
 	"github.com/remotemobprogramming/mob/v5/goal"
@@ -993,7 +994,7 @@ func done(configuration config.Configuration) {
 		if hasCachedChanges {
 			say.InfoIndented(cachedChanges)
 		}
-		err := appendCoauthorsToSquashMsg(gitDir())
+		err := coauthors.AppendCoauthorsToSquashMsg(gitDir(), gitUserEmail())
 		if err != nil {
 			say.Warning(err.Error())
 		}
