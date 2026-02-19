@@ -4,17 +4,19 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	config "github.com/remotemobprogramming/mob/v5/configuration"
-	"github.com/remotemobprogramming/mob/v5/httpclient"
-	"github.com/remotemobprogramming/mob/v5/say"
 	"runtime"
 	"strconv"
 	"time"
+
+	config "github.com/remotemobprogramming/mob/v5/configuration"
+	"github.com/remotemobprogramming/mob/v5/exit"
+	"github.com/remotemobprogramming/mob/v5/httpclient"
+	"github.com/remotemobprogramming/mob/v5/say"
 )
 
 func StartTimer(timerInMinutes string, configuration config.Configuration) {
 	if err := startTimer(timerInMinutes, configuration); err != nil {
-		gitClient.Exit(1)
+		exit.Exit(1)
 	}
 }
 
@@ -34,7 +36,7 @@ func startTimer(timerInMinutes string, configuration config.Configuration) error
 
 	if !startRemoteTimer && !startLocalTimer {
 		say.Error("No timer configured, not starting timer")
-		gitClient.Exit(1)
+		exit.Exit(1)
 	}
 
 	if startRemoteTimer {
@@ -43,7 +45,7 @@ func startTimer(timerInMinutes string, configuration config.Configuration) error
 		if err != nil {
 			say.Error("remote timer couldn't be started")
 			say.Error(err.Error())
-			gitClient.Exit(1)
+			exit.Exit(1)
 		}
 	}
 
@@ -53,7 +55,7 @@ func startTimer(timerInMinutes string, configuration config.Configuration) error
 		if err != nil {
 			say.Error(fmt.Sprintf("timer couldn't be started on your system (%s)", runtime.GOOS))
 			say.Error(err.Error())
-			gitClient.Exit(1)
+			exit.Exit(1)
 		}
 	}
 
@@ -88,7 +90,7 @@ func getMobTimerRoom(configuration config.Configuration) string {
 
 func StartBreakTimer(timerInMinutes string, configuration config.Configuration) {
 	if err := startBreakTimer(timerInMinutes, configuration); err != nil {
-		gitClient.Exit(1)
+		exit.Exit(1)
 	}
 }
 
@@ -108,7 +110,7 @@ func startBreakTimer(timerInMinutes string, configuration config.Configuration) 
 
 	if !startRemoteTimer && !startLocalTimer {
 		say.Error("No break timer configured, not starting break timer")
-		gitClient.Exit(1)
+		exit.Exit(1)
 	}
 
 	if startRemoteTimer {
@@ -118,7 +120,7 @@ func startBreakTimer(timerInMinutes string, configuration config.Configuration) 
 		if err != nil {
 			say.Error("remote break timer couldn't be started")
 			say.Error(err.Error())
-			gitClient.Exit(1)
+			exit.Exit(1)
 		}
 	}
 
@@ -128,7 +130,7 @@ func startBreakTimer(timerInMinutes string, configuration config.Configuration) 
 		if err != nil {
 			say.Error(fmt.Sprintf("break timer couldn't be started on your system (%s)", runtime.GOOS))
 			say.Error(err.Error())
-			gitClient.Exit(1)
+			exit.Exit(1)
 		}
 	}
 

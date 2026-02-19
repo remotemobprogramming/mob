@@ -2,10 +2,12 @@ package main
 
 import (
 	"fmt"
+	"os"
+
 	config "github.com/remotemobprogramming/mob/v5/configuration"
+	"github.com/remotemobprogramming/mob/v5/exit"
 	"github.com/remotemobprogramming/mob/v5/open"
 	"github.com/remotemobprogramming/mob/v5/say"
-	"os"
 	"path/filepath"
 	"reflect"
 	"runtime"
@@ -2071,8 +2073,8 @@ func mockOpenInBrowser() {
 }
 
 func mockExit() {
-	originalExitFunction = gitClient.Exit
-	gitClient.Exit = func(code int) {
+	originalExitFunction = exit.Exit
+	exit.Exit = func(code int) {
 		defer func() {
 			if r := recover(); r != nil {
 				fmt.Printf("exit(%d)\n", code)
@@ -2084,7 +2086,7 @@ func mockExit() {
 }
 
 func resetExit() {
-	gitClient.Exit = originalExitFunction
+	exit.Exit = originalExitFunction
 }
 
 func createTestbed(t *testing.T, configuration config.Configuration) {

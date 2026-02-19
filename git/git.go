@@ -8,15 +8,15 @@ import (
 	"strings"
 
 	config "github.com/remotemobprogramming/mob/v5/configuration"
+	"github.com/remotemobprogramming/mob/v5/exit"
 	"github.com/remotemobprogramming/mob/v5/say"
 )
 
 // Client kapselt den Zustand fuer Git-Operationen.
-// Ersetzt die globalen Variablen workingDir, GitPassthroughStderrStdout und Exit.
+// Ersetzt die globalen Variablen workingDir und GitPassthroughStderrStdout.
 type Client struct {
 	WorkingDir              string
 	PassthroughStderrStdout bool
-	Exit                    func(int)
 }
 
 // --- Schicht 1: Rohe Kommando-Ausfuehrung ---
@@ -102,7 +102,7 @@ func (g *Client) Run(args ...string) {
 				say.Error(err.Error())
 			}
 		}
-		g.Exit(1)
+		exit.Exit(1)
 	}
 }
 
@@ -117,7 +117,7 @@ func (g *Client) Silent(args ...string) string {
 			say.Error(output)
 			say.Error(err.Error())
 		}
-		g.Exit(1)
+		exit.Exit(1)
 	}
 	return strings.TrimSpace(output)
 }
@@ -147,7 +147,7 @@ func (g *Client) RunIgnoreFailure(args ...string) error {
 	if err != nil {
 		if !g.IsRepo() {
 			say.Error("expecting the current working directory to be a git repository.")
-			g.Exit(1)
+			exit.Exit(1)
 		} else {
 			say.Warning(commandString)
 			say.Warning(output)
