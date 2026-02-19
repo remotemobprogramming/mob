@@ -15,12 +15,12 @@ import (
 )
 
 func StartTimer(timerInMinutes string, configuration config.Configuration) {
-	if err := startTimer(timerInMinutes, configuration); err != nil {
+	if err := startTimer(timerInMinutes, configuration, ProcessLocalTimer{}); err != nil {
 		exit.Exit(1)
 	}
 }
 
-func startTimer(timerInMinutes string, configuration config.Configuration) error {
+func startTimer(timerInMinutes string, configuration config.Configuration, localTimer LocalTimer) error {
 	err, timeoutInMinutes := toMinutes(timerInMinutes)
 	if err != nil {
 		return err
@@ -50,7 +50,7 @@ func startTimer(timerInMinutes string, configuration config.Configuration) error
 	}
 
 	if startLocalTimer {
-		err := executeCommandsInBackgroundProcess(getSleepCommand(timeoutInSeconds), getVoiceCommand(configuration.VoiceMessage, configuration.VoiceCommand), getNotifyCommand(configuration.NotifyMessage, configuration.NotifyCommand), "echo \"mobTimer\"")
+		err := localTimer.StartTimer(timeoutInMinutes, configuration.VoiceMessage, configuration.VoiceCommand, configuration.NotifyMessage, configuration.NotifyCommand)
 
 		if err != nil {
 			say.Error(fmt.Sprintf("timer couldn't be started on your system (%s)", runtime.GOOS))
@@ -89,12 +89,12 @@ func getMobTimerRoom(configuration config.Configuration) string {
 }
 
 func StartBreakTimer(timerInMinutes string, configuration config.Configuration) {
-	if err := startBreakTimer(timerInMinutes, configuration); err != nil {
+	if err := startBreakTimer(timerInMinutes, configuration, ProcessLocalTimer{}); err != nil {
 		exit.Exit(1)
 	}
 }
 
-func startBreakTimer(timerInMinutes string, configuration config.Configuration) error {
+func startBreakTimer(timerInMinutes string, configuration config.Configuration, localTimer LocalTimer) error {
 	err, timeoutInMinutes := toMinutes(timerInMinutes)
 	if err != nil {
 		return err
@@ -125,7 +125,7 @@ func startBreakTimer(timerInMinutes string, configuration config.Configuration) 
 	}
 
 	if startLocalTimer {
-		err := executeCommandsInBackgroundProcess(getSleepCommand(timeoutInSeconds), getVoiceCommand("mob start", configuration.VoiceCommand), getNotifyCommand("mob start", configuration.NotifyCommand), "echo \"mobTimer\"")
+		err := localTimer.StartBreakTimer(timeoutInMinutes, configuration.VoiceCommand, configuration.NotifyCommand)
 
 		if err != nil {
 			say.Error(fmt.Sprintf("break timer couldn't be started on your system (%s)", runtime.GOOS))

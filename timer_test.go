@@ -36,7 +36,7 @@ func TestOpenTimerInBrowserError(t *testing.T) {
 func TestTimerNumberLessThen1(t *testing.T) {
 	output, configuration := setup(t)
 
-	err := startTimer("0", configuration)
+	err := startTimer("0", configuration, ProcessLocalTimer{})
 
 	assertError(t, err, "The parameter must be an integer number greater then zero")
 	assertOutputContains(t, output, "The parameter must be an integer number greater then zero")
@@ -45,7 +45,7 @@ func TestTimerNumberLessThen1(t *testing.T) {
 func TestTimerNotANumber(t *testing.T) {
 	output, configuration := setup(t)
 
-	err := startTimer("NotANumber", configuration)
+	err := startTimer("NotANumber", configuration, ProcessLocalTimer{})
 
 	assertError(t, err, "The parameter must be an integer number greater then zero")
 	assertOutputContains(t, output, "The parameter must be an integer number greater then zero")
@@ -56,7 +56,7 @@ func TestTimer(t *testing.T) {
 	configuration.NotifyCommand = ""
 	configuration.VoiceCommand = ""
 
-	err := startTimer("1", configuration)
+	err := startTimer("1", configuration, ProcessLocalTimer{})
 
 	assertNoError(t, err)
 	assertOutputContains(t, output, "1 min timer ends at approx.")
@@ -77,7 +77,7 @@ func TestTimerExportFunction(t *testing.T) {
 func TestBreakTimerNumberLessThen1(t *testing.T) {
 	output, configuration := setup(t)
 
-	err := startBreakTimer("0", configuration)
+	err := startBreakTimer("0", configuration, ProcessLocalTimer{})
 
 	assertError(t, err, "The parameter must be an integer number greater then zero")
 	assertOutputContains(t, output, "The parameter must be an integer number greater then zero")
@@ -86,7 +86,7 @@ func TestBreakTimerNumberLessThen1(t *testing.T) {
 func TestBreakTimerNotANumber(t *testing.T) {
 	output, configuration := setup(t)
 
-	err := startBreakTimer("NotANumber", configuration)
+	err := startBreakTimer("NotANumber", configuration, ProcessLocalTimer{})
 
 	assertError(t, err, "The parameter must be an integer number greater then zero")
 	assertOutputContains(t, output, "The parameter must be an integer number greater then zero")
@@ -97,7 +97,7 @@ func TestBreakTimer(t *testing.T) {
 	configuration.NotifyCommand = ""
 	configuration.VoiceCommand = ""
 
-	err := startBreakTimer("1", configuration)
+	err := startBreakTimer("1", configuration, ProcessLocalTimer{})
 
 	assertNoError(t, err)
 	assertOutputContains(t, output, "1 min break timer ends at approx.")
