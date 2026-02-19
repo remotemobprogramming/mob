@@ -20,7 +20,7 @@ func StartTimer(timerInMinutes string, configuration config.Configuration) {
 	}
 }
 
-func startTimer(timerInMinutes string, configuration config.Configuration, localTimer LocalTimer) error {
+func startTimer(timerInMinutes string, configuration config.Configuration, localTimer Timer) error {
 	err, timeoutInMinutes := toMinutes(timerInMinutes)
 	if err != nil {
 		return err
@@ -94,7 +94,7 @@ func StartBreakTimer(timerInMinutes string, configuration config.Configuration) 
 	}
 }
 
-func startBreakTimer(timerInMinutes string, configuration config.Configuration, localTimer LocalTimer) error {
+func startBreakTimer(timerInMinutes string, configuration config.Configuration, localTimer Timer) error {
 	err, timeoutInMinutes := toMinutes(timerInMinutes)
 	if err != nil {
 		return err

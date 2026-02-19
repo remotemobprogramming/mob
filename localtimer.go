@@ -2,13 +2,13 @@ package main
 
 import config "github.com/remotemobprogramming/mob/v5/configuration"
 
-// LocalTimer abstracts the local timer functionality so different implementations can be used.
-type LocalTimer interface {
+// Timer abstracts the local timer functionality so different implementations can be used.
+type Timer interface {
 	StartTimer(minutes int, configuration config.Configuration) error
 	StartBreakTimer(minutes int, configuration config.Configuration) error
 }
 
-// ProcessLocalTimer is the default LocalTimer implementation that uses background OS processes.
+// ProcessLocalTimer is the default Timer implementation that uses background OS processes.
 type ProcessLocalTimer struct{}
 
 func (t ProcessLocalTimer) StartTimer(minutes int, configuration config.Configuration) error {
