@@ -1,26 +1,23 @@
 package main
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
-	"runtime"
 	"strconv"
 	"time"
 
 	config "github.com/remotemobprogramming/mob/v5/configuration"
 	"github.com/remotemobprogramming/mob/v5/exit"
-	"github.com/remotemobprogramming/mob/v5/httpclient"
 	"github.com/remotemobprogramming/mob/v5/say"
 )
 
 func StartTimer(timerInMinutes string, configuration config.Configuration) {
-	if err := startTimer(timerInMinutes, configuration, ProcessLocalTimer{}); err != nil {
+	if err := startTimer(timerInMinutes, configuration); err != nil {
 		exit.Exit(1)
 	}
 }
 
-func startTimer(timerInMinutes string, configuration config.Configuration, localTimer Timer) error {
+func startTimer(timerInMinutes string, configuration config.Configuration) error {
 	err, timeoutInMinutes := toMinutes(timerInMinutes)
 	if err != nil {
 		return err
@@ -30,30 +27,14 @@ func startTimer(timerInMinutes string, configuration config.Configuration, local
 	timeOfTimeout := time.Now().Add(time.Minute * time.Duration(timeoutInMinutes)).Format("15:04")
 	say.Debug(fmt.Sprintf("Starting timer at %s for %d minutes = %d seconds (parsed from user input %s)", timeOfTimeout, timeoutInMinutes, timeoutInSeconds, timerInMinutes))
 
-	room := getMobTimerRoom(configuration)
-	startRemoteTimer := room != ""
-	startLocalTimer := configuration.TimerLocal
-
-	if !startRemoteTimer && !startLocalTimer {
+	timers := getTimers(configuration)
+	if len(timers) == 0 {
 		say.Error("No timer configured, not starting timer")
 		exit.Exit(1)
 	}
 
-	if startRemoteTimer {
-		timerUser := getUserForMobTimer(configuration.TimerUser)
-		err := httpPutTimer(timeoutInMinutes, room, timerUser, configuration.TimerUrl, configuration.TimerInsecure)
-		if err != nil {
-			say.Error("remote timer couldn't be started")
-			say.Error(err.Error())
-			exit.Exit(1)
-		}
-	}
-
-	if startLocalTimer {
-		err := localTimer.StartTimer(timeoutInMinutes, configuration)
-
-		if err != nil {
-			say.Error(fmt.Sprintf("timer couldn't be started on your system (%s)", runtime.GOOS))
+	for _, timer := range timers {
+		if err := timer.StartTimer(timeoutInMinutes, configuration); err != nil {
 			say.Error(err.Error())
 			exit.Exit(1)
 		}
@@ -89,12 +70,12 @@ func getMobTimerRoom(configuration config.Configuration) string {
 }
 
 func StartBreakTimer(timerInMinutes string, configuration config.Configuration) {
-	if err := startBreakTimer(timerInMinutes, configuration, ProcessLocalTimer{}); err != nil {
+	if err := startBreakTimer(timerInMinutes, configuration); err != nil {
 		exit.Exit(1)
 	}
 }
 
-func startBreakTimer(timerInMinutes string, configuration config.Configuration, localTimer Timer) error {
+func startBreakTimer(timerInMinutes string, configuration config.Configuration) error {
 	err, timeoutInMinutes := toMinutes(timerInMinutes)
 	if err != nil {
 		return err
@@ -104,31 +85,14 @@ func startBreakTimer(timerInMinutes string, configuration config.Configuration, 
 	timeOfTimeout := time.Now().Add(time.Minute * time.Duration(timeoutInMinutes)).Format("15:04")
 	say.Debug(fmt.Sprintf("Starting break timer at %s for %d minutes = %d seconds (parsed from user input %s)", timeOfTimeout, timeoutInMinutes, timeoutInSeconds, timerInMinutes))
 
-	room := getMobTimerRoom(configuration)
-	startRemoteTimer := room != ""
-	startLocalTimer := configuration.TimerLocal
-
-	if !startRemoteTimer && !startLocalTimer {
+	timers := getTimers(configuration)
+	if len(timers) == 0 {
 		say.Error("No break timer configured, not starting break timer")
 		exit.Exit(1)
 	}
 
-	if startRemoteTimer {
-		timerUser := getUserForMobTimer(configuration.TimerUser)
-		err := httpPutBreakTimer(timeoutInMinutes, room, timerUser, configuration.TimerUrl, configuration.TimerInsecure)
-
-		if err != nil {
-			say.Error("remote break timer couldn't be started")
-			say.Error(err.Error())
-			exit.Exit(1)
-		}
-	}
-
-	if startLocalTimer {
-		err := localTimer.StartBreakTimer(timeoutInMinutes, configuration)
-
-		if err != nil {
-			say.Error(fmt.Sprintf("break timer couldn't be started on your system (%s)", runtime.GOOS))
+	for _, timer := range timers {
+		if err := timer.StartBreakTimer(timeoutInMinutes, configuration); err != nil {
 			say.Error(err.Error())
 			exit.Exit(1)
 		}
@@ -136,6 +100,17 @@ func startBreakTimer(timerInMinutes string, configuration config.Configuration, 
 
 	say.Info("It's now " + currentTime() + ". " + fmt.Sprintf("%d min break timer ends at approx. %s", timeoutInMinutes, timeOfTimeout) + ". So take a break now! :)")
 	return nil
+}
+
+func getTimers(configuration config.Configuration) []Timer {
+	var timers []Timer
+	if getMobTimerRoom(configuration) != "" {
+		timers = append(timers, WebTimer{})
+	}
+	if configuration.TimerLocal {
+		timers = append(timers, ProcessLocalTimer{})
+	}
+	return timers
 }
 
 func getUserForMobTimer(userOverride string) string {
@@ -152,26 +127,6 @@ func toMinutes(timerInMinutes string) (error, int) {
 		return errors.New("The parameter must be an integer number greater then zero"), 0
 	}
 	return nil, timeoutInMinutes
-}
-
-func httpPutTimer(timeoutInMinutes int, room string, user string, timerService string, disableSSLVerification bool) error {
-	putBody, _ := json.Marshal(map[string]interface{}{
-		"timer": timeoutInMinutes,
-		"user":  user,
-	})
-	client := httpclient.CreateHttpClient(disableSSLVerification)
-	_, err := client.SendRequest(putBody, "PUT", timerService+room)
-	return err
-}
-
-func httpPutBreakTimer(timeoutInMinutes int, room string, user string, timerService string, disableSSLVerification bool) error {
-	putBody, _ := json.Marshal(map[string]interface{}{
-		"breaktimer": timeoutInMinutes,
-		"user":       user,
-	})
-	client := httpclient.CreateHttpClient(disableSSLVerification)
-	_, err := client.SendRequest(putBody, "PUT", timerService+room)
-	return err
 }
 
 func getSleepCommand(timeoutInSeconds int) string {
