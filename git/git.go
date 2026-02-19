@@ -228,6 +228,11 @@ func (g *Client) HasUncommittedChanges() bool {
 	return !g.IsNothingToCommit()
 }
 
+func (g *Client) CommitHash() string {
+	output, _ := g.SilentIgnoreFailure("rev-parse", "HEAD")
+	return output
+}
+
 type GitVersion struct {
 	Major int
 	Minor int

@@ -817,7 +817,7 @@ func makeWipCommit(configuration config.Configuration) {
 	commitMessage := createWipCommitMessage(configuration)
 	gitWithoutEmptyStrings("commit", "--message", commitMessage, gitHooksOption(configuration))
 	say.InfoIndented(getChangesOfLastCommit())
-	say.InfoIndented(gitCommitHash())
+	say.InfoIndented(gitClient.CommitHash())
 }
 
 func createWipCommitMessage(configuration config.Configuration) string {
@@ -1102,11 +1102,6 @@ func git(args ...string) {
 
 func gitIgnoreFailure(args ...string) error {
 	return gitClient.RunIgnoreFailure(args...)
-}
-
-func gitCommitHash() string {
-	output, _ := silentgitignorefailure("rev-parse", "HEAD")
-	return output
 }
 
 func gitVersion() string {
