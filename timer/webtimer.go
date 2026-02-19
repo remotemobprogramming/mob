@@ -1,4 +1,4 @@
-package main
+package timer
 
 import (
 	"encoding/json"
@@ -9,21 +9,20 @@ import (
 )
 
 // WebTimer is a Timer implementation that notifies a remote timer service via HTTP.
-type WebTimer struct{}
+type WebTimer struct {
+	Room      string
+	TimerUser string
+}
 
 func (t WebTimer) StartTimer(minutes int, configuration config.Configuration) error {
-	room := getMobTimerRoom(configuration)
-	timerUser := getUserForMobTimer(configuration.TimerUser)
-	if err := httpPutTimer(minutes, room, timerUser, configuration.TimerUrl, configuration.TimerInsecure); err != nil {
+	if err := httpPutTimer(minutes, t.Room, t.TimerUser, configuration.TimerUrl, configuration.TimerInsecure); err != nil {
 		return fmt.Errorf("remote timer couldn't be started: %w", err)
 	}
 	return nil
 }
 
 func (t WebTimer) StartBreakTimer(minutes int, configuration config.Configuration) error {
-	room := getMobTimerRoom(configuration)
-	timerUser := getUserForMobTimer(configuration.TimerUser)
-	if err := httpPutBreakTimer(minutes, room, timerUser, configuration.TimerUrl, configuration.TimerInsecure); err != nil {
+	if err := httpPutBreakTimer(minutes, t.Room, t.TimerUser, configuration.TimerUrl, configuration.TimerInsecure); err != nil {
 		return fmt.Errorf("remote break timer couldn't be started: %w", err)
 	}
 	return nil

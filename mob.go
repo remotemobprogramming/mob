@@ -21,6 +21,7 @@ import (
 	"github.com/remotemobprogramming/mob/v5/help"
 	"github.com/remotemobprogramming/mob/v5/open"
 	"github.com/remotemobprogramming/mob/v5/say"
+	timerpkg "github.com/remotemobprogramming/mob/v5/timer"
 	"github.com/remotemobprogramming/mob/v5/workdir"
 )
 
@@ -446,32 +447,13 @@ func injectCommandWithMessage(command string, message string) string {
 	return fmt.Sprintf(command, message)
 }
 
-func executeCommandsInBackgroundProcess(commands ...string) (err error) {
-	cmds := make([]string, 0)
-	for _, c := range commands {
-		if len(c) > 0 {
-			cmds = append(cmds, c)
-		}
-	}
-	say.Debug(fmt.Sprintf("Operating System %s", runtime.GOOS))
-	switch runtime.GOOS {
-	case "windows":
-		_, err = startCommand("powershell", "-command", fmt.Sprintf("start-process powershell -NoNewWindow -ArgumentList '-command \"%s\"'", strings.Join(cmds, ";")))
-	case "darwin", "linux":
-		_, err = startCommand("sh", "-c", fmt.Sprintf("(%s) &", strings.Join(cmds, ";")))
-	default:
-		say.Warning(fmt.Sprintf("Cannot execute background commands on your os: %s", runtime.GOOS))
-	}
-	return err
-}
-
 func currentTime() string {
 	return time.Now().Format("15:04")
 }
 
 func moo(configuration config.Configuration) {
 	voiceMessage := "moo"
-	err := executeCommandsInBackgroundProcess(getVoiceCommand(voiceMessage, configuration.VoiceCommand))
+	err := timerpkg.ExecuteCommandsInBackgroundProcess(timerpkg.VoiceCommand(voiceMessage, configuration.VoiceCommand))
 
 	if err != nil {
 		say.Warning(fmt.Sprintf("can't run voice command on your system (%s)", runtime.GOOS))
