@@ -12,14 +12,10 @@ import (
 	"github.com/remotemobprogramming/mob/v5/say"
 )
 
-// Client kapselt den Zustand fuer Git-Operationen.
-// Ersetzt die globalen Variablen workingDir und GitPassthroughStderrStdout.
 type Client struct {
 	WorkingDir              string
 	PassthroughStderrStdout bool
 }
-
-// --- Schicht 1: Rohe Kommando-Ausfuehrung ---
 
 func (g *Client) runCommandSilent(name string, args ...string) (string, string, error) {
 	command := exec.Command(name, args...)
@@ -77,8 +73,6 @@ func (g *Client) runCommand(name string, args ...string) (string, string, error)
 	say.Debug(output)
 	return commandString, output, nil
 }
-
-// --- Schicht 2: Git-Wrapper ---
 
 func (g *Client) Run(args ...string) {
 	say.Indented("git " + strings.Join(args, " "))
@@ -160,8 +154,6 @@ func (g *Client) RunIgnoreFailure(args ...string) error {
 	return nil
 }
 
-// HooksOption gibt "--no-verify" oder "" zurueck je nach Config.
-// Reine Funktion ohne Seiteneffekte.
 func HooksOption(c config.Configuration) string {
 	if c.GitHooksEnabled {
 		return ""
@@ -169,8 +161,6 @@ func HooksOption(c config.Configuration) string {
 		return "--no-verify"
 	}
 }
-
-// --- Schicht 3: Git-Info-Abfragen ---
 
 func (g *Client) CurrentBranch() string {
 	// upgrade to branch --show-current when git v2.21 is more widely spread
@@ -238,8 +228,6 @@ func (g *Client) HasUncommittedChanges() bool {
 	return !g.IsNothingToCommit()
 }
 
-// --- Typen ---
-
 type GitVersion struct {
 	Major int
 	Minor int
@@ -281,8 +269,6 @@ func (v GitVersion) Less(rhs GitVersion) bool {
 		(v.Major == rhs.Major && v.Minor < rhs.Minor) ||
 		(v.Major == rhs.Major && v.Minor == rhs.Minor && v.Patch < rhs.Patch)
 }
-
-// --- Hilfsfunktionen (unexportiert) ---
 
 func deleteEmptyStrings(s []string) []string {
 	var r []string
