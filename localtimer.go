@@ -1,30 +1,32 @@
 package main
 
+import config "github.com/remotemobprogramming/mob/v5/configuration"
+
 // LocalTimer abstracts the local timer functionality so different implementations can be used.
 type LocalTimer interface {
-	StartTimer(timeoutInMinutes int, voiceMessage string, voiceCommand string, notifyMessage string, notifyCommand string) error
-	StartBreakTimer(timeoutInMinutes int, voiceCommand string, notifyCommand string) error
+	StartTimer(timeoutInMinutes int, configuration config.Configuration) error
+	StartBreakTimer(timeoutInMinutes int, configuration config.Configuration) error
 }
 
 // ProcessLocalTimer is the default LocalTimer implementation that uses background OS processes.
 type ProcessLocalTimer struct{}
 
-func (t ProcessLocalTimer) StartTimer(timeoutInMinutes int, voiceMessage string, voiceCommand string, notifyMessage string, notifyCommand string) error {
+func (t ProcessLocalTimer) StartTimer(timeoutInMinutes int, configuration config.Configuration) error {
 	timeoutInSeconds := timeoutInMinutes * 60
 	return executeCommandsInBackgroundProcess(
 		getSleepCommand(timeoutInSeconds),
-		getVoiceCommand(voiceMessage, voiceCommand),
-		getNotifyCommand(notifyMessage, notifyCommand),
+		getVoiceCommand(configuration.VoiceMessage, configuration.VoiceCommand),
+		getNotifyCommand(configuration.NotifyMessage, configuration.NotifyCommand),
 		"echo \"mobTimer\"",
 	)
 }
 
-func (t ProcessLocalTimer) StartBreakTimer(timeoutInMinutes int, voiceCommand string, notifyCommand string) error {
+func (t ProcessLocalTimer) StartBreakTimer(timeoutInMinutes int, configuration config.Configuration) error {
 	timeoutInSeconds := timeoutInMinutes * 60
 	return executeCommandsInBackgroundProcess(
 		getSleepCommand(timeoutInSeconds),
-		getVoiceCommand("mob start", voiceCommand),
-		getNotifyCommand("mob start", notifyCommand),
+		getVoiceCommand("mob start", configuration.VoiceCommand),
+		getNotifyCommand("mob start", configuration.NotifyCommand),
 		"echo \"mobTimer\"",
 	)
 }

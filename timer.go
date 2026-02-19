@@ -50,7 +50,7 @@ func startTimer(timerInMinutes string, configuration config.Configuration, local
 	}
 
 	if startLocalTimer {
-		err := localTimer.StartTimer(timeoutInMinutes, configuration.VoiceMessage, configuration.VoiceCommand, configuration.NotifyMessage, configuration.NotifyCommand)
+		err := localTimer.StartTimer(timeoutInMinutes, configuration)
 
 		if err != nil {
 			say.Error(fmt.Sprintf("timer couldn't be started on your system (%s)", runtime.GOOS))
@@ -125,7 +125,7 @@ func startBreakTimer(timerInMinutes string, configuration config.Configuration, 
 	}
 
 	if startLocalTimer {
-		err := localTimer.StartBreakTimer(timeoutInMinutes, configuration.VoiceCommand, configuration.NotifyCommand)
+		err := localTimer.StartBreakTimer(timeoutInMinutes, configuration)
 
 		if err != nil {
 			say.Error(fmt.Sprintf("break timer couldn't be started on your system (%s)", runtime.GOOS))
