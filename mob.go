@@ -21,6 +21,7 @@ import (
 	"github.com/remotemobprogramming/mob/v5/help"
 	"github.com/remotemobprogramming/mob/v5/open"
 	"github.com/remotemobprogramming/mob/v5/say"
+	"github.com/remotemobprogramming/mob/v5/workdir"
 )
 
 const (
@@ -252,7 +253,7 @@ func run(osArgs []string) {
 	say.Debug("command '" + command + "'")
 	say.Debug("parameters '" + strings.Join(parameters, " ") + "'")
 	say.Debug("version " + versionNumber)
-	say.Debug("workingDir '" + gitClient.WorkingDir + "'")
+	say.Debug("workingDir '" + workdir.Path + "'")
 
 	// workaround until we have a better design
 	if configuration.GitHooksEnabled {
@@ -877,10 +878,10 @@ func getPathOfLastModifiedFile() string {
 // uses git status --porcelain. To work properly files have to be staged.
 func getModifiedFiles(rootDir string) []string {
 	say.Debug("Find modified files")
-	oldWorkingDir := gitClient.WorkingDir
-	gitClient.WorkingDir = rootDir
+	oldWorkingDir := workdir.Path
+	workdir.Path = rootDir
 	gitstatus := silentgit("status", "--porcelain")
-	gitClient.WorkingDir = oldWorkingDir
+	workdir.Path = oldWorkingDir
 	lines := strings.Split(gitstatus, "\n")
 	files := []string{}
 	for _, line := range lines {
@@ -1114,8 +1115,8 @@ func isGit() bool {
 
 func startCommand(name string, args ...string) (string, error) {
 	command := exec.Command(name, args...)
-	if len(gitClient.WorkingDir) > 0 {
-		command.Dir = gitClient.WorkingDir
+	if len(workdir.Path) > 0 {
+		command.Dir = workdir.Path
 	}
 	commandString := strings.Join(command.Args, " ")
 	say.Debug("Starting command " + commandString)

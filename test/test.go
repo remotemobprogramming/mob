@@ -3,6 +3,7 @@ package test
 import (
 	"fmt"
 	"github.com/remotemobprogramming/mob/v5/say"
+	"github.com/remotemobprogramming/mob/v5/workdir"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -11,10 +12,6 @@ import (
 	"strings"
 	"testing"
 	"time"
-)
-
-var (
-	workingDir string
 )
 
 const (
@@ -50,7 +47,7 @@ func failWithFailureMessage(t *testing.T, message string) {
 
 func CreateFile(t *testing.T, filename string, content string) (pathToFile string) {
 	contentAsBytes := []byte(content)
-	pathToFile = workingDir + "/" + filename
+	pathToFile = workdir.Path + "/" + filename
 	err := os.WriteFile(pathToFile, contentAsBytes, 0644)
 	if err != nil {
 		failWithFailure(t, "creating file "+filename+" with content "+content, "error")
@@ -59,7 +56,7 @@ func CreateFile(t *testing.T, filename string, content string) (pathToFile strin
 }
 
 func SetWorkingDir(dir string) {
-	workingDir = dir
+	workdir.Path = dir
 	say.Say("\n===== cd " + dir)
 }
 

@@ -10,17 +10,17 @@ import (
 	config "github.com/remotemobprogramming/mob/v5/configuration"
 	"github.com/remotemobprogramming/mob/v5/exit"
 	"github.com/remotemobprogramming/mob/v5/say"
+	"github.com/remotemobprogramming/mob/v5/workdir"
 )
 
 type Client struct {
-	WorkingDir              string
 	PassthroughStderrStdout bool
 }
 
 func (g *Client) runCommandSilent(name string, args ...string) (string, string, error) {
 	command := exec.Command(name, args...)
-	if len(g.WorkingDir) > 0 {
-		command.Dir = g.WorkingDir
+	if len(workdir.Path) > 0 {
+		command.Dir = workdir.Path
 	}
 	commandString := strings.Join(command.Args, " ")
 	say.Debug("Running command <" + commandString + "> in silent mode, capturing combined output")
@@ -32,8 +32,8 @@ func (g *Client) runCommandSilent(name string, args ...string) (string, string, 
 
 func (g *Client) runCommand(name string, args ...string) (string, string, error) {
 	command := exec.Command(name, args...)
-	if len(g.WorkingDir) > 0 {
-		command.Dir = g.WorkingDir
+	if len(workdir.Path) > 0 {
+		command.Dir = workdir.Path
 	}
 	commandString := strings.Join(command.Args, " ")
 	say.Debug("Running command <" + commandString + "> passing output through")

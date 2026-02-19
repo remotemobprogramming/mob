@@ -8,6 +8,7 @@ import (
 	"github.com/remotemobprogramming/mob/v5/exit"
 	"github.com/remotemobprogramming/mob/v5/open"
 	"github.com/remotemobprogramming/mob/v5/say"
+	"github.com/remotemobprogramming/mob/v5/workdir"
 	"path/filepath"
 	"reflect"
 	"runtime"
@@ -209,7 +210,7 @@ func TestStart(t *testing.T) {
 
 func TestStartDespiteGitHook(t *testing.T) {
 	_, configuration := setup(t)
-	createExecutableFileInPath(t, gitClient.WorkingDir+"/.git/hooks", "pre-commit", "#!/bin/sh\necho 'boo'\nexit 1\n")
+	createExecutableFileInPath(t, workdir.Path+"/.git/hooks", "pre-commit", "#!/bin/sh\necho 'boo'\nexit 1\n")
 
 	start(configuration)
 
@@ -854,7 +855,7 @@ func TestStartNextStay_WriteLastModifiedFileInCommit_WhenFileIsModifiedAndWorkin
 	start(configuration)
 	createDirectory(t, "dir")
 	createFile(t, "file1.txt", "contentIrrelevantButModified")
-	setWorkingDir(gitClient.WorkingDir + "/dir")
+	setWorkingDir(workdir.Path + "/dir")
 	next(configuration)
 
 	assertOnBranch(t, "mob-session")
@@ -884,7 +885,7 @@ func TestStartNextStay_DoNotWriteLastModifiedFileInCommit_WhenFileIsDeleted(t *t
 	next(configuration)
 
 	start(configuration)
-	removeFile(t, filepath.Join(gitClient.WorkingDir, "file1.txt"))
+	removeFile(t, filepath.Join(workdir.Path, "file1.txt"))
 	next(configuration)
 
 	assertOnBranch(t, "mob-session")
@@ -901,7 +902,7 @@ func TestStartNextStay_DoNotWriteLastModifiedFileInCommit_WhenFileIsMoved(t *tes
 
 	start(configuration)
 	createDirectory(t, "dir")
-	moveFile(t, filepath.Join(gitClient.WorkingDir, "file1.txt"), filepath.Join(gitClient.WorkingDir, "dir", "file1.txt"))
+	moveFile(t, filepath.Join(workdir.Path, "file1.txt"), filepath.Join(workdir.Path, "dir", "file1.txt"))
 	next(configuration)
 
 	assertOnBranch(t, "mob-session")
@@ -2090,7 +2091,7 @@ func resetExit() {
 }
 
 func createTestbed(t *testing.T, configuration config.Configuration) {
-	gitClient.WorkingDir = ""
+	workdir.Path = ""
 
 	tempDir = t.TempDir()
 
@@ -2121,7 +2122,7 @@ func createTestbedIn(t *testing.T, temporaryDirectory string) {
 	cloneRepository(localDirectory, remoteDirectory)
 
 	say.Debug("Populate, initial import and push")
-	gitClient.WorkingDir = localDirectory
+	workdir.Path = localDirectory
 	createFile(t, "test.txt", "test")
 	createDirectory(t, "subdir")
 	createFileInPath(t, localDirectory+"/subdir", "subdir.txt", "subdir")
@@ -2153,7 +2154,7 @@ func createTestbedIn(t *testing.T, temporaryDirectory string) {
 }
 
 func setWorkingDir(dir string) {
-	gitClient.WorkingDir = dir
+	workdir.Path = dir
 	say.Say("\n===== cd " + dir)
 }
 
@@ -2181,7 +2182,7 @@ func assertCommitsOnBranch(t *testing.T, commits int, branchName string) {
 	result := silentgit("rev-list", "--count", branchName)
 	number, _ := strconv.Atoi(result)
 	if number != commits {
-		failWithFailure(t, strconv.Itoa(commits)+" commits in "+gitClient.WorkingDir, strconv.Itoa(number)+" commits in "+gitClient.WorkingDir)
+		failWithFailure(t, strconv.Itoa(commits)+" commits in "+workdir.Path, strconv.Itoa(number)+" commits in "+workdir.Path)
 	}
 }
 
@@ -2200,7 +2201,7 @@ func assertCommitLogNotContainsMessage(t *testing.T, branchName string, commitMe
 }
 
 func assertFileExist(t *testing.T, filename string) {
-	path := gitClient.WorkingDir + "/" + filename
+	path := workdir.Path + "/" + filename
 	if strings.Index(filename, "/") == 0 {
 		path = filename
 	}
@@ -2216,7 +2217,7 @@ func createFileAndCommitIt(t *testing.T, filename string, content string, commit
 }
 
 func createFile(t *testing.T, filename string, content string) (pathToFile string) {
-	return createFileInPath(t, gitClient.WorkingDir, filename, content)
+	return createFileInPath(t, workdir.Path, filename, content)
 }
 
 func createFileInPath(t *testing.T, path, filename, content string) (pathToFile string) {
@@ -2242,7 +2243,7 @@ func createExecutableFileInPath(t *testing.T, path, filename, content string) (p
 }
 
 func createDirectory(t *testing.T, directory string) (pathToDirectory string) {
-	return ensureDirectoryExists(t, gitClient.WorkingDir+"/"+directory)
+	return ensureDirectoryExists(t, workdir.Path+"/"+directory)
 }
 
 func ensureDirectoryExists(t *testing.T, path string) (pathToDirectory string) {
@@ -2378,7 +2379,7 @@ func createRemoteRepository(path string) {
 		say.Error(err.Error())
 		return
 	}
-	gitClient.WorkingDir = path
+	workdir.Path = path
 	say.Debug("before git init")
 	git("--bare", "init")
 	say.Debug("before symbolic-ref")
@@ -2396,7 +2397,7 @@ func cloneRepository(path, remoteDirectory string) {
 		say.Error(err.Error())
 		return
 	}
-	gitClient.WorkingDir = path
+	workdir.Path = path
 	name := basename(path)
 	git("clone", "--origin", "origin", "file://"+remoteDirectory, ".")
 	git("config", "--local", "user.name", name)
