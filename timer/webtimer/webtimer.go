@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	config "github.com/remotemobprogramming/mob/v5/configuration"
+	"github.com/remotemobprogramming/mob/v5/git"
 	"github.com/remotemobprogramming/mob/v5/httpclient"
 	"github.com/remotemobprogramming/mob/v5/timer"
 )
@@ -29,10 +30,18 @@ type WebTimer struct {
 func NewWebTimer(configuration config.Configuration) WebTimer {
 	return WebTimer{
 		room:          configuration.TimerRoom,
-		timerUser:     configuration.TimerUser,
+		timerUser:     getUserForMobTimer(configuration.TimerUser),
 		timerUrl:      configuration.TimerUrl,
 		timerInsecure: configuration.TimerInsecure,
 	}
+}
+
+func getUserForMobTimer(userOverride string) string {
+	if userOverride == "" {
+		gitClient := &git.Client{}
+		return gitClient.UserName()
+	}
+	return userOverride
 }
 
 func (t WebTimer) StartTimer(minutes int) error {

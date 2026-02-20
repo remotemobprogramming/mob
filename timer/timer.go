@@ -31,14 +31,14 @@ func Register(f Factory) {
 
 // GetTimers returns all registered timers that are active for the given configuration.
 func GetTimers(configuration config.Configuration) []Timer {
-	var active []Timer
-	for _, f := range factories {
-		t := f(configuration)
+	var timers []Timer
+	for _, createTimer := range factories {
+		t := createTimer(configuration)
 		if t != nil {
-			active = append(active, t)
+			timers = append(timers, t)
 		}
 	}
-	return active
+	return timers
 }
 
 // RunTimer parses timerInMinutes, starts all active timers and returns any error.
@@ -64,7 +64,7 @@ func RunTimer(timerInMinutes string, configuration config.Configuration) error {
 		}
 	}
 
-	say.Info("It's now " + currentTime() + ". " + fmt.Sprintf("%d min timer ends at approx. %s", timeoutInMinutes, timeOfTimeout) + ". Happy collaborating! :)")
+	say.Info(fmt.Sprintf("It's now %s. %d min timer ends at approx. %s. Happy collaborating! :)", currentTime(), timeoutInMinutes, timeOfTimeout))
 	return nil
 }
 
@@ -91,7 +91,7 @@ func RunBreakTimer(timerInMinutes string, configuration config.Configuration) er
 		}
 	}
 
-	say.Info("It's now " + currentTime() + ". " + fmt.Sprintf("%d min break timer ends at approx. %s", timeoutInMinutes, timeOfTimeout) + ". So take a break now! :)")
+	say.Info(fmt.Sprintf("It's now %s. %d min break timer ends at approx. %s. So take a break now! :)", currentTime(), timeoutInMinutes, timeOfTimeout))
 	return nil
 }
 

@@ -16,7 +16,6 @@ func StartTimer(timerInMinutes string, configuration config.Configuration) {
 
 func startTimer(timerInMinutes string, configuration config.Configuration) error {
 	configuration.TimerRoom = getMobTimerRoom(configuration)
-	configuration.TimerUser = getUserForMobTimer(configuration.TimerUser)
 	return timerpkg.RunTimer(timerInMinutes, configuration)
 }
 
@@ -28,7 +27,6 @@ func StartBreakTimer(timerInMinutes string, configuration config.Configuration) 
 
 func startBreakTimer(timerInMinutes string, configuration config.Configuration) error {
 	configuration.TimerRoom = getMobTimerRoom(configuration)
-	configuration.TimerUser = getUserForMobTimer(configuration.TimerUser)
 	return timerpkg.RunBreakTimer(timerInMinutes, configuration)
 }
 
@@ -53,11 +51,4 @@ func getMobTimerRoom(configuration config.Configuration) string {
 	}
 
 	return configuration.TimerRoom
-}
-
-func getUserForMobTimer(userOverride string) string {
-	if userOverride == "" {
-		return gitUserName()
-	}
-	return userOverride
 }
