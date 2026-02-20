@@ -1,4 +1,4 @@
-package timer
+package webtimer
 
 import (
 	"encoding/json"
@@ -6,14 +6,21 @@ import (
 
 	config "github.com/remotemobprogramming/mob/v5/configuration"
 	"github.com/remotemobprogramming/mob/v5/httpclient"
+	"github.com/remotemobprogramming/mob/v5/timer"
 )
+
+func init() {
+	timer.Register(func(configuration config.Configuration) timer.Timer {
+		return NewWebTimer(configuration)
+	})
+}
 
 // WebTimer is a Timer implementation that notifies a remote timer service via HTTP.
 type WebTimer struct {
-	room           string
-	timerUser      string
-	timerUrl       string
-	timerInsecure  bool
+	room          string
+	timerUser     string
+	timerUrl      string
+	timerInsecure bool
 }
 
 func NewWebTimer(configuration config.Configuration) WebTimer {

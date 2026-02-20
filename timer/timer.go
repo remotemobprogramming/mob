@@ -18,14 +18,22 @@ type Timer interface {
 	StartBreakTimer(minutes int) error
 }
 
-// GetTimers returns all timers that report themselves as active.
+// Factory creates a Timer for the given configuration.
+type Factory func(configuration config.Configuration) Timer
+
+var factories []Factory
+
+// Register adds a Timer factory to the registry.
+// Implementation packages call this in their init() function.
+func Register(f Factory) {
+	factories = append(factories, f)
+}
+
+// GetTimers returns all registered timers that report themselves as active.
 func GetTimers(configuration config.Configuration) []Timer {
-	all := []Timer{
-		NewWebTimer(configuration),
-		NewProcessLocalTimer(configuration),
-	}
 	var active []Timer
-	for _, t := range all {
+	for _, f := range factories {
+		t := f(configuration)
 		if t.IsActive() {
 			active = append(active, t)
 		}

@@ -4,6 +4,8 @@ import (
 	config "github.com/remotemobprogramming/mob/v5/configuration"
 	"github.com/remotemobprogramming/mob/v5/exit"
 	timerpkg "github.com/remotemobprogramming/mob/v5/timer"
+	_ "github.com/remotemobprogramming/mob/v5/timer/localtimer"
+	_ "github.com/remotemobprogramming/mob/v5/timer/webtimer"
 )
 
 func StartTimer(timerInMinutes string, configuration config.Configuration) {

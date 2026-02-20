@@ -21,7 +21,7 @@ import (
 	"github.com/remotemobprogramming/mob/v5/help"
 	"github.com/remotemobprogramming/mob/v5/open"
 	"github.com/remotemobprogramming/mob/v5/say"
-	timerpkg "github.com/remotemobprogramming/mob/v5/timer"
+	"github.com/remotemobprogramming/mob/v5/timer/localtimer"
 	"github.com/remotemobprogramming/mob/v5/workdir"
 )
 
@@ -453,7 +453,7 @@ func currentTime() string {
 
 func moo(configuration config.Configuration) {
 	voiceMessage := "moo"
-	err := timerpkg.ExecuteCommandsInBackgroundProcess(timerpkg.VoiceCommand(voiceMessage, configuration.VoiceCommand))
+	err := localtimer.ExecuteCommandsInBackgroundProcess(localtimer.VoiceCommand(voiceMessage, configuration.VoiceCommand))
 
 	if err != nil {
 		say.Warning(fmt.Sprintf("can't run voice command on your system (%s)", runtime.GOOS))

@@ -1,4 +1,4 @@
-package timer
+package localtimer
 
 import (
 	"fmt"
@@ -9,8 +9,15 @@ import (
 	config "github.com/remotemobprogramming/mob/v5/configuration"
 	"github.com/remotemobprogramming/mob/v5/exit"
 	"github.com/remotemobprogramming/mob/v5/say"
+	"github.com/remotemobprogramming/mob/v5/timer"
 	"github.com/remotemobprogramming/mob/v5/workdir"
 )
+
+func init() {
+	timer.Register(func(configuration config.Configuration) timer.Timer {
+		return NewProcessLocalTimer(configuration)
+	})
+}
 
 // ProcessLocalTimer is a Timer implementation that uses background OS processes.
 type ProcessLocalTimer struct {
