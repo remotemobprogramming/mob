@@ -3,12 +3,6 @@ package main
 import (
 	"fmt"
 	"os"
-
-	config "github.com/remotemobprogramming/mob/v5/configuration"
-	"github.com/remotemobprogramming/mob/v5/exit"
-	"github.com/remotemobprogramming/mob/v5/open"
-	"github.com/remotemobprogramming/mob/v5/say"
-	"github.com/remotemobprogramming/mob/v5/workdir"
 	"path/filepath"
 	"reflect"
 	"runtime"
@@ -16,6 +10,12 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+
+	config "github.com/remotemobprogramming/mob/v5/configuration"
+	"github.com/remotemobprogramming/mob/v5/exit"
+	"github.com/remotemobprogramming/mob/v5/open"
+	"github.com/remotemobprogramming/mob/v5/say"
+	"github.com/remotemobprogramming/mob/v5/workdir"
 )
 
 var (
@@ -241,7 +241,58 @@ func TestStartWithOutCISkip(t *testing.T) {
 	assertMobSessionBranches(t, configuration, "mob-session")
 	assertCommitLogNotContainsMessage(t, "mob-session", configuration.StartCommitMessage)
 	assertOutputNotContains(t, output, "--push-option ci.skip")
+}
 
+func TestNextWithCISkipLocalCommits(t *testing.T) {
+	output, configuration := setup(t)
+	configuration.SkipCiPushOptionEnabled = true
+	mockExit()
+
+	start(configuration)
+	createFileAndCommitIt(t, "example.txt", "asdf", "asdf")
+	next(configuration)
+
+	assertOutputContains(t, output, "git push --push-option ci.skip")
+	assertOutputContains(t, output, "Disable the push option ci.skip in your .mob file or set the expected environment variable")
+	assertOutputContains(t, output, "export MOB_SKIP_CI_PUSH_OPTION_ENABLED=false")
+	resetExit()
+}
+
+func TestNextWithOutCISkipLocalCommits(t *testing.T) {
+	output, configuration := setup(t)
+	configuration.SkipCiPushOptionEnabled = false
+
+	start(configuration)
+	createFileAndCommitIt(t, "example.txt", "asdf", "asdf")
+	next(configuration)
+
+	assertOutputNotContains(t, output, "--push-option ci.skip")
+}
+
+func TestNextWithCISkipSomethingToCommit(t *testing.T) {
+	output, configuration := setup(t)
+	configuration.SkipCiPushOptionEnabled = true
+	mockExit()
+
+	start(configuration)
+	createFile(t, "example.txt", "contentIrrelevant")
+	next(configuration)
+
+	assertOutputContains(t, output, "git push --push-option ci.skip")
+	assertOutputContains(t, output, "Disable the push option ci.skip in your .mob file or set the expected environment variable")
+	assertOutputContains(t, output, "export MOB_SKIP_CI_PUSH_OPTION_ENABLED=false")
+	resetExit()
+}
+
+func TestNextWithOutCISkipSomethingToCommit(t *testing.T) {
+	output, configuration := setup(t)
+	configuration.SkipCiPushOptionEnabled = false
+
+	start(configuration)
+	createFile(t, "example.txt", "contentIrrelevant")
+	next(configuration)
+
+	assertOutputNotContains(t, output, "--push-option ci.skip")
 }
 
 func TestStartWithMultipleExistingBranches(t *testing.T) {
@@ -2028,7 +2079,7 @@ func runMob(t *testing.T, workingDir string, args ...string) {
 func gitStatus() GitStatus {
 	shortStatus := silentgit("status", "--porcelain")
 	statusLines := strings.Split(shortStatus, "\n")
-	var statusMap = make(GitStatus)
+	statusMap := make(GitStatus)
 	for _, line := range statusLines {
 		if len(line) == 0 {
 			continue
@@ -2105,7 +2156,7 @@ func createTestbed(t *testing.T, configuration config.Configuration) {
 
 func createTestbedIn(t *testing.T, temporaryDirectory string) {
 	say.Debug("Creating temporary test assets in " + temporaryDirectory)
-	err := os.MkdirAll(temporaryDirectory, 0755)
+	err := os.MkdirAll(temporaryDirectory, 0o755)
 	if err != nil {
 		say.Error("Could not create temporary dir " + temporaryDirectory)
 		say.Error(err.Error())
@@ -2138,7 +2189,7 @@ func createTestbedIn(t *testing.T, temporaryDirectory string) {
 	}
 
 	notGitDirectory := getNotGitDirectory(temporaryDirectory)
-	err = os.MkdirAll(notGitDirectory, 0755)
+	err = os.MkdirAll(notGitDirectory, 0o755)
 	if err != nil {
 		say.Error("Count not create directory " + notGitDirectory)
 		say.Error(err.Error())
@@ -2162,7 +2213,6 @@ func assertNoError(t *testing.T, err error) {
 	if err != nil {
 		failWithFailure(t, nil, err)
 	}
-
 }
 
 func assertError(t *testing.T, err error, errorMessage string) {
@@ -2223,7 +2273,7 @@ func createFile(t *testing.T, filename string, content string) (pathToFile strin
 func createFileInPath(t *testing.T, path, filename, content string) (pathToFile string) {
 	contentAsBytes := []byte(content)
 	pathToFile = path + "/" + filename
-	err := os.WriteFile(pathToFile, contentAsBytes, 0644)
+	err := os.WriteFile(pathToFile, contentAsBytes, 0o644)
 	if err != nil {
 		failWithFailure(t, "creating file "+filename+" with content "+content, "error")
 	}
@@ -2235,7 +2285,7 @@ func createExecutableFileInPath(t *testing.T, path, filename, content string) (p
 
 	pathToFile = path + "/" + filename
 	contentAsBytes := []byte(content)
-	err := os.WriteFile(pathToFile, contentAsBytes, 0755)
+	err := os.WriteFile(pathToFile, contentAsBytes, 0o755)
 	if err != nil {
 		failWithFailure(t, "creating file "+filename+" with content "+content, "error")
 	}
@@ -2247,7 +2297,7 @@ func createDirectory(t *testing.T, directory string) (pathToDirectory string) {
 }
 
 func ensureDirectoryExists(t *testing.T, path string) (pathToDirectory string) {
-	err := os.MkdirAll(path, 0755)
+	err := os.MkdirAll(path, 0o755)
 	if err != nil {
 		failWithFailure(t, "creating folder "+path, "error")
 	}
@@ -2373,7 +2423,7 @@ func cleanRepository(path string) {
 func createRemoteRepository(path string) {
 	branch := "master" // fixed to master for now
 	say.Debug("createremoterepository: Creating remote repository " + path)
-	err := os.MkdirAll(path, 0755)
+	err := os.MkdirAll(path, 0o755)
 	if err != nil {
 		say.Error("Could not create directory " + path)
 		say.Error(err.Error())
@@ -2391,7 +2441,7 @@ func createRemoteRepository(path string) {
 
 func cloneRepository(path, remoteDirectory string) {
 	say.Debug("clonerepository: Cloning remote " + remoteDirectory + " to " + path)
-	err := os.MkdirAll(path, 0755)
+	err := os.MkdirAll(path, 0o755)
 	if err != nil {
 		say.Error("Could not create directory " + path)
 		say.Error(err.Error())
