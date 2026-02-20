@@ -15,6 +15,9 @@ import (
 
 func init() {
 	timer.Register(func(configuration config.Configuration) timer.Timer {
+		if !configuration.TimerLocal {
+			return nil
+		}
 		return NewProcessLocalTimer(configuration)
 	})
 }
@@ -26,10 +29,6 @@ type ProcessLocalTimer struct {
 
 func NewProcessLocalTimer(configuration config.Configuration) ProcessLocalTimer {
 	return ProcessLocalTimer{configuration: configuration}
-}
-
-func (t ProcessLocalTimer) IsActive() bool {
-	return t.configuration.TimerLocal
 }
 
 func (t ProcessLocalTimer) StartTimer(minutes int) error {

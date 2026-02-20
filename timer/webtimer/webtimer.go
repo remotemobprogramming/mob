@@ -11,6 +11,9 @@ import (
 
 func init() {
 	timer.Register(func(configuration config.Configuration) timer.Timer {
+		if configuration.TimerRoom == "" {
+			return nil
+		}
 		return NewWebTimer(configuration)
 	})
 }
@@ -30,10 +33,6 @@ func NewWebTimer(configuration config.Configuration) WebTimer {
 		timerUrl:      configuration.TimerUrl,
 		timerInsecure: configuration.TimerInsecure,
 	}
-}
-
-func (t WebTimer) IsActive() bool {
-	return t.room != ""
 }
 
 func (t WebTimer) StartTimer(minutes int) error {

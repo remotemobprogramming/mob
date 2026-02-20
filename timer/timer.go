@@ -13,12 +13,12 @@ import (
 
 // Timer abstracts timer functionality so different implementations can be used.
 type Timer interface {
-	IsActive() bool
 	StartTimer(minutes int) error
 	StartBreakTimer(minutes int) error
 }
 
 // Factory creates a Timer for the given configuration.
+// Returns nil if the timer should not be active.
 type Factory func(configuration config.Configuration) Timer
 
 var factories []Factory
@@ -29,12 +29,12 @@ func Register(f Factory) {
 	factories = append(factories, f)
 }
 
-// GetTimers returns all registered timers that report themselves as active.
+// GetTimers returns all registered timers that are active for the given configuration.
 func GetTimers(configuration config.Configuration) []Timer {
 	var active []Timer
 	for _, f := range factories {
 		t := f(configuration)
-		if t.IsActive() {
+		if t != nil {
 			active = append(active, t)
 		}
 	}
@@ -48,9 +48,8 @@ func RunTimer(timerInMinutes string, configuration config.Configuration) error {
 		return err
 	}
 
-	timeoutInSeconds := timeoutInMinutes * 60
 	timeOfTimeout := time.Now().Add(time.Minute * time.Duration(timeoutInMinutes)).Format("15:04")
-	say.Debug(fmt.Sprintf("Starting timer at %s for %d minutes = %d seconds (parsed from user input %s)", timeOfTimeout, timeoutInMinutes, timeoutInSeconds, timerInMinutes))
+	say.Debug(fmt.Sprintf("Starting timer at %s for %d minutes (parsed from user input %s)", timeOfTimeout, timeoutInMinutes, timerInMinutes))
 
 	timers := GetTimers(configuration)
 	if len(timers) == 0 {
@@ -76,9 +75,8 @@ func RunBreakTimer(timerInMinutes string, configuration config.Configuration) er
 		return err
 	}
 
-	timeoutInSeconds := timeoutInMinutes * 60
 	timeOfTimeout := time.Now().Add(time.Minute * time.Duration(timeoutInMinutes)).Format("15:04")
-	say.Debug(fmt.Sprintf("Starting break timer at %s for %d minutes = %d seconds (parsed from user input %s)", timeOfTimeout, timeoutInMinutes, timeoutInSeconds, timerInMinutes))
+	say.Debug(fmt.Sprintf("Starting break timer at %s for %d minutes (parsed from user input %s)", timeOfTimeout, timeoutInMinutes, timerInMinutes))
 
 	timers := GetTimers(configuration)
 	if len(timers) == 0 {
