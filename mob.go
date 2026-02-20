@@ -31,7 +31,7 @@ const (
 
 var (
 	gitClient = &mobgit.Client{}
-	args      []string
+	args []string
 )
 
 func openCommandFor(c config.Configuration, filepath string) (string, []string) {
@@ -173,7 +173,7 @@ func (branch Branch) exists(existingBranches []string) bool {
 	return stringContains(existingBranches, branch.Name)
 }
 
-func (branch Branch) hasWipBranchQualifierSeparator(configuration config.Configuration) bool { // TODO improve (dont use strings.Contains, add tests)
+func (branch Branch) hasWipBranchQualifierSeparator(configuration config.Configuration) bool { //TODO improve (dont use strings.Contains, add tests)
 	return strings.Contains(branch.Name, configuration.WipBranchQualifierSeparator)
 }
 
@@ -399,6 +399,7 @@ func clean(configuration config.Configuration) {
 			git("branch", "-D", b.Name)
 		}
 	}
+
 }
 
 func (branch Branch) isOrphanWipBranch(configuration config.Configuration) bool {
@@ -471,6 +472,7 @@ func currentTime() string {
 func moo(configuration config.Configuration) {
 	voiceMessage := "moo"
 	err := executeCommandsInBackgroundProcess(getVoiceCommand(voiceMessage, configuration.VoiceCommand))
+
 	if err != nil {
 		say.Warning(fmt.Sprintf("can't run voice command on your system (%s)", runtime.GOOS))
 		say.Warning(err.Error())
