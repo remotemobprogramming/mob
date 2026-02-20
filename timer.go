@@ -13,9 +13,9 @@ func StartTimer(timerInMinutes string, configuration config.Configuration) {
 }
 
 func startTimer(timerInMinutes string, configuration config.Configuration) error {
-	room := getMobTimerRoom(configuration)
-	timerUser := getUserForMobTimer(configuration.TimerUser)
-	return timerpkg.RunTimer(timerInMinutes, room, timerUser, configuration)
+	configuration.TimerRoom = getMobTimerRoom(configuration)
+	configuration.TimerUser = getUserForMobTimer(configuration.TimerUser)
+	return timerpkg.RunTimer(timerInMinutes, configuration)
 }
 
 func StartBreakTimer(timerInMinutes string, configuration config.Configuration) {
@@ -25,9 +25,9 @@ func StartBreakTimer(timerInMinutes string, configuration config.Configuration) 
 }
 
 func startBreakTimer(timerInMinutes string, configuration config.Configuration) error {
-	room := getMobTimerRoom(configuration)
-	timerUser := getUserForMobTimer(configuration.TimerUser)
-	return timerpkg.RunBreakTimer(timerInMinutes, room, timerUser, configuration)
+	configuration.TimerRoom = getMobTimerRoom(configuration)
+	configuration.TimerUser = getUserForMobTimer(configuration.TimerUser)
+	return timerpkg.RunBreakTimer(timerInMinutes, configuration)
 }
 
 func getMobTimerRoom(configuration config.Configuration) string {
@@ -59,4 +59,3 @@ func getUserForMobTimer(userOverride string) string {
 	}
 	return userOverride
 }
-

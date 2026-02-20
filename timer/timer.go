@@ -19,9 +19,9 @@ type Timer interface {
 }
 
 // GetTimers returns all timers that report themselves as active.
-func GetTimers(room string, timerUser string, configuration config.Configuration) []Timer {
+func GetTimers(configuration config.Configuration) []Timer {
 	all := []Timer{
-		NewWebTimer(room, timerUser, configuration),
+		NewWebTimer(configuration),
 		NewProcessLocalTimer(configuration),
 	}
 	var active []Timer
@@ -34,7 +34,7 @@ func GetTimers(room string, timerUser string, configuration config.Configuration
 }
 
 // RunTimer parses timerInMinutes, starts all active timers and returns any error.
-func RunTimer(timerInMinutes string, room string, timerUser string, configuration config.Configuration) error {
+func RunTimer(timerInMinutes string, configuration config.Configuration) error {
 	err, timeoutInMinutes := toMinutes(timerInMinutes)
 	if err != nil {
 		return err
@@ -44,7 +44,7 @@ func RunTimer(timerInMinutes string, room string, timerUser string, configuratio
 	timeOfTimeout := time.Now().Add(time.Minute * time.Duration(timeoutInMinutes)).Format("15:04")
 	say.Debug(fmt.Sprintf("Starting timer at %s for %d minutes = %d seconds (parsed from user input %s)", timeOfTimeout, timeoutInMinutes, timeoutInSeconds, timerInMinutes))
 
-	timers := GetTimers(room, timerUser, configuration)
+	timers := GetTimers(configuration)
 	if len(timers) == 0 {
 		say.Error("No timer configured, not starting timer")
 		exit.Exit(1)
@@ -62,7 +62,7 @@ func RunTimer(timerInMinutes string, room string, timerUser string, configuratio
 }
 
 // RunBreakTimer parses timerInMinutes, starts all active break timers and returns any error.
-func RunBreakTimer(timerInMinutes string, room string, timerUser string, configuration config.Configuration) error {
+func RunBreakTimer(timerInMinutes string, configuration config.Configuration) error {
 	err, timeoutInMinutes := toMinutes(timerInMinutes)
 	if err != nil {
 		return err
@@ -72,7 +72,7 @@ func RunBreakTimer(timerInMinutes string, room string, timerUser string, configu
 	timeOfTimeout := time.Now().Add(time.Minute * time.Duration(timeoutInMinutes)).Format("15:04")
 	say.Debug(fmt.Sprintf("Starting break timer at %s for %d minutes = %d seconds (parsed from user input %s)", timeOfTimeout, timeoutInMinutes, timeoutInSeconds, timerInMinutes))
 
-	timers := GetTimers(room, timerUser, configuration)
+	timers := GetTimers(configuration)
 	if len(timers) == 0 {
 		say.Error("No break timer configured, not starting break timer")
 		exit.Exit(1)

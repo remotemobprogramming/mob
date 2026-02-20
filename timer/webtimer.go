@@ -16,10 +16,10 @@ type WebTimer struct {
 	timerInsecure  bool
 }
 
-func NewWebTimer(room string, timerUser string, configuration config.Configuration) WebTimer {
+func NewWebTimer(configuration config.Configuration) WebTimer {
 	return WebTimer{
-		room:          room,
-		timerUser:     timerUser,
+		room:          configuration.TimerRoom,
+		timerUser:     configuration.TimerUser,
 		timerUrl:      configuration.TimerUrl,
 		timerInsecure: configuration.TimerInsecure,
 	}
