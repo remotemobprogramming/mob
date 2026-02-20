@@ -435,6 +435,24 @@ func determineBranches(currentBranch Branch, localBranches []string, configurati
 	return
 }
 
+func enrichConfigurationWithBranchQualifier(configuration config.Configuration) config.Configuration {
+	if !isGit() {
+		return configuration
+	}
+
+	if configuration.WipBranchQualifier == "" {
+		currentBranch := gitCurrentBranch()
+		currentBaseBranch, _ := determineBranches(currentBranch, gitBranches(), configuration)
+
+		if currentBranch.IsWipBranch(configuration) {
+			wipBranchWithoutWipPrefix := currentBranch.removeWipPrefix(configuration).Name
+			configuration.WipBranchQualifier = removePrefix(removePrefix(wipBranchWithoutWipPrefix, currentBaseBranch.Name), configuration.WipBranchQualifierSeparator)
+		}
+	}
+
+	return configuration
+}
+
 func injectCommandWithMessage(command string, message string) string {
 	placeHolders := strings.Count(command, "%s")
 	if placeHolders > 1 {

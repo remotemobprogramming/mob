@@ -15,7 +15,7 @@ func StartTimer(timerInMinutes string, configuration config.Configuration) {
 }
 
 func startTimer(timerInMinutes string, configuration config.Configuration) error {
-	configuration.TimerRoom = getMobTimerRoom(configuration)
+	configuration = enrichConfigurationWithBranchQualifier(configuration)
 	return timerpkg.RunTimer(timerInMinutes, configuration)
 }
 
@@ -26,29 +26,6 @@ func StartBreakTimer(timerInMinutes string, configuration config.Configuration) 
 }
 
 func startBreakTimer(timerInMinutes string, configuration config.Configuration) error {
-	configuration.TimerRoom = getMobTimerRoom(configuration)
+	configuration = enrichConfigurationWithBranchQualifier(configuration)
 	return timerpkg.RunBreakTimer(timerInMinutes, configuration)
-}
-
-func getMobTimerRoom(configuration config.Configuration) string {
-	if !isGit() {
-		return configuration.TimerRoom
-	}
-
-	currentWipBranchQualifier := configuration.WipBranchQualifier
-	if currentWipBranchQualifier == "" {
-		currentBranch := gitCurrentBranch()
-		currentBaseBranch, _ := determineBranches(currentBranch, gitBranches(), configuration)
-
-		if currentBranch.IsWipBranch(configuration) {
-			wipBranchWithoutWipPrefix := currentBranch.removeWipPrefix(configuration).Name
-			currentWipBranchQualifier = removePrefix(removePrefix(wipBranchWithoutWipPrefix, currentBaseBranch.Name), configuration.WipBranchQualifierSeparator)
-		}
-	}
-
-	if configuration.TimerRoomUseWipBranchQualifier && currentWipBranchQualifier != "" {
-		return currentWipBranchQualifier
-	}
-
-	return configuration.TimerRoom
 }

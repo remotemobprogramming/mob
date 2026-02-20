@@ -28,8 +28,14 @@ type WebTimer struct {
 }
 
 func NewWebTimer(configuration config.Configuration) WebTimer {
+	// Determine the effective timer room
+	room := configuration.TimerRoom
+	if configuration.TimerRoomUseWipBranchQualifier && configuration.WipBranchQualifier != "" {
+		room = configuration.WipBranchQualifier
+	}
+
 	return WebTimer{
-		room:          configuration.TimerRoom,
+		room:          room,
 		timerUser:     getUserForMobTimer(configuration.TimerUser),
 		timerUrl:      configuration.TimerUrl,
 		timerInsecure: configuration.TimerInsecure,
