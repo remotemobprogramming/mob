@@ -13,24 +13,27 @@ import (
 
 // Timer abstracts timer functionality so different implementations can be used.
 type Timer interface {
-	StartTimer(minutes int, configuration config.Configuration) error
-	StartBreakTimer(minutes int, configuration config.Configuration) error
+	IsActive() bool
+	StartTimer(minutes int) error
+	StartBreakTimer(minutes int) error
 }
 
-// GetTimers returns the list of active timers based on room and configuration.
-// Both WebTimer and ProcessLocalTimer can be active simultaneously.
+// GetTimers returns all timers that report themselves as active.
 func GetTimers(room string, timerUser string, configuration config.Configuration) []Timer {
-	var timers []Timer
-	if room != "" {
-		timers = append(timers, WebTimer{Room: room, TimerUser: timerUser})
+	all := []Timer{
+		NewWebTimer(room, timerUser, configuration),
+		NewProcessLocalTimer(configuration),
 	}
-	if configuration.TimerLocal {
-		timers = append(timers, ProcessLocalTimer{})
+	var active []Timer
+	for _, t := range all {
+		if t.IsActive() {
+			active = append(active, t)
+		}
 	}
-	return timers
+	return active
 }
 
-// RunTimer parses timerInMinutes, starts all configured timers and returns any error.
+// RunTimer parses timerInMinutes, starts all active timers and returns any error.
 func RunTimer(timerInMinutes string, room string, timerUser string, configuration config.Configuration) error {
 	err, timeoutInMinutes := toMinutes(timerInMinutes)
 	if err != nil {
@@ -48,7 +51,7 @@ func RunTimer(timerInMinutes string, room string, timerUser string, configuratio
 	}
 
 	for _, t := range timers {
-		if err := t.StartTimer(timeoutInMinutes, configuration); err != nil {
+		if err := t.StartTimer(timeoutInMinutes); err != nil {
 			say.Error(err.Error())
 			exit.Exit(1)
 		}
@@ -58,7 +61,7 @@ func RunTimer(timerInMinutes string, room string, timerUser string, configuratio
 	return nil
 }
 
-// RunBreakTimer parses timerInMinutes, starts all configured break timers and returns any error.
+// RunBreakTimer parses timerInMinutes, starts all active break timers and returns any error.
 func RunBreakTimer(timerInMinutes string, room string, timerUser string, configuration config.Configuration) error {
 	err, timeoutInMinutes := toMinutes(timerInMinutes)
 	if err != nil {
@@ -76,7 +79,7 @@ func RunBreakTimer(timerInMinutes string, room string, timerUser string, configu
 	}
 
 	for _, t := range timers {
-		if err := t.StartBreakTimer(timeoutInMinutes, configuration); err != nil {
+		if err := t.StartBreakTimer(timeoutInMinutes); err != nil {
 			say.Error(err.Error())
 			exit.Exit(1)
 		}

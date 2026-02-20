@@ -10,19 +10,34 @@ import (
 
 // WebTimer is a Timer implementation that notifies a remote timer service via HTTP.
 type WebTimer struct {
-	Room      string
-	TimerUser string
+	room           string
+	timerUser      string
+	timerUrl       string
+	timerInsecure  bool
 }
 
-func (t WebTimer) StartTimer(minutes int, configuration config.Configuration) error {
-	if err := httpPutTimer(minutes, t.Room, t.TimerUser, configuration.TimerUrl, configuration.TimerInsecure); err != nil {
+func NewWebTimer(room string, timerUser string, configuration config.Configuration) WebTimer {
+	return WebTimer{
+		room:          room,
+		timerUser:     timerUser,
+		timerUrl:      configuration.TimerUrl,
+		timerInsecure: configuration.TimerInsecure,
+	}
+}
+
+func (t WebTimer) IsActive() bool {
+	return t.room != ""
+}
+
+func (t WebTimer) StartTimer(minutes int) error {
+	if err := httpPutTimer(minutes, t.room, t.timerUser, t.timerUrl, t.timerInsecure); err != nil {
 		return fmt.Errorf("remote timer couldn't be started: %w", err)
 	}
 	return nil
 }
 
-func (t WebTimer) StartBreakTimer(minutes int, configuration config.Configuration) error {
-	if err := httpPutBreakTimer(minutes, t.Room, t.TimerUser, configuration.TimerUrl, configuration.TimerInsecure); err != nil {
+func (t WebTimer) StartBreakTimer(minutes int) error {
+	if err := httpPutBreakTimer(minutes, t.room, t.timerUser, t.timerUrl, t.timerInsecure); err != nil {
 		return fmt.Errorf("remote break timer couldn't be started: %w", err)
 	}
 	return nil

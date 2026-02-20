@@ -13,14 +13,24 @@ import (
 )
 
 // ProcessLocalTimer is a Timer implementation that uses background OS processes.
-type ProcessLocalTimer struct{}
+type ProcessLocalTimer struct {
+	configuration config.Configuration
+}
 
-func (t ProcessLocalTimer) StartTimer(minutes int, configuration config.Configuration) error {
+func NewProcessLocalTimer(configuration config.Configuration) ProcessLocalTimer {
+	return ProcessLocalTimer{configuration: configuration}
+}
+
+func (t ProcessLocalTimer) IsActive() bool {
+	return t.configuration.TimerLocal
+}
+
+func (t ProcessLocalTimer) StartTimer(minutes int) error {
 	timeoutInSeconds := minutes * 60
 	if err := ExecuteCommandsInBackgroundProcess(
 		sleepCommand(timeoutInSeconds),
-		VoiceCommand(configuration.VoiceMessage, configuration.VoiceCommand),
-		notifyCommand(configuration.NotifyMessage, configuration.NotifyCommand),
+		VoiceCommand(t.configuration.VoiceMessage, t.configuration.VoiceCommand),
+		notifyCommand(t.configuration.NotifyMessage, t.configuration.NotifyCommand),
 		"echo \"mobTimer\"",
 	); err != nil {
 		return fmt.Errorf("timer couldn't be started on your system (%s): %w", runtime.GOOS, err)
@@ -28,12 +38,12 @@ func (t ProcessLocalTimer) StartTimer(minutes int, configuration config.Configur
 	return nil
 }
 
-func (t ProcessLocalTimer) StartBreakTimer(minutes int, configuration config.Configuration) error {
+func (t ProcessLocalTimer) StartBreakTimer(minutes int) error {
 	timeoutInSeconds := minutes * 60
 	if err := ExecuteCommandsInBackgroundProcess(
 		sleepCommand(timeoutInSeconds),
-		VoiceCommand("mob start", configuration.VoiceCommand),
-		notifyCommand("mob start", configuration.NotifyCommand),
+		VoiceCommand("mob start", t.configuration.VoiceCommand),
+		notifyCommand("mob start", t.configuration.NotifyCommand),
 		"echo \"mobTimer\"",
 	); err != nil {
 		return fmt.Errorf("break timer couldn't be started on your system (%s): %w", runtime.GOOS, err)
