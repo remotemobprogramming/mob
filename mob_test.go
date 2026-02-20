@@ -2213,7 +2213,7 @@ func assertNoError(t *testing.T, err error) {
 	if err != nil {
 		failWithFailure(t, nil, err)
 	}
-	
+
 }
 
 func assertError(t *testing.T, err error, errorMessage string) {
