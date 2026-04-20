@@ -7,17 +7,7 @@ import (
 	config "github.com/remotemobprogramming/mob/v5/configuration"
 	"github.com/remotemobprogramming/mob/v5/git"
 	"github.com/remotemobprogramming/mob/v5/httpclient"
-	"github.com/remotemobprogramming/mob/v5/timer"
 )
-
-func init() {
-	timer.Register(func(configuration config.Configuration) timer.Timer {
-		if configuration.TimerRoom == "" {
-			return nil
-		}
-		return NewWebTimer(configuration)
-	})
-}
 
 // WebTimer is a Timer implementation that notifies a remote timer service via HTTP.
 type WebTimer struct {
@@ -28,12 +18,10 @@ type WebTimer struct {
 }
 
 func NewWebTimer(configuration config.Configuration) WebTimer {
-	// Determine the effective timer room
 	room := configuration.TimerRoom
 	if configuration.TimerRoomUseWipBranchQualifier && configuration.WipBranchQualifier != "" {
 		room = configuration.WipBranchQualifier
 	}
-
 	return WebTimer{
 		room:          room,
 		timerUser:     getUserForMobTimer(configuration.TimerUser),
@@ -48,6 +36,10 @@ func getUserForMobTimer(userOverride string) string {
 		return gitClient.UserName()
 	}
 	return userOverride
+}
+
+func (t WebTimer) IsActive() bool {
+	return t.room != ""
 }
 
 func (t WebTimer) StartTimer(minutes int) error {

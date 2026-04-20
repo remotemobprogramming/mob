@@ -9,39 +9,33 @@ import (
 	config "github.com/remotemobprogramming/mob/v5/configuration"
 	"github.com/remotemobprogramming/mob/v5/exit"
 	"github.com/remotemobprogramming/mob/v5/say"
+	"github.com/remotemobprogramming/mob/v5/timer/localtimer"
+	"github.com/remotemobprogramming/mob/v5/timer/webtimer"
 )
 
 // Timer abstracts timer functionality so different implementations can be used.
 type Timer interface {
+	IsActive() bool
 	StartTimer(minutes int) error
 	StartBreakTimer(minutes int) error
 }
 
-// Factory creates a Timer for the given configuration.
-// Returns nil if the timer should not be active.
-type Factory func(configuration config.Configuration) Timer
-
-var factories []Factory
-
-// Register adds a Timer factory to the registry.
-// Implementation packages call this in their init() function.
-func Register(f Factory) {
-	factories = append(factories, f)
-}
-
-// GetTimers returns all registered timers that are active for the given configuration.
+// GetTimers returns all timers that report themselves as active.
 func GetTimers(configuration config.Configuration) []Timer {
-	var timers []Timer
-	for _, createTimer := range factories {
-		t := createTimer(configuration)
-		if t != nil {
-			timers = append(timers, t)
+	all := []Timer{
+		webtimer.NewWebTimer(configuration),
+		localtimer.NewProcessLocalTimer(configuration),
+	}
+	var active []Timer
+	for _, t := range all {
+		if t.IsActive() {
+			active = append(active, t)
 		}
 	}
-	return timers
+	return active
 }
 
-// RunTimer parses timerInMinutes, starts all active timers and returns any error.
+// RunTimer parses timerInMinutes and starts the first active timer.
 func RunTimer(timerInMinutes string, configuration config.Configuration) error {
 	err, timeoutInMinutes := toMinutes(timerInMinutes)
 	if err != nil {
@@ -57,18 +51,16 @@ func RunTimer(timerInMinutes string, configuration config.Configuration) error {
 		exit.Exit(1)
 	}
 
-	for _, t := range timers {
-		if err := t.StartTimer(timeoutInMinutes); err != nil {
-			say.Error(err.Error())
-			exit.Exit(1)
-		}
+	if err := timers[0].StartTimer(timeoutInMinutes); err != nil {
+		say.Error(err.Error())
+		exit.Exit(1)
 	}
 
 	say.Info(fmt.Sprintf("It's now %s. %d min timer ends at approx. %s. Happy collaborating! :)", currentTime(), timeoutInMinutes, timeOfTimeout))
 	return nil
 }
 
-// RunBreakTimer parses timerInMinutes, starts all active break timers and returns any error.
+// RunBreakTimer parses timerInMinutes and starts the first active break timer.
 func RunBreakTimer(timerInMinutes string, configuration config.Configuration) error {
 	err, timeoutInMinutes := toMinutes(timerInMinutes)
 	if err != nil {
@@ -84,11 +76,9 @@ func RunBreakTimer(timerInMinutes string, configuration config.Configuration) er
 		exit.Exit(1)
 	}
 
-	for _, t := range timers {
-		if err := t.StartBreakTimer(timeoutInMinutes); err != nil {
-			say.Error(err.Error())
-			exit.Exit(1)
-		}
+	if err := timers[0].StartBreakTimer(timeoutInMinutes); err != nil {
+		say.Error(err.Error())
+		exit.Exit(1)
 	}
 
 	say.Info(fmt.Sprintf("It's now %s. %d min break timer ends at approx. %s. So take a break now! :)", currentTime(), timeoutInMinutes, timeOfTimeout))
