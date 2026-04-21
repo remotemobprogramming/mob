@@ -20,23 +20,19 @@ type Timer interface {
 	StartBreakTimer(minutes int) error
 }
 
-func getActiveTimers(configuration config.Configuration) []Timer {
+func getActiveTimer(configuration config.Configuration) Timer {
 	all := []Timer{
 		webtimer.NewWebTimer(configuration),
 		localtimer.NewProcessLocalTimer(configuration),
 	}
-	var active []Timer
 	for _, t := range all {
 		if t.IsActive() {
-			active = append(active, t)
+			say.Debug(fmt.Sprintf("Active timer: %T", t))
+			return t
 		}
 	}
-	names := make([]string, len(active))
-	for i, t := range active {
-		names[i] = fmt.Sprintf("%T", t)
-	}
-	say.Debug(fmt.Sprintf("Active timers: %v", names))
-	return active
+	say.Debug("No active timer found")
+	return nil
 }
 
 // RunTimer parses timerInMinutes and starts the first active timer.
@@ -49,13 +45,13 @@ func RunTimer(timerInMinutes string, configuration config.Configuration) error {
 	timeOfTimeout := time.Now().Add(time.Minute * time.Duration(timeoutInMinutes)).Format("15:04")
 	say.Debug(fmt.Sprintf("Starting timer at %s for %d minutes (parsed from user input %s)", timeOfTimeout, timeoutInMinutes, timerInMinutes))
 
-	timers := getActiveTimers(configuration)
-	if len(timers) == 0 {
+	timer := getActiveTimer(configuration)
+	if timer == nil {
 		say.Error("No timer configured, not starting timer")
 		exit.Exit(1)
 	}
 
-	if err := timers[0].StartTimer(timeoutInMinutes); err != nil {
+	if err := timer.StartTimer(timeoutInMinutes); err != nil {
 		say.Error(err.Error())
 		exit.Exit(1)
 	}
@@ -74,13 +70,13 @@ func RunBreakTimer(timerInMinutes string, configuration config.Configuration) er
 	timeOfTimeout := time.Now().Add(time.Minute * time.Duration(timeoutInMinutes)).Format("15:04")
 	say.Debug(fmt.Sprintf("Starting break timer at %s for %d minutes (parsed from user input %s)", timeOfTimeout, timeoutInMinutes, timerInMinutes))
 
-	timers := getActiveTimers(configuration)
-	if len(timers) == 0 {
+	timer := getActiveTimer(configuration)
+	if timer == nil {
 		say.Error("No break timer configured, not starting break timer")
 		exit.Exit(1)
 	}
 
-	if err := timers[0].StartBreakTimer(timeoutInMinutes); err != nil {
+	if err := timer.StartBreakTimer(timeoutInMinutes); err != nil {
 		say.Error(err.Error())
 		exit.Exit(1)
 	}
