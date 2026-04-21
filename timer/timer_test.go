@@ -8,17 +8,17 @@ import (
 
 type mockTimer struct {
 	active                bool
-	startTimerCalled      bool
-	startBreakTimerCalled bool
+	startTimerMinutes     int
+	startBreakTimerMinutes int
 }
 
 func (m *mockTimer) IsActive() bool { return m.active }
-func (m *mockTimer) StartTimer(_ int) error {
-	m.startTimerCalled = true
+func (m *mockTimer) StartTimer(minutes int) error {
+	m.startTimerMinutes = minutes
 	return nil
 }
-func (m *mockTimer) StartBreakTimer(_ int) error {
-	m.startBreakTimerCalled = true
+func (m *mockTimer) StartBreakTimer(minutes int) error {
+	m.startBreakTimerMinutes = minutes
 	return nil
 }
 
@@ -49,6 +49,26 @@ func TestGetActiveTimerPrefersFirstOverSecond(t *testing.T) {
 
 	if result != first {
 		t.Error("expected the first active timer to take priority")
+	}
+}
+
+func TestRunWithPassesMinutesToStartTimer(t *testing.T) {
+	mock := &mockTimer{active: true}
+
+	runWith([]Timer{mock}, "5")
+
+	if mock.startTimerMinutes != 5 {
+		t.Errorf("expected StartTimer to be called with 5, got %d", mock.startTimerMinutes)
+	}
+}
+
+func TestRunBreakWithPassesMinutesToStartBreakTimer(t *testing.T) {
+	mock := &mockTimer{active: true}
+
+	runBreakWith([]Timer{mock}, "10")
+
+	if mock.startBreakTimerMinutes != 10 {
+		t.Errorf("expected StartBreakTimer to be called with 10, got %d", mock.startBreakTimerMinutes)
 	}
 }
 
