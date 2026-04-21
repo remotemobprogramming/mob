@@ -12,6 +12,19 @@ import (
 	"github.com/remotemobprogramming/mob/v5/timer/webtimer"
 )
 
+func newCapturingServer(t *testing.T) (*httptest.Server, *string, *[]byte) {
+	t.Helper()
+	var capturedMethod string
+	var capturedBody []byte
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		capturedMethod = r.Method
+		capturedBody, _ = io.ReadAll(r.Body)
+		w.WriteHeader(http.StatusOK)
+	}))
+	t.Cleanup(server.Close)
+	return server, &capturedMethod, &capturedBody
+}
+
 func TestIsActiveWhenRoomIsSet(t *testing.T) {
 	cfg := config.GetDefaultConfiguration()
 	cfg.TimerRoom = "testroom"
@@ -53,14 +66,7 @@ func TestUsesTimerRoomWhenWipBranchQualifierIsEmpty(t *testing.T) {
 }
 
 func TestStartTimerSendsPutWithTimerAndUser(t *testing.T) {
-	var capturedBody []byte
-	var capturedMethod string
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		capturedMethod = r.Method
-		capturedBody, _ = io.ReadAll(r.Body)
-		w.WriteHeader(http.StatusOK)
-	}))
-	defer server.Close()
+	server, capturedMethod, capturedBody := newCapturingServer(t)
 
 	cfg := config.GetDefaultConfiguration()
 	cfg.TimerRoom = "testroom"
@@ -71,20 +77,15 @@ func TestStartTimerSendsPutWithTimerAndUser(t *testing.T) {
 	err := timer.StartTimer(10)
 
 	var body map[string]interface{}
-	json.Unmarshal(capturedBody, &body)
+	json.Unmarshal(*capturedBody, &body)
 	test.Equals(t, nil, err)
-	test.Equals(t, "PUT", capturedMethod)
+	test.Equals(t, "PUT", *capturedMethod)
 	test.Equals(t, float64(10), body["timer"])
 	test.Equals(t, "testuser", body["user"])
 }
 
 func TestStartBreakTimerSendsPutWithBreakTimerAndUser(t *testing.T) {
-	var capturedBody []byte
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		capturedBody, _ = io.ReadAll(r.Body)
-		w.WriteHeader(http.StatusOK)
-	}))
-	defer server.Close()
+	server, capturedMethod, capturedBody := newCapturingServer(t)
 
 	cfg := config.GetDefaultConfiguration()
 	cfg.TimerRoom = "testroom"
@@ -95,8 +96,9 @@ func TestStartBreakTimerSendsPutWithBreakTimerAndUser(t *testing.T) {
 	err := timer.StartBreakTimer(5)
 
 	var body map[string]interface{}
-	json.Unmarshal(capturedBody, &body)
+	json.Unmarshal(*capturedBody, &body)
 	test.Equals(t, nil, err)
+	test.Equals(t, "PUT", *capturedMethod)
 	test.Equals(t, float64(5), body["breaktimer"])
 	test.Equals(t, "testuser", body["user"])
 }
