@@ -20,8 +20,7 @@ type Timer interface {
 	StartBreakTimer(minutes int) error
 }
 
-// GetTimers returns all timers that report themselves as active.
-func GetTimers(configuration config.Configuration) []Timer {
+func getTimers(configuration config.Configuration) []Timer {
 	all := []Timer{
 		webtimer.NewWebTimer(configuration),
 		localtimer.NewProcessLocalTimer(configuration),
@@ -45,7 +44,7 @@ func RunTimer(timerInMinutes string, configuration config.Configuration) error {
 	timeOfTimeout := time.Now().Add(time.Minute * time.Duration(timeoutInMinutes)).Format("15:04")
 	say.Debug(fmt.Sprintf("Starting timer at %s for %d minutes (parsed from user input %s)", timeOfTimeout, timeoutInMinutes, timerInMinutes))
 
-	timers := GetTimers(configuration)
+	timers := getTimers(configuration)
 	if len(timers) == 0 {
 		say.Error("No timer configured, not starting timer")
 		exit.Exit(1)
@@ -70,7 +69,7 @@ func RunBreakTimer(timerInMinutes string, configuration config.Configuration) er
 	timeOfTimeout := time.Now().Add(time.Minute * time.Duration(timeoutInMinutes)).Format("15:04")
 	say.Debug(fmt.Sprintf("Starting break timer at %s for %d minutes (parsed from user input %s)", timeOfTimeout, timeoutInMinutes, timerInMinutes))
 
-	timers := GetTimers(configuration)
+	timers := getTimers(configuration)
 	if len(timers) == 0 {
 		say.Error("No break timer configured, not starting break timer")
 		exit.Exit(1)
