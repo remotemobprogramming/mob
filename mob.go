@@ -330,7 +330,7 @@ func execute(command string, parameter []string, configuration config.Configurat
 			help.Help(configuration)
 		}
 	case "moo":
-		moo(configuration)
+		localtimer.Moo(configuration)
 	case "sw", "squash-wip":
 		if len(parameter) > 1 && parameter[0] == "--git-editor" {
 			squashWipGitEditor(parameter[1], configuration)
@@ -469,18 +469,6 @@ func currentTime() string {
 	return time.Now().Format("15:04")
 }
 
-func moo(configuration config.Configuration) {
-	voiceMessage := "moo"
-	err := localtimer.ExecuteCommandsInBackgroundProcess(localtimer.VoiceCommand(voiceMessage, configuration.VoiceCommand))
-
-	if err != nil {
-		say.Warning(fmt.Sprintf("can't run voice command on your system (%s)", runtime.GOOS))
-		say.Warning(err.Error())
-		return
-	}
-
-	say.Info(voiceMessage)
-}
 
 func reset(configuration config.Configuration) {
 	if configuration.ResetDeleteRemoteWipBranch {

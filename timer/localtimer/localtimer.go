@@ -27,9 +27,9 @@ func (t ProcessLocalTimer) IsActive() bool {
 
 func (t ProcessLocalTimer) StartTimer(minutes int) error {
 	timeoutInSeconds := minutes * 60
-	if err := ExecuteCommandsInBackgroundProcess(
+	if err := executeCommandsInBackgroundProcess(
 		sleepCommand(timeoutInSeconds),
-		VoiceCommand(t.configuration.VoiceMessage, t.configuration.VoiceCommand),
+		voiceCommand(t.configuration.VoiceMessage, t.configuration.VoiceCommand),
 		notifyCommand(t.configuration.NotifyMessage, t.configuration.NotifyCommand),
 		"echo \"mobTimer\"",
 	); err != nil {
@@ -40,9 +40,9 @@ func (t ProcessLocalTimer) StartTimer(minutes int) error {
 
 func (t ProcessLocalTimer) StartBreakTimer(minutes int) error {
 	timeoutInSeconds := minutes * 60
-	if err := ExecuteCommandsInBackgroundProcess(
+	if err := executeCommandsInBackgroundProcess(
 		sleepCommand(timeoutInSeconds),
-		VoiceCommand("mob start", t.configuration.VoiceCommand),
+		voiceCommand("mob start", t.configuration.VoiceCommand),
 		notifyCommand("mob start", t.configuration.NotifyCommand),
 		"echo \"mobTimer\"",
 	); err != nil {
@@ -51,13 +51,22 @@ func (t ProcessLocalTimer) StartBreakTimer(minutes int) error {
 	return nil
 }
 
+func Moo(configuration config.Configuration) {
+	voiceMessage := "moo"
+	err := executeCommandsInBackgroundProcess(voiceCommand(voiceMessage, configuration.VoiceCommand))
+	if err != nil {
+		say.Warning(fmt.Sprintf("can't run voice command on your system (%s)", runtime.GOOS))
+		say.Warning(err.Error())
+		return
+	}
+	say.Info(voiceMessage)
+}
+
 func sleepCommand(timeoutInSeconds int) string {
 	return fmt.Sprintf("sleep %d", timeoutInSeconds)
 }
 
-// VoiceCommand builds the shell command string for the voice notification.
-// Exported because it is also used by the moo feature in the main package.
-func VoiceCommand(message string, voiceCommand string) string {
+func voiceCommand(message string, voiceCommand string) string {
 	if len(voiceCommand) == 0 {
 		return ""
 	}
@@ -83,9 +92,7 @@ func injectCommandWithMessage(command string, message string) string {
 	return fmt.Sprintf(command, message)
 }
 
-// ExecuteCommandsInBackgroundProcess runs the given shell commands in a background OS process.
-// Exported because it is also used by the moo feature in the main package.
-func ExecuteCommandsInBackgroundProcess(commands ...string) error {
+func executeCommandsInBackgroundProcess(commands ...string) error {
 	cmds := make([]string, 0)
 	for _, c := range commands {
 		if len(c) > 0 {
