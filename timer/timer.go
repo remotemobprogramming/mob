@@ -25,14 +25,19 @@ func getActiveTimer(configuration config.Configuration) Timer {
 		webtimer.NewWebTimer(configuration),
 		localtimer.NewProcessLocalTimer(configuration),
 	}
+	var active []string
+	var first Timer
 	for _, t := range all {
 		if t.IsActive() {
-			say.Debug(fmt.Sprintf("Active timer: %T", t))
-			return t
+			active = append(active, fmt.Sprintf("%T", t))
+			if first == nil {
+				first = t
+			}
 		}
 	}
-	say.Debug("No active timer found")
-	return nil
+	say.Debug(fmt.Sprintf("Active timers: %v", active))
+	say.Debug(fmt.Sprintf("Using timer: %T", first))
+	return first
 }
 
 // RunTimer parses timerInMinutes and starts the first active timer.
