@@ -3,7 +3,7 @@ package main
 import (
 	config "github.com/remotemobprogramming/mob/v5/configuration"
 	"github.com/remotemobprogramming/mob/v5/exit"
-	timerpkg "github.com/remotemobprogramming/mob/v5/timer"
+	"github.com/remotemobprogramming/mob/v5/timer"
 )
 
 func StartTimer(timerInMinutes string, configuration config.Configuration) {
@@ -14,7 +14,7 @@ func StartTimer(timerInMinutes string, configuration config.Configuration) {
 
 func startTimer(timerInMinutes string, configuration config.Configuration) error {
 	configuration = enrichConfigurationWithBranchQualifier(configuration)
-	return timerpkg.RunTimer(timerInMinutes, configuration)
+	return timer.RunTimer(timerInMinutes, configuration)
 }
 
 func StartBreakTimer(timerInMinutes string, configuration config.Configuration) {
@@ -25,5 +25,5 @@ func StartBreakTimer(timerInMinutes string, configuration config.Configuration) 
 
 func startBreakTimer(timerInMinutes string, configuration config.Configuration) error {
 	configuration = enrichConfigurationWithBranchQualifier(configuration)
-	return timerpkg.RunBreakTimer(timerInMinutes, configuration)
+	return timer.RunBreakTimer(timerInMinutes, configuration)
 }
