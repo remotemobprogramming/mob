@@ -48,41 +48,57 @@ func TestGetActiveTimerPrefersFirstOverSecond(t *testing.T) {
 }
 
 func TestRunWithPassesMinutesToStartTimer(t *testing.T) {
+	output := test.CaptureOutput(t)
 	mock := &mockTimer{active: true}
 
 	runWith([]Timer{mock}, "5")
 
 	test.Equals(t, 5, mock.startTimerMinutes)
+	test.AssertOutputContains(t, output, "Happy collaborating!")
 }
 
 func TestRunBreakWithPassesMinutesToStartBreakTimer(t *testing.T) {
+	output := test.CaptureOutput(t)
 	mock := &mockTimer{active: true}
 
 	runBreakWith([]Timer{mock}, "10")
 
 	test.Equals(t, 10, mock.startBreakTimerMinutes)
+	test.AssertOutputContains(t, output, "So take a break now!")
 }
 
 func TestRunTimerReturnsErrorForZeroMinutes(t *testing.T) {
+	output := test.CaptureOutput(t)
+
 	err := RunTimer("0", config.GetDefaultConfiguration())
 
 	test.NotEquals(t, nil, err)
+	test.AssertOutputContains(t, output, "The parameter must be an integer number greater then zero")
 }
 
 func TestRunTimerReturnsErrorForNonNumericInput(t *testing.T) {
+	output := test.CaptureOutput(t)
+
 	err := RunTimer("NotANumber", config.GetDefaultConfiguration())
 
 	test.NotEquals(t, nil, err)
+	test.AssertOutputContains(t, output, "The parameter must be an integer number greater then zero")
 }
 
 func TestRunBreakTimerReturnsErrorForZeroMinutes(t *testing.T) {
+	output := test.CaptureOutput(t)
+
 	err := RunBreakTimer("0", config.GetDefaultConfiguration())
 
 	test.NotEquals(t, nil, err)
+	test.AssertOutputContains(t, output, "The parameter must be an integer number greater then zero")
 }
 
 func TestRunBreakTimerReturnsErrorForNonNumericInput(t *testing.T) {
+	output := test.CaptureOutput(t)
+
 	err := RunBreakTimer("NotANumber", config.GetDefaultConfiguration())
 
 	test.NotEquals(t, nil, err)
+	test.AssertOutputContains(t, output, "The parameter must be an integer number greater then zero")
 }
