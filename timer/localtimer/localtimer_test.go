@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	config "github.com/remotemobprogramming/mob/v5/configuration"
+	"github.com/remotemobprogramming/mob/v5/say"
 	"github.com/remotemobprogramming/mob/v5/test"
 )
 
@@ -46,6 +47,8 @@ func TestVoiceCommandAppendsMessageWithoutPlaceholder(t *testing.T) {
 }
 
 func TestStartTimerExecutesBackgroundProcess(t *testing.T) {
+	say.TurnOnDebugging()
+	output := test.CaptureOutput(t)
 	tmpFile := filepath.Join(t.TempDir(), "timer_ran")
 	cfg := config.GetDefaultConfiguration()
 	cfg.VoiceCommand = "touch " + tmpFile + "; true"
@@ -55,6 +58,7 @@ func TestStartTimerExecutesBackgroundProcess(t *testing.T) {
 	err := timer.StartTimer(0)
 
 	test.Equals(t, nil, err)
+	test.AssertOutputContains(t, output, "Starting command")
 	test.Await(t, func() bool {
 		_, err := os.Stat(tmpFile)
 		return err == nil
@@ -62,6 +66,8 @@ func TestStartTimerExecutesBackgroundProcess(t *testing.T) {
 }
 
 func TestStartBreakTimerExecutesBackgroundProcess(t *testing.T) {
+	say.TurnOnDebugging()
+	output := test.CaptureOutput(t)
 	tmpFile := filepath.Join(t.TempDir(), "break_timer_ran")
 	cfg := config.GetDefaultConfiguration()
 	cfg.VoiceCommand = "touch " + tmpFile + "; true"
@@ -71,6 +77,7 @@ func TestStartBreakTimerExecutesBackgroundProcess(t *testing.T) {
 	err := timer.StartBreakTimer(0)
 
 	test.Equals(t, nil, err)
+	test.AssertOutputContains(t, output, "Starting command")
 	test.Await(t, func() bool {
 		_, err := os.Stat(tmpFile)
 		return err == nil
