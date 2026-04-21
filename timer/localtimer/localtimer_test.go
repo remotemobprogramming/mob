@@ -48,7 +48,7 @@ func TestVoiceCommandAppendsMessageWithoutPlaceholder(t *testing.T) {
 func TestStartTimerExecutesBackgroundProcess(t *testing.T) {
 	tmpFile := filepath.Join(t.TempDir(), "timer_ran")
 	cfg := config.GetDefaultConfiguration()
-	cfg.VoiceCommand = "touch " + tmpFile
+	cfg.VoiceCommand = "touch " + tmpFile + "; true"
 	cfg.NotifyCommand = ""
 	timer := NewProcessLocalTimer(cfg)
 
@@ -64,7 +64,7 @@ func TestStartTimerExecutesBackgroundProcess(t *testing.T) {
 func TestStartBreakTimerExecutesBackgroundProcess(t *testing.T) {
 	tmpFile := filepath.Join(t.TempDir(), "break_timer_ran")
 	cfg := config.GetDefaultConfiguration()
-	cfg.VoiceCommand = "touch " + tmpFile
+	cfg.VoiceCommand = "touch " + tmpFile + "; true"
 	cfg.NotifyCommand = ""
 	timer := NewProcessLocalTimer(cfg)
 
