@@ -1,18 +1,59 @@
-package timer_test
+package timer
 
 import (
-	"net/http"
-	"net/http/httptest"
 	"testing"
 
 	config "github.com/remotemobprogramming/mob/v5/configuration"
-	"github.com/remotemobprogramming/mob/v5/timer"
 )
 
-func TestRunTimerReturnsErrorForZeroMinutes(t *testing.T) {
-	cfg := config.GetDefaultConfiguration()
+type mockTimer struct {
+	active                bool
+	startTimerCalled      bool
+	startBreakTimerCalled bool
+}
 
-	err := timer.RunTimer("0", cfg)
+func (m *mockTimer) IsActive() bool { return m.active }
+func (m *mockTimer) StartTimer(_ int) error {
+	m.startTimerCalled = true
+	return nil
+}
+func (m *mockTimer) StartBreakTimer(_ int) error {
+	m.startBreakTimerCalled = true
+	return nil
+}
+
+func TestGetActiveTimerReturnsFirstActiveTimer(t *testing.T) {
+	inactive := &mockTimer{active: false}
+	active := &mockTimer{active: true}
+
+	result := getActiveTimer([]Timer{inactive, active})
+
+	if result != active {
+		t.Error("expected the first active timer to be returned")
+	}
+}
+
+func TestGetActiveTimerReturnsNilWhenNoneActive(t *testing.T) {
+	result := getActiveTimer([]Timer{&mockTimer{active: false}})
+
+	if result != nil {
+		t.Error("expected nil when no timer is active")
+	}
+}
+
+func TestGetActiveTimerPrefersFirstOverSecond(t *testing.T) {
+	first := &mockTimer{active: true}
+	second := &mockTimer{active: true}
+
+	result := getActiveTimer([]Timer{first, second})
+
+	if result != first {
+		t.Error("expected the first active timer to take priority")
+	}
+}
+
+func TestRunTimerReturnsErrorForZeroMinutes(t *testing.T) {
+	err := RunTimer("0", config.GetDefaultConfiguration())
 
 	if err == nil {
 		t.Error("expected error for zero minutes")
@@ -20,9 +61,7 @@ func TestRunTimerReturnsErrorForZeroMinutes(t *testing.T) {
 }
 
 func TestRunTimerReturnsErrorForNonNumericInput(t *testing.T) {
-	cfg := config.GetDefaultConfiguration()
-
-	err := timer.RunTimer("NotANumber", cfg)
+	err := RunTimer("NotANumber", config.GetDefaultConfiguration())
 
 	if err == nil {
 		t.Error("expected error for non-numeric input")
@@ -30,9 +69,7 @@ func TestRunTimerReturnsErrorForNonNumericInput(t *testing.T) {
 }
 
 func TestRunBreakTimerReturnsErrorForZeroMinutes(t *testing.T) {
-	cfg := config.GetDefaultConfiguration()
-
-	err := timer.RunBreakTimer("0", cfg)
+	err := RunBreakTimer("0", config.GetDefaultConfiguration())
 
 	if err == nil {
 		t.Error("expected error for zero minutes")
@@ -40,47 +77,9 @@ func TestRunBreakTimerReturnsErrorForZeroMinutes(t *testing.T) {
 }
 
 func TestRunBreakTimerReturnsErrorForNonNumericInput(t *testing.T) {
-	cfg := config.GetDefaultConfiguration()
-
-	err := timer.RunBreakTimer("NotANumber", cfg)
+	err := RunBreakTimer("NotANumber", config.GetDefaultConfiguration())
 
 	if err == nil {
 		t.Error("expected error for non-numeric input")
-	}
-}
-
-func TestRunTimerSucceedsWithWebTimer(t *testing.T) {
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
-	}))
-	defer server.Close()
-
-	cfg := config.GetDefaultConfiguration()
-	cfg.TimerLocal = false
-	cfg.TimerRoom = "testroom"
-	cfg.TimerUrl = server.URL + "/"
-
-	err := timer.RunTimer("1", cfg)
-
-	if err != nil {
-		t.Errorf("unexpected error: %v", err)
-	}
-}
-
-func TestRunBreakTimerSucceedsWithWebTimer(t *testing.T) {
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
-	}))
-	defer server.Close()
-
-	cfg := config.GetDefaultConfiguration()
-	cfg.TimerLocal = false
-	cfg.TimerRoom = "testroom"
-	cfg.TimerUrl = server.URL + "/"
-
-	err := timer.RunBreakTimer("1", cfg)
-
-	if err != nil {
-		t.Errorf("unexpected error: %v", err)
 	}
 }

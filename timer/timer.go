@@ -20,14 +20,17 @@ type Timer interface {
 	StartBreakTimer(minutes int) error
 }
 
-func getActiveTimer(configuration config.Configuration) Timer {
-	all := []Timer{
+func buildTimers(configuration config.Configuration) []Timer {
+	return []Timer{
 		webtimer.NewWebTimer(configuration),
 		localtimer.NewProcessLocalTimer(configuration),
 	}
+}
+
+func getActiveTimer(timers []Timer) Timer {
 	var active []string
 	var first Timer
-	for _, t := range all {
+	for _, t := range timers {
 		if t.IsActive() {
 			active = append(active, fmt.Sprintf("%T", t))
 			if first == nil {
@@ -50,7 +53,7 @@ func RunTimer(timerInMinutes string, configuration config.Configuration) error {
 	timeOfTimeout := time.Now().Add(time.Minute * time.Duration(timeoutInMinutes)).Format("15:04")
 	say.Debug(fmt.Sprintf("Starting timer at %s for %d minutes (parsed from user input %s)", timeOfTimeout, timeoutInMinutes, timerInMinutes))
 
-	timer := getActiveTimer(configuration)
+	timer := getActiveTimer(buildTimers(configuration))
 	if timer == nil {
 		say.Error("No timer configured, not starting timer")
 		exit.Exit(1)
@@ -75,7 +78,7 @@ func RunBreakTimer(timerInMinutes string, configuration config.Configuration) er
 	timeOfTimeout := time.Now().Add(time.Minute * time.Duration(timeoutInMinutes)).Format("15:04")
 	say.Debug(fmt.Sprintf("Starting break timer at %s for %d minutes (parsed from user input %s)", timeOfTimeout, timeoutInMinutes, timerInMinutes))
 
-	timer := getActiveTimer(configuration)
+	timer := getActiveTimer(buildTimers(configuration))
 	if timer == nil {
 		say.Error("No break timer configured, not starting break timer")
 		exit.Exit(1)
