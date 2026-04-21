@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	config "github.com/remotemobprogramming/mob/v5/configuration"
+	"github.com/remotemobprogramming/mob/v5/test"
 )
 
 type mockTimer struct {
@@ -28,17 +29,13 @@ func TestGetActiveTimerReturnsFirstActiveTimer(t *testing.T) {
 
 	result := getActiveTimer([]Timer{inactive, active})
 
-	if result != active {
-		t.Error("expected the first active timer to be returned")
-	}
+	test.Equals(t, active, result)
 }
 
 func TestGetActiveTimerReturnsNilWhenNoneActive(t *testing.T) {
 	result := getActiveTimer([]Timer{&mockTimer{active: false}})
 
-	if result != nil {
-		t.Error("expected nil when no timer is active")
-	}
+	test.Equals(t, nil, result)
 }
 
 func TestGetActiveTimerPrefersFirstOverSecond(t *testing.T) {
@@ -47,9 +44,7 @@ func TestGetActiveTimerPrefersFirstOverSecond(t *testing.T) {
 
 	result := getActiveTimer([]Timer{first, second})
 
-	if result != first {
-		t.Error("expected the first active timer to take priority")
-	}
+	test.Equals(t, first, result)
 }
 
 func TestRunWithPassesMinutesToStartTimer(t *testing.T) {
@@ -57,9 +52,7 @@ func TestRunWithPassesMinutesToStartTimer(t *testing.T) {
 
 	runWith([]Timer{mock}, "5")
 
-	if mock.startTimerMinutes != 5 {
-		t.Errorf("expected StartTimer to be called with 5, got %d", mock.startTimerMinutes)
-	}
+	test.Equals(t, 5, mock.startTimerMinutes)
 }
 
 func TestRunBreakWithPassesMinutesToStartBreakTimer(t *testing.T) {
@@ -67,39 +60,29 @@ func TestRunBreakWithPassesMinutesToStartBreakTimer(t *testing.T) {
 
 	runBreakWith([]Timer{mock}, "10")
 
-	if mock.startBreakTimerMinutes != 10 {
-		t.Errorf("expected StartBreakTimer to be called with 10, got %d", mock.startBreakTimerMinutes)
-	}
+	test.Equals(t, 10, mock.startBreakTimerMinutes)
 }
 
 func TestRunTimerReturnsErrorForZeroMinutes(t *testing.T) {
 	err := RunTimer("0", config.GetDefaultConfiguration())
 
-	if err == nil {
-		t.Error("expected error for zero minutes")
-	}
+	test.NotEquals(t, nil, err)
 }
 
 func TestRunTimerReturnsErrorForNonNumericInput(t *testing.T) {
 	err := RunTimer("NotANumber", config.GetDefaultConfiguration())
 
-	if err == nil {
-		t.Error("expected error for non-numeric input")
-	}
+	test.NotEquals(t, nil, err)
 }
 
 func TestRunBreakTimerReturnsErrorForZeroMinutes(t *testing.T) {
 	err := RunBreakTimer("0", config.GetDefaultConfiguration())
 
-	if err == nil {
-		t.Error("expected error for zero minutes")
-	}
+	test.NotEquals(t, nil, err)
 }
 
 func TestRunBreakTimerReturnsErrorForNonNumericInput(t *testing.T) {
 	err := RunBreakTimer("NotANumber", config.GetDefaultConfiguration())
 
-	if err == nil {
-		t.Error("expected error for non-numeric input")
-	}
+	test.NotEquals(t, nil, err)
 }
