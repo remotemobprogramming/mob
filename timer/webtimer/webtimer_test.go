@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	config "github.com/remotemobprogramming/mob/v5/configuration"
+	"github.com/remotemobprogramming/mob/v5/test"
 	"github.com/remotemobprogramming/mob/v5/timer/webtimer"
 )
 
@@ -17,9 +18,7 @@ func TestIsActiveWhenRoomIsSet(t *testing.T) {
 
 	timer := webtimer.NewWebTimer(cfg)
 
-	if !timer.IsActive() {
-		t.Error("expected timer to be active when TimerRoom is set")
-	}
+	test.Equals(t, true, timer.IsActive())
 }
 
 func TestIsInactiveWhenRoomIsEmpty(t *testing.T) {
@@ -28,9 +27,7 @@ func TestIsInactiveWhenRoomIsEmpty(t *testing.T) {
 
 	timer := webtimer.NewWebTimer(cfg)
 
-	if timer.IsActive() {
-		t.Error("expected timer to be inactive when TimerRoom is empty")
-	}
+	test.Equals(t, false, timer.IsActive())
 }
 
 func TestUsesWipBranchQualifierAsRoom(t *testing.T) {
@@ -41,9 +38,7 @@ func TestUsesWipBranchQualifierAsRoom(t *testing.T) {
 
 	timer := webtimer.NewWebTimer(cfg)
 
-	if !timer.IsActive() {
-		t.Error("expected timer to be active when WipBranchQualifier is used as room")
-	}
+	test.Equals(t, true, timer.IsActive())
 }
 
 func TestUsesTimerRoomWhenWipBranchQualifierIsEmpty(t *testing.T) {
@@ -54,9 +49,7 @@ func TestUsesTimerRoomWhenWipBranchQualifierIsEmpty(t *testing.T) {
 
 	timer := webtimer.NewWebTimer(cfg)
 
-	if !timer.IsActive() {
-		t.Error("expected timer to use TimerRoom when WipBranchQualifier is empty")
-	}
+	test.Equals(t, true, timer.IsActive())
 }
 
 func TestStartTimerSendsPutWithTimerAndUser(t *testing.T) {
@@ -77,20 +70,12 @@ func TestStartTimerSendsPutWithTimerAndUser(t *testing.T) {
 
 	err := timer.StartTimer(10)
 
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	if capturedMethod != "PUT" {
-		t.Errorf("expected PUT, got %s", capturedMethod)
-	}
 	var body map[string]interface{}
 	json.Unmarshal(capturedBody, &body)
-	if body["timer"] != float64(10) {
-		t.Errorf("expected timer=10, got %v", body["timer"])
-	}
-	if body["user"] != "testuser" {
-		t.Errorf("expected user=testuser, got %v", body["user"])
-	}
+	test.Equals(t, nil, err)
+	test.Equals(t, "PUT", capturedMethod)
+	test.Equals(t, float64(10), body["timer"])
+	test.Equals(t, "testuser", body["user"])
 }
 
 func TestStartBreakTimerSendsPutWithBreakTimerAndUser(t *testing.T) {
@@ -109,15 +94,9 @@ func TestStartBreakTimerSendsPutWithBreakTimerAndUser(t *testing.T) {
 
 	err := timer.StartBreakTimer(5)
 
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
 	var body map[string]interface{}
 	json.Unmarshal(capturedBody, &body)
-	if body["breaktimer"] != float64(5) {
-		t.Errorf("expected breaktimer=5, got %v", body["breaktimer"])
-	}
-	if body["user"] != "testuser" {
-		t.Errorf("expected user=testuser, got %v", body["user"])
-	}
+	test.Equals(t, nil, err)
+	test.Equals(t, float64(5), body["breaktimer"])
+	test.Equals(t, "testuser", body["user"])
 }
