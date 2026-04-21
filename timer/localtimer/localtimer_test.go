@@ -49,10 +49,11 @@ func TestVoiceCommandAppendsMessageWithoutPlaceholder(t *testing.T) {
 func TestStartTimerExecutesBackgroundProcess(t *testing.T) {
 	say.TurnOnDebugging()
 	output := test.CaptureOutput(t)
-	tmpFile := filepath.Join(t.TempDir(), "timer_ran")
+	voiceFile := filepath.Join(t.TempDir(), "timer_voice")
+	notifyFile := filepath.Join(t.TempDir(), "timer_notify")
 	cfg := config.GetDefaultConfiguration()
-	cfg.VoiceCommand = "touch " + tmpFile + "; true"
-	cfg.NotifyCommand = ""
+	cfg.VoiceCommand = "touch " + voiceFile + "; true"
+	cfg.NotifyCommand = "touch " + notifyFile + "; true"
 	timer := NewProcessLocalTimer(cfg)
 
 	err := timer.StartTimer(0)
@@ -60,18 +61,23 @@ func TestStartTimerExecutesBackgroundProcess(t *testing.T) {
 	test.Equals(t, nil, err)
 	test.AssertOutputContains(t, output, "Starting command")
 	test.Await(t, func() bool {
-		_, err := os.Stat(tmpFile)
+		_, err := os.Stat(voiceFile)
 		return err == nil
 	}, "timer voice command created file")
+	test.Await(t, func() bool {
+		_, err := os.Stat(notifyFile)
+		return err == nil
+	}, "timer notify command created file")
 }
 
 func TestStartBreakTimerExecutesBackgroundProcess(t *testing.T) {
 	say.TurnOnDebugging()
 	output := test.CaptureOutput(t)
-	tmpFile := filepath.Join(t.TempDir(), "break_timer_ran")
+	voiceFile := filepath.Join(t.TempDir(), "break_timer_voice")
+	notifyFile := filepath.Join(t.TempDir(), "break_timer_notify")
 	cfg := config.GetDefaultConfiguration()
-	cfg.VoiceCommand = "touch " + tmpFile + "; true"
-	cfg.NotifyCommand = ""
+	cfg.VoiceCommand = "touch " + voiceFile + "; true"
+	cfg.NotifyCommand = "touch " + notifyFile + "; true"
 	timer := NewProcessLocalTimer(cfg)
 
 	err := timer.StartBreakTimer(0)
@@ -79,9 +85,13 @@ func TestStartBreakTimerExecutesBackgroundProcess(t *testing.T) {
 	test.Equals(t, nil, err)
 	test.AssertOutputContains(t, output, "Starting command")
 	test.Await(t, func() bool {
-		_, err := os.Stat(tmpFile)
+		_, err := os.Stat(voiceFile)
 		return err == nil
 	}, "break timer voice command created file")
+	test.Await(t, func() bool {
+		_, err := os.Stat(notifyFile)
+		return err == nil
+	}, "break timer notify command created file")
 }
 
 func TestMooLogsInfoMessage(t *testing.T) {
