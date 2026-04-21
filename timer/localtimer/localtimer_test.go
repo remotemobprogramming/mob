@@ -1,7 +1,6 @@
 package localtimer
 
 import (
-	"os"
 	"path/filepath"
 	"testing"
 
@@ -60,14 +59,8 @@ func TestStartTimerExecutesBackgroundProcess(t *testing.T) {
 
 	test.Equals(t, nil, err)
 	test.AssertOutputContains(t, output, "Starting command")
-	test.Await(t, func() bool {
-		_, err := os.Stat(voiceFile)
-		return err == nil
-	}, "timer voice command created file")
-	test.Await(t, func() bool {
-		_, err := os.Stat(notifyFile)
-		return err == nil
-	}, "timer notify command created file")
+	test.AwaitFileCreated(t, voiceFile)
+	test.AwaitFileCreated(t, notifyFile)
 }
 
 func TestStartBreakTimerExecutesBackgroundProcess(t *testing.T) {
@@ -84,14 +77,8 @@ func TestStartBreakTimerExecutesBackgroundProcess(t *testing.T) {
 
 	test.Equals(t, nil, err)
 	test.AssertOutputContains(t, output, "Starting command")
-	test.Await(t, func() bool {
-		_, err := os.Stat(voiceFile)
-		return err == nil
-	}, "break timer voice command created file")
-	test.Await(t, func() bool {
-		_, err := os.Stat(notifyFile)
-		return err == nil
-	}, "break timer notify command created file")
+	test.AwaitFileCreated(t, voiceFile)
+	test.AwaitFileCreated(t, notifyFile)
 }
 
 func TestMooLogsInfoMessage(t *testing.T) {

@@ -82,6 +82,14 @@ func AssertOutputNotContains(t *testing.T, output *string, notContains string) {
 	}
 }
 
+func AwaitFileCreated(t *testing.T, path string) {
+	t.Helper()
+	Await(t, func() bool {
+		_, err := os.Stat(path)
+		return err == nil
+	}, "file created: "+path)
+}
+
 func Await(t *testing.T, until func() bool, awaitedState string) {
 	AwaitBlocking(t, AWAIT_DEFAULT_POLL_INTERVAL, AWAIT_DEFAULT_AT_MOST, until, awaitedState)
 }
