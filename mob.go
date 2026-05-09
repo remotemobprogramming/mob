@@ -375,9 +375,9 @@ func helpRequested(parameter []string) bool {
 }
 
 func clean(configuration config.Configuration) {
-	git("fetch", configuration.RemoteName, "--prune")
-
 	currentBranch := gitCurrentBranch()
+	git("fetch", configuration.RemoteName, currentBranch.Name)
+
 	localBranches := gitBranches()
 
 	if currentBranch.isOrphanWipBranch(configuration) {
@@ -503,8 +503,10 @@ func start(configuration config.Configuration) error {
 		return errors.New("cannot start; clean working tree required")
 	}
 
-	git("fetch", configuration.RemoteName, "--prune")
 	currentBranch := gitCurrentBranch()
+	if !configuration.StartCreate {
+		git("fetch", configuration.RemoteName, currentBranch.Name)
+	}
 	currentBaseBranch, currentWipBranch := determineBranches(currentBranch, gitBranches(), configuration)
 
 	if !currentWipBranch.hasRemoteBranch(configuration) && configuration.StartJoin {
@@ -902,9 +904,11 @@ func done(configuration config.Configuration) {
 		return
 	}
 
-	git("fetch", configuration.RemoteName, "--prune")
+	currentBranch := gitCurrentBranch()
 
-	baseBranch, wipBranch := determineBranches(gitCurrentBranch(), gitBranches(), configuration)
+	git("fetch", configuration.RemoteName, currentBranch.Name)
+
+	baseBranch, wipBranch := determineBranches(currentBranch, gitBranches(), configuration)
 
 	if wipBranch.hasRemoteBranch(configuration) {
 		if configuration.DoneSquash == config.SquashWip {
