@@ -778,13 +778,13 @@ func next(configuration config.Configuration) {
 
 	if isNothingToCommit() {
 		if currentWipBranch.hasLocalCommits(configuration) {
-			gitWithoutEmptyStrings("push", gitHooksOption(configuration), configuration.RemoteName, currentWipBranch.Name)
+			gitWithoutEmptyStrings(append(gitPushArgs(configuration), gitHooksOption(configuration), configuration.RemoteName, currentWipBranch.Name)...)
 		} else {
 			say.Info("nothing was done, so nothing to commit")
 		}
 	} else {
 		makeWipCommit(configuration)
-		gitWithoutEmptyStrings("push", gitHooksOption(configuration), configuration.RemoteName, currentWipBranch.Name)
+		gitWithoutEmptyStrings(append(gitPushArgs(configuration), gitHooksOption(configuration), configuration.RemoteName, currentWipBranch.Name)...)
 	}
 	showNext(configuration)
 

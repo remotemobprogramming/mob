@@ -241,7 +241,58 @@ func TestStartWithOutCISkip(t *testing.T) {
 	assertMobSessionBranches(t, configuration, "mob-session")
 	assertCommitLogNotContainsMessage(t, "mob-session", configuration.StartCommitMessage)
 	assertOutputNotContains(t, output, "--push-option ci.skip")
+}
 
+func TestNextWithCISkipLocalCommits(t *testing.T) {
+	output, configuration := setup(t)
+	configuration.SkipCiPushOptionEnabled = true
+	mockExit()
+
+	start(configuration)
+	createFileAndCommitIt(t, "example.txt", "asdf", "asdf")
+	next(configuration)
+
+	assertOutputContains(t, output, "git push --push-option ci.skip")
+	assertOutputContains(t, output, "Disable the push option ci.skip in your .mob file or set the expected environment variable")
+	assertOutputContains(t, output, "export MOB_SKIP_CI_PUSH_OPTION_ENABLED=false")
+	resetExit()
+}
+
+func TestNextWithOutCISkipLocalCommits(t *testing.T) {
+	output, configuration := setup(t)
+	configuration.SkipCiPushOptionEnabled = false
+
+	start(configuration)
+	createFileAndCommitIt(t, "example.txt", "asdf", "asdf")
+	next(configuration)
+
+	assertOutputNotContains(t, output, "--push-option ci.skip")
+}
+
+func TestNextWithCISkipSomethingToCommit(t *testing.T) {
+	output, configuration := setup(t)
+	configuration.SkipCiPushOptionEnabled = true
+	mockExit()
+
+	start(configuration)
+	createFile(t, "example.txt", "contentIrrelevant")
+	next(configuration)
+
+	assertOutputContains(t, output, "git push --push-option ci.skip")
+	assertOutputContains(t, output, "Disable the push option ci.skip in your .mob file or set the expected environment variable")
+	assertOutputContains(t, output, "export MOB_SKIP_CI_PUSH_OPTION_ENABLED=false")
+	resetExit()
+}
+
+func TestNextWithOutCISkipSomethingToCommit(t *testing.T) {
+	output, configuration := setup(t)
+	configuration.SkipCiPushOptionEnabled = false
+
+	start(configuration)
+	createFile(t, "example.txt", "contentIrrelevant")
+	next(configuration)
+
+	assertOutputNotContains(t, output, "--push-option ci.skip")
 }
 
 func TestStartWithMultipleExistingBranches(t *testing.T) {
