@@ -58,6 +58,32 @@ func TestDetermineBranches(t *testing.T) {
 	assertDetermineBranches(t, "mob/feature/test", "", []string{"feature/test", "mob/feature/test"}, "feature/test", "mob/feature/test")
 
 	assertDetermineBranches(t, "feature/test-ch", "", []string{"DPL-2638-update-apis", "DPL-2814-create-project", "feature/test-ch", "fix/smallChanges", "master", "pipeship/pipelineupdate-pipeship-pipeline.yaml"}, "feature/test-ch", "mob/feature/test-ch")
+
+	assertDetermineBranches(t, "mob/feature/CS-606", "", []string{"master", "mob/feature/CS-606", "feature/CS-606"}, "feature/CS-606", "mob/feature/CS-606")
+}
+
+func TestNextOnForeignWipBranchWithoutLocalBaseBranch(t *testing.T) {
+	output, configuration := setup(t)
+
+	git("checkout", "-b", "feature/great-idea")
+	git("push", "--set-upstream", "origin", "feature/great-idea")
+	start(configuration)
+	createFile(t, "file1.txt", "abc")
+	next(configuration)
+
+	setWorkingDir(tempDir + "/alice")
+	git("fetch", "origin")
+	git("checkout", "mob/feature/great-idea")
+
+	baseBranch, wipBranch := determineBranches(gitCurrentBranch(), gitLocalAndRemoteBranches(configuration), configuration)
+	equals(t, "feature/great-idea", baseBranch.Name)
+	equals(t, "mob/feature/great-idea", wipBranch.Name)
+
+	createFile(t, "file2.txt", "def")
+	next(configuration)
+
+	assertOutputNotContains(t, output, "unknown revision")
+	assertOnBranch(t, "feature/great-idea")
 }
 
 func assertDetermineBranches(t *testing.T, branch string, qualifier string, branches []string, expectedBase string, expectedWip string) {
