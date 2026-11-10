@@ -69,7 +69,7 @@ jobs:
       - name: Set up Homebrew
         if: matrix.goos == 'darwin'
         id: set-up-homebrew
-        uses: Homebrew/actions/setup-homebrew@master
+        uses: Homebrew/actions/setup-homebrew@main
       - name: Bump homebrew formula
         if: matrix.goos == 'darwin'
         env:
