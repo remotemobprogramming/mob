@@ -78,6 +78,7 @@ jobs:
           git config --global user.email "ci@example.com"
           git config --global user.name "CI"
           brew tap ${{github.repository_owner}}/homebrew-brew
+          brew trust ${{github.repository_owner}}/brew
           brew bump-formula-pr -f --version=${{ github.event.release.tag_name }} --no-browse --no-audit \
           --sha256=${{ steps.shasum.outputs.sha_darwin }} \
           --url="https://github.com/${{github.repository_owner}}/mob/releases/download/${{ github.event.release.tag_name }}/mob_${{ github.event.release.tag_name }}_darwin_universal.tar.gz" \
