@@ -58,6 +58,31 @@ func TestDetermineBranches(t *testing.T) {
 	assertDetermineBranches(t, "mob/feature/test", "", []string{"feature/test", "mob/feature/test"}, "feature/test", "mob/feature/test")
 
 	assertDetermineBranches(t, "feature/test-ch", "", []string{"DPL-2638-update-apis", "DPL-2814-create-project", "feature/test-ch", "fix/smallChanges", "master", "pipeship/pipelineupdate-pipeship-pipeline.yaml"}, "feature/test-ch", "mob/feature/test-ch")
+
+	assertDetermineBranches(t, "mob/feature/CS-606", "", []string{"mob/feature/CS-606", "feature/CS-606"}, "feature/CS-606", "mob/feature/CS-606")
+	assertDetermineBranches(t, "mob/feature/CS-606", "", []string{"mob/feature/CS-606"}, "feature/CS", "mob/feature/CS-606")
+}
+
+func TestGitLocalAndRemoteBranchesContainsBranchOnlyOnRemote(t *testing.T) {
+	_, configuration := setup(t)
+	git("checkout", "-b", "feature/remote-only")
+	git("push", "--set-upstream", "origin", "feature/remote-only")
+	git("checkout", "master")
+	git("branch", "-D", "feature/remote-only")
+
+	branches := gitLocalAndRemoteBranches(configuration)
+
+	equals(t, []string{"feature/remote-only", "master"}, branches)
+}
+
+func TestGitLocalAndRemoteBranchesIgnoresOtherRemotes(t *testing.T) {
+	_, configuration := setup(t)
+	git("remote", "add", "upstream", getRemoteDirectory(tempDir))
+	git("fetch", "upstream")
+
+	branches := gitLocalAndRemoteBranches(configuration)
+
+	equals(t, []string{"master"}, branches)
 }
 
 func assertDetermineBranches(t *testing.T, branch string, qualifier string, branches []string, expectedBase string, expectedWip string) {
@@ -529,6 +554,19 @@ func TestCleanFeatureOrphanWipBranch(t *testing.T) {
 	git("checkout", "-b", "feature1")
 	git("push", "origin", "feature1", "--set-upstream")
 	git("checkout", "-b", "mob/feature1")
+
+	clean(configuration)
+
+	assertOnBranch(t, "feature1")
+	assertNoLocalBranch(t, "mob/feature1")
+}
+
+func TestCleanFeatureOrphanWipBranchWithoutLocalBaseBranch(t *testing.T) {
+	_, configuration := setup(t)
+	git("checkout", "-b", "feature1")
+	git("push", "origin", "feature1", "--set-upstream")
+	git("checkout", "-b", "mob/feature1")
+	git("branch", "-D", "feature1")
 
 	clean(configuration)
 
@@ -1949,6 +1987,38 @@ func TestMobStartOnWipBranchWithoutCheckedOutBaseBranchWithoutHyphens(t *testing
 	createFile(t, "file2.txt", "abc")
 	done(configuration)
 	assertOnBranch(t, "basebranchwithouthyphen")
+}
+
+func TestStartOnWipBranchWithoutLocalBaseBranchWithHyphen(t *testing.T) {
+	_, configuration := setup(t)
+	git("checkout", "-b", "some-task")
+	git("push", "origin", "some-task", "--set-upstream")
+	start(configuration)
+
+	setWorkingDir(tempDir + "/alice")
+	git("fetch")
+	git("checkout", "mob/some-task")
+
+	err := start(configuration)
+
+	assertNoError(t, err)
+	assertOnBranch(t, "mob/some-task")
+}
+
+func TestNextOnWipBranchWithoutLocalBaseBranch(t *testing.T) {
+	_, configuration := setup(t)
+	git("checkout", "-b", "sometask")
+	git("push", "origin", "sometask", "--set-upstream")
+	start(configuration)
+
+	setWorkingDir(tempDir + "/alice")
+	git("fetch")
+	git("checkout", "mob/sometask")
+	createFile(t, "file.txt", "x")
+
+	next(configuration)
+
+	assertOnBranch(t, "sometask")
 }
 
 func TestGitVersionParse(t *testing.T) {

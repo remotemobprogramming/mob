@@ -7,12 +7,12 @@ import (
 
 func status(configuration config.Configuration) {
 	if isMobProgramming(configuration) {
-		currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), gitBranches(), configuration)
+		currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), gitLocalAndRemoteBranches(configuration), configuration)
 		say.Info("you are on wip branch " + currentWipBranch.String() + " (base branch " + currentBaseBranch.String() + ")")
 
 		sayLastCommitsList(currentBaseBranch, currentWipBranch, configuration)
 	} else {
-		currentBaseBranch, _ := determineBranches(gitCurrentBranch(), gitBranches(), configuration)
+		currentBaseBranch, _ := determineBranches(gitCurrentBranch(), gitLocalAndRemoteBranches(configuration), configuration)
 		say.Info("you are on base branch '" + currentBaseBranch.String() + "'")
 		showActiveMobSessions(configuration, currentBaseBranch)
 	}

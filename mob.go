@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"reflect"
 	"runtime"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -138,8 +139,8 @@ func removePrefix(branch string, prefix string) string {
 	return branch[len(prefix):]
 }
 
-func (branch Branch) removeWipQualifier(localBranches []string, configuration config.Configuration) Branch {
-	for !branch.exists(localBranches) && branch.hasWipBranchQualifierSeparator(configuration) {
+func (branch Branch) removeWipQualifier(branches []string, configuration config.Configuration) Branch {
+	for !branch.exists(branches) && branch.hasWipBranchQualifierSeparator(configuration) {
 		afterRemoval := branch.removeWipQualifierSuffixOrSeparator(configuration)
 
 		if branch == afterRemoval { // avoids infinite loop
@@ -381,10 +382,10 @@ func clean(configuration config.Configuration) {
 	localBranches := gitBranches()
 
 	if currentBranch.isOrphanWipBranch(configuration) {
-		currentBaseBranch, _ := determineBranches(currentBranch, localBranches, configuration)
+		currentBaseBranch, _ := determineBranches(currentBranch, gitLocalAndRemoteBranches(configuration), configuration)
 
 		say.Info("Current branch " + currentBranch.Name + " is an orphan")
-		if currentBaseBranch.exists(localBranches) {
+		if currentBaseBranch.exists(localBranches) || currentBaseBranch.hasRemoteBranch(configuration) {
 			git("checkout", currentBaseBranch.Name)
 		} else if newBranch("main").exists(localBranches) {
 			git("checkout", "main")
@@ -414,20 +415,20 @@ func branch(configuration config.Configuration) {
 	say.Say(silentgit("branch", "--list", "--remote", newBranch("mob-session").remote(configuration).Name))
 }
 
-func determineBranches(currentBranch Branch, localBranches []string, configuration config.Configuration) (baseBranch Branch, wipBranch Branch) {
+func determineBranches(currentBranch Branch, branches []string, configuration config.Configuration) (baseBranch Branch, wipBranch Branch) {
 	if currentBranch.Is("mob-session") || (currentBranch.Is("master") && !configuration.CustomWipBranchQualifierConfigured()) {
 		// DEPRECATED
 		baseBranch = newBranch("master")
 		wipBranch = newBranch("mob-session")
 	} else if currentBranch.IsWipBranch(configuration) {
-		baseBranch = currentBranch.removeWipPrefix(configuration).removeWipQualifier(localBranches, configuration)
+		baseBranch = currentBranch.removeWipPrefix(configuration).removeWipQualifier(branches, configuration)
 		wipBranch = currentBranch
 	} else {
 		baseBranch = currentBranch
 		wipBranch = currentBranch.addWipPrefix(configuration).addWipQualifier(configuration)
 	}
 
-	say.Debug("on currentBranch " + currentBranch.String() + " => BASE " + baseBranch.String() + " WIP " + wipBranch.String() + " with allLocalBranches " + strings.Join(localBranches, ","))
+	say.Debug("on currentBranch " + currentBranch.String() + " => BASE " + baseBranch.String() + " WIP " + wipBranch.String() + " with allBranches " + strings.Join(branches, ","))
 	if currentBranch != baseBranch && currentBranch != wipBranch {
 		// this is unreachable code, but we keep it as a backup
 		panic("assertion failed! neither on base nor on wip branch")
@@ -442,7 +443,7 @@ func enrichConfigurationWithBranchQualifier(configuration config.Configuration) 
 
 	if configuration.WipBranchQualifier == "" {
 		currentBranch := gitCurrentBranch()
-		currentBaseBranch, _ := determineBranches(currentBranch, gitBranches(), configuration)
+		currentBaseBranch, _ := determineBranches(currentBranch, gitLocalAndRemoteBranches(configuration), configuration)
 
 		if currentBranch.IsWipBranch(configuration) {
 			wipBranchWithoutWipPrefix := currentBranch.removeWipPrefix(configuration).Name
@@ -481,7 +482,7 @@ func reset(configuration config.Configuration) {
 func deleteRemoteWipBranch(configuration config.Configuration) {
 	git("fetch", configuration.RemoteName)
 
-	currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), gitBranches(), configuration)
+	currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), gitLocalAndRemoteBranches(configuration), configuration)
 
 	git("checkout", currentBaseBranch.String())
 	if currentWipBranch.hasLocalBranch() {
@@ -505,7 +506,7 @@ func start(configuration config.Configuration) error {
 
 	git("fetch", configuration.RemoteName, "--prune")
 	currentBranch := gitCurrentBranch()
-	currentBaseBranch, currentWipBranch := determineBranches(currentBranch, gitBranches(), configuration)
+	currentBaseBranch, currentWipBranch := determineBranches(currentBranch, gitLocalAndRemoteBranches(configuration), configuration)
 
 	if !currentWipBranch.hasRemoteBranch(configuration) && configuration.StartJoin {
 		say.Error("Remote wip branch " + currentWipBranch.remote(configuration).String() + " is missing")
@@ -717,7 +718,7 @@ func getWipBranchesForBaseBranch(currentBaseBranch Branch, configuration config.
 }
 
 func startJoinMobSession(configuration config.Configuration) {
-	baseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), gitBranches(), configuration)
+	baseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), gitLocalAndRemoteBranches(configuration), configuration)
 
 	say.Info("joining existing session from " + currentWipBranch.remote(configuration).String())
 	if currentWipBranch.hasLocalBranch() && doBranchesDiverge(baseBranch.remote(configuration).Name, currentWipBranch.Name) {
@@ -729,7 +730,7 @@ func startJoinMobSession(configuration config.Configuration) {
 }
 
 func startNewMobSession(configuration config.Configuration) {
-	currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), gitBranches(), configuration)
+	currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), gitLocalAndRemoteBranches(configuration), configuration)
 
 	say.Info("starting new session from " + currentBaseBranch.remote(configuration).String())
 	git("checkout", "-B", currentWipBranch.Name, currentBaseBranch.remote(configuration).Name)
@@ -774,7 +775,7 @@ func next(configuration config.Configuration) {
 		return
 	}
 
-	currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), gitBranches(), configuration)
+	currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), gitLocalAndRemoteBranches(configuration), configuration)
 
 	if isNothingToCommit() {
 		if currentWipBranch.hasLocalCommits(configuration) {
@@ -904,7 +905,7 @@ func done(configuration config.Configuration) {
 
 	git("fetch", configuration.RemoteName, "--prune")
 
-	baseBranch, wipBranch := determineBranches(gitCurrentBranch(), gitBranches(), configuration)
+	baseBranch, wipBranch := determineBranches(gitCurrentBranch(), gitLocalAndRemoteBranches(configuration), configuration)
 
 	if wipBranch.hasRemoteBranch(configuration) {
 		if configuration.DoneSquash == config.SquashWip {
@@ -976,13 +977,18 @@ func squashOrCommit(configuration config.Configuration) string {
 	}
 }
 
-func sayLastCommitsList(currentBaseBranch Branch, currentWipBranch Branch, configuration config.Configuration) {
+func logBaseToWipBranch(currentBaseBranch Branch, currentWipBranch Branch, configuration config.Configuration, format string) string {
 	commitsBaseWipBranch := currentBaseBranch.String() + ".." + currentWipBranch.String()
-	log, err := silentgitignorefailure("--no-pager", "log", commitsBaseWipBranch, "--pretty=format:%h %cr <%an>", "--abbrev-commit")
+	log, err := silentgitignorefailure("--no-pager", "log", commitsBaseWipBranch, "--pretty=format:"+format, "--abbrev-commit")
 	if err != nil {
 		commitsBaseWipBranch = currentBaseBranch.remote(configuration).String() + ".." + currentWipBranch.String()
-		log = silentgit("--no-pager", "log", commitsBaseWipBranch, "--pretty=format:%h %cr <%an>", "--abbrev-commit")
+		log = silentgit("--no-pager", "log", commitsBaseWipBranch, "--pretty=format:"+format, "--abbrev-commit")
 	}
+	return log
+}
+
+func sayLastCommitsList(currentBaseBranch Branch, currentWipBranch Branch, configuration config.Configuration) {
+	log := logBaseToWipBranch(currentBaseBranch, currentWipBranch, configuration, "%h %cr <%an>")
 	lines := strings.Split(log, "\n")
 	if len(lines) > 5 {
 		say.Info("wip branch '" + currentWipBranch.String() + "' contains " + strconv.Itoa(len(lines)) + " commits. The last 5 were:")
@@ -1011,13 +1017,30 @@ func hasUncommittedChanges() bool {
 
 func isMobProgramming(configuration config.Configuration) bool {
 	currentBranch := gitCurrentBranch()
-	_, currentWipBranch := determineBranches(currentBranch, gitBranches(), configuration)
+	_, currentWipBranch := determineBranches(currentBranch, gitLocalAndRemoteBranches(configuration), configuration)
 	say.Debug("current branch " + currentBranch.String() + " and currentWipBranch " + currentWipBranch.String())
 	return currentWipBranch == currentBranch
 }
 
 func gitBranches() []string {
 	return gitClient.Branches()
+}
+
+func gitLocalAndRemoteBranches(configuration config.Configuration) []string {
+	branches := append(gitBranches(), gitRemoteBranchNames(configuration)...)
+	slices.Sort(branches)
+	return slices.Compact(branches)
+}
+
+func gitRemoteBranchNames(configuration config.Configuration) []string {
+	remotePrefix := configuration.RemoteName + "/"
+	var branchNames []string
+	for _, remoteBranch := range gitRemoteBranches() {
+		if strings.HasPrefix(remoteBranch, remotePrefix) {
+			branchNames = append(branchNames, removePrefix(remoteBranch, remotePrefix))
+		}
+	}
+	return branchNames
 }
 
 func gitRemoteBranches() []string {
@@ -1049,10 +1072,9 @@ func showNext(configuration config.Configuration) {
 		return
 	}
 
-	currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), gitBranches(), configuration)
-	commitsBaseWipBranch := currentBaseBranch.String() + ".." + currentWipBranch.String()
+	currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), gitLocalAndRemoteBranches(configuration), configuration)
 
-	changes := silentgit("--no-pager", "log", commitsBaseWipBranch, "--pretty=format:%an", "--abbrev-commit")
+	changes := logBaseToWipBranch(currentBaseBranch, currentWipBranch, configuration, "%an")
 	lines := strings.Split(strings.Replace(changes, "\r\n", "\n", -1), "\n")
 	numberOfLines := len(lines)
 	say.Debug("there have been " + strconv.Itoa(numberOfLines) + " changes")
