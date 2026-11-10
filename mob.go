@@ -1027,17 +1027,20 @@ func gitBranches() []string {
 }
 
 func gitLocalAndRemoteBranches(configuration config.Configuration) []string {
-	branches := gitBranches()
+	branches := append(gitBranches(), gitRemoteBranchNames(configuration)...)
+	slices.Sort(branches)
+	return slices.Compact(branches)
+}
+
+func gitRemoteBranchNames(configuration config.Configuration) []string {
 	remotePrefix := configuration.RemoteName + "/"
+	var branchNames []string
 	for _, remoteBranch := range gitRemoteBranches() {
-		if strings.HasPrefix(remoteBranch, remotePrefix) {
-			branchName := removePrefix(remoteBranch, remotePrefix)
-			if branchName != "HEAD" && !slices.Contains(branches, branchName) {
-				branches = append(branches, branchName)
-			}
+		if strings.HasPrefix(remoteBranch, remotePrefix) && remoteBranch != remotePrefix+"HEAD" {
+			branchNames = append(branchNames, removePrefix(remoteBranch, remotePrefix))
 		}
 	}
-	return branches
+	return branchNames
 }
 
 func gitRemoteBranches() []string {
