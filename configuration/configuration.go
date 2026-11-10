@@ -36,6 +36,7 @@ type Configuration struct {
 	NextStay                       bool   // override with MOB_NEXT_STAY
 	HandleUncommittedChanges       string
 	StartCreate                    bool // override with MOB_START_CREATE variable
+	StartCreateBase                string
 	StartJoin                      bool
 	StashName                      string // override with MOB_STASH_NAME
 	WipBranchQualifier             string // override with MOB_WIP_BRANCH_QUALIFIER
@@ -152,6 +153,12 @@ func ParseArgs(args []string, configuration Configuration) (command string, para
 			newConfiguration.DoneSquash = SquashWip
 		case "--create", "-c":
 			newConfiguration.StartCreate = true
+		case "--create-base":
+			if i+1 != len(args) {
+				newConfiguration.StartCreateBase = args[i+1]
+				newConfiguration.StartCreate = true
+			}
+			i++ // skip consumed parameter
 		case "--join", "-j":
 			newConfiguration.StartJoin = true
 		case "--delete-remote-wip-branch":
