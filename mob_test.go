@@ -60,7 +60,8 @@ func TestDetermineBranches(t *testing.T) {
 
 	assertDetermineBranches(t, "feature/test-ch", "", []string{"DPL-2638-update-apis", "DPL-2814-create-project", "feature/test-ch", "fix/smallChanges", "master", "pipeship/pipelineupdate-pipeship-pipeline.yaml"}, "feature/test-ch", "mob/feature/test-ch")
 
-	assertDetermineBranches(t, "mob/feature/CS-606", "", []string{"master", "mob/feature/CS-606", "feature/CS-606"}, "feature/CS-606", "mob/feature/CS-606")
+	assertDetermineBranches(t, "mob/feature/CS-606", "", []string{"mob/feature/CS-606", "feature/CS-606"}, "feature/CS-606", "mob/feature/CS-606")
+	assertDetermineBranches(t, "mob/feature/CS-606", "", []string{"mob/feature/CS-606"}, "feature/CS", "mob/feature/CS-606")
 }
 
 func TestNextOnForeignWipBranchWithoutLocalBaseBranch(t *testing.T) {
