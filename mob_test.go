@@ -1997,6 +1997,38 @@ func TestMobStartOnWipBranchWithoutCheckedOutBaseBranchWithoutHyphens(t *testing
 	assertOnBranch(t, "basebranchwithouthyphen")
 }
 
+func TestStartOnWipBranchWithoutLocalBaseBranchWithHyphen(t *testing.T) {
+	_, configuration := setup(t)
+	git("checkout", "-b", "some-task")
+	git("push", "origin", "some-task", "--set-upstream")
+	start(configuration)
+
+	setWorkingDir(tempDir + "/alice")
+	git("fetch")
+	git("checkout", "mob/some-task")
+
+	err := start(configuration)
+
+	assertNoError(t, err)
+	assertOnBranch(t, "mob/some-task")
+}
+
+func TestNextOnWipBranchWithoutLocalBaseBranch(t *testing.T) {
+	_, configuration := setup(t)
+	git("checkout", "-b", "sometask")
+	git("push", "origin", "sometask", "--set-upstream")
+	start(configuration)
+
+	setWorkingDir(tempDir + "/alice")
+	git("fetch")
+	git("checkout", "mob/sometask")
+	createFile(t, "file.txt", "x")
+
+	next(configuration)
+
+	assertOnBranch(t, "sometask")
+}
+
 func TestGitVersionParse(t *testing.T) {
 	// Check real examples
 	equals(t, GitVersion{2, 34, 1}, parseGitVersion("git version 2.34.1"))
