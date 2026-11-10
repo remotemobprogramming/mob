@@ -13,7 +13,6 @@ import (
 	"reflect"
 	"runtime"
 	"runtime/debug"
-	"slices"
 	"strconv"
 	"strings"
 	"testing"
@@ -64,22 +63,26 @@ func TestDetermineBranches(t *testing.T) {
 	assertDetermineBranches(t, "mob/feature/CS-606", "", []string{"mob/feature/CS-606"}, "feature/CS", "mob/feature/CS-606")
 }
 
-func TestGitLocalAndRemoteBranches(t *testing.T) {
+func TestGitLocalAndRemoteBranchesContainsBranchOnlyOnRemote(t *testing.T) {
 	_, configuration := setup(t)
-
-	// branch existing both locally and on the remote appears only once
-	git("checkout", "-b", "feature/local-and-remote")
-	git("push", "--set-upstream", "origin", "feature/local-and-remote")
-
-	// branch existing only on the remote is included without the remote prefix
 	git("checkout", "-b", "feature/remote-only")
 	git("push", "--set-upstream", "origin", "feature/remote-only")
 	git("checkout", "master")
 	git("branch", "-D", "feature/remote-only")
 
 	branches := gitLocalAndRemoteBranches(configuration)
-	slices.Sort(branches)
-	equals(t, []string{"feature/local-and-remote", "feature/remote-only", "master"}, branches)
+
+	equals(t, []string{"feature/remote-only", "master"}, branches)
+}
+
+func TestGitLocalAndRemoteBranchesIgnoresOtherRemotes(t *testing.T) {
+	_, configuration := setup(t)
+	git("remote", "add", "upstream", getRemoteDirectory(tempDir))
+	git("fetch", "upstream")
+
+	branches := gitLocalAndRemoteBranches(configuration)
+
+	equals(t, []string{"master"}, branches)
 }
 
 func assertDetermineBranches(t *testing.T, branch string, qualifier string, branches []string, expectedBase string, expectedWip string) {

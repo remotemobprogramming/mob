@@ -1036,7 +1036,7 @@ func gitRemoteBranchNames(configuration config.Configuration) []string {
 	remotePrefix := configuration.RemoteName + "/"
 	var branchNames []string
 	for _, remoteBranch := range gitRemoteBranches() {
-		if strings.HasPrefix(remoteBranch, remotePrefix) && remoteBranch != remotePrefix+"HEAD" {
+		if strings.HasPrefix(remoteBranch, remotePrefix) {
 			branchNames = append(branchNames, removePrefix(remoteBranch, remotePrefix))
 		}
 	}
