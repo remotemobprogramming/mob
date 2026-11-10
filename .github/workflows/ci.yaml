@@ -33,9 +33,9 @@ jobs:
         sudo make install install-info
     - name: Show git version
       run: git version
-    - name: Use Go 1.22.x
+    - name: Use Go 1.27.x
       uses: actions/setup-go@v6
       with:
-        go-version: '1.22'
+        go-version: '1.27'
     - name: Test
       run: go test ./... -v

@@ -1,5 +1,6 @@
 # 5.4.3
 - Fix: `mob start` and `mob next` now work on a wip branch whose base branch was never checked out locally, including base branch names that contain a `-`.
+- Upgrade to go 1.27. On macOS, mob now requires macOS 13 Ventura or later.
 
 # 5.4.2
 - Fix: `mob start` now correctly handles parsing of lastFile when the commit message has been extended with additional information.
