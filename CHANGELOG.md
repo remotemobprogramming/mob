@@ -1,3 +1,6 @@
+# 5.4.3
+- Fix: `mob next` and `mob done` now function correctly on WIP branches when the base branch is not checked out, including branch names that contain a `-` character.
+
 # 5.4.2
 - Fix: `mob start` now correctly handles parsing of lastFile when the commit message has been extended with additional information.
 
