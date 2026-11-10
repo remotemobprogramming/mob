@@ -13,6 +13,7 @@ import (
 	"reflect"
 	"runtime"
 	"runtime/debug"
+	"slices"
 	"strconv"
 	"strings"
 	"testing"
@@ -84,6 +85,24 @@ func TestNextOnForeignWipBranchWithoutLocalBaseBranch(t *testing.T) {
 
 	assertOutputNotContains(t, output, "unknown revision")
 	assertOnBranch(t, "feature/great-idea")
+}
+
+func TestGitLocalAndRemoteBranches(t *testing.T) {
+	_, configuration := setup(t)
+
+	// branch existing both locally and on the remote appears only once
+	git("checkout", "-b", "feature/local-and-remote")
+	git("push", "--set-upstream", "origin", "feature/local-and-remote")
+
+	// branch existing only on the remote is included without the remote prefix
+	git("checkout", "-b", "feature/remote-only")
+	git("push", "--set-upstream", "origin", "feature/remote-only")
+	git("checkout", "master")
+	git("branch", "-D", "feature/remote-only")
+
+	branches := gitLocalAndRemoteBranches(configuration)
+	slices.Sort(branches)
+	equals(t, []string{"feature/local-and-remote", "feature/remote-only", "master"}, branches)
 }
 
 func assertDetermineBranches(t *testing.T, branch string, qualifier string, branches []string, expectedBase string, expectedWip string) {

@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"reflect"
 	"runtime"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -384,7 +385,7 @@ func clean(configuration config.Configuration) {
 		currentBaseBranch, _ := determineBranches(currentBranch, gitLocalAndRemoteBranches(configuration), configuration)
 
 		say.Info("Current branch " + currentBranch.Name + " is an orphan")
-		if currentBaseBranch.exists(localBranches) {
+		if currentBaseBranch.exists(localBranches) || currentBaseBranch.hasRemoteBranch(configuration) {
 			git("checkout", currentBaseBranch.Name)
 		} else if newBranch("main").exists(localBranches) {
 			git("checkout", "main")
@@ -976,13 +977,18 @@ func squashOrCommit(configuration config.Configuration) string {
 	}
 }
 
-func sayLastCommitsList(currentBaseBranch Branch, currentWipBranch Branch, configuration config.Configuration) {
+func logBaseToWipBranch(currentBaseBranch Branch, currentWipBranch Branch, configuration config.Configuration, format string) string {
 	commitsBaseWipBranch := currentBaseBranch.String() + ".." + currentWipBranch.String()
-	log, err := silentgitignorefailure("--no-pager", "log", commitsBaseWipBranch, "--pretty=format:%h %cr <%an>", "--abbrev-commit")
+	log, err := silentgitignorefailure("--no-pager", "log", commitsBaseWipBranch, "--pretty=format:"+format, "--abbrev-commit")
 	if err != nil {
 		commitsBaseWipBranch = currentBaseBranch.remote(configuration).String() + ".." + currentWipBranch.String()
-		log = silentgit("--no-pager", "log", commitsBaseWipBranch, "--pretty=format:%h %cr <%an>", "--abbrev-commit")
+		log = silentgit("--no-pager", "log", commitsBaseWipBranch, "--pretty=format:"+format, "--abbrev-commit")
 	}
+	return log
+}
+
+func sayLastCommitsList(currentBaseBranch Branch, currentWipBranch Branch, configuration config.Configuration) {
+	log := logBaseToWipBranch(currentBaseBranch, currentWipBranch, configuration, "%h %cr <%an>")
 	lines := strings.Split(log, "\n")
 	if len(lines) > 5 {
 		say.Info("wip branch '" + currentWipBranch.String() + "' contains " + strconv.Itoa(len(lines)) + " commits. The last 5 were:")
@@ -1026,7 +1032,7 @@ func gitLocalAndRemoteBranches(configuration config.Configuration) []string {
 	for _, remoteBranch := range gitRemoteBranches() {
 		if strings.HasPrefix(remoteBranch, remotePrefix) {
 			branchName := removePrefix(remoteBranch, remotePrefix)
-			if branchName != "HEAD" {
+			if branchName != "HEAD" && !slices.Contains(branches, branchName) {
 				branches = append(branches, branchName)
 			}
 		}
@@ -1064,13 +1070,8 @@ func showNext(configuration config.Configuration) {
 	}
 
 	currentBaseBranch, currentWipBranch := determineBranches(gitCurrentBranch(), gitLocalAndRemoteBranches(configuration), configuration)
-	commitsBaseWipBranch := currentBaseBranch.String() + ".." + currentWipBranch.String()
 
-	changes, err := silentgitignorefailure("--no-pager", "log", commitsBaseWipBranch, "--pretty=format:%an", "--abbrev-commit")
-	if err != nil {
-		commitsBaseWipBranch = currentBaseBranch.remote(configuration).String() + ".." + currentWipBranch.String()
-		changes = silentgit("--no-pager", "log", commitsBaseWipBranch, "--pretty=format:%an", "--abbrev-commit")
-	}
+	changes := logBaseToWipBranch(currentBaseBranch, currentWipBranch, configuration, "%an")
 	lines := strings.Split(strings.Replace(changes, "\r\n", "\n", -1), "\n")
 	numberOfLines := len(lines)
 	say.Debug("there have been " + strconv.Itoa(numberOfLines) + " changes")
