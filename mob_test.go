@@ -16,6 +16,7 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+	"time"
 )
 
 var (
@@ -2400,7 +2401,13 @@ func assertNoMobSessionBranches(t *testing.T, configuration config.Configuration
 }
 
 func assertGitStatus(t *testing.T, expected map[string]string) {
-	equals(t, expected, gitStatus())
+	status := gitStatus()
+	deadline := time.Now().Add(2 * time.Second)
+	for !reflect.DeepEqual(expected, status) && time.Now().Before(deadline) {
+		time.Sleep(10 * time.Millisecond)
+		status = gitStatus()
+	}
+	equals(t, expected, status)
 }
 
 func assertCleanGitStatus(t *testing.T) {
