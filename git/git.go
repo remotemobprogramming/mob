@@ -198,8 +198,7 @@ func (g *Client) Dir() string {
 }
 
 func (g *Client) HasCommits() bool {
-	commitCount := g.Silent("rev-list", "--all", "--count")
-	return commitCount != "0"
+	return g.Silent("rev-list", "--all", "--max-count=1") != ""
 }
 
 func (g *Client) DoBranchesDiverge(ancestor string, successor string) bool {
