@@ -811,6 +811,160 @@ func TestStartCreateOnPushedFeatureBranchWhichIsBehind(t *testing.T) {
 	assertOutputContains(t, output, "git push origin feature1")
 }
 
+func TestStartCreateBaseBranch(t *testing.T) {
+	output, configuration := setup(t)
+	checkoutAndPushBranch("unrelated")
+	git("branch", "-D", "master")
+
+	setWorkingDir(tempDir + "/localother")
+	createFileAndCommitIt(t, "newfile.txt", "contentIrrelevant", "new commit on default branch")
+	git("push")
+
+	setWorkingDir(tempDir + "/local")
+	configuration.StartCreateBase = "feature/story-1"
+	configuration.StartCreate = true
+	err := start(configuration)
+
+	assertNoError(t, err)
+	assertOnBranch(t, "mob/feature/story-1")
+	assertMobSessionBranches(t, configuration, "mob/feature/story-1")
+	assertLocalBranch(t, "feature/story-1")
+	assertCommitLogContainsMessage(t, "feature/story-1", "new commit on default branch")
+	assertNoLocalBranch(t, "master")
+	assertOutputContains(t, output, "creating base branch feature/story-1 from origin/master")
+}
+
+func TestStartCreateBaseBranchAlreadyExistsLocally(t *testing.T) {
+	output, configuration := setup(t)
+	git("checkout", "-b", "feature/story-1")
+	git("checkout", "master")
+
+	configuration.StartCreateBase = "feature/story-1"
+	configuration.StartCreate = true
+	err := start(configuration)
+
+	assertError(t, err, "local branch already exists")
+	assertOnBranch(t, "master")
+	assertOutputContains(t, output, "local branch feature/story-1 already exists")
+	assertOutputContains(t, output, "git checkout feature/story-1")
+}
+
+func TestStartCreateBaseBranchAlreadyExistsOnRemote(t *testing.T) {
+	output, configuration := setup(t)
+	checkoutAndPushBranch("feature/story-1")
+	git("checkout", "master")
+	git("branch", "-D", "feature/story-1")
+
+	configuration.StartCreateBase = "feature/story-1"
+	configuration.StartCreate = true
+	err := start(configuration)
+
+	assertError(t, err, "remote branch already exists")
+	assertOnBranch(t, "master")
+	assertOutputContains(t, output, "remote branch origin/feature/story-1 already exists")
+}
+
+func TestStartCreateBaseBranchOnWipBranch(t *testing.T) {
+	output, configuration := setup(t)
+	start(configuration)
+	assertOnBranch(t, "mob-session")
+
+	configuration.StartCreateBase = "feature/story-1"
+	configuration.StartCreate = true
+	err := start(configuration)
+
+	assertError(t, err, "cannot create base branch while on wip branch")
+	assertOnBranch(t, "mob-session")
+	assertOutputContains(t, output, "mob done")
+}
+
+func TestStartCreateBaseBranchWithWipBranchName(t *testing.T) {
+	output, configuration := setup(t)
+
+	configuration.StartCreateBase = "mob/feature/story-1"
+	configuration.StartCreate = true
+	err := start(configuration)
+
+	assertError(t, err, "cannot create base branch because it is a wip branch")
+	assertOnBranch(t, "master")
+	assertOutputContains(t, output, "cannot create base branch mob/feature/story-1 because it is a wip branch")
+}
+
+func TestStartCreateBaseBranchWithUncommitedChanges(t *testing.T) {
+	output, configuration := setup(t)
+	createFile(t, "example.txt", "contentIrrelevant")
+
+	configuration.StartCreateBase = "feature/story-1"
+	configuration.StartCreate = true
+	err := start(configuration)
+
+	assertError(t, err, "cannot start; clean working tree required")
+	assertOnBranch(t, "master")
+	assertOutputContains(t, output, "mob start --create-base feature/story-1 --include-uncommitted-changes")
+	assertOutputContains(t, output, "mob start --create-base feature/story-1 --discard-uncommitted-changes")
+}
+
+func TestStartCreateBaseBranchWithJoin(t *testing.T) {
+	output, configuration := setup(t)
+
+	configuration.StartCreateBase = "feature/story-1"
+	configuration.StartCreate = true
+	configuration.StartJoin = true
+	err := start(configuration)
+
+	assertError(t, err, "--create-base cannot be combined with --join")
+	assertOnBranch(t, "master")
+	assertNoLocalBranch(t, "feature/story-1")
+	assertOutputContains(t, output, "--create-base cannot be combined with --join")
+}
+
+func TestStartCreateBaseBranchWithoutBranchName(t *testing.T) {
+	output, _ := setup(t)
+	mockExit()
+
+	runMob(t, tempDir+"/local", "start", "--create-base")
+
+	assertOutputContains(t, output, "option --create-base requires a branch name")
+	assertOutputContains(t, output, "mob start --create-base <branch>")
+	assertOnBranch(t, "master")
+	args = []string{}
+	resetExit()
+}
+
+func TestStartCreateBaseBranchDiscardUncommitedChangesConflictingWithDefaultBranch(t *testing.T) {
+	_, configuration := setup(t)
+
+	setWorkingDir(tempDir + "/localother")
+	createFileAndCommitIt(t, "test.txt", "newContent", "update on default branch")
+	git("push")
+
+	setWorkingDir(tempDir + "/local")
+	createFile(t, "test.txt", "dirtyContent")
+
+	configuration.StartCreateBase = "feature/story-1"
+	configuration.StartCreate = true
+	configuration.HandleUncommittedChanges = config.DiscardChanges
+	err := start(configuration)
+
+	assertNoError(t, err)
+	assertOnBranch(t, "mob/feature/story-1")
+	assertCommitLogContainsMessage(t, "feature/story-1", "update on default branch")
+}
+
+func TestStartCreateBaseBranchIncludeUncommitedChanges(t *testing.T) {
+	_, configuration := setup(t)
+	createFile(t, "example.txt", "contentIrrelevant")
+
+	configuration.StartCreateBase = "feature/story-1"
+	configuration.StartCreate = true
+	configuration.HandleUncommittedChanges = config.IncludeChanges
+	err := start(configuration)
+
+	assertNoError(t, err)
+	assertOnBranch(t, "mob/feature/story-1")
+	assertFileExist(t, "example.txt")
+}
+
 func TestStartPushOnWIPBranchWithOptions(t *testing.T) {
 	output, configuration := setup(t)
 

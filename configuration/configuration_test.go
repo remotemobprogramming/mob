@@ -49,6 +49,27 @@ func TestParseArgsStartCreateShort(t *testing.T) {
 	test.Equals(t, true, configuration.StartCreate)
 }
 
+func TestParseArgsStartCreateBase(t *testing.T) {
+	configuration := GetDefaultConfiguration()
+
+	command, parameters, configuration := ParseArgs([]string{"mob", "start", "--create-base", "feature/story-1"}, configuration)
+
+	test.Equals(t, "start", command)
+	test.Equals(t, "", strings.Join(parameters, ""))
+	test.Equals(t, "feature/story-1", configuration.StartCreateBase)
+	test.Equals(t, true, configuration.StartCreate)
+}
+
+func TestParseArgsStartCreateBaseWithoutValue(t *testing.T) {
+	configuration := GetDefaultConfiguration()
+
+	command, _, configuration := ParseArgs([]string{"mob", "start", "--create-base"}, configuration)
+
+	test.Equals(t, "start", command)
+	test.Equals(t, "", configuration.StartCreateBase)
+	test.Equals(t, false, configuration.StartCreate)
+}
+
 func TestParseArgsStartJoin(t *testing.T) {
 	configuration := GetDefaultConfiguration()
 
