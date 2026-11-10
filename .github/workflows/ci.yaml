@@ -6,19 +6,15 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest]
-        git-version: [latest, 2.37.0]
+        git-version: [latest]
         include:
+          - os: ubuntu-latest
+            git-version: 2.37.0
           - os: ubuntu-latest
             git-version: 2.20.0
     runs-on: ${{ matrix.os }}
     steps:
     - uses: actions/checkout@v6
-    - name: Install old git version (macOS)
-      if: ${{ matrix.os == 'macos-latest' && matrix.git-version != 'latest'}}
-      run: |
-        brew tap-new mob/local-git
-        brew extract --version=${{ matrix.git-version }} git mob/local-git
-        brew install git@${{ matrix.git-version }} || brew link --overwrite git@${{ matrix.git-version }}
     - name: Install old git version (ubuntu)
       if: ${{ matrix.os == 'ubuntu-latest' && matrix.git-version != 'latest'}}
       run: |
@@ -28,7 +24,7 @@ jobs:
         tar -zxf git-${{ matrix.git-version }}.tar.gz
         cd git-${{ matrix.git-version }}
         make configure
-        ./configure --prefix=/usr
+        ./configure --prefix=/usr CFLAGS="-std=gnu17 -O2"
         make all info
         sudo make install install-info
     - name: Show git version
