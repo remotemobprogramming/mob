@@ -561,6 +561,19 @@ func TestCleanFeatureOrphanWipBranch(t *testing.T) {
 	assertNoLocalBranch(t, "mob/feature1")
 }
 
+func TestCleanFeatureOrphanWipBranchWithoutLocalBaseBranch(t *testing.T) {
+	_, configuration := setup(t)
+	git("checkout", "-b", "feature1")
+	git("push", "origin", "feature1", "--set-upstream")
+	git("checkout", "-b", "mob/feature1")
+	git("branch", "-D", "feature1")
+
+	clean(configuration)
+
+	assertOnBranch(t, "feature1")
+	assertNoLocalBranch(t, "mob/feature1")
+}
+
 func TestCleanMissingBaseBranch(t *testing.T) {
 	_, configuration := setup(t)
 	git("checkout", "-b", "mob/feature1")
