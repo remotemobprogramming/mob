@@ -495,6 +495,17 @@ func deleteRemoteWipBranch(configuration config.Configuration) {
 }
 
 func start(configuration config.Configuration) error {
+	if containsAny(args, "--create-base") && strings.TrimSpace(configuration.StartCreateBase) == "" {
+		say.Error("option --create-base requires a branch name")
+		say.Fix("To start and create a new base branch, use", configuration.Mob("start --create-base <branch>"))
+		return errors.New("option --create-base requires a branch name")
+	}
+
+	if configuration.StartCreateBase != "" && configuration.StartJoin {
+		say.Error("--create-base cannot be combined with --join")
+		return errors.New("--create-base cannot be combined with --join")
+	}
+
 	uncommittedChanges := hasUncommittedChanges()
 	if uncommittedChanges && configuration.HandleUncommittedChanges == config.FailWithError {
 		say.Info("cannot start; clean working tree required")
@@ -505,6 +516,14 @@ func start(configuration config.Configuration) error {
 	}
 
 	git("fetch", configuration.RemoteName, "--prune")
+
+	if configuration.StartCreateBase != "" {
+		configuration.StartCreate = true
+		if err := createBaseBranchFromDefaultBranch(configuration); err != nil {
+			return err
+		}
+	}
+
 	currentBranch := gitCurrentBranch()
 	currentBaseBranch, currentWipBranch := determineBranches(currentBranch, gitLocalAndRemoteBranches(configuration), configuration)
 
@@ -531,17 +550,13 @@ func start(configuration config.Configuration) error {
 		git("reset", "--hard")
 	}
 
-	if uncommittedChanges && configuration.HandleUncommittedChanges == config.IncludeChanges {
-		if silentgit("ls-tree", "-r", "HEAD", "--full-name", "--name-only", ".") == "" {
-			say.Error("cannot start; current working dir is an uncommitted subdir")
-			say.Fix("to fix this, go to the parent directory and try again", "cd ..")
-			return errors.New("cannot start; current working dir is an uncommitted subdir")
+	if uncommittedChanges && configuration.HandleUncommittedChanges == config.IncludeChanges && hasUncommittedChanges() {
+		if err := stashUncommittedChanges(configuration); err != nil {
+			return err
 		}
-		git("stash", "push", "--include-untracked", "--message", configuration.StashName)
-		say.Info("uncommitted changes were stashed. If an error occurs later on, you can recover them with 'git stash pop'.")
 	}
 
-	if !isMobProgramming(configuration) {
+	if !isMobProgramming(configuration) && configuration.StartCreateBase == "" {
 		git("merge", "FETCH_HEAD", "--ff-only")
 	}
 
@@ -587,6 +602,9 @@ func sayFixUncommittedChanges(configuration config.Configuration) {
 }
 
 func createFix(configuration config.Configuration) string {
+	if configuration.StartCreateBase != "" {
+		return " --create-base " + configuration.StartCreateBase
+	}
 	if configuration.StartCreate {
 		return " --create"
 	}
@@ -613,6 +631,82 @@ func containsAny(list []string, elements ...string) bool {
 		}
 	}
 	return false
+}
+
+func createBaseBranchFromDefaultBranch(configuration config.Configuration) error {
+	baseBranch := newBranch(configuration.StartCreateBase)
+	currentBranch := gitCurrentBranch()
+
+	if baseBranch.IsWipBranch(configuration) {
+		say.Error("cannot create base branch " + baseBranch.String() + " because it is a wip branch")
+		return errors.New("cannot create base branch because it is a wip branch")
+	}
+
+	if currentBranch.IsWipBranch(configuration) {
+		say.Error("cannot create base branch " + baseBranch.String() + " while on wip branch " + currentBranch.String())
+		say.Fix("To finish the current session, use", configuration.Mob("done"))
+		return errors.New("cannot create base branch while on wip branch")
+	}
+
+	if baseBranch.hasLocalBranch() {
+		say.Error("local branch " + baseBranch.String() + " already exists")
+		say.Fix("To start on the existing branch instead, switch to it with", "git checkout "+baseBranch.String())
+		return errors.New("local branch already exists")
+	}
+
+	if baseBranch.hasRemoteBranch(configuration) {
+		say.Error("remote branch " + baseBranch.remote(configuration).String() + " already exists")
+		return errors.New("remote branch already exists")
+	}
+
+	defaultBranch, err := determineDefaultBranch(configuration)
+	if err != nil {
+		return err
+	}
+
+	if hasUncommittedChanges() && configuration.HandleUncommittedChanges == config.DiscardChanges {
+		git("reset", "--hard")
+	}
+
+	if hasUncommittedChanges() && configuration.HandleUncommittedChanges == config.IncludeChanges {
+		if err := stashUncommittedChanges(configuration); err != nil {
+			return err
+		}
+	}
+
+	say.Info("creating base branch " + baseBranch.String() + " from " + defaultBranch.remote(configuration).String())
+	git("checkout", "-b", baseBranch.String(), "--no-track", defaultBranch.remote(configuration).String())
+
+	return nil
+}
+
+func stashUncommittedChanges(configuration config.Configuration) error {
+	if silentgit("ls-tree", "-r", "HEAD", "--full-name", "--name-only", ".") == "" {
+		say.Error("cannot start; current working dir is an uncommitted subdir")
+		say.Fix("to fix this, go to the parent directory and try again", "cd ..")
+		return errors.New("cannot start; current working dir is an uncommitted subdir")
+	}
+	git("stash", "push", "--include-untracked", "--message", configuration.StashName)
+	say.Info("uncommitted changes were stashed. If an error occurs later on, you can recover them with 'git stash pop'.")
+	return nil
+}
+
+func determineDefaultBranch(configuration config.Configuration) (Branch, error) {
+	remoteHeadPrefix := "refs/remotes/" + configuration.RemoteName + "/"
+	remoteHead, err := silentgitignorefailure("symbolic-ref", remoteHeadPrefix+"HEAD")
+	if err == nil {
+		return newBranch(removePrefix(strings.TrimSpace(remoteHead), remoteHeadPrefix)), nil
+	}
+
+	remoteBranches := gitRemoteBranches()
+	for _, defaultBranchCandidate := range []string{"main", "master"} {
+		if stringContains(remoteBranches, configuration.RemoteName+"/"+defaultBranchCandidate) {
+			return newBranch(defaultBranchCandidate), nil
+		}
+	}
+
+	say.Error("could not determine default branch on remote " + configuration.RemoteName)
+	return Branch{}, errors.New("could not determine default branch")
 }
 
 func createRemoteBranch(configuration config.Configuration, currentBaseBranch Branch) {

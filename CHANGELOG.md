@@ -1,4 +1,5 @@
 # 5.4.3
+- Feature: `mob start --create-base <branch>` creates a new base branch from the up-to-date remote default branch (without requiring it to be checked out locally), pushes it, and starts the mob session on it.
 - Fix: `mob start` and `mob next` now work on a wip branch whose base branch was never checked out locally, including base branch names that contain a `-`.
 - Upgrade to go 1.27. On macOS, mob now requires macOS 13 Ventura or later.
 - Improvement: every mob command runs faster in repositories with a long history.
