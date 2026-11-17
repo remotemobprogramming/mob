@@ -5,7 +5,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest]
+        os: [ubuntu-latest, ubuntu-24.04-arm, macos-latest]
         git-version: [latest]
         include:
           - os: ubuntu-latest
@@ -20,7 +20,9 @@ jobs:
       run: |
         sudo apt-get update
         sudo apt-get install gettext asciidoc docbook2x
-        curl https://mirrors.edge.kernel.org/pub/software/scm/git/git-${{ matrix.git-version }}.tar.gz --output git-${{ matrix.git-version }}.tar.gz
+        # kernel.org downloads from GitHub runners are sometimes cut off; retry, then fall back to GitHub's tag archive
+        curl --fail --location --retry 5 --retry-all-errors --retry-delay 10 https://mirrors.edge.kernel.org/pub/software/scm/git/git-${{ matrix.git-version }}.tar.gz --output git-${{ matrix.git-version }}.tar.gz \
+          || curl --fail --location --retry 5 --retry-all-errors --retry-delay 10 https://github.com/git/git/archive/refs/tags/v${{ matrix.git-version }}.tar.gz --output git-${{ matrix.git-version }}.tar.gz
         tar -zxf git-${{ matrix.git-version }}.tar.gz
         cd git-${{ matrix.git-version }}
         make configure
