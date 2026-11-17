@@ -1,3 +1,6 @@
+# 5.4.4
+- Feature: Release a Linux arm64 build (`mob_<version>_linux_arm64.tar.gz`). The install script and the AUR package `mobsh-bin` pick it up automatically on arm64 machines.
+
 # 5.4.3
 - Fix: `mob start` and `mob next` now work on a wip branch whose base branch was never checked out locally, including base branch names that contain a `-`.
 - Upgrade to go 1.27. On macOS, mob now requires macOS 13 Ventura or later.

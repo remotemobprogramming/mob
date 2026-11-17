@@ -9,6 +9,16 @@ determine_arch() {
   Darwin)
     echo "universal"
     ;;
+  Linux)
+    case "$(uname -m)" in
+    aarch64 | arm64)
+      echo "arm64"
+      ;;
+    *)
+      echo "amd64"
+      ;;
+    esac
+    ;;
   *)
     echo "amd64"
     ;;

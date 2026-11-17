@@ -9,10 +9,16 @@ jobs:
         include:
           - os: ubuntu-latest
             goos: linux
+            goarch: amd64
+          - os: ubuntu-24.04-arm
+            goos: linux
+            goarch: arm64
           - os: ubuntu-latest
             goos: windows
+            goarch: amd64
           - os: macos-latest
             goos: darwin
+            goarch: universal
     env:
       GOOS: ${{ matrix.goos }}
       CGO_ENABLED: 0
@@ -20,6 +26,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     outputs:
       sha_linux: ${{ steps.shasum.outputs.sha_linux }}
+      sha_linux_arm64: ${{ steps.shasum.outputs.sha_linux_arm64 }}
     steps:
       - uses: actions/checkout@v6
       - name: Use Go 1.27.x
@@ -31,12 +38,12 @@ jobs:
         run: go test ./... -v
         env:
           GOOS: ${{ matrix.goos }}
-      - name: Build ${{ matrix.goos }} amd64
+      - name: Build ${{ matrix.goos }} ${{ matrix.goarch }}
         if: ${{ matrix.goos != 'darwin' }}
         run: go build -o mob${{ matrix.goos == 'windows' && '.exe' || '' }}
         env:
           GOOS: ${{ matrix.goos }}
-          GOARCH: amd64
+          GOARCH: ${{ matrix.goarch }}
       - name: Build macOS universal
         if: ${{ matrix.goos == 'darwin' }}
         run: >
@@ -52,7 +59,7 @@ jobs:
       - name: Create release artifacts using .github/build
         run: .github/build
         env:
-          GOARCH: amd64
+          GOARCH: ${{ matrix.goarch }}
           VERSION: ${{ github.event.release.tag_name }}
       - name: Upload artifacts to release
         uses: svenstaro/upload-release-action@v2
@@ -65,7 +72,9 @@ jobs:
         if: matrix.goos == 'darwin' || matrix.goos == 'linux'
         id: shasum
         run: |
-          echo "sha_${{ matrix.goos }}=\"$(shasum -a 256 *.tar.gz | awk '{printf $1}')\"" >> $GITHUB_OUTPUT
+          key="sha_${{ matrix.goos }}"
+          if [ "${{ matrix.goarch }}" = "arm64" ]; then key="${key}_arm64"; fi
+          echo "${key}=\"$(shasum -a 256 *.tar.gz | awk '{printf $1}')\"" >> $GITHUB_OUTPUT
       - name: Set up Homebrew
         if: matrix.goos == 'darwin'
         id: set-up-homebrew
@@ -107,7 +116,7 @@ jobs:
           pkgver=$PACKAGE_VERSION
           pkgrel=1
           pkgdesc="Fast git handover with mob"
-          arch=('x86_64')
+          arch=('x86_64' 'aarch64')
           url="https://github.com/${{ github.repository }}"
           license=('MIT')
           depends=("git")
@@ -118,6 +127,8 @@ jobs:
 
           source_x86_64=("\$url/releases/download/${{ github.event.release.tag_name }}/mob_${{ github.event.release.tag_name }}_linux_amd64.tar.gz")
           sha256sums_x86_64=("${{ needs.release.outputs.sha_linux }}")
+          source_aarch64=("\$url/releases/download/${{ github.event.release.tag_name }}/mob_${{ github.event.release.tag_name }}_linux_arm64.tar.gz")
+          sha256sums_aarch64=("${{ needs.release.outputs.sha_linux_arm64 }}")
 
           package() {
               install -D -m644 "LICENSE" "\$pkgdir/usr/share/licenses/\$pkgname/LICENSE"
