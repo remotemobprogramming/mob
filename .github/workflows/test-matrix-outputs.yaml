@@ -4,10 +4,9 @@ on:
     branches: [claude/great-cray-6xrmhz]
 name: Test matrix outputs
 jobs:
-  release:
+  release_arm64_last:
     strategy:
       matrix:
-        order: [arm64-last, amd64-last]
         leg:
           - { os: ubuntu-latest, goos: linux, goarch: amd64 }
           - { os: ubuntu-24.04-arm, goos: linux, goarch: arm64 }
@@ -20,7 +19,7 @@ jobs:
     steps:
       - name: Delay to force completion order
         run: |
-          last=${{ matrix.order == 'arm64-last' && 'arm64' || 'amd64' }}
+          last=${{ 'arm64-last' == 'arm64-last' && 'arm64' || 'amd64' }}
           if [ "${{ matrix.leg.goos }}" = linux ] && [ "${{ matrix.leg.goarch }}" = "$last" ]; then sleep 90; fi
       - name: Create dummy archive
         run: echo "${{ matrix.leg.goos }}-${{ matrix.leg.goarch }}" > f && tar czf "mob_${{ matrix.leg.goos }}_${{ matrix.leg.goarch }}.tar.gz" f && rm f
@@ -35,14 +34,56 @@ jobs:
       - name: Expected
         if: matrix.leg.goos == 'linux'
         run: shasum -a 256 *.tar.gz
-  check:
-    needs: [release]
+  check_arm64_last:
+    needs: [release_arm64_last]
     runs-on: ubuntu-latest
     steps:
       - name: Check both outputs are set and differ
         run: |
-          amd='${{ needs.release.outputs.sha_linux }}'
-          arm='${{ needs.release.outputs.sha_linux_arm64 }}'
+          amd='${{ needs.release_arm64_last.outputs.sha_linux }}'
+          arm='${{ needs.release_arm64_last.outputs.sha_linux_arm64 }}'
+          echo "sha_linux=$amd"
+          echo "sha_linux_arm64=$arm"
+          [ -n "$amd" ] && [ -n "$arm" ] && [ "$amd" != "$arm" ] || { echo "FAIL"; exit 1; }
+          echo "PASS"
+  release_amd64_last:
+    strategy:
+      matrix:
+        leg:
+          - { os: ubuntu-latest, goos: linux, goarch: amd64 }
+          - { os: ubuntu-24.04-arm, goos: linux, goarch: arm64 }
+          - { os: ubuntu-latest, goos: windows, goarch: amd64 }
+          - { os: macos-latest, goos: darwin, goarch: universal }
+    runs-on: ${{ matrix.leg.os }}
+    outputs:
+      sha_linux: ${{ steps.shasum.outputs.sha_linux }}
+      sha_linux_arm64: ${{ steps.shasum.outputs.sha_linux_arm64 }}
+    steps:
+      - name: Delay to force completion order
+        run: |
+          last=${{ 'amd64-last' == 'arm64-last' && 'arm64' || 'amd64' }}
+          if [ "${{ matrix.leg.goos }}" = linux ] && [ "${{ matrix.leg.goarch }}" = "$last" ]; then sleep 90; fi
+      - name: Create dummy archive
+        run: echo "${{ matrix.leg.goos }}-${{ matrix.leg.goarch }}" > f && tar czf "mob_${{ matrix.leg.goos }}_${{ matrix.leg.goarch }}.tar.gz" f && rm f
+      - name: Set SHA
+        if: matrix.leg.goos == 'darwin' || matrix.leg.goos == 'linux'
+        id: shasum
+        run: |
+          key="sha_${{ matrix.leg.goos }}"
+          if [ "${{ matrix.leg.goarch }}" = "arm64" ]; then key="${key}_arm64"; fi
+          echo "${key}=\"$(shasum -a 256 *.tar.gz | awk '{printf $1}')\"" >> $GITHUB_OUTPUT
+          echo "set ${key} for ${{ matrix.leg.goos }}/${{ matrix.leg.goarch }}"
+      - name: Expected
+        if: matrix.leg.goos == 'linux'
+        run: shasum -a 256 *.tar.gz
+  check_amd64_last:
+    needs: [release_amd64_last]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check both outputs are set and differ
+        run: |
+          amd='${{ needs.release_amd64_last.outputs.sha_linux }}'
+          arm='${{ needs.release_amd64_last.outputs.sha_linux_arm64 }}'
           echo "sha_linux=$amd"
           echo "sha_linux_arm64=$arm"
           [ -n "$amd" ] && [ -n "$arm" ] && [ "$amd" != "$arm" ] || { echo "FAIL"; exit 1; }
