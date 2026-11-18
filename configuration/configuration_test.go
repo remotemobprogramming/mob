@@ -49,6 +49,62 @@ func TestParseArgsStartCreateShort(t *testing.T) {
 	test.Equals(t, true, configuration.StartCreate)
 }
 
+func TestParseArgsStartCreateWithBranch(t *testing.T) {
+	configuration := GetDefaultConfiguration()
+
+	command, parameters, configuration := ParseArgs([]string{"mob", "start", "--create", "feature/story-1"}, configuration)
+
+	test.Equals(t, "start", command)
+	test.Equals(t, "", strings.Join(parameters, ""))
+	test.Equals(t, "feature/story-1", configuration.StartCreateBranch)
+	test.Equals(t, true, configuration.StartCreate)
+}
+
+func TestParseArgsStartCreateWithBranchAndTimer(t *testing.T) {
+	configuration := GetDefaultConfiguration()
+
+	command, parameters, configuration := ParseArgs([]string{"mob", "start", "-c", "feature/story-1", "10"}, configuration)
+
+	test.Equals(t, "start", command)
+	test.Equals(t, "10", strings.Join(parameters, ""))
+	test.Equals(t, "feature/story-1", configuration.StartCreateBranch)
+	test.Equals(t, true, configuration.StartCreate)
+}
+
+func TestParseArgsStartTimerThenCreateWithBranch(t *testing.T) {
+	configuration := GetDefaultConfiguration()
+
+	command, parameters, configuration := ParseArgs([]string{"mob", "start", "10", "-c", "feature/story-1"}, configuration)
+
+	test.Equals(t, "start", command)
+	test.Equals(t, "10", strings.Join(parameters, ""))
+	test.Equals(t, "feature/story-1", configuration.StartCreateBranch)
+	test.Equals(t, true, configuration.StartCreate)
+}
+
+func TestParseArgsStartCreateWithNumberKeepsTimer(t *testing.T) {
+	configuration := GetDefaultConfiguration()
+
+	command, parameters, configuration := ParseArgs([]string{"mob", "start", "-c", "10"}, configuration)
+
+	test.Equals(t, "start", command)
+	test.Equals(t, "10", strings.Join(parameters, ""))
+	test.Equals(t, "", configuration.StartCreateBranch)
+	test.Equals(t, true, configuration.StartCreate)
+}
+
+func TestParseArgsStartCreateFollowedByOption(t *testing.T) {
+	configuration := GetDefaultConfiguration()
+
+	command, parameters, configuration := ParseArgs([]string{"mob", "start", "-c", "--branch", "green"}, configuration)
+
+	test.Equals(t, "start", command)
+	test.Equals(t, "", strings.Join(parameters, ""))
+	test.Equals(t, "", configuration.StartCreateBranch)
+	test.Equals(t, true, configuration.StartCreate)
+	test.Equals(t, "green", configuration.WipBranchQualifier)
+}
+
 func TestParseArgsStartJoin(t *testing.T) {
 	configuration := GetDefaultConfiguration()
 
