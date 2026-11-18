@@ -27,7 +27,7 @@ import (
 )
 
 const (
-	versionNumber     = "5.4.4"
+	versionNumber     = "5.5.0"
 	minimumGitVersion = "2.13.0"
 )
 
@@ -36,12 +36,36 @@ var (
 	args []string
 )
 
-func openCommandFor(c config.Configuration, filepath string) (string, []string) {
+const (
+	openCommandFilePlaceholder = "%{file}"
+	openCommandLinePlaceholder = "%{line}"
+)
+
+// openCommandFor builds the command to open the given file. Supported placeholders are
+// %s and %{file} for the file and %{line} for the line (1 if unknown). Without any
+// placeholder the file is appended to the command.
+func openCommandFor(c config.Configuration, filepath string, line int) (string, []string) {
 	if !c.IsOpenCommandGiven() {
 		return "", []string{}
 	}
+	if line < 1 {
+		line = 1
+	}
 	filepathWithoutSpaces := strings.ReplaceAll(filepath, " ", "&spc&")
-	split := strings.Split(injectCommandWithMessage(c.OpenCommand, filepathWithoutSpaces), " ")
+	command := c.OpenCommand
+	if strings.Contains(command, openCommandFilePlaceholder) || strings.Contains(command, openCommandLinePlaceholder) {
+		placeHolders := strings.Count(command, "%s")
+		if placeHolders > 1 {
+			say.Error(fmt.Sprintf("Too many placeholders (%d) in format command string: %s", placeHolders, command))
+			exit.Exit(1)
+		}
+		command = strings.Replace(command, "%s", openCommandFilePlaceholder, 1)
+		command = strings.ReplaceAll(command, openCommandLinePlaceholder, strconv.Itoa(line))
+		command = strings.ReplaceAll(command, openCommandFilePlaceholder, filepathWithoutSpaces)
+	} else {
+		command = injectCommandWithMessage(command, filepathWithoutSpaces)
+	}
+	split := strings.Split(command, " ")
 	for i := 0; i < len(split); i++ {
 		split[i] = strings.ReplaceAll(split[i], "&spc&", " ")
 	}
@@ -634,26 +658,17 @@ func openLastModifiedFileIfPresent(configuration config.Configuration) {
 		say.Debug("Last commit isn't a WIP commit.")
 		return
 	}
-	lastCommitMessage := lastCommitMessage()
-	split := strings.Split(lastCommitMessage, "lastFile:")
-	if len(split) == 1 {
-		say.Warning("Couldn't find last modified file in commit message!")
+	lastModifiedFile, lastLine, warning := parseLastFileFromCommitMessage(lastCommitMessage())
+	if warning != "" {
+		say.Warning(warning)
 		return
-	}
-	if len(split) > 2 {
-		say.Warning("Could not determine last modified file from commit message, separator was used multiple times!")
-		return
-	}
-	lastModifiedFile := strings.Split(split[1], "\n")[0]
-	if strings.HasPrefix(lastModifiedFile, "\"") {
-		lastModifiedFile, _ = strconv.Unquote(lastModifiedFile)
 	}
 	if lastModifiedFile == "" {
 		say.Debug("Could not find last modified file in commit message")
 		return
 	}
 	lastModifiedFilePath := gitRootDir() + "/" + lastModifiedFile
-	commandname, args := openCommandFor(configuration, lastModifiedFilePath)
+	commandname, args := openCommandFor(configuration, lastModifiedFilePath, lastLine)
 	_, err := startCommand(commandname, args...)
 	if err != nil {
 		say.Warning(fmt.Sprintf("Couldn't open last modified file on your system (%s)", runtime.GOOS))
@@ -811,82 +826,7 @@ func makeWipCommit(configuration config.Configuration) {
 }
 
 func createWipCommitMessage(configuration config.Configuration) string {
-	commitMessage := configuration.WipCommitMessage
-
-	lastModifiedFilePath := getPathOfLastModifiedFile()
-	if lastModifiedFilePath != "" {
-		commitMessage += "\n\nlastFile:" + lastModifiedFilePath
-	}
-
-	return commitMessage
-}
-
-// uses git status --porcelain. To work properly files have to be staged.
-func getPathOfLastModifiedFile() string {
-	rootDir := gitRootDir()
-	files := getModifiedFiles(rootDir)
-	lastModifiedFilePath := ""
-	lastModifiedTime := time.Time{}
-
-	say.Debug("Find last modified file")
-	if len(files) == 1 {
-		lastModifiedFilePath = files[0]
-		say.Debug("Just one modified file: " + lastModifiedFilePath)
-		return lastModifiedFilePath
-	}
-
-	for _, file := range files {
-		unquotedFile := file
-		if strings.HasPrefix(file, "\"") {
-			var err error
-			unquotedFile, err = strconv.Unquote(file)
-			if err != nil {
-				say.Warning("Could not unquote filename from git: " + file)
-				say.Warning(err.Error())
-				continue
-			}
-		}
-		absoluteFilepath := rootDir + "/" + unquotedFile
-		say.Debug(absoluteFilepath)
-		info, err := os.Stat(absoluteFilepath)
-		if err != nil {
-			say.Warning("Could not get statistics of file: " + absoluteFilepath)
-			say.Warning(err.Error())
-			continue
-		}
-		modTime := info.ModTime()
-		if modTime.After(lastModifiedTime) {
-			lastModifiedTime = modTime
-			lastModifiedFilePath = file
-		}
-		say.Debug(modTime.String())
-	}
-	return lastModifiedFilePath
-}
-
-// uses git status --porcelain. To work properly files have to be staged.
-func getModifiedFiles(rootDir string) []string {
-	say.Debug("Find modified files")
-	oldWorkingDir := workdir.Path
-	workdir.Path = rootDir
-	gitstatus := silentgit("status", "--porcelain")
-	workdir.Path = oldWorkingDir
-	lines := strings.Split(gitstatus, "\n")
-	files := []string{}
-	for _, line := range lines {
-		relativeFilepath := ""
-		if strings.HasPrefix(line, "M") {
-			relativeFilepath = strings.TrimPrefix(line, "M")
-		} else if strings.HasPrefix(line, "A") {
-			relativeFilepath = strings.TrimPrefix(line, "A")
-		} else {
-			continue
-		}
-		relativeFilepath = strings.TrimSpace(relativeFilepath)
-		say.Debug(relativeFilepath)
-		files = append(files, relativeFilepath)
-	}
-	return files
+	return appendLastFile(configuration.WipCommitMessage, determineLastFile())
 }
 
 func gitHooksOption(c config.Configuration) string {

@@ -333,6 +333,51 @@ Mob supports you and can automate this step. You just need the configuration opt
 
 For example if you want use IntelliJ the configuration option would look like this: `MOB_OPEN_COMMAND="idea %s"`
 
+`%s` is replaced by the file. If you also want to jump to the line the previous typist was looking at, use the named placeholders `%{file}` and `%{line}`:
+
+```bash
+MOB_OPEN_COMMAND="idea --line %{line} %{file}"  # IntelliJ / JetBrains IDEs
+MOB_OPEN_COMMAND="code -g %{file}:%{line}"      # VS Code
+```
+
+`%{line}` is `1` if the previous typist's commit contains no line. Named placeholders require mob 5.5.0 or newer; `%s` and commands without placeholders keep working as before.
+
+#### Use the file and line you were looking at in your editor
+
+By default, `mob next` remembers the file you modified last. With an editor plugin installed (e.g. the [IntelliJ mob last file plugin](https://github.com/remotemobprogramming/intellij-mob-last-file-plugin)), `mob next` instead remembers the file and line you were last looking at in your editor. No configuration is needed: if the plugin wrote a current editor state file, mob uses it; otherwise it falls back to the last modified file. The commit message stays readable for every mob version and editor:
+
+```
+mob next [ci-skip] [ci skip] [skip ci]
+
+lastFile:src/main/java/Foo.java
+lastLine:42
+```
+
+Teammates without a plugin, with another editor or with an older mob version can still open `lastFile`; `lastLine` is simply ignored by older versions.
+
+#### Editor plugins: the editor state file
+
+Any editor plugin can provide the last file by writing `<git dir>/mob/last-file.json` (the directory reported by `git rev-parse --absolute-git-dir`, so it is never committed and works per worktree):
+
+```json
+{
+  "version": 1,
+  "file": "src/main/java/Foo.java",
+  "line": 42,
+  "updatedAt": "2026-11-18T10:15:03Z",
+  "editor": "IntelliJ IDEA 2026.2",
+  "plugin": "Mob Last File",
+  "pluginVersion": "0.1.0"
+}
+```
+
+- `file`: path relative to the git root, using `/` as separator.
+- `line`: 1-based line number; optional.
+- `updatedAt`: RFC 3339 timestamp of when the file was written.
+- `editor`, `plugin`, `pluginVersion`: name and version of the editor and of the plugin which wrote the file; optional and informational only, shown in `mob --debug`.
+
+`mob next` uses the file only if `version` is `1`, `updatedAt` is newer than the last commit, and `file` exists inside the repository. Plugins should update the file when the active file or line changes and when the editor loses focus, and may delete it when the project is closed. If clocks of your team's machines differ a lot, mob may ignore a fresh state file and fall back to the last modified file.
+
 ## More on Installation
 
 ### Known Issues
