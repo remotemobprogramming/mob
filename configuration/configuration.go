@@ -35,8 +35,8 @@ type Configuration struct {
 	NotifyMessage                  string // override with MOB_NOTIFY_MESSAGE
 	NextStay                       bool   // override with MOB_NEXT_STAY
 	HandleUncommittedChanges       string
-	StartCreate                    bool // override with MOB_START_CREATE variable
-	StartCreateBase                string
+	StartCreate                    bool   // override with MOB_START_CREATE variable
+	StartCreateBranch              string
 	StartJoin                      bool
 	StashName                      string // override with MOB_STASH_NAME
 	WipBranchQualifier             string // override with MOB_WIP_BRANCH_QUALIFIER
@@ -153,12 +153,10 @@ func ParseArgs(args []string, configuration Configuration) (command string, para
 			newConfiguration.DoneSquash = SquashWip
 		case "--create", "-c":
 			newConfiguration.StartCreate = true
-		case "--create-base":
-			if i+1 != len(args) {
-				newConfiguration.StartCreateBase = args[i+1]
-				newConfiguration.StartCreate = true
+			if i+1 < len(args) && isBranchName(args[i+1]) {
+				newConfiguration.StartCreateBranch = args[i+1]
+				i++ // skip consumed parameter
 			}
-			i++ // skip consumed parameter
 		case "--join", "-j":
 			newConfiguration.StartJoin = true
 		case "--delete-remote-wip-branch":
@@ -179,6 +177,19 @@ func ParseArgs(args []string, configuration Configuration) (command string, para
 	}
 
 	return
+}
+
+// isBranchName reports whether an argument following --create / -c is a branch
+// name: anything that is not another option and not a number (a number is the
+// timer).
+func isBranchName(arg string) bool {
+	if strings.HasPrefix(arg, "-") {
+		return false
+	}
+	if _, err := strconv.Atoi(arg); err == nil {
+		return false
+	}
+	return true
 }
 
 func GetDefaultConfiguration() Configuration {

@@ -1,8 +1,8 @@
 # 5.4.4
+- Feature: `mob start --create` now takes an optional branch name (#211). `mob start --create <branch>` creates that branch from the current branch's up-to-date remote, pushes it, and starts the mob session on it. If the branch already exists locally or on the remote, it is checked out instead, so everyone in the mob can run the same command.
 - Feature: Release a Linux arm64 build (`mob_<version>_linux_arm64.tar.gz`). The install script and the AUR package `mobsh-bin` pick it up automatically on arm64 machines.
 
 # 5.4.3
-- Feature: `mob start --create-base <branch>` creates a new base branch from the up-to-date remote default branch (without requiring it to be checked out locally), pushes it, and starts the mob session on it.
 - Fix: `mob start` and `mob next` now work on a wip branch whose base branch was never checked out locally, including base branch names that contain a `-`.
 - Upgrade to go 1.27. On macOS, mob now requires macOS 13 Ventura or later.
 - Improvement: every mob command runs faster in repositories with a long history.
