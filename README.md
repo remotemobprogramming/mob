@@ -365,14 +365,16 @@ Any editor plugin can provide the last file by writing `<git dir>/mob/last-file.
   "file": "src/main/java/Foo.java",
   "line": 42,
   "updatedAt": "2026-11-18T10:15:03Z",
-  "editor": "IntelliJ IDEA 2026.2"
+  "editor": "IntelliJ IDEA 2026.2",
+  "plugin": "Mob Last File",
+  "pluginVersion": "0.1.0"
 }
 ```
 
 - `file`: path relative to the git root, using `/` as separator.
 - `line`: 1-based line number; optional.
 - `updatedAt`: RFC 3339 timestamp of when the file was written.
-- `editor`: informational only, shown in `mob --debug`.
+- `editor`, `plugin`, `pluginVersion`: name and version of the editor and of the plugin which wrote the file; optional and informational only, shown in `mob --debug`.
 
 `mob next` uses the file only if `version` is `1`, `updatedAt` is newer than the last commit, and `file` exists inside the repository. Plugins should update the file when the active file or line changes and when the editor loses focus, and may delete it when the project is closed. If clocks of your team's machines differ a lot, mob may ignore a fresh state file and fall back to the last modified file.
 

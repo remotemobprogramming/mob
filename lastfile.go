@@ -79,7 +79,10 @@ type editorState struct {
 	File      string    `json:"file"`
 	Line      int       `json:"line"`
 	UpdatedAt time.Time `json:"updatedAt"`
-	Editor    string    `json:"editor"`
+	// informational only
+	Editor        string `json:"editor"`
+	Plugin        string `json:"plugin"`
+	PluginVersion string `json:"pluginVersion"`
 }
 
 func (editorStateFileSource) name() string { return "editor state file" }
@@ -100,7 +103,7 @@ func (editorStateFileSource) find() (lastFile, bool) {
 		say.Debug("Ignoring editor state file: " + reason)
 		return lastFile{}, false
 	}
-	say.Debug("Using editor state file written by '" + state.Editor + "' at " + state.UpdatedAt.String())
+	say.Debug("Using editor state file written by plugin '" + state.Plugin + "' " + state.PluginVersion + " in '" + state.Editor + "' at " + state.UpdatedAt.String())
 	line := state.Line
 	if line < 1 {
 		line = 0

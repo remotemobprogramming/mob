@@ -257,7 +257,7 @@ func TestStartNextStay_OpenLastFile_WithLinePlaceholderButNoLineInCommit(t *test
 func TestEditorStateFile_ParsesFormatWrittenByIntellijPlugin(t *testing.T) {
 	for _, updatedAt := range []string{"2026-11-18T10:15:03.123Z", "2026-11-18T10:15:03Z"} {
 		var state editorState
-		content := "{\n  \"version\": 1,\n  \"file\": \"dir with space/Über.java\",\n  \"line\": 42,\n  \"updatedAt\": \"" + updatedAt + "\",\n  \"editor\": \"IntelliJ IDEA 2024.2.5\"\n}\n"
+		content := "{\n  \"version\": 1,\n  \"file\": \"dir with space/Über.java\",\n  \"line\": 42,\n  \"updatedAt\": \"" + updatedAt + "\",\n  \"editor\": \"IntelliJ IDEA 2024.2.5\",\n  \"plugin\": \"Mob Last File\",\n  \"pluginVersion\": \"0.1.0\"\n}\n"
 		if err := json.Unmarshal([]byte(content), &state); err != nil {
 			t.Fatal(err)
 		}
@@ -265,6 +265,8 @@ func TestEditorStateFile_ParsesFormatWrittenByIntellijPlugin(t *testing.T) {
 		equals(t, "dir with space/Über.java", state.File)
 		equals(t, 42, state.Line)
 		equals(t, "IntelliJ IDEA 2024.2.5", state.Editor)
+		equals(t, "Mob Last File", state.Plugin)
+		equals(t, "0.1.0", state.PluginVersion)
 		equals(t, time.Date(2026, 11, 18, 10, 15, 3, 0, time.UTC), state.UpdatedAt.UTC().Truncate(time.Second))
 	}
 }
