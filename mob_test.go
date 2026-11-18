@@ -914,6 +914,7 @@ func TestStartCreateExistingLocalBranchWithUnpushedCommits(t *testing.T) {
 	err := start(configuration)
 
 	assertError(t, err, "cannot start; unpushed changes on base branch must be pushed upstream")
+	assertOnBranch(t, "master")
 	assertOutputContains(t, output, "git push origin feature/story-1")
 }
 
@@ -982,17 +983,33 @@ func TestStartCreateBranchWithUncommitedChanges(t *testing.T) {
 	assertOutputContains(t, output, "mob start --create feature/story-1 --discard-uncommitted-changes")
 }
 
+func TestStartCreateBranchKeepsUncommitedChangesWhenValidationFails(t *testing.T) {
+	_, configuration := setup(t)
+	git("checkout", "-b", "local-only")
+	createFile(t, "example.txt", "contentIrrelevant")
+
+	configuration.StartCreateBranch = "feature/story-1"
+	configuration.StartCreate = true
+	configuration.HandleUncommittedChanges = config.IncludeChanges
+	err := start(configuration)
+
+	assertError(t, err, "cannot create branch because the current branch has no remote branch")
+	assertOnBranch(t, "local-only")
+	assertFileExist(t, "example.txt")
+	equals(t, "", silentgit("stash", "list"))
+}
+
 func TestStartCreateBranchAndTimerInWrongOrder(t *testing.T) {
 	output, _ := setup(t)
 	mockExit()
+	t.Cleanup(resetExit)
+	t.Cleanup(func() { args = []string{} })
 
 	runMob(t, tempDir+"/local", "start", "-c", "10", "feature")
 
 	assertOutputContains(t, output, "too many arguments: 10 feature")
 	assertOutputContains(t, output, "mob start --create <branch> <timer>")
 	assertOnBranch(t, "master")
-	args = []string{}
-	resetExit()
 }
 
 func TestStartCreateBranchDiscardUncommitedChangesConflictingWithRemote(t *testing.T) {
