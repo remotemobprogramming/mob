@@ -186,6 +186,14 @@ func (branch Branch) hasLocalCommits(configuration config.Configuration) bool {
 }
 
 func (branch Branch) hasUnpushedCommits(configuration config.Configuration) bool {
+	return branch.hasUnpushedCommitsWithType(configuration, "base branch")
+}
+
+func (branch Branch) hasUnpushedWipCommits(configuration config.Configuration) bool {
+	return branch.hasUnpushedCommitsWithType(configuration, "wip branch")
+}
+
+func (branch Branch) hasUnpushedCommitsWithType(configuration config.Configuration, branchType string) bool {
 	countOutput := silentgit(
 		"rev-list", "--count", "--left-only",
 		"refs/heads/"+branch.Name+"..."+"refs/remotes/"+branch.remote(configuration).Name,
@@ -196,7 +204,7 @@ func (branch Branch) hasUnpushedCommits(configuration config.Configuration) bool
 	}
 	unpushedCommits := unpushedCount != 0
 	if unpushedCommits {
-		say.Info(fmt.Sprintf("there are %d unpushed commits on local base branch <%s>", unpushedCount, branch.Name))
+		say.Info(fmt.Sprintf("there are %d unpushed commits on local %s <%s>", unpushedCount, branchType, branch.Name))
 	}
 	return unpushedCommits
 }
@@ -525,6 +533,16 @@ func start(configuration config.Configuration) error {
 		say.Error("cannot start; unpushed changes on base branch must be pushed upstream")
 		say.Fix("to fix this, push those commits and try again", "git push "+configuration.RemoteName+" "+currentBaseBranch.String())
 		return errors.New("cannot start; unpushed changes on base branch must be pushed upstream")
+	}
+
+	if currentWipBranch.hasLocalBranch() && currentWipBranch.hasRemoteBranch(configuration) && currentWipBranch.hasUnpushedWipCommits(configuration) {
+		say.Error("cannot start; unpushed changes on wip branch must be pushed upstream")
+		fixCommand := "git pull --rebase " + configuration.RemoteName + " " + currentWipBranch.String() + " && git push " + configuration.RemoteName + " " + currentWipBranch.String()
+		if !isMobProgramming(configuration) {
+			fixCommand = "git checkout " + currentWipBranch.String() + " && " + fixCommand
+		}
+		say.Fix("to fix this, rebase onto remote wip branch and push those commits, then try again", fixCommand)
+		return errors.New("cannot start; unpushed changes on wip branch must be pushed upstream")
 	}
 
 	if uncommittedChanges && configuration.HandleUncommittedChanges == config.DiscardChanges {
