@@ -1626,7 +1626,7 @@ func TestStartBranchWithUncommitedChangesFixWithBranch(t *testing.T) {
 
 	setWorkingDir(tempDir + "/local")
 
-	createFile(t, "uncommited.txt", "contentIrrelevant")
+	createFile(t, "uncommitted.txt", "contentIrrelevant")
 	runMob(t, tempDir+"/local", "start", "-b", "green")
 
 	assertOutputContains(t, output, "mob start --branch green --include-uncommitted-changes")
@@ -1640,7 +1640,7 @@ func TestStartBranchEnvWithUncommitedChangesFixWithoutBranch(t *testing.T) {
 
 	setWorkingDir(tempDir + "/local")
 	t.Setenv("MOB_WIP_BRANCH_QUALIFIER", "red")
-	createFile(t, "uncommited.txt", "contentIrrelevant")
+	createFile(t, "uncommitted.txt", "contentIrrelevant")
 	runMob(t, tempDir+"/local", "start")
 
 	assertOutputContains(t, output, "mob start --include-uncommitted-changes")
@@ -1655,7 +1655,7 @@ func TestStartCreateBranchWithUncommitedChangesFixWithBranch(t *testing.T) {
 	setWorkingDir(tempDir + "/local")
 
 	git("checkout", "-b", "unpushedBranch")
-	createFile(t, "uncommited.txt", "contentIrrelevant")
+	createFile(t, "uncommitted.txt", "contentIrrelevant")
 	runMob(t, tempDir+"/local", "start", "--create", "-b", "green")
 
 	assertOutputContains(t, output, "mob start --create --branch green --include-uncommitted-changes")
@@ -1670,7 +1670,7 @@ func TestStartCreateBranchEnvWithUncommitedChangesFixWithoutBranch(t *testing.T)
 	setWorkingDir(tempDir + "/local")
 	os.Setenv("MOB_WIP_BRANCH_QUALIFIER", "red")
 	git("checkout", "-b", "unpushedBranch")
-	createFile(t, "uncommited.txt", "contentIrrelevant")
+	createFile(t, "uncommitted.txt", "contentIrrelevant")
 	runMob(t, tempDir+"/local", "start", "--create")
 
 	os.Unsetenv("MOB_WIP_BRANCH_QUALIFIER")
@@ -2328,14 +2328,14 @@ func ensureDirectoryExists(t *testing.T, path string) (pathToDirectory string) {
 func removeFile(t *testing.T, path string) {
 	err := os.Remove(path)
 	if err != nil {
-		failWithFailure(t, "no error", fmt.Sprintf("error %v occured deleting file %s", err, path))
+		failWithFailure(t, "no error", fmt.Sprintf("error %v occurred deleting file %s", err, path))
 	}
 }
 
 func moveFile(t *testing.T, oldPath string, newPath string) {
 	err := os.Rename(oldPath, newPath)
 	if err != nil {
-		failWithFailure(t, "no error", fmt.Sprintf("error %v occured moving %s to %s", err, oldPath, newPath))
+		failWithFailure(t, "no error", fmt.Sprintf("error %v occurred moving %s to %s", err, oldPath, newPath))
 	}
 }
 

@@ -324,7 +324,7 @@ pick 01a9a33 %[1]s
 	equals(t, expected, result)
 }
 
-// Check if the initial commit is not dropped when the commmit line does not contain `InitialCISkipCommitMessage`
+// Check if the initial commit is not dropped when the commit line does not contain `InitialCISkipCommitMessage`
 func TestMarkDropStartCommit_notHasStartCISkipCommitLine(t *testing.T) {
 	configuration := config.GetDefaultConfiguration()
 
