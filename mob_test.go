@@ -644,6 +644,104 @@ func TestStartHasUnpushedCommits(t *testing.T) {
 	assertOutputContains(t, output, "unpushed commits")
 }
 
+func TestStartHasUnpushedWipCommitsWhenOnWipBranch(t *testing.T) {
+	output, configuration := setup(t)
+
+	setWorkingDir(tempDir + "/local")
+	start(configuration)
+	createFile(t, "file1.txt", "contentIrrelevant")
+	next(configuration)
+
+	setWorkingDir(tempDir + "/localother")
+	start(configuration)
+
+	setWorkingDir(tempDir + "/local")
+	start(configuration)
+	createFile(t, "file2.txt", "contentIrrelevant")
+	next(configuration)
+
+	setWorkingDir(tempDir + "/localother")
+	createFileAndCommitIt(t, "local_wip.txt", "local change", "unpushed wip commit")
+
+	err := start(configuration)
+
+	assertError(t, err, "cannot start; unpushed changes on wip branch must be pushed upstream")
+	assertOutputContains(t, output, "cannot start; unpushed changes on wip branch must be pushed upstream")
+	assertOutputContains(t, output, "unpushed commits on local wip branch <mob-session>")
+	assertOutputContains(t, output, "git pull --rebase origin mob-session && git push origin mob-session")
+	assertOnBranch(t, "mob-session")
+	assertFileExist(t, "local_wip.txt")
+	assertCommitLogContainsMessage(t, "mob-session", "unpushed wip commit")
+}
+
+func TestStartHasUnpushedWipCommitsWhenOnBaseBranch(t *testing.T) {
+	output, configuration := setup(t)
+
+	setWorkingDir(tempDir + "/local")
+	start(configuration)
+	createFile(t, "file1.txt", "contentIrrelevant")
+	next(configuration)
+
+	setWorkingDir(tempDir + "/localother")
+	start(configuration)
+	createFileAndCommitIt(t, "local_wip.txt", "local change", "unpushed wip commit")
+	git("checkout", "master")
+
+	setWorkingDir(tempDir + "/local")
+	start(configuration)
+	createFile(t, "file2.txt", "contentIrrelevant")
+	next(configuration)
+
+	setWorkingDir(tempDir + "/localother")
+	err := start(configuration)
+
+	assertError(t, err, "cannot start; unpushed changes on wip branch must be pushed upstream")
+	assertOutputContains(t, output, "git checkout mob-session && git pull --rebase origin mob-session && git push origin mob-session")
+	assertOnBranch(t, "master")
+	assertCommitLogContainsMessage(t, "mob-session", "unpushed wip commit")
+}
+
+func TestStartHasUnpushedWipCommitsDoesNotDiscardOrStashUncommittedChanges(t *testing.T) {
+	_, configuration := setup(t)
+
+	setWorkingDir(tempDir + "/local")
+	start(configuration)
+	createFile(t, "file1.txt", "contentIrrelevant")
+	next(configuration)
+
+	setWorkingDir(tempDir + "/localother")
+	start(configuration)
+	createFileAndCommitIt(t, "local_wip.txt", "local change", "unpushed wip commit")
+	createFile(t, "dirty.txt", "uncommitted work")
+
+	configuration.HandleUncommittedChanges = config.DiscardChanges
+	err := start(configuration)
+
+	assertError(t, err, "cannot start; unpushed changes on wip branch must be pushed upstream")
+	assertOnBranch(t, "mob-session")
+	assertFileExist(t, "local_wip.txt")
+	assertFileExist(t, "dirty.txt")
+}
+
+func TestExecuteStartExitsNonZeroWhenWipBranchHasUnpushedCommits(t *testing.T) {
+	_, configuration := setup(t)
+
+	start(configuration)
+	createFileAndCommitIt(t, "local_wip.txt", "local change", "unpushed wip commit")
+
+	exitCode := 0
+	originalExitFunction = exit.Exit
+	exit.Exit = func(code int) {
+		exitCode = code
+	}
+	defer resetExit()
+
+	execute("s", []string{}, configuration)
+
+	equals(t, 1, exitCode)
+	assertCommitLogContainsMessage(t, "mob-session", "unpushed wip commit")
+}
+
 func TestBranch(t *testing.T) {
 	output, configuration := setup(t)
 	start(configuration)
