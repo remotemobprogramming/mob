@@ -281,6 +281,12 @@ func execute(command string, parameter []string, configuration config.Configurat
 
 	switch command {
 	case "s", "start":
+		if containsAny(args, "--create", "-c") && len(parameter) > 1 {
+			say.Error("too many arguments: " + strings.Join(parameter, " "))
+			say.Fix("to create a branch and set a timer, use", configuration.Mob("start --create <branch> <timer>"))
+			exit.Exit(1)
+			return
+		}
 		err := start(configuration)
 		if !isMobProgramming(configuration) || err != nil {
 			exit.Exit(1)
@@ -505,6 +511,22 @@ func start(configuration config.Configuration) error {
 	}
 
 	git("fetch", configuration.RemoteName, "--prune")
+
+	if configuration.StartCreateBranch != "" {
+		if err := validateStartBranch(configuration); err != nil {
+			return err
+		}
+		if uncommittedChanges && configuration.HandleUncommittedChanges == config.DiscardChanges {
+			git("reset", "--hard")
+		}
+		if uncommittedChanges && configuration.HandleUncommittedChanges == config.IncludeChanges {
+			if err := stashUncommittedChanges(configuration); err != nil {
+				return err
+			}
+		}
+		switchToStartBranch(configuration)
+	}
+
 	currentBranch := gitCurrentBranch()
 	currentBaseBranch, currentWipBranch := determineBranches(currentBranch, gitLocalAndRemoteBranches(configuration), configuration)
 
@@ -531,18 +553,18 @@ func start(configuration config.Configuration) error {
 		git("reset", "--hard")
 	}
 
-	if uncommittedChanges && configuration.HandleUncommittedChanges == config.IncludeChanges {
-		if silentgit("ls-tree", "-r", "HEAD", "--full-name", "--name-only", ".") == "" {
-			say.Error("cannot start; current working dir is an uncommitted subdir")
-			say.Fix("to fix this, go to the parent directory and try again", "cd ..")
-			return errors.New("cannot start; current working dir is an uncommitted subdir")
+	if uncommittedChanges && configuration.HandleUncommittedChanges == config.IncludeChanges && hasUncommittedChanges() {
+		if err := stashUncommittedChanges(configuration); err != nil {
+			return err
 		}
-		git("stash", "push", "--include-untracked", "--message", configuration.StashName)
-		say.Info("uncommitted changes were stashed. If an error occurs later on, you can recover them with 'git stash pop'.")
 	}
 
 	if !isMobProgramming(configuration) {
-		git("merge", "FETCH_HEAD", "--ff-only")
+		if configuration.StartCreateBranch != "" {
+			git("merge", currentBaseBranch.remote(configuration).String(), "--ff-only")
+		} else {
+			git("merge", "FETCH_HEAD", "--ff-only")
+		}
 	}
 
 	if currentWipBranch.hasRemoteBranch(configuration) {
@@ -587,6 +609,9 @@ func sayFixUncommittedChanges(configuration config.Configuration) {
 }
 
 func createFix(configuration config.Configuration) string {
+	if configuration.StartCreateBranch != "" {
+		return " --create " + configuration.StartCreateBranch
+	}
 	if configuration.StartCreate {
 		return " --create"
 	}
@@ -613,6 +638,80 @@ func containsAny(list []string, elements ...string) bool {
 		}
 	}
 	return false
+}
+
+// validateStartBranch runs every check that can refuse the branch given to
+// --create before start() touches the working tree (stash or reset).
+func validateStartBranch(configuration config.Configuration) error {
+	branch := newBranch(configuration.StartCreateBranch)
+	currentBranch := gitCurrentBranch()
+
+	if branch.IsWipBranch(configuration) {
+		say.Error("cannot create branch " + branch.String() + " because it is a wip branch")
+		return errors.New("cannot create branch because it is a wip branch")
+	}
+
+	if branch == currentBranch {
+		return nil
+	}
+
+	if branch.hasLocalBranch() {
+		if branch.hasRemoteBranch(configuration) && branch.hasUnpushedCommits(configuration) {
+			say.Error("cannot start; unpushed changes on base branch must be pushed upstream")
+			say.Fix("to fix this, push those commits and try again", "git push "+configuration.RemoteName+" "+branch.String())
+			return errors.New("cannot start; unpushed changes on base branch must be pushed upstream")
+		}
+		return nil
+	}
+
+	if branch.hasRemoteBranch(configuration) {
+		return nil
+	}
+
+	if currentBranch.IsWipBranch(configuration) {
+		say.Error("cannot create branch " + branch.String() + " while on wip branch " + currentBranch.String())
+		say.Fix("To finish the current session, use", configuration.Mob("done"))
+		return errors.New("cannot create branch while on wip branch")
+	}
+
+	if !currentBranch.hasRemoteBranch(configuration) {
+		say.Error("cannot create branch " + branch.String() + " because remote branch " + currentBranch.remote(configuration).String() + " is missing")
+		say.Fix("To push the current branch first, use", "git push "+configuration.RemoteName+" "+currentBranch.String()+" --set-upstream")
+		return errors.New("cannot create branch because the current branch has no remote branch")
+	}
+
+	return nil
+}
+
+func switchToStartBranch(configuration config.Configuration) {
+	branch := newBranch(configuration.StartCreateBranch)
+	currentBranch := gitCurrentBranch()
+
+	if branch == currentBranch {
+		return
+	}
+
+	if branch.hasLocalBranch() {
+		say.Info("switching to existing branch " + branch.String())
+		git("checkout", branch.String())
+	} else if branch.hasRemoteBranch(configuration) {
+		say.Info("checking out branch " + branch.String() + " from " + branch.remote(configuration).String())
+		git("checkout", "-b", branch.String(), branch.remote(configuration).String())
+	} else {
+		say.Info("creating branch " + branch.String() + " from " + currentBranch.remote(configuration).String())
+		git("checkout", "-b", branch.String(), "--no-track", currentBranch.remote(configuration).String())
+	}
+}
+
+func stashUncommittedChanges(configuration config.Configuration) error {
+	if silentgit("ls-tree", "-r", "HEAD", "--full-name", "--name-only", ".") == "" {
+		say.Error("cannot start; current working dir is an uncommitted subdir")
+		say.Fix("to fix this, go to the parent directory and try again", "cd ..")
+		return errors.New("cannot start; current working dir is an uncommitted subdir")
+	}
+	git("stash", "push", "--include-untracked", "--message", configuration.StashName)
+	say.Info("uncommitted changes were stashed. If an error occurs later on, you can recover them with 'git stash pop'.")
+	return nil
 }
 
 func createRemoteBranch(configuration config.Configuration, currentBaseBranch Branch) {

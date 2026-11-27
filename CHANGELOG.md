@@ -1,4 +1,5 @@
 # 5.4.4
+- Feature: `mob start --create` now takes an optional branch name (#211). `mob start --create <branch>` creates that branch from the current branch's up-to-date remote, pushes it, and starts the mob session on it. If the branch already exists locally or on the remote, it is checked out instead, so everyone in the mob can run the same command.
 - Feature: Release a Linux arm64 build (`mob_<version>_linux_arm64.tar.gz`). The install script and the AUR package `mobsh-bin` pick it up automatically on arm64 machines.
 
 # 5.4.3
