@@ -1,3 +1,7 @@
+# 5.5.0
+- Feature: `mob next` uses the file and line you were last looking at in your editor, if an editor plugin (e.g. the IntelliJ mob last file plugin) wrote `<git dir>/mob/last-file.json`. Without a plugin, mob falls back to the last modified file as before. The line is stored as `lastLine:` below `lastFile:` in the wip commit message, which older mob versions ignore.
+- Feature: `MOB_OPEN_COMMAND` supports the named placeholders `%{file}` and `%{line}`, e.g. `code -g %{file}:%{line}` or `idea --line %{line} %{file}`. `%s` keeps working.
+
 # 5.4.4
 - Feature: Release a Linux arm64 build (`mob_<version>_linux_arm64.tar.gz`). The install script and the AUR package `mobsh-bin` pick it up automatically on arm64 machines.
 
